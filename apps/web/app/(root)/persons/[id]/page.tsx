@@ -55,6 +55,7 @@ import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { formatDelegateLevel } from "@/lib/delegate-level";
 import type { SearchParams } from "@/types";
+import { PersonResultsChartTab } from "./_components/results-chart-tab";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -109,6 +110,7 @@ async function PersonPageContent({
       : queryParams.tab;
     const valid = [
       "results-by-event",
+      "results-chart",
       "records",
       "championship-podiums",
       "map",
@@ -162,7 +164,7 @@ async function PersonPageContent({
   const hasRecords = regionalRecords.total > 0;
   const hasPodiums = championshipPodiums.length > 0;
   const tabCount =
-    2 +
+    3 +
     (hasRecords ? 1 : 0) +
     (hasPodiums ? 1 : 0) +
     (hasStaffCompetitions ? 1 : 0);
@@ -511,36 +513,94 @@ async function PersonPageContent({
             tabCount === 2 && "md:grid-cols-2",
             tabCount === 3 && "md:grid-cols-3",
             tabCount === 4 && "md:grid-cols-4",
-            tabCount >= 5 && "md:grid-cols-5",
+            tabCount === 5 && "md:grid-cols-5",
+            tabCount >= 6 && "md:grid-cols-6",
           )}
         >
           <TabsTrigger value="results-by-event" asChild>
-            <Link href="?tab=results-by-event">Resultados</Link>
+            <Link
+              href={
+                selectedEventId
+                  ? `?tab=results-by-event&event=${selectedEventId}`
+                  : "?tab=results-by-event"
+              }
+            >
+              Resultados
+            </Link>
+          </TabsTrigger>
+          <TabsTrigger value="results-chart" asChild>
+            <Link
+              href={
+                selectedEventId
+                  ? `?tab=results-chart&event=${selectedEventId}`
+                  : "?tab=results-chart"
+              }
+            >
+              Gráfica
+            </Link>
           </TabsTrigger>
           {hasRecords && (
             <TabsTrigger value="records" asChild>
-              <Link href="?tab=records">Récords</Link>
+              <Link
+                href={
+                  selectedEventId
+                    ? `?tab=records&event=${selectedEventId}`
+                    : "?tab=records"
+                }
+              >
+                Récords
+              </Link>
             </TabsTrigger>
           )}
           {hasPodiums && (
             <TabsTrigger value="championship-podiums" asChild>
-              <Link href="?tab=championship-podiums">
+              <Link
+                href={
+                  selectedEventId
+                    ? `?tab=championship-podiums&event=${selectedEventId}`
+                    : "?tab=championship-podiums"
+                }
+              >
                 Podios en Campeonatos
               </Link>
             </TabsTrigger>
           )}
           <TabsTrigger value="map" asChild>
-            <Link href="?tab=map">Mapa</Link>
+            <Link
+              href={
+                selectedEventId
+                  ? `?tab=map&event=${selectedEventId}`
+                  : "?tab=map"
+              }
+            >
+              Mapa
+            </Link>
           </TabsTrigger>
           {hasStaffCompetitions && (
             <TabsTrigger value="staff-competitions" asChild>
-              <Link href="?tab=staff-competitions">Organización</Link>
+              <Link
+                href={
+                  selectedEventId
+                    ? `?tab=staff-competitions&event=${selectedEventId}`
+                    : "?tab=staff-competitions"
+                }
+              >
+                Organización
+              </Link>
             </TabsTrigger>
           )}
         </TabsList>
 
         <TabsContent value="results-by-event" className="mt-6">
           <PersonResultsTab
+            eventOptions={eventOptions}
+            selectedEventId={selectedEventId}
+            selectedResults={selectedResults}
+          />
+        </TabsContent>
+
+        <TabsContent value="results-chart" className="mt-6">
+          <PersonResultsChartTab
             eventOptions={eventOptions}
             selectedEventId={selectedEventId}
             selectedResults={selectedResults}
