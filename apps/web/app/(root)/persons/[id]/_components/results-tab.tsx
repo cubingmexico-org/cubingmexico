@@ -87,7 +87,7 @@ export function PersonResultsTab({
       <CardHeader className="space-y-6">
         <div className="flex flex-wrap justify-center gap-2 text-muted-foreground">
           {eventOptions.map((group) => {
-            const href = `?event=${group.eventId}`;
+            const href = `?tab=results-by-event&event=${group.eventId}`;
 
             return (
               <Link
