@@ -52,6 +52,8 @@ type SessionPoint = {
   ao12: number | null;
   ao50: number | null;
   ao100: number | null;
+  bestAo50: number | null;
+  bestAo100: number | null;
 };
 
 // Formats a duration in seconds to m:ss format for Y-axis labels.
@@ -141,6 +143,39 @@ function formatDisplayValue(eventId: string, val: number | null): string {
   );
 }
 
+// Helper to format total accumulated time / moves across all solves
+function formatTotalTime(eventId: string, val: number | null): string {
+  if (val === null || Number.isNaN(val) || !Number.isFinite(val)) {
+    return "—";
+  }
+  if (eventId === "333fm") {
+    return `${Math.round(val).toLocaleString("es-MX")} movs`;
+  }
+
+  if (val < 60) {
+    return `${val.toFixed(2)}s`;
+  }
+
+  const seconds = val % 60;
+  const totalMinutes = Math.floor(val / 60);
+  const minutes = totalMinutes % 60;
+  const totalHours = Math.floor(totalMinutes / 60);
+  const hours = totalHours % 24;
+  const days = Math.floor(totalHours / 24);
+
+  const secStr = seconds.toFixed(2).padStart(5, "0");
+
+  if (days > 0) {
+    return `${days}d ${hours}h ${minutes}m ${secStr}s`;
+  }
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${secStr}s`;
+  }
+
+  return `${minutes}m ${secStr}s`;
+}
+
 export function PersonResultsChartTab({
   eventOptions,
   selectedEventId,
@@ -223,7 +258,40 @@ export function PersonResultsChartTab({
         ao12: ao12Val,
         ao50: ao50Val,
         ao100: ao100Val,
+        bestAo50: null,
+        bestAo100: null,
       });
+    }
+
+    let minAo50: number | null = null;
+    let minAo50Idx = -1;
+    let minAo100: number | null = null;
+    let minAo100Idx = -1;
+
+    for (let i = 0; i < resultPoints.length; i++) {
+      const pt = resultPoints[i];
+      if (!pt) continue;
+      if (pt.ao50 !== null && (minAo50 === null || pt.ao50 < minAo50)) {
+        minAo50 = pt.ao50;
+        minAo50Idx = i;
+      }
+      if (pt.ao100 !== null && (minAo100 === null || pt.ao100 < minAo100)) {
+        minAo100 = pt.ao100;
+        minAo100Idx = i;
+      }
+    }
+
+    if (minAo50Idx !== -1) {
+      const targetAo50 = resultPoints[minAo50Idx];
+      if (targetAo50) {
+        targetAo50.bestAo50 = minAo50;
+      }
+    }
+    if (minAo100Idx !== -1) {
+      const targetAo100 = resultPoints[minAo100Idx];
+      if (targetAo100) {
+        targetAo100.bestAo100 = minAo100;
+      }
     }
 
     return resultPoints;
@@ -264,6 +332,16 @@ export function PersonResultsChartTab({
 
     const globalBest =
       validAllSolves.length > 0 ? Math.min(...validAllSolves) : null;
+    const globalWorst =
+      validAllSolves.length > 0 ? Math.max(...validAllSolves) : null;
+    const globalMean =
+      validAllSolves.length > 0
+        ? validAllSolves.reduce((acc, v) => acc + v, 0) / validAllSolves.length
+        : null;
+    const globalTotalTime =
+      validAllSolves.length > 0
+        ? validAllSolves.reduce((acc, v) => acc + v, 0)
+        : null;
 
     // Last results (current moving averages at the end of the solve history)
     const lastAo12 = calculateAoN(allSolves, 12);
@@ -277,6 +355,9 @@ export function PersonResultsChartTab({
         ao50: globalAo50,
         ao100: globalAo100,
         best: globalBest,
+        worst: globalWorst,
+        mean: globalMean,
+        totalTime: globalTotalTime,
         count: allSolves.length,
         validCount: validAllSolves.length,
       },
@@ -307,7 +388,7 @@ export function PersonResultsChartTab({
       color: "#ffffff",
     },
     best: {
-      label: "Single",
+      label: "Mejor",
       color: "#facc15",
     },
     ao50: {
@@ -451,7 +532,10 @@ export function PersonResultsChartTab({
                     }
                     if (point.ao50 !== null) {
                       rows.push({
-                        label: "Ao50",
+                        label:
+                          point.bestAo50 !== null
+                            ? "¡Nuevo récord Ao50!"
+                            : "Ao50",
                         color: "#ef4444",
                         value:
                           fmtVal(point.ao50) + (showUnit ? ` ${unit}` : ""),
@@ -459,7 +543,10 @@ export function PersonResultsChartTab({
                     }
                     if (point.ao100 !== null) {
                       rows.push({
-                        label: "Ao100",
+                        label:
+                          point.bestAo100 !== null
+                            ? "¡Nuevo récord Ao100!"
+                            : "Ao100",
                         color: "#22c55e",
                         value:
                           fmtVal(point.ao100) + (showUnit ? ` ${unit}` : ""),
@@ -518,7 +605,7 @@ export function PersonResultsChartTab({
                 />
                 <Line
                   dataKey="best"
-                  name="Single"
+                  name="Mejor"
                   type="monotone"
                   stroke="#facc15"
                   strokeDasharray="4 4"
@@ -538,8 +625,32 @@ export function PersonResultsChartTab({
                   name="Ao50"
                   type="monotone"
                   stroke="#ef4444"
-                  strokeWidth={1.5}
-                  dot={false}
+                  strokeWidth={3}
+                  dot={(props: {
+                    cx?: number;
+                    cy?: number;
+                    payload?: SessionPoint;
+                    index?: number;
+                  }) => {
+                    const { cx, cy, payload } = props;
+                    if (
+                      !payload?.bestAo50 ||
+                      cx === undefined ||
+                      cy === undefined
+                    )
+                      return <g key={props.index} />;
+                    return (
+                      <circle
+                        key={props.index}
+                        cx={cx}
+                        cy={cy}
+                        r={4}
+                        fill="#fff"
+                        stroke="#ef4444"
+                        strokeWidth={3}
+                      />
+                    );
+                  }}
                   activeDot={{ r: 4, fill: "#ef4444" }}
                   connectNulls
                   isAnimationActive={false}
@@ -549,8 +660,32 @@ export function PersonResultsChartTab({
                   name="Ao100"
                   type="monotone"
                   stroke="#22c55e"
-                  strokeWidth={1.5}
-                  dot={false}
+                  strokeWidth={3}
+                  dot={(props: {
+                    cx?: number;
+                    cy?: number;
+                    payload?: SessionPoint;
+                    index?: number;
+                  }) => {
+                    const { cx, cy, payload } = props;
+                    if (
+                      !payload?.bestAo100 ||
+                      cx === undefined ||
+                      cy === undefined
+                    )
+                      return <g key={props.index} />;
+                    return (
+                      <circle
+                        key={props.index}
+                        cx={cx}
+                        cy={cy}
+                        r={4}
+                        fill="#fff"
+                        stroke="#22c55e"
+                        strokeWidth={3}
+                      />
+                    );
+                  }}
                   activeDot={{ r: 4, fill: "#22c55e" }}
                   connectNulls
                   isAnimationActive={false}
@@ -565,7 +700,7 @@ export function PersonResultsChartTab({
               </div>
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#facc15] inline-block" />
-                <span>Single</span>
+                <span>Mejor</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ef4444] inline-block" />
@@ -645,11 +780,45 @@ export function PersonResultsChartTab({
                       </TableCell>
                     </TableRow>
                     <TableRow>
-                      <TableCell className="font-medium">Single</TableCell>
+                      <TableCell className="font-medium">Mejor</TableCell>
                       <TableCell className="text-right font-mono">
                         {formatDisplayValue(
                           selectedResults.eventId,
                           stats.global.best,
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">—</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Peor</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatDisplayValue(
+                          selectedResults.eventId,
+                          stats.global.worst,
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">—</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">Media</TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatDisplayValue(
+                          selectedResults.eventId,
+                          stats.global.mean,
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">—</TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell className="font-medium">
+                        {selectedResults.eventId === "333fm"
+                          ? "Movimientos totales"
+                          : "Tiempo total"}
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        {formatTotalTime(
+                          selectedResults.eventId,
+                          stats.global.totalTime,
                         )}
                       </TableCell>
                       <TableCell className="text-right font-mono">—</TableCell>
