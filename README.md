@@ -8,8 +8,9 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 
 ### Applications
 
+- **[web](./apps/web)** - Main web application with competition management features (Next.js 16 + Drizzle ORM)
+- **[backend](./apps/backend)** - Python Flask service for WCA TSV processing, state ranks, and computation endpoints
 - **[wca-certificates](./apps/wca-certificates)** - Design and print participation and podium certificates for WCA competitions
-- **[web](./apps/web)** - Main web application with competition management features
 
 ### Packages
 

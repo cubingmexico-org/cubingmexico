@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cubing_mexico_db
+    restart: always
+    environment:
+      POSTGRES_DB: cubing_mexico
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cubing_mexico"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: cubing_mexico_backend
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_URL=postgresql://postgres:postgres@db:5432/cubing_mexico
+      - CRON_SECRET=local-dev-cron-secret-12345
+      - FLASK_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend/app.py:/app/app.py
+      - ./apps/backend/common.py:/app/common.py
+      - ./apps/backend/utils.py:/app/utils.py
+      - ./apps/backend/routes:/app/routes
+
+volumes:
+  postgres_data:
