@@ -1,18 +1,64 @@
-from geopy.geocoders import Nominatim
+import logging
+import os
 import re
 from datetime import datetime
+
 from flask import request
+from geopy.extra.rate_limiter import RateLimiter
+from geopy.geocoders import Nominatim
+
+log = logging.getLogger("common")
+
+# Set SKIP_GEOCODING=true for local imports (Nominatim rate-limits bulk reverse geocoding).
+SKIP_GEOCODING = os.environ.get("SKIP_GEOCODING", "").strip().lower() in {
+    "1",
+    "true",
+    "yes",
+}
+
+_geolocator = None
+_reverse = None
+_skip_logged = False
+
+
+def _get_reverse():
+    """Lazy Nominatim client with ~1 req/s rate limit (OSM usage policy)."""
+    global _geolocator, _reverse
+    if _reverse is None:
+        _geolocator = Nominatim(user_agent="cubing-mexico-web-backend", timeout=10)
+        _reverse = RateLimiter(
+            _geolocator.reverse,
+            min_delay_seconds=1.1,
+            max_retries=2,
+            error_wait_seconds=5.0,
+        )
+    return _reverse
+
 
 def get_state_from_coordinates(latitude, longitude):
+    global _skip_logged
+    if SKIP_GEOCODING:
+        if not _skip_logged:
+            log.info(
+                "SKIP_GEOCODING enabled — Mexican competition state_id will be left null"
+            )
+            _skip_logged = True
+        return None
+
     try:
-        geolocator = Nominatim(user_agent="cubing-mexico", timeout=10)
-        location = geolocator.reverse((latitude, longitude), addressdetails=True)
+        location = _get_reverse()(
+            (latitude, longitude),
+            addressdetails=True,
+            language="es",
+        )
         if location and "address" in location.raw:
             # Return state if available, otherwise default to "Ciudad de México"
             return location.raw["address"].get("state") or "Ciudad de México"
         return None
-    except Exception:
+    except Exception as e:
+        log.warning("Geocoding failed for (%s, %s): %s", latitude, longitude, e)
         return None
+
 
 def to_camel_case(snake_str):
     components = snake_str.split('_')
