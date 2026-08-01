@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import { and, asc, eq, ne, notInArray } from "drizzle-orm";
 import {
   person,
@@ -8,7 +8,7 @@ import {
   rankSingle,
   state,
   teamMember,
-} from "@/db/schema";
+} from "@workspace/db/schema";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
 import { auth } from "@/auth";
 

@@ -1,8 +1,8 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
-import { type State, state, person, sumOfRanks } from "@/db/schema";
+import { db } from "@workspace/db";
+import { type State, state, person, sumOfRanks } from "@workspace/db/schema";
 import { and, count, ilike, gt, eq, desc, asc, inArray } from "drizzle-orm";
 import { type GetSORSinglesSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";

@@ -146,15 +146,18 @@ apps/web/
 │   └── globals.css       # Global styles
 ├── components/           # React components
 ├── config/              # Configuration files
-├── db/                  # Database schema and migrations
-├── drizzle/             # Drizzle ORM files
+├── db/                  # App-specific DB query helpers (schema lives in @workspace/db)
 ├── hooks/               # Custom React hooks
 ├── lib/                 # Utilities and helpers
 ├── public/              # Static assets
 └── types/               # TypeScript type definitions
 ```
 
+Schema, migrations, and seed live in [`packages/db`](../../packages/db) (`@workspace/db`).
+
 ## 🗄️ Database Scripts
+
+From `apps/web` (proxies to `@workspace/db`):
 
 ```bash
 # Generate new migration from schema changes
@@ -163,21 +166,14 @@ pnpm db:generate
 # Run pending migrations
 pnpm db:migrate
 
+# Seed Mexican states
+pnpm db:seed
+
 # Open Drizzle Studio (database GUI)
 pnpm db:studio
-
-# Push schema changes directly to database (dev only)
-pnpm db:push
-
-# Pull schema from existing database
-pnpm db:pull
-
-# Check for migration conflicts
-pnpm db:check
-
-# Apply pending migrations (alternative to migrate)
-pnpm db:up
 ```
+
+Or from the monorepo root: `pnpm --filter @workspace/db migrate`
 
 ## 🎨 Key Features Explained
 
@@ -223,8 +219,8 @@ View competitions and locations with:
 Configuration files:
 
 - `next.config.mjs` - Next.js configuration
-- `drizzle.config.ts` - Drizzle ORM configuration
 - `tsconfig.json` - TypeScript configuration
+- Shared DB schema/migrations: [`packages/db`](../../packages/db) (`@workspace/db`)
 - `eslint.config.js` - ESLint rules
 - `postcss.config.mjs` - PostCSS configuration
 - `components.json` - shadcn/ui configuration

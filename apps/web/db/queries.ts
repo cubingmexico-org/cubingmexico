@@ -3,7 +3,7 @@
 import "server-only";
 import { readFile } from "fs/promises";
 import { join } from "path";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import {
   event,
   Person,
@@ -16,7 +16,7 @@ import {
   TeamMember,
   competition,
   result,
-} from "@/db/schema";
+} from "@workspace/db/schema";
 import { cacheLife, cacheTag } from "next/cache";
 import { and, desc, eq, ilike, isNull, lt, notInArray, or } from "drizzle-orm";
 

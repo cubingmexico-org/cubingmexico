@@ -4,7 +4,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import Link from "next/link";
 import * as React from "react";
 import { RankTypeSelector } from "./rank-type-selector";
-import { person } from "@/db/schema";
+import { person } from "@workspace/db/schema";
 import {
   parseAsString,
   parseAsArrayOf,

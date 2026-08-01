@@ -6,7 +6,7 @@ import {
   parseAsStringEnum,
 } from "nuqs/server";
 import { getFiltersStateParser, getSortingStateParser } from "@/lib/parsers";
-import { person } from "@/db/schema";
+import { person } from "@workspace/db/schema";
 import { ResultAverage, ResultSingle } from "../_types";
 
 export const searchSingleParamsCache = createSearchParamsCache({

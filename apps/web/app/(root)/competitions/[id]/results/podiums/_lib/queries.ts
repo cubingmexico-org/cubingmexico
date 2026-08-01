@@ -1,8 +1,14 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
-import { event, person, result, state, resultAttempts } from "@/db/schema";
+import { db } from "@workspace/db";
+import {
+  event,
+  person,
+  result,
+  state,
+  resultAttempts,
+} from "@workspace/db/schema";
 import { and, eq, gt, inArray, or } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import type { CompetitionResultRow } from "../../../_lib/results";

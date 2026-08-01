@@ -1,4 +1,4 @@
-import { Person, TeamMember } from "@/db/schema";
+import { Person, TeamMember } from "@workspace/db/schema";
 
 export interface Member {
   wcaId: Person["wcaId"];

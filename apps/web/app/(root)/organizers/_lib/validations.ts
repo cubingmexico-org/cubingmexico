@@ -8,7 +8,7 @@ import {
 import { getFiltersStateParser, getSortingStateParser } from "@/lib/parsers";
 import { ORGANIZER_LEVEL_FILTERS } from "@/lib/organizer-level";
 import type { Person } from "../_types";
-import { person } from "@/db/schema";
+import { person } from "@workspace/db/schema";
 
 export const searchParamsCache = createSearchParamsCache({
   page: parseAsInteger.withDefault(1),

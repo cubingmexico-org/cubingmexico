@@ -1,8 +1,14 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
-import { state, person, type State, result, competition } from "@/db/schema";
+import { db } from "@workspace/db";
+import {
+  state,
+  person,
+  type State,
+  result,
+  competition,
+} from "@workspace/db/schema";
 import {
   and,
   count,

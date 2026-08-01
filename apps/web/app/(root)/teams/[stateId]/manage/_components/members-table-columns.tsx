@@ -5,7 +5,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Member } from "../../_types";
 import Link from "next/link";
-import { TeamMember } from "@/db/schema";
+import { TeamMember } from "@workspace/db/schema";
 import {
   DropdownMenu,
   DropdownMenuTrigger,

@@ -22,7 +22,7 @@ import {
 } from "@workspace/ui/components/alert";
 import { User } from "next-auth";
 import { Label } from "@workspace/ui/components/label";
-import { State } from "@/db/schema";
+import { State } from "@workspace/db/schema";
 import { Check, Info, X } from "lucide-react";
 import { useActionState } from "react";
 import { profileFormAction } from "@/app/actions";

@@ -1,5 +1,5 @@
 import "server-only";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import { roundRank } from "@/lib/utils";
 import {
   championship,
@@ -15,7 +15,7 @@ import {
   resultAttempts,
   state,
   event,
-} from "@/db/schema";
+} from "@workspace/db/schema";
 import {
   SPEEDSOLVING_AVERAGES_EVENTS,
   BLD_FMC_MEANS_EVENTS,

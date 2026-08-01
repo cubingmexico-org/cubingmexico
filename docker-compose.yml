@@ -11,12 +11,23 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./apps/backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d cubing_mexico"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.migrator
+    container_name: cubing_mexico_migrator
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/cubing_mexico
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
 
   backend:
     build:
@@ -32,6 +43,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
     volumes:
       - ./apps/backend/app.py:/app/app.py
       - ./apps/backend/common.py:/app/common.py

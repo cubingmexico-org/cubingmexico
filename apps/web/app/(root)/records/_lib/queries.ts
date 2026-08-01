@@ -1,7 +1,7 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import {
   event,
   state,
@@ -9,7 +9,7 @@ import {
   result,
   competition,
   resultAttempts,
-} from "@/db/schema";
+} from "@workspace/db/schema";
 import { and, eq, gt, notInArray, sql, inArray } from "drizzle-orm";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
 import { GetRecordsSchema } from "./validations";

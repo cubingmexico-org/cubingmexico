@@ -8,12 +8,13 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 
 ### Applications
 
-- **[web](./apps/web)** - Main web application with competition management features (Next.js 16 + Drizzle ORM)
+- **[web](./apps/web)** - Main web application with competition management features (Next.js 16)
 - **[backend](./apps/backend)** - Python Flask service for WCA TSV processing, state ranks, and computation endpoints
 - **[wca-certificates](./apps/wca-certificates)** - Design and print participation and podium certificates for WCA competitions
 
 ### Packages
 
+- **[@workspace/db](./packages/db)** - Shared Drizzle schema, migrations, and seed (source of truth for Postgres)
 - **[@workspace/ui](./packages/ui)** - Shared UI component library built with shadcn/ui and Radix UI
 - **[@workspace/icons](./packages/icons)** - Centralized icon components
 - **[@workspace/eslint-config](./packages/eslint-config)** - Shared ESLint configurations

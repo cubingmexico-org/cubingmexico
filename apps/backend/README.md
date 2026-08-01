@@ -29,28 +29,31 @@ Environment variables (see `.env.example`):
 
 ### Option 1: Docker Compose (Recommended)
 
-Runs PostgreSQL container and Flask backend together with pre-loaded schema and seed data.
+From the **monorepo root**, Postgres schema/seed come from `@workspace/db` (Drizzle migrator), then the Flask backend starts.
 
 ```bash
-# 1. Copy environment variables file
+# 1. Copy environment variables (monorepo root and/or apps/backend)
 cp .env.example .env
 
-# 2. Start services
-docker compose up --build -d
+# 2. Start db + migrator + backend
+pnpm services:up
+# same as: docker compose up --build -d
 
 # 3. View logs
-docker compose logs -f web
+docker compose logs -f backend
 ```
 
 The app will be available at `http://localhost:8080`.
 
+Schema source of truth: [`packages/db`](../../packages/db) (`@workspace/db`). Do not maintain a separate SQL schema in this app.
+
 ### Option 2: Standalone Python + Docker Postgres
 
-If you want to run Python directly while using PostgreSQL in Docker:
+If you want to run Python directly while using PostgreSQL in Docker (from monorepo root):
 
 ```bash
-# 1. Start only the PostgreSQL database container
-docker compose up db -d
+# 1. Start Postgres and apply shared migrations/seed
+docker compose up db migrator --build
 
 # 2. Install Python dependencies
 pip install -r requirements.txt

@@ -1,8 +1,8 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
-import { type Person, person, result, teamMember } from "@/db/schema";
+import { db } from "@workspace/db";
+import { type Person, person, result, teamMember } from "@workspace/db/schema";
 import {
   and,
   asc,
