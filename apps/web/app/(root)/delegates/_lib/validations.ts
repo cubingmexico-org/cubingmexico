@@ -7,7 +7,7 @@ import {
 } from "nuqs/server";
 import { getFiltersStateParser, getSortingStateParser } from "@/lib/parsers";
 import type { Person } from "../_types";
-import { delegate, person } from "@/db/schema";
+import { delegate, person } from "@workspace/db/schema";
 
 export const searchParamsCache = createSearchParamsCache({
   page: parseAsInteger.withDefault(1),

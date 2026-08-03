@@ -88,7 +88,7 @@ export default function Error({
           <Button asChild variant="secondary">
             <Link
               target="_blank"
-              href="https://github.com/cubingmexico-org/web-frontend/issues/new"
+              href="https://github.com/cubingmexico-org/cubingmexico/issues/new"
             >
               <Send />
               Reportar problema

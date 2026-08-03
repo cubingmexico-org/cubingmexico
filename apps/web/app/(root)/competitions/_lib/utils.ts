@@ -1,4 +1,4 @@
-import type { Event } from "@/db/schema";
+import type { Event } from "@workspace/db/schema";
 import {
   createLucideIcon,
   LucideProps,

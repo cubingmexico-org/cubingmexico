@@ -1,9 +1,9 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import { getEvents } from "@/db/queries";
-import { championship, person, result, state } from "@/db/schema";
+import { championship, person, result, state } from "@workspace/db/schema";
 import {
   SPEEDSOLVING_AVERAGES_EVENTS,
   BLD_FMC_MEANS_EVENTS,

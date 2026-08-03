@@ -1,8 +1,14 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
-import { event, person, rankAverage, rankSingle, state } from "@/db/schema";
+import { db } from "@workspace/db";
+import {
+  event,
+  person,
+  rankAverage,
+  rankSingle,
+  state,
+} from "@workspace/db/schema";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
 import { and, eq, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";

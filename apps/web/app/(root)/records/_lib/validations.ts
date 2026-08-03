@@ -1,4 +1,4 @@
-import { person } from "@/db/schema";
+import { person } from "@workspace/db/schema";
 import {
   createSearchParamsCache,
   parseAsString,

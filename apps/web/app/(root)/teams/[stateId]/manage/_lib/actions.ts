@@ -1,11 +1,11 @@
 "use server";
 
-import { db } from "@/db/index";
+import { db } from "@workspace/db";
 import { eq, inArray } from "drizzle-orm";
 import { updateTag } from "next/cache";
 
 import { getErrorMessage } from "@/lib/handle-error";
-import { person, teamMember } from "@/db/schema";
+import { person, teamMember } from "@workspace/db/schema";
 
 import { addMemberFormSchema } from "@/lib/validations";
 import { z } from "zod";

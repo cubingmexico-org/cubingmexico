@@ -1,7 +1,7 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import {
   competition,
   person,
@@ -10,7 +10,7 @@ import {
   result,
   state,
   team,
-} from "@/db/schema";
+} from "@workspace/db/schema";
 import { and, eq, gt, inArray, or } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 

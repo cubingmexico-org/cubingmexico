@@ -54,7 +54,7 @@ export default function Page(): React.JSX.Element {
             </Link>
 
             <Link
-              href="https://github.com/cubingmexico-org/web-frontend"
+              href="https://github.com/cubingmexico-org/cubingmexico"
               className={buttonVariants({ variant: "outline", size: "sm" })}
               target="_blank"
               rel="noopener noreferrer"

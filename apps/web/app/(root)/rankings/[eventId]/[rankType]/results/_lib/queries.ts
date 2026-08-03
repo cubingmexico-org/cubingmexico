@@ -1,7 +1,7 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import {
   state,
   type State,
@@ -9,7 +9,7 @@ import {
   person,
   result,
   competition,
-} from "@/db/schema";
+} from "@workspace/db/schema";
 import {
   and,
   count,

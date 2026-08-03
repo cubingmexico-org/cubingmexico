@@ -14,7 +14,7 @@ import {
   parseAsStringEnum,
   useQueryStates,
 } from "nuqs";
-import { person } from "@/db/schema";
+import { person } from "@workspace/db/schema";
 
 const searchParams = {
   name: parseAsString.withDefault(""),

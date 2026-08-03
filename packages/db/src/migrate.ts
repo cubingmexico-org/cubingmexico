@@ -1,17 +1,16 @@
 import { migrate } from "drizzle-orm/postgres-js/migrator";
-import { config } from "dotenv";
-import { db } from ".";
+import { loadEnv, packagePath } from "./load-env";
 
-config({
-  path: ".env.local",
-});
+loadEnv();
+
+const { db } = await import("./index");
 
 export async function runMigrate() {
   console.log("⏳ Running migrations...");
 
   const start = Date.now();
 
-  await migrate(db, { migrationsFolder: "drizzle" });
+  await migrate(db, { migrationsFolder: packagePath("drizzle") });
 
   const end = Date.now();
 

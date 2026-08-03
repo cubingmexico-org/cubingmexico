@@ -18,7 +18,7 @@ import {
 } from "@workspace/ui/components/popover";
 import { cn } from "@workspace/ui/lib/utils";
 import { useRouter } from "next/navigation";
-import type { State } from "@/db/schema";
+import type { State } from "@workspace/db/schema";
 
 interface StateSelectorProps {
   states: State[];

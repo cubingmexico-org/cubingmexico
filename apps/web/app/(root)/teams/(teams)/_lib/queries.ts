@@ -1,8 +1,8 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
-import { team, state, person } from "@/db/schema";
+import { db } from "@workspace/db";
+import { team, state, person } from "@workspace/db/schema";
 import { eq, desc, count } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 

@@ -1,7 +1,7 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import { EXCLUDED_EVENTS, SINGLE_EVENTS } from "@/lib/constants";
 import { sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";

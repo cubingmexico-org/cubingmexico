@@ -1,14 +1,14 @@
 "use cache";
 
 import "server-only";
-import { db } from "@/db";
+import { db } from "@workspace/db";
 import {
   state,
   person,
   type State,
   organizer,
   competitionOrganizer,
-} from "@/db/schema";
+} from "@workspace/db/schema";
 import {
   organizerLevelFilterSql,
   type OrganizerLevelFilter,

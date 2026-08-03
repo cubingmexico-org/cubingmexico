@@ -1,12 +1,17 @@
 {
-  "name": "cubingmexico-monorepo",
+  "name": "cubingmexico",
   "version": "0.0.1",
   "private": true,
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "dev:web": "turbo dev --filter=web",
+    "dev:wca-certificates": "turbo dev --filter=wca-certificates",
     "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:up": "docker compose up db -d",
+    "db:down": "docker compose down",
+    "services:up": "docker compose up --build -d"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",

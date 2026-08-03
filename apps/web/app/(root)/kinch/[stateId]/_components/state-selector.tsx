@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
 import { cn } from "@workspace/ui/lib/utils";
-import { State } from "@/db/schema";
+import { State } from "@workspace/db/schema";
 import { redirect } from "next/navigation";
 
 interface StateSelecorProps {
