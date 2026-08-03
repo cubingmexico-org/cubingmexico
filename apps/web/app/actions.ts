@@ -5,6 +5,7 @@ import {
   addMember,
   deleteTeamCover,
   deleteTeamLogo,
+  getCurrentUserTeam,
   saveProfile,
   saveTeam,
   updateTeamCover,
@@ -25,6 +26,10 @@ export async function signInAction(provider?: string) {
 
 export async function signOutAction() {
   await signOut();
+}
+
+export async function getCurrentUserTeamAction(userId: string) {
+  return getCurrentUserTeam({ userId });
 }
 
 export async function profileFormAction(
