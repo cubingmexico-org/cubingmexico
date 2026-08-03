@@ -1,6 +1,6 @@
-# Cubing México Web Frontend
+# Cubing México
 
-A modern monorepo containing multiple web applications and shared packages for the Cubing México ecosystem.
+A Turborepo monorepo for the Cubing México ecosystem: web apps, Flask backend, shared UI, and the Postgres schema (`@workspace/db`).
 
 ## Monorepo Structure
 
