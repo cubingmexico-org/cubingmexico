@@ -1,0 +1,33 @@
+name: Migrate production database
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/db/**"
+      - ".github/workflows/migrate.yml"
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Use Supabase direct or Session-mode connection string (not Transaction pooler :6543).
+      - name: Apply Drizzle migrations
+        run: pnpm --filter @workspace/db migrate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
