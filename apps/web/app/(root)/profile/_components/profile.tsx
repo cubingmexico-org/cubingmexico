@@ -20,7 +20,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@workspace/ui/components/alert";
-import { User } from "next-auth";
+import type { User } from "better-auth";
 import { Label } from "@workspace/ui/components/label";
 import { State } from "@workspace/db/schema";
 import { Check, Info, X } from "lucide-react";
@@ -32,8 +32,10 @@ import {
   TooltipTrigger,
 } from "@workspace/ui/components/tooltip";
 
+type AuthUser = User & { wcaId?: string | null };
+
 interface ProfileProps {
-  user: User;
+  user: AuthUser;
   person: {
     wcaId: string;
     name: string | null;
@@ -189,7 +191,8 @@ export function Profile({ user, person, states }: ProfileProps) {
 
             <div>
               <p className="font-medium">
-                Tu ID de la WCA es <span className="font-mono">{user.id}</span>
+                Tu ID de la WCA es{" "}
+                <span className="font-mono">{user.wcaId ?? person.wcaId}</span>
               </p>
             </div>
 

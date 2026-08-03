@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { Users, UserCheck, UserIcon, LogOut } from "lucide-react";
-import type { User } from "next-auth";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
-import { signOutAction } from "@/app/actions";
+import { useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import {
   Avatar,
   AvatarImage,
@@ -17,17 +17,22 @@ import {
   DropdownMenuItem,
 } from "@workspace/ui/components/dropdown-menu";
 
+type SessionUser = NonNullable<
+  NonNullable<ReturnType<typeof authClient.useSession>["data"]>["user"]
+>;
+
 export function UserDropdown({
   user,
   team,
 }: {
-  user: User;
+  user: SessionUser;
   team: {
     id: string;
     name: string;
   } | null;
 }) {
   const isMobile = useIsMobile();
+  const router = useRouter();
 
   return (
     <DropdownMenu>
@@ -44,12 +49,14 @@ export function UserDropdown({
             Perfil
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <UserCheck />
-          <Link href={`/persons/${user.id}`} className="w-full">
-            Mis resultados
-          </Link>
-        </DropdownMenuItem>
+        {user.wcaId ? (
+          <DropdownMenuItem>
+            <UserCheck />
+            <Link href={`/persons/${user.wcaId}`} className="w-full">
+              Mis resultados
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         {team && (
           <DropdownMenuItem>
             <Users />
@@ -60,7 +67,13 @@ export function UserDropdown({
         )}
         <DropdownMenuItem
           onClick={async () => {
-            await signOutAction();
+            await authClient.signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  router.refresh();
+                },
+              },
+            });
           }}
         >
           <LogOut />

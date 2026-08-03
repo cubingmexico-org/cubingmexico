@@ -47,10 +47,8 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
       input.sort.length > 0
         ? input.sort.map((item) => {
             switch (item.id) {
-              case "isAdmin":
-                return item.desc
-                  ? desc(teamMember.isAdmin)
-                  : asc(teamMember.isAdmin);
+              case "role":
+                return item.desc ? desc(teamMember.role) : asc(teamMember.role);
               case "stateRecords":
                 return item.desc
                   ? desc(sql`"state_records"`)
@@ -73,7 +71,7 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
           wcaId: person.wcaId,
           name: person.name,
           gender: person.gender,
-          isAdmin: teamMember.isAdmin,
+          role: teamMember.role,
           podiums: count(
             sql`CASE 
                       WHEN ${result.roundTypeId} IN ('f', 'c') 
@@ -107,7 +105,7 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
           person.wcaId,
           person.name,
           person.gender,
-          teamMember.isAdmin,
+          teamMember.role,
           teamMember.specialties,
         )
         .orderBy(...orderBy);

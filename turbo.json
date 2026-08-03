@@ -3,7 +3,6 @@
   "ui": "tui",
   "globalEnv": [
     "URL",
-    "NEXTAUTH_SECRET",
     "CRON_SECRET",
     "WCA_CLIENT_ID",
     "WCA_CLIENT_SECRET",
@@ -11,7 +10,8 @@
     "DATABASE_URL",
     "UPLOADTHING_TOKEN",
     "API_URL",
-    "BETTER_AUTH_URL"
+    "BETTER_AUTH_URL",
+    "BETTER_AUTH_SECRET"
   ],
   "tasks": {
     "build": {

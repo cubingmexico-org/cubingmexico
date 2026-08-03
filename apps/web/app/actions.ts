@@ -1,6 +1,5 @@
 "use server";
 
-import { signIn, signOut } from "@/auth";
 import {
   addMember,
   deleteTeamCover,
@@ -12,21 +11,16 @@ import {
   updateTeamLogo,
 } from "@/db/queries";
 import { getErrorMessage } from "@/lib/handle-error";
+import { getSessionUserId, requireTeamPermission } from "@/lib/team-auth";
+import { updateStateRanks } from "@/lib/update-state-ranks";
 import {
   addMemberFormSchema,
   profileFormSchema,
   teamFormSchema,
 } from "@/lib/validations";
 import { updateTag } from "next/cache";
+import { unauthorized } from "next/navigation";
 import { z } from "zod";
-
-export async function signInAction(provider?: string) {
-  await signIn(provider);
-}
-
-export async function signOutAction() {
-  await signOut();
-}
 
 export async function getCurrentUserTeamAction(userId: string) {
   return getCurrentUserTeam({ userId });
@@ -42,6 +36,11 @@ export async function profileFormAction(
 
   try {
     const data = profileFormSchema.parse(Object.fromEntries(formData));
+    const userId = await getSessionUserId();
+
+    if (!userId || userId !== data.personId) {
+      unauthorized();
+    }
 
     await saveProfile({
       stateId: data.stateId,
@@ -51,10 +50,7 @@ export async function profileFormAction(
     updateTag(`profile-person-${data.personId}`);
     updateTag(`person-page-${data.personId}`);
 
-    await fetch(process.env.URL + "/api/update-state-ranks", {
-      method: "POST",
-      body: JSON.stringify({ stateId: data.stateId }),
-    });
+    await updateStateRanks(data.stateId);
 
     updateTag("state-kinch-ranks");
     updateTag("combined-records");
@@ -78,11 +74,7 @@ export async function profileFormAction(
       };
     }
 
-    return {
-      defaultValues,
-      success: false,
-      errors: null,
-    };
+    throw error;
   }
 }
 
@@ -99,6 +91,8 @@ export async function teamFormAction(_prevState: unknown, formData: FormData) {
 
   try {
     const data = teamFormSchema.parse(Object.fromEntries(formData));
+
+    await requireTeamPermission(data.stateId, "team.settings");
 
     await saveTeam({
       stateId: data.stateId,
@@ -143,11 +137,7 @@ export async function teamFormAction(_prevState: unknown, formData: FormData) {
       };
     }
 
-    return {
-      defaultValues,
-      success: false,
-      errors: null,
-    };
+    throw error;
   }
 }
 
@@ -161,6 +151,8 @@ export async function addMemberFormAction(
 
   try {
     const data = addMemberFormSchema.parse(Object.fromEntries(formData));
+
+    await requireTeamPermission(data.stateId, "team.members");
 
     const specialties = data.specialties
       ? data.specialties.split(",").map((speciality) => speciality.trim())
@@ -180,10 +172,7 @@ export async function addMemberFormAction(
     updateTag(`single-national-records-${data.stateId}`);
     updateTag(`average-national-records-${data.stateId}`);
 
-    await fetch(process.env.URL + "/api/update-state-ranks", {
-      method: "POST",
-      body: JSON.stringify({ stateId: data.stateId }),
-    });
+    await updateStateRanks(data.stateId);
 
     return {
       defaultValues: {
@@ -203,15 +192,13 @@ export async function addMemberFormAction(
       };
     }
 
-    return {
-      defaultValues,
-      success: false,
-      errors: null,
-    };
+    throw error;
   }
 }
 
 export async function deleteTeamLogoAction(stateId: string) {
+  await requireTeamPermission(stateId, "team.media");
+
   try {
     await deleteTeamLogo({
       stateId,
@@ -229,6 +216,8 @@ export async function deleteTeamLogoAction(stateId: string) {
 }
 
 export async function deleteTeamCoverAction(stateId: string) {
+  await requireTeamPermission(stateId, "team.media");
+
   try {
     await deleteTeamCover({
       stateId,
@@ -249,6 +238,8 @@ export async function updateTeamLogoAction(
   stateId: string,
   image: string | null,
 ) {
+  await requireTeamPermission(stateId, "team.media");
+
   try {
     await updateTeamLogo({
       stateId,
@@ -270,6 +261,8 @@ export async function updateTeamCoverAction(
   stateId: string,
   coverImage: string | null,
 ) {
+  await requireTeamPermission(stateId, "team.media");
+
   try {
     await updateTeamCover({
       stateId,

@@ -41,6 +41,7 @@ export function ManageTeam({
   stateId,
   teamData,
   promises,
+  canManageRoles,
 }: {
   stateId: string;
   teamData: {
@@ -66,6 +67,7 @@ export function ManageTeam({
       Awaited<ReturnType<typeof getMembersGenderCounts>>,
     ]
   >;
+  canManageRoles: boolean;
 }) {
   return (
     <>
@@ -111,7 +113,11 @@ export function ManageTeam({
           </TabsContent>
 
           <TabsContent value="members">
-            <AddMemberForm stateId={stateId} promises={promises} />
+            <AddMemberForm
+              stateId={stateId}
+              promises={promises}
+              canManageRoles={canManageRoles}
+            />
           </TabsContent>
 
           {/* <TabsContent value="achievements">

@@ -4,7 +4,7 @@ export interface Member {
   wcaId: Person["wcaId"];
   name: Person["name"];
   gender: Person["gender"];
-  isAdmin: TeamMember["isAdmin"] | null;
+  role: TeamMember["role"] | null;
   podiums: number;
   stateRecords: unknown;
   specialties: TeamMember["specialties"];

@@ -346,7 +346,7 @@ export const teamMember = pgTable("team_members", {
     .primaryKey(),
   specialties: jsonb("specialties").$type<string[]>(),
   achievements: jsonb("achievements").$type<string[]>(),
-  isAdmin: boolean("is_admin").notNull().default(false),
+  role: varchar("role", { length: 20 }).$type<"admin" | "editor">(),
 });
 
 export type TeamMember = InferSelectModel<typeof teamMember>;

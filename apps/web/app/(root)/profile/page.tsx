@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-
-import { auth } from "@/auth";
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
 import { Profile } from "./_components/profile";
 import { getPerson, getStates } from "@/db/queries";
 import type { Metadata } from "next";
@@ -8,9 +7,17 @@ import { notFound, unauthorized } from "next/navigation";
 import { getProfile } from "./_lib/queries";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const session = await auth();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  const person = await getPerson(session?.user?.id!);
+  if (!session?.user?.wcaId) {
+    return {
+      title: "Perfil | Cubing México",
+    };
+  }
+
+  const person = await getPerson(session.user.wcaId);
 
   return {
     title: `${person?.name} | Cubing México`,
@@ -19,13 +26,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Page() {
-  const session = await auth();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (!session) {
+  if (!session?.user?.wcaId) {
     unauthorized();
   }
 
-  const person = await getProfile(session.user?.id!);
+  const person = await getProfile(session.user.wcaId);
 
   if (!person) {
     notFound();
@@ -33,5 +42,5 @@ export default async function Page() {
 
   const states = await getStates();
 
-  return <Profile user={session?.user!} person={person} states={states} />;
+  return <Profile user={session.user} person={person} states={states} />;
 }
