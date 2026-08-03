@@ -24,6 +24,7 @@ type PersonResultsTabProps = {
   eventOptions: PersonResultsEventOption[];
   selectedEventId: string;
   selectedResults: PersonResultsByEventGroup | null;
+  onEventSelect?: (eventId: string) => void;
 };
 
 function getPodiumRowClass(
@@ -51,6 +52,7 @@ export function PersonResultsTab({
   eventOptions,
   selectedEventId,
   selectedResults,
+  onEventSelect,
 }: PersonResultsTabProps) {
   if (eventOptions.length === 0 || !selectedResults) {
     return (
@@ -86,20 +88,17 @@ export function PersonResultsTab({
     <Card>
       <CardHeader className="space-y-6">
         <div className="flex flex-wrap justify-center gap-2 text-muted-foreground">
-          {eventOptions.map((group) => {
-            const href = `?tab=results-by-event&event=${group.eventId}`;
-
-            return (
-              <Link
-                key={group.eventId}
-                href={href}
-                className={cn(
-                  `cubing-icon event-${group.eventId} text-3xl hover:text-primary/50 transition-colors`,
-                  selectedEventId === group.eventId && "text-primary",
-                )}
-              />
-            );
-          })}
+          {eventOptions.map((group) => (
+            <button
+              key={group.eventId}
+              type="button"
+              onClick={() => onEventSelect?.(group.eventId)}
+              className={cn(
+                `cubing-icon event-${group.eventId} text-3xl hover:text-primary/50 transition-colors`,
+                selectedEventId === group.eventId && "text-primary",
+              )}
+            />
+          ))}
         </div>
         <CardTitle className="flex items-center gap-2">
           <span

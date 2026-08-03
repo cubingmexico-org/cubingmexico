@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 import {
   CartesianGrid,
@@ -40,6 +39,7 @@ type PersonResultsChartTabProps = {
   eventOptions: PersonResultsEventOption[];
   selectedEventId: string;
   selectedResults: PersonResultsByEventGroup | null;
+  onEventSelect?: (eventId: string) => void;
 };
 
 type SessionPoint = {
@@ -180,6 +180,7 @@ export function PersonResultsChartTab({
   eventOptions,
   selectedEventId,
   selectedResults,
+  onEventSelect,
 }: PersonResultsChartTabProps) {
   const points = useMemo<SessionPoint[]>(() => {
     if (!selectedResults) {
@@ -421,9 +422,10 @@ export function PersonResultsChartTab({
       <CardHeader className="space-y-6">
         <div className="flex flex-wrap justify-center gap-2 text-muted-foreground">
           {eventOptions.map((group) => (
-            <Link
+            <button
               key={group.eventId}
-              href={`?tab=results-chart&event=${group.eventId}`}
+              type="button"
+              onClick={() => onEventSelect?.(group.eventId)}
               className={cn(
                 `cubing-icon event-${group.eventId} text-3xl hover:text-primary/50 transition-colors`,
                 selectedEventId === group.eventId && "text-primary",

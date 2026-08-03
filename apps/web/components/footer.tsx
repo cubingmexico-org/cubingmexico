@@ -8,12 +8,14 @@ import { Clock, Trophy } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
 import { getLastCompetitionWithResults } from "@/db/queries";
-import { connection } from "next/server";
+import { cacheLife, cacheTag } from "next/cache";
 
-export async function Footer() {
-  await connection();
+async function FooterContent() {
+  "use cache";
+  cacheLife("days");
+  cacheTag("site-footer");
+
   const currentYear = new Date().getFullYear();
-
   const competitions = await getLastCompetitionWithResults();
 
   return (
@@ -109,4 +111,8 @@ export async function Footer() {
       </div>
     </footer>
   );
+}
+
+export function Footer() {
+  return <FooterContent />;
 }

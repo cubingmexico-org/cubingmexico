@@ -71,11 +71,11 @@ pnpm services:up
 
 This brings up:
 
-| Service   | What it does                                      | URL / port        |
-|-----------|---------------------------------------------------|-------------------|
-| `db`      | PostgreSQL 16                                     | `localhost:5432`  |
-| `migrator`| Drizzle migrate + seed (Mexican states), then exits | —               |
-| `backend` | Flask API                                         | `http://localhost:8080` |
+| Service    | What it does                                        | URL / port              |
+| ---------- | --------------------------------------------------- | ----------------------- |
+| `db`       | PostgreSQL 16                                       | `localhost:5432`        |
+| `migrator` | Drizzle migrate + seed (Mexican states), then exits | —                       |
+| `backend`  | Flask API                                           | `http://localhost:8080` |
 
 Check status and logs:
 
@@ -145,21 +145,21 @@ pnpm services:up
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm install` | Install all workspace dependencies |
-| `pnpm services:up` | Start db + migrator + backend via Docker Compose |
-| `pnpm db:up` | Start Postgres only |
-| `pnpm db:down` | Stop Compose services |
-| `pnpm dev:web` | Next.js web app (Turbo) |
-| `pnpm dev:wca-certificates` | Certificates app (Turbo) |
-| `pnpm dev` | All apps in development mode |
-| `pnpm build` | Build all apps and packages |
-| `pnpm lint` | Lint all apps and packages |
-| `pnpm format` | Format with Prettier |
-| `pnpm --filter web db:migrate` | Apply Drizzle migrations |
-| `pnpm --filter web db:seed` | Seed Mexican states |
-| `pnpm --filter web db:studio` | Open Drizzle Studio |
+| Command                        | Description                                      |
+| ------------------------------ | ------------------------------------------------ |
+| `pnpm install`                 | Install all workspace dependencies               |
+| `pnpm services:up`             | Start db + migrator + backend via Docker Compose |
+| `pnpm db:up`                   | Start Postgres only                              |
+| `pnpm db:down`                 | Stop Compose services                            |
+| `pnpm dev:web`                 | Next.js web app (Turbo)                          |
+| `pnpm dev:wca-certificates`    | Certificates app (Turbo)                         |
+| `pnpm dev`                     | All apps in development mode                     |
+| `pnpm build`                   | Build all apps and packages                      |
+| `pnpm lint`                    | Lint all apps and packages                       |
+| `pnpm format`                  | Format with Prettier                             |
+| `pnpm --filter web db:migrate` | Apply Drizzle migrations                         |
+| `pnpm --filter web db:seed`    | Seed Mexican states                              |
+| `pnpm --filter web db:studio`  | Open Drizzle Studio                              |
 
 ## Tech Stack
 

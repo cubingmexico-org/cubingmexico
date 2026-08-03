@@ -9,7 +9,7 @@ import {
   TableCell,
 } from "@workspace/ui/components/table";
 import Image from "next/image";
-import { getEvents, getPerson, getStatesGeoJSON } from "@/db/queries";
+import { getEvents, getPerson } from "@/db/queries";
 import {
   formatTime,
   formatTime333mbf,
@@ -24,42 +24,23 @@ import {
 } from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
 import { Badge } from "@workspace/ui/components/badge";
-import type { GeoJSONProps } from "react-leaflet";
 import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@workspace/ui/components/tabs";
-import { MapContainer } from "./_components/map-container";
-import { PersonResultsTab } from "./_components/results-tab";
-import { PersonStaffCompetitionsTab } from "./_components/staff-competitions-tab";
 import {
   getPersonData,
   getOrganizerStatus,
   getMembershipData,
   getPersonCompetitionEventOptions,
-  getPersonCompetitionLocations,
-  getPersonCompetitionResults,
   getPersonDataFromWCA,
-  getPersonStaffCompetitions,
-  getPersonRecordHistory,
-  getPersonChampionshipPodiums,
 } from "./_lib/queries";
 import type { PersonalRecordWithStateRank } from "./_lib/queries";
-import { PersonRecordsTab } from "./_components/records-tab";
-import { PersonChampionshipPodiumsTab } from "./_components/championship-podiums-tab";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { formatDelegateLevel } from "@/lib/delegate-level";
-import type { SearchParams } from "@/types";
-import { PersonResultsChartTab } from "./_components/results-chart-tab";
+import { PersonTabs } from "./_components/person-tabs";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<SearchParams>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -88,69 +69,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-async function PersonPageContent({
-  id,
-  searchParams,
-}: {
-  id: string;
-  searchParams: Promise<SearchParams>;
-}) {
+async function PersonPageContent({ id }: { id: string }) {
   "use cache";
   cacheLife("days");
   cacheTag(`person-page-${id}`);
 
   const events = await getEvents();
-  const queryParams = await searchParams;
-  const requestedEventId = Array.isArray(queryParams.event)
-    ? queryParams.event[0]
-    : queryParams.event;
-  const selectedTab = (() => {
-    const raw = Array.isArray(queryParams.tab)
-      ? queryParams.tab[0]
-      : queryParams.tab;
-    const valid = [
-      "results-by-event",
-      "results-chart",
-      "records",
-      "championship-podiums",
-      "map",
-      "staff-competitions",
-    ];
-    return valid.includes(raw ?? "")
-      ? (raw ?? "results-by-event")
-      : "results-by-event";
-  })();
-
   const wcaData = await getPersonDataFromWCA(id);
 
   if (!wcaData) {
     notFound();
   }
 
-  const [
-    personData,
-    organizerStatus,
-    membershipData,
-    eventOptions,
-    locations,
-    statesData,
-    staffCompetitions,
-    recordHistory,
-    championshipPodiums,
-  ] = await Promise.all([
-    getPersonData(id),
-    getOrganizerStatus(id),
-    getMembershipData(
-      id,
-      events.map((event) => event.id),
-    ),
-    getPersonCompetitionEventOptions(id),
-    getPersonCompetitionLocations(id),
-    getStatesGeoJSON(),
-    getPersonStaffCompetitions(id),
-    getPersonRecordHistory(id),
-    getPersonChampionshipPodiums(id),
-  ]);
+  const [personData, organizerStatus, membershipData, eventOptions] =
+    await Promise.all([
+      getPersonData(id),
+      getOrganizerStatus(id),
+      getMembershipData(
+        id,
+        events.map((event) => event.id),
+      ),
+      getPersonCompetitionEventOptions(id),
+    ]);
 
   if (!personData) {
     notFound();
@@ -158,45 +98,10 @@ async function PersonPageContent({
 
   const { person, competitionCount, personalRecords, medals, regionalRecords } =
     personData;
-  const { organized, delegated } = staffCompetitions;
-  const hasStaffCompetitions = organized.length > 0 || delegated.length > 0;
   const isOrganizer = organizerStatus !== null;
-  const hasRecords = regionalRecords.total > 0;
-  const hasPodiums = championshipPodiums.length > 0;
-  const tabCount =
-    3 +
-    (hasRecords ? 1 : 0) +
-    (hasPodiums ? 1 : 0) +
-    (hasStaffCompetitions ? 1 : 0);
-
-  const stateIds = locations
-    .map((location) => location.stateId)
-    .filter((stateId): stateId is string => stateId !== null);
-
-  const filteredStatesData = statesData?.features.filter((feature) =>
-    stateIds?.includes(feature.properties.id),
-  ) as unknown as GeoJSONProps["data"];
-
-  const visitedStateCount = new Set(stateIds).size;
-
-  const filteredLocations = locations.filter((location) => {
-    const latitude = location.latitude ?? 0;
-    const longitude = location.longitude ?? 0;
-
-    return latitude !== 0 && longitude !== 0;
-  });
-
   const isDelegate = person.delegateStatus !== null;
-
   const tier = getTier(membershipData);
-  const selectedEventId =
-    eventOptions.find((e) => e.eventId === requestedEventId)?.eventId ??
-    eventOptions[0]?.eventId ??
-    "";
-
-  const selectedResults = selectedEventId
-    ? await getPersonCompetitionResults(id, selectedEventId)
-    : null;
+  const showRecordsTab = regionalRecords.total > 0;
 
   const records = events.reduce<
     Array<{ event: string; record: PersonalRecordWithStateRank }>
@@ -261,7 +166,6 @@ async function PersonPageContent({
             <TableHead className="text-center">WCA ID</TableHead>
             <TableHead className="text-center">Sexo</TableHead>
             <TableHead className="text-center">Competencias</TableHead>
-            {/* <TableHead className="text-center">Resoluciones</TableHead> */}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -280,7 +184,6 @@ async function PersonPageContent({
                   : "Otro"}
             </TableCell>
             <TableCell className="text-center">{competitionCount}</TableCell>
-            {/* <TableCell className="text-center">{solveCount}</TableCell> */}
           </TableRow>
         </TableBody>
       </Table>
@@ -505,152 +408,17 @@ async function PersonPageContent({
           </Table>
         </div>
       </div>
-      <Tabs value={selectedTab} className="mt-6">
-        <TabsList
-          className={cn(
-            "flex flex-col h-auto w-full gap-1.5 p-1.5",
-            "md:h-10 md:grid",
-            tabCount === 2 && "md:grid-cols-2",
-            tabCount === 3 && "md:grid-cols-3",
-            tabCount === 4 && "md:grid-cols-4",
-            tabCount === 5 && "md:grid-cols-5",
-            tabCount >= 6 && "md:grid-cols-6",
-          )}
-        >
-          <TabsTrigger value="results-by-event" asChild>
-            <Link
-              href={
-                selectedEventId
-                  ? `?tab=results-by-event&event=${selectedEventId}`
-                  : "?tab=results-by-event"
-              }
-            >
-              Resultados
-            </Link>
-          </TabsTrigger>
-          <TabsTrigger value="results-chart" asChild>
-            <Link
-              href={
-                selectedEventId
-                  ? `?tab=results-chart&event=${selectedEventId}`
-                  : "?tab=results-chart"
-              }
-            >
-              Gráfica
-            </Link>
-          </TabsTrigger>
-          {hasRecords && (
-            <TabsTrigger value="records" asChild>
-              <Link
-                href={
-                  selectedEventId
-                    ? `?tab=records&event=${selectedEventId}`
-                    : "?tab=records"
-                }
-              >
-                Récords
-              </Link>
-            </TabsTrigger>
-          )}
-          {hasPodiums && (
-            <TabsTrigger value="championship-podiums" asChild>
-              <Link
-                href={
-                  selectedEventId
-                    ? `?tab=championship-podiums&event=${selectedEventId}`
-                    : "?tab=championship-podiums"
-                }
-              >
-                Podios en Campeonatos
-              </Link>
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="map" asChild>
-            <Link
-              href={
-                selectedEventId
-                  ? `?tab=map&event=${selectedEventId}`
-                  : "?tab=map"
-              }
-            >
-              Mapa
-            </Link>
-          </TabsTrigger>
-          {hasStaffCompetitions && (
-            <TabsTrigger value="staff-competitions" asChild>
-              <Link
-                href={
-                  selectedEventId
-                    ? `?tab=staff-competitions&event=${selectedEventId}`
-                    : "?tab=staff-competitions"
-                }
-              >
-                Organización
-              </Link>
-            </TabsTrigger>
-          )}
-        </TabsList>
-
-        <TabsContent value="results-by-event" className="mt-6">
-          <PersonResultsTab
-            eventOptions={eventOptions}
-            selectedEventId={selectedEventId}
-            selectedResults={selectedResults}
-          />
-        </TabsContent>
-
-        <TabsContent value="results-chart" className="mt-6">
-          <PersonResultsChartTab
-            eventOptions={eventOptions}
-            selectedEventId={selectedEventId}
-            selectedResults={selectedResults}
-          />
-        </TabsContent>
-
-        {hasRecords && (
-          <TabsContent value="records" className="mt-6">
-            <PersonRecordsTab records={recordHistory} />
-          </TabsContent>
-        )}
-
-        {hasPodiums && (
-          <TabsContent value="championship-podiums" className="mt-6">
-            <PersonChampionshipPodiumsTab podiums={championshipPodiums} />
-          </TabsContent>
-        )}
-
-        <TabsContent value="map" className="mt-6">
-          <h2 className="flex items-center justify-center gap-2 text-lg font-semibold my-4">
-            <span>Estados visitados</span>
-            <Badge>{visitedStateCount}</Badge>
-          </h2>
-          <MapContainer
-            locations={filteredLocations}
-            statesData={filteredStatesData}
-          />
-        </TabsContent>
-
-        {hasStaffCompetitions && (
-          <TabsContent value="staff-competitions" className="mt-6">
-            <PersonStaffCompetitionsTab
-              organized={organized}
-              delegated={delegated}
-            />
-          </TabsContent>
-        )}
-      </Tabs>
+      <PersonTabs
+        wcaId={id}
+        eventOptions={eventOptions}
+        showRecordsTab={showRecordsTab}
+      />
     </>
   );
 }
 
-export default async function Page({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ id: string }>;
-  searchParams: Promise<SearchParams>;
-}) {
+export default async function Page({ params }: Props) {
   const id = (await params).id;
 
-  return <PersonPageContent id={id} searchParams={searchParams} />;
+  return <PersonPageContent id={id} />;
 }

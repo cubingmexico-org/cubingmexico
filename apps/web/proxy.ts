@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/auth";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -8,7 +7,7 @@ export async function proxy(request: NextRequest) {
     return new NextResponse("Gone", { status: 410 });
   }
 
-  if (/^\/rankings\/a\/[^/]+\/(single|average)\/[^/]+$/i.test(pathname)) {
+  if (/^\/rankings\/a\/[^/]+\/(single|average)(\/[^/]+)?$/i.test(pathname)) {
     return new NextResponse("Gone", { status: 410 });
   }
 
@@ -20,5 +19,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/records/:path*", "/team/:path*", "/rankings/a/:path*"],
 };
