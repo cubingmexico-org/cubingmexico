@@ -2,7 +2,6 @@
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
   "globalEnv": [
-    "URL",
     "CRON_SECRET",
     "WCA_CLIENT_ID",
     "WCA_CLIENT_SECRET",

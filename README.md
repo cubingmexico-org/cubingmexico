@@ -46,14 +46,13 @@ Create `apps/web/.env.local` for the Next.js app. Minimum for local browsing:
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cubing_mexico
-URL=http://localhost:3000
+BETTER_AUTH_URL=http://localhost:3000
 ```
 
 For WCA login and uploads, also set:
 
 ```env
 BETTER_AUTH_SECRET=...
-BETTER_AUTH_URL=http://localhost:3000
 WCA_CLIENT_ID=...
 WCA_CLIENT_SECRET=...
 UPLOADTHING_TOKEN=...
