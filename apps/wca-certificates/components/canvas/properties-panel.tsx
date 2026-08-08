@@ -624,17 +624,44 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
             <Label htmlFor="bgColor" className="text-xs">
               Color de relleno
             </Label>
-            <Input
-              id="bgColor"
-              type="color"
+            <ColorPicker
               value={selectedElement.backgroundColor || "#3b82f6"}
-              onChange={(e) =>
-                updateElement(selectedElement.id, {
-                  backgroundColor: e.target.value,
-                })
-              }
-              className="h-10"
-            />
+              onValueChange={(color) => {
+                if (color !== selectedElement.backgroundColor) {
+                  updateElement(selectedElement.id, {
+                    backgroundColor: color,
+                  });
+                }
+              }}
+              defaultFormat="hex"
+              className="w-full"
+            >
+              <div className="flex items-center gap-3">
+                <ColorPickerTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 px-3"
+                  >
+                    <ColorPickerSwatch className="size-4" />
+                    {selectedElement.backgroundColor || "#3b82f6"}
+                  </Button>
+                </ColorPickerTrigger>
+              </div>
+              <ColorPickerContent>
+                <ColorPickerArea />
+                <div className="flex items-center gap-2">
+                  <ColorPickerEyeDropper />
+                  <div className="flex flex-1 flex-col gap-2">
+                    <ColorPickerHueSlider />
+                    <ColorPickerAlphaSlider />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ColorPickerFormatSelect />
+                  <ColorPickerInput />
+                </div>
+              </ColorPickerContent>
+            </ColorPicker>
           </div>
         )}
 

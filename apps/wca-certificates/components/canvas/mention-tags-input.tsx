@@ -138,7 +138,10 @@ export function MentionTagsInput({
     setQuery("");
   };
 
-  const commitTags = (nextTags: string[], opts?: { replacedText?: boolean }) => {
+  const commitTags = (
+    nextTags: string[],
+    opts?: { replacedText?: boolean },
+  ) => {
     if (opts?.replacedText) {
       setShowReplacedNotice(true);
     }
@@ -278,9 +281,9 @@ export function MentionTagsInput({
         </p>
       ) : (
         <p className="text-[11px] leading-snug text-muted-foreground">
-          Puedes escribir texto libre, o{" "}
-          <span className="font-medium">@</span> para insertar un dato
-          dinámico (esto reemplazará el texto). Solo uno por cuadro.
+          Puedes escribir texto libre, o <span className="font-medium">@</span>{" "}
+          para insertar un dato dinámico (esto reemplazará el texto). Solo uno
+          por cuadro.
         </p>
       )}
 

@@ -26,7 +26,18 @@ import {
 } from "@workspace/ui/components/select";
 import { Button } from "@workspace/ui/components/button";
 import { Toggle } from "@workspace/ui/components/toggle";
-import { Input } from "@workspace/ui/components/input";
+import {
+  ColorPicker,
+  ColorPickerAlphaSlider,
+  ColorPickerArea,
+  ColorPickerContent,
+  ColorPickerEyeDropper,
+  ColorPickerFormatSelect,
+  ColorPickerHueSlider,
+  ColorPickerInput,
+  ColorPickerSwatch,
+  ColorPickerTrigger,
+} from "@workspace/ui/components/color-picker";
 import { fontFamilies, fontSizes } from "@/lib/fonts";
 import { ComboboxFont } from "./combobox-font";
 
@@ -91,15 +102,38 @@ export default function Toolbar({ editor }: ToolbarProps) {
             ))}
           </SelectContent>
         </Select>
-        <Input
-          className="h-9 w-9 p-0 border-0"
-          data-testid="setColor"
-          onChange={(event) =>
-            editor.chain().focus().setColor(event.target.value).run()
-          }
-          type="color"
+        <ColorPicker
           value={editor.getAttributes("textStyle").color || "#000000"}
-        />
+          onValueChange={(color) => {
+            editor.chain().focus().setColor(color).run();
+          }}
+          defaultFormat="hex"
+        >
+          <ColorPickerTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 w-9 p-0"
+              data-testid="setColor"
+            >
+              <ColorPickerSwatch className="size-4" />
+            </Button>
+          </ColorPickerTrigger>
+          <ColorPickerContent>
+            <ColorPickerArea />
+            <div className="flex items-center gap-2">
+              <ColorPickerEyeDropper />
+              <div className="flex flex-1 flex-col gap-2">
+                <ColorPickerHueSlider />
+                <ColorPickerAlphaSlider />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ColorPickerFormatSelect />
+              <ColorPickerInput />
+            </div>
+          </ColorPickerContent>
+        </ColorPicker>
         <Toggle
           disabled={!editor.can().chain().focus().toggleBold().run()}
           onPressedChange={() => editor.chain().focus().toggleBold().run()}
