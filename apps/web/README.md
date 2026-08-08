@@ -32,8 +32,8 @@ Create a `.env.local` file with required environment variables:
 DATABASE_URL="postgresql://..."
 
 # Authentication
-AUTH_SECRET="your-secret-key"
-AUTH_TRUST_HOST=true
+BETTER_AUTH_SECRET="your-secret-key"
+BETTER_AUTH_URL="http://localhost:3000"
 
 # UploadThing
 UPLOADTHING_SECRET="..."

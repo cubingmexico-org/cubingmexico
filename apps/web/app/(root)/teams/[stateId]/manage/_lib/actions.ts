@@ -5,6 +5,8 @@ import { eq, inArray } from "drizzle-orm";
 import { updateTag } from "next/cache";
 
 import { getErrorMessage } from "@/lib/handle-error";
+import { requireTeamPermission } from "@/lib/team-auth";
+import { updateStateRanks } from "@/lib/update-state-ranks";
 import { person, teamMember } from "@workspace/db/schema";
 
 import { addMemberFormSchema } from "@/lib/validations";
@@ -17,6 +19,8 @@ export async function updateMember(_prevState: unknown, formData: FormData) {
 
   try {
     const data = addMemberFormSchema.parse(Object.fromEntries(formData));
+
+    await requireTeamPermission(data.stateId, "team.members");
 
     const specialties = data.specialties
       ? data.specialties.split(",").map((speciality) => speciality.trim())
@@ -57,16 +61,14 @@ export async function updateMember(_prevState: unknown, formData: FormData) {
       };
     }
 
-    return {
-      defaultValues,
-      success: false,
-      errors: null,
-    };
+    throw error;
   }
 }
 
-export async function deleteMember(input: { id: string }) {
+export async function deleteMember(input: { id: string; stateId: string }) {
   try {
+    await requireTeamPermission(input.stateId, "team.members");
+
     await db.transaction(async (tx) => {
       await tx.delete(teamMember).where(eq(teamMember.personId, input.id));
       await tx
@@ -92,6 +94,8 @@ export async function deleteMember(input: { id: string }) {
 
 export async function deleteMembers(input: { ids: string[]; stateId: string }) {
   try {
+    await requireTeamPermission(input.stateId, "team.members");
+
     await db.transaction(async (tx) => {
       await tx
         .delete(teamMember)
@@ -105,10 +109,7 @@ export async function deleteMembers(input: { ids: string[]; stateId: string }) {
     updateTag("members");
     updateTag("members-gender-count");
 
-    await fetch(process.env.URL + "/api/update-state-ranks", {
-      method: "POST",
-      body: JSON.stringify({ stateId: input.stateId }),
-    });
+    await updateStateRanks(input.stateId);
 
     updateTag("state-kinch-ranks");
     updateTag("combined-records");
@@ -121,6 +122,54 @@ export async function deleteMembers(input: { ids: string[]; stateId: string }) {
     };
   } catch (err) {
     console.error("Error deleting members", err);
+    return {
+      data: null,
+      error: getErrorMessage(err),
+    };
+  }
+}
+
+export async function updateMemberRole(input: {
+  personId: string;
+  stateId: string;
+  role: "admin" | "editor" | null;
+}) {
+  try {
+    await requireTeamPermission(input.stateId, "team.roles");
+
+    const member = await db
+      .select({ stateId: person.stateId })
+      .from(person)
+      .where(eq(person.wcaId, input.personId))
+      .limit(1);
+
+    if (member[0]?.stateId !== input.stateId) {
+      return {
+        data: null,
+        error: "El miembro no pertenece a este team",
+      };
+    }
+
+    await db
+      .insert(teamMember)
+      .values({
+        personId: input.personId,
+        role: input.role,
+      })
+      .onConflictDoUpdate({
+        target: [teamMember.personId],
+        set: {
+          role: input.role,
+        },
+      });
+
+    updateTag("members");
+
+    return {
+      data: null,
+      error: null,
+    };
+  } catch (err) {
     return {
       data: null,
       error: getErrorMessage(err),

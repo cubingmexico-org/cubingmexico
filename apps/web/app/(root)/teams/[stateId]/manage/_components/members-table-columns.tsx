@@ -15,18 +15,90 @@ import {
 import { MoreHorizontal } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
+import { Badge } from "@workspace/ui/components/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 import { DataTableRowAction } from "@/types/data-table";
+import { toast } from "sonner";
+import { updateMemberRole } from "../_lib/actions";
+import { useRouter } from "next/navigation";
 
 interface GetColumnsProps {
   genderCounts: Record<string, number>;
   setRowAction: React.Dispatch<
     React.SetStateAction<DataTableRowAction<Member> | null>
   >;
+  canManageRoles: boolean;
+  stateId: string;
+}
+
+function RoleCell({
+  member,
+  stateId,
+  canManageRoles,
+}: {
+  member: Member;
+  stateId: string;
+  canManageRoles: boolean;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = React.useTransition();
+
+  if (!canManageRoles) {
+    if (member.role === "admin") {
+      return <Badge>Admin</Badge>;
+    }
+    if (member.role === "editor") {
+      return <Badge variant="secondary">Editor</Badge>;
+    }
+    return <span className="text-muted-foreground">—</span>;
+  }
+
+  return (
+    <Select
+      disabled={pending}
+      value={member.role ?? "none"}
+      onValueChange={(value) => {
+        startTransition(async () => {
+          const role = value === "admin" || value === "editor" ? value : null;
+          const { error } = await updateMemberRole({
+            personId: member.wcaId,
+            stateId,
+            role,
+          });
+
+          if (error) {
+            toast.error(error);
+            return;
+          }
+
+          toast.success("Rol actualizado");
+          router.refresh();
+        });
+      }}
+    >
+      <SelectTrigger className="w-32 h-8">
+        <SelectValue placeholder="Sin rol" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">Sin rol</SelectItem>
+        <SelectItem value="editor">Editor</SelectItem>
+        <SelectItem value="admin">Admin</SelectItem>
+      </SelectContent>
+    </Select>
+  );
 }
 
 export function getColumns({
   genderCounts,
   setRowAction,
+  canManageRoles,
+  stateId,
 }: GetColumnsProps): ColumnDef<Member>[] {
   return [
     {
@@ -100,6 +172,21 @@ export function getColumns({
       enableHiding: false,
     },
     {
+      id: "role",
+      accessorKey: "role",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Rol" />
+      ),
+      cell: ({ row }) => (
+        <RoleCell
+          member={row.original}
+          stateId={stateId}
+          canManageRoles={canManageRoles}
+        />
+      ),
+      enableHiding: false,
+    },
+    {
       id: "gender",
       accessorKey: "gender",
       meta: {
@@ -148,39 +235,6 @@ export function getColumns({
       enableHiding: false,
       enableSorting: false,
     },
-    // {
-    //   accessorKey: "achievements",
-    //   header: ({ column }) => (
-    //     <DataTableColumnHeader
-    //       className="text-xs"
-    //       column={column}
-    //       title="Logros"
-    //     />
-    //   ),
-    //   cell: ({ row }) => {
-    //     const achievements = row.getValue(
-    //       "achievements",
-    //     ) as TeamMember["achievements"];
-
-    //     return (
-    //       <div className="flex space-x-2 w-72">
-    //         {achievements ? (
-    //           <>
-    //             {achievements.map((achievement) => (
-    //               <span className="text-accent-foreground" key={achievement}>
-    //                 {achievement}
-    //               </span>
-    //             ))}
-    //           </>
-    //         ) : (
-    //           <span className="text-muted-foreground">Sin logros</span>
-    //         )}
-    //       </div>
-    //     );
-    //   },
-    //   enableSorting: false,
-    //   enableHiding: false,
-    // },
     {
       id: "actions",
       cell: function Cell({ row }) {

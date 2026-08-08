@@ -55,11 +55,10 @@ export async function getTeamInfo(stateId: string) {
   }
 }
 
-export async function getTeamShellData(stateId: string, personId: string) {
-  const [teamInfo, totalMembers, isAdmin] = await Promise.all([
+export async function getTeamShellData(stateId: string) {
+  const [teamInfo, totalMembers] = await Promise.all([
     getTeamInfo(stateId),
     getTotalMembers(stateId),
-    getIsTeamAdmin(stateId, personId),
   ]);
 
   if (!teamInfo) {
@@ -69,7 +68,6 @@ export async function getTeamShellData(stateId: string, personId: string) {
   return {
     team: teamInfo,
     totalMembers,
-    isAdmin,
   };
 }
 
@@ -265,10 +263,8 @@ export async function getMembers(
       input.sort.length > 0
         ? input.sort.map((item) => {
             switch (item.id) {
-              case "isAdmin":
-                return item.desc
-                  ? desc(teamMember.isAdmin)
-                  : asc(teamMember.isAdmin);
+              case "role":
+                return item.desc ? desc(teamMember.role) : asc(teamMember.role);
               case "stateRecords":
                 return item.desc
                   ? desc(sql`"state_records"`)
@@ -291,7 +287,7 @@ export async function getMembers(
           wcaId: person.wcaId,
           name: person.name,
           gender: person.gender,
-          isAdmin: teamMember.isAdmin,
+          role: teamMember.role,
           podiums: count(
             sql`CASE 
                       WHEN ${result.roundTypeId} IN ('f', 'c') 
@@ -325,7 +321,7 @@ export async function getMembers(
           person.wcaId,
           person.name,
           person.gender,
-          teamMember.isAdmin,
+          teamMember.role,
           teamMember.specialties,
         )
         .orderBy(...orderBy);
@@ -382,31 +378,5 @@ export async function getMembersGenderCounts(stateId: Person["stateId"]) {
   } catch (err) {
     console.error(err);
     return {} as Record<string, number>;
-  }
-}
-
-export async function getIsTeamAdmin(stateId: string, personId: string) {
-  cacheLife("days");
-  cacheTag(`team-admin-${stateId}-${personId}`);
-
-  try {
-    const admin = await db
-      .select({
-        id: person.wcaId,
-      })
-      .from(person)
-      .leftJoin(teamMember, eq(person.wcaId, teamMember.personId))
-      .where(
-        and(
-          eq(person.stateId, stateId),
-          eq(teamMember.isAdmin, true),
-          eq(person.wcaId, personId),
-        ),
-      );
-
-    return admin.length > 0;
-  } catch (err) {
-    console.error(err);
-    return false;
   }
 }

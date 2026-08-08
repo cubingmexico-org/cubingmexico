@@ -52,7 +52,10 @@ export function getColumns({
             >
               {row.getValue("name")}
             </Link>
-            {row.original.isAdmin && <Badge>Admin</Badge>}
+            {row.original.role === "admin" && <Badge>Admin</Badge>}
+            {row.original.role === "editor" && (
+              <Badge variant="secondary">Editor</Badge>
+            )}
           </div>
         );
       },

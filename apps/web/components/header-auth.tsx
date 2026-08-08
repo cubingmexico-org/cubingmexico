@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { getCurrentUserTeamAction } from "@/app/actions";
+import { authClient } from "@/lib/auth-client";
 import { UserAuthForm } from "./user-auth-form";
 import { UserDropdown } from "./user-dropdown";
 
@@ -13,19 +13,19 @@ type Team = {
 } | null;
 
 export function HeaderAuth() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = authClient.useSession();
   const [team, setTeam] = useState<Team>(null);
 
   useEffect(() => {
-    const userId = session?.user?.id;
-    if (!userId) {
+    const wcaId = session?.user?.wcaId;
+    if (!wcaId) {
       setTeam(null);
       return;
     }
 
     let cancelled = false;
 
-    void getCurrentUserTeamAction(userId).then((result) => {
+    void getCurrentUserTeamAction(wcaId).then((result) => {
       if (!cancelled) {
         setTeam(result);
       }
@@ -34,9 +34,9 @@ export function HeaderAuth() {
     return () => {
       cancelled = true;
     };
-  }, [session?.user?.id]);
+  }, [session?.user?.wcaId]);
 
-  if (status === "loading") {
+  if (isPending) {
     return <Skeleton className="size-12 rounded-full" />;
   }
 

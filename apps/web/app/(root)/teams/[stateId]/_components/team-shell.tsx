@@ -21,7 +21,7 @@ type TeamShellProps = {
   stateId: string;
   team: Team;
   totalMembers: number;
-  isAdmin: boolean;
+  canManage: boolean;
   children: ReactNode;
 };
 
@@ -29,7 +29,7 @@ export function TeamShell({
   stateId,
   team,
   totalMembers,
-  isAdmin,
+  canManage,
   children,
 }: TeamShellProps) {
   const pathname = usePathname();
@@ -111,7 +111,7 @@ export function TeamShell({
               >
                 <Users /> Ver todos los Teams
               </Link>
-              {isAdmin ? (
+              {canManage ? (
                 <Link
                   className={cn(
                     buttonVariants({

@@ -36,23 +36,17 @@ pnpm install
 
 ### 2. Environment files
 
-Copy the root template (used by Docker Compose / backend defaults):
-
-```bash
-cp .env.example .env
-```
-
-Create `apps/web/.env.local` for the Next.js app. Minimum for local browsing:
+Create `apps/web/.env.local` for the Next.js app (see `apps/web/.env.example`). Minimum for local browsing:
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cubing_mexico
-URL=http://localhost:3000
+BETTER_AUTH_URL=http://localhost:3000
 ```
 
 For WCA login and uploads, also set:
 
 ```env
-NEXTAUTH_SECRET=...
+BETTER_AUTH_SECRET=...
 WCA_CLIENT_ID=...
 WCA_CLIENT_SECRET=...
 UPLOADTHING_TOKEN=...

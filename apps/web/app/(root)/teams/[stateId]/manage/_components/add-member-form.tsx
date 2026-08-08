@@ -34,6 +34,7 @@ import { getMembers, getMembersGenderCounts } from "../../_lib/queries";
 export function AddMemberForm({
   stateId,
   promises,
+  canManageRoles,
 }: {
   stateId: string;
   promises: Promise<
@@ -42,6 +43,7 @@ export function AddMemberForm({
       Awaited<ReturnType<typeof getMembersGenderCounts>>,
     ]
   >;
+  canManageRoles: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
   const [state, formAction, pending] = useActionState(addMemberFormAction, {
@@ -161,7 +163,11 @@ export function AddMemberForm({
               />
             }
           >
-            <MembersTable promises={promises} stateId={stateId} />
+            <MembersTable
+              promises={promises}
+              stateId={stateId}
+              canManageRoles={canManageRoles}
+            />
           </React.Suspense>
         </CardContent>
       </Card>

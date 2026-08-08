@@ -20,9 +20,14 @@ interface MembersTableProps {
     ]
   >;
   stateId: string;
+  canManageRoles: boolean;
 }
 
-export function MembersTable({ promises, stateId }: MembersTableProps) {
+export function MembersTable({
+  promises,
+  stateId,
+  canManageRoles,
+}: MembersTableProps) {
   const [{ data, pageCount }, genderCounts] = React.use(promises);
 
   const [rowAction, setRowAction] =
@@ -33,8 +38,10 @@ export function MembersTable({ promises, stateId }: MembersTableProps) {
       getColumns({
         genderCounts,
         setRowAction,
+        canManageRoles,
+        stateId,
       }),
-    [genderCounts],
+    [genderCounts, canManageRoles, stateId],
   );
 
   const { table } = useDataTable({

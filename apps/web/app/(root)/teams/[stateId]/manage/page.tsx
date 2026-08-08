@@ -1,5 +1,4 @@
 import { ManageTeam } from "./_components/manage-team";
-import { auth } from "@/auth";
 import { getValidFilters } from "@/lib/data-table";
 import { SearchParams } from "@/types";
 import { searchParamsCache } from "../_lib/validations";
@@ -7,11 +6,16 @@ import {
   getMembers,
   getMembersGenderCounts,
   getTeamInfo,
-  getIsTeamAdmin,
 } from "../_lib/queries";
 import { getTeam } from "@/db/queries";
 import { Metadata } from "next";
 import { notFound, unauthorized } from "next/navigation";
+import {
+  canManageTeam,
+  getSessionUserId,
+  getTeamRole,
+  roleHasPermission,
+} from "@/lib/team-auth";
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -32,18 +36,16 @@ export default async function Page(props: {
   params: Promise<{ stateId: string }>;
   searchParams: Promise<SearchParams>;
 }) {
-  const session = await auth();
+  const userId = await getSessionUserId();
 
-  if (!session) {
+  if (!userId) {
     unauthorized();
   }
 
   const stateId = (await props.params).stateId;
+  const role = await getTeamRole(stateId, userId);
 
-  // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-  const isAdmin = await getIsTeamAdmin(stateId, session.user?.id!);
-
-  if (!isAdmin) {
+  if (!canManageTeam(role)) {
     unauthorized();
   }
 
@@ -69,5 +71,12 @@ export default async function Page(props: {
     getMembersGenderCounts(stateId),
   ]);
 
-  return <ManageTeam stateId={stateId} teamData={team} promises={promises} />;
+  return (
+    <ManageTeam
+      stateId={stateId}
+      teamData={team}
+      promises={promises}
+      canManageRoles={roleHasPermission(role, "team.roles")}
+    />
+  );
 }

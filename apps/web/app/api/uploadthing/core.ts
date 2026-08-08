@@ -1,69 +1,57 @@
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { createUploadthing } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import type { FileRouter } from "uploadthing/next";
+import { hasTeamPermission } from "@/lib/team-auth";
 
 const f = createUploadthing();
 
-// FileRouter for your app, can contain multiple FileRoutes
+async function requireMediaPermission(req: Request) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user?.wcaId) {
+    throw new UploadThingError("Unauthorized");
+  }
+
+  const stateId = req.headers.get("x-state-id") ?? "";
+  if (!stateId) {
+    throw new UploadThingError("Missing stateId");
+  }
+
+  const allowed = await hasTeamPermission(
+    stateId,
+    session.user.wcaId,
+    "team.media",
+  );
+  if (!allowed) {
+    throw new UploadThingError("Unauthorized");
+  }
+
+  return { userId: session.user.wcaId, stateId };
+}
+
 export const ourFileRouter: FileRouter = {
-  // Define as many FileRoutes as you like, each with a unique routeSlug
   imageUploader: f({
     image: {
-      /**
-       * For full list of options and defaults, see the File Route API reference
-       * @see https://docs.uploadthing.com/file-routes#route-config
-       */
       maxFileSize: "2MB",
       maxFileCount: 1,
     },
   })
-    // Set permissions and file types for this FileRoute
-    .middleware(async ({ req }) => {
-      // This code runs on your server before upload
-      const session = await auth();
-
-      // If you throw, the user will not be able to upload
-      if (!session) throw new UploadThingError("Unauthorized");
-
-      // Extract stateId from the request headers or query parameters
-      const stateId = req.headers.get("x-state-id") ?? "";
-      if (!stateId) throw new UploadThingError("Missing stateId");
-
-      // Whatever is returned here is accessible in onUploadComplete as `metadata`
-      return { userId: session.user?.id, stateId };
-    })
+    .middleware(async ({ req }) => requireMediaPermission(req))
     .onUploadComplete(async ({ metadata, file }) => {
-      // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
       return { stateId: metadata.stateId, image: file.ufsUrl };
     }),
   coverUploader: f({
     image: {
-      /**
-       * For full list of options and defaults, see the File Route API reference
-       * @see https://docs.uploadthing.com/file-routes#route-config
-       */
       maxFileSize: "4MB",
       maxFileCount: 1,
     },
   })
-    // Set permissions and file types for this FileRoute
-    .middleware(async ({ req }) => {
-      // This code runs on your server before upload
-      const session = await auth();
-
-      // If you throw, the user will not be able to upload
-      if (!session) throw new UploadThingError("Unauthorized");
-
-      // Extract stateId from the request headers or query parameters
-      const stateId = req.headers.get("x-state-id") ?? "";
-      if (!stateId) throw new UploadThingError("Missing stateId");
-
-      // Whatever is returned here is accessible in onUploadComplete as `metadata`
-      return { userId: session.user?.id, stateId };
-    })
+    .middleware(async ({ req }) => requireMediaPermission(req))
     .onUploadComplete(async ({ metadata, file }) => {
-      // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
       return { stateId: metadata.stateId, coverImage: file.ufsUrl };
     }),
 };
