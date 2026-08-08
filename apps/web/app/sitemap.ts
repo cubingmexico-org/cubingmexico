@@ -1,4 +1,4 @@
-import { getCompetitions, getEvents, getStates } from "@/db/queries";
+import { getEvents, getStates } from "@/db/queries";
 import type { MetadataRoute } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -9,7 +9,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const states = await getStates();
   const events = await getEvents();
-  const competitions = await getCompetitions();
 
   const teamUrls = states.map((state) => {
     return {
@@ -98,14 +97,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  const competitionUrls = competitions.map((competition) => {
-    return {
-      url: `https://www.cubingmexico.net/competitions/${competition.id}`,
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    };
-  });
-
   return [
     {
       url: "https://www.cubingmexico.net",
@@ -124,7 +115,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.8,
     },
-    ...competitionUrls,
     {
       url: "https://www.cubingmexico.net/about",
       changeFrequency: "monthly",
