@@ -36,13 +36,7 @@ pnpm install
 
 ### 2. Environment files
 
-Copy the root template (used by Docker Compose / backend defaults):
-
-```bash
-cp .env.example .env
-```
-
-Create `apps/web/.env.local` for the Next.js app. Minimum for local browsing:
+Create `apps/web/.env.local` for the Next.js app (see `apps/web/.env.example`). Minimum for local browsing:
 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cubing_mexico
