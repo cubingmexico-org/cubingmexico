@@ -105,6 +105,9 @@ export default function Toolbar({ editor }: ToolbarProps) {
         <ColorPicker
           value={editor.getAttributes("textStyle").color || "#000000"}
           onValueChange={(color) => {
+            const current =
+              editor.getAttributes("textStyle").color || "#000000";
+            if (color === current) return;
             editor.chain().focus().setColor(color).run();
           }}
           defaultFormat="hex"
