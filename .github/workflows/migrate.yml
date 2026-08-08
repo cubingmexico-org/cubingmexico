@@ -1,8 +1,8 @@
-name: Migrate production database
+name: Migrate database
 
 on:
   push:
-    branches: [main]
+    branches: [main, development]
     paths:
       - "packages/db/**"
       - ".github/workflows/migrate.yml"
@@ -27,7 +27,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       # Use Supabase direct or Session-mode connection string (not Transaction pooler :6543).
+      # main → production (DATABASE_URL); development → staging (DATABASE_URL_STAGING)
       - name: Apply Drizzle migrations
         run: pnpm --filter @workspace/db migrate
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_URL: ${{ github.ref_name == 'main' && secrets.DATABASE_URL || secrets.DATABASE_URL_STAGING }}
