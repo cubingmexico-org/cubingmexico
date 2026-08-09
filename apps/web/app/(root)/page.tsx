@@ -6,7 +6,6 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { HomeHero } from "@/components/home-hero";
-// import { Notification } from "@/components/notification";
 
 const destinations = [
   {

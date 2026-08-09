@@ -43,3 +43,23 @@ export const eventNames: Record<string, string> = {
   "555bf": "5x5x5 Blindfolded",
   "333mbf": "3x3x3 Multi-Blind",
 };
+
+export const SPECIALTY_EVENT_IDS = [
+  "333",
+  "222",
+  "444",
+  "555",
+  "666",
+  "777",
+  "333bf",
+  "333fm",
+  "333oh",
+  "clock",
+  "minx",
+  "pyram",
+  "skewb",
+  "sq1",
+  "444bf",
+  "555bf",
+  "333mbf",
+] as const;
