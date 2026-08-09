@@ -41,6 +41,12 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
       input.gender.length > 0
         ? inArray(person.gender, input.gender)
         : undefined,
+      input.specialties.length > 0
+        ? sql`${teamMember.specialties} ?| array[${sql.join(
+            input.specialties.map((specialty) => sql`${specialty}`),
+            sql`, `,
+          )}]::text[]`
+        : undefined,
     );
 
     const orderBy =
@@ -56,11 +62,13 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
               case "podiums":
                 return item.desc ? desc(sql`"podiums"`) : asc(sql`"podiums"`);
               case "specialties":
-                return item.desc
-                  ? desc(teamMember.specialties)
-                  : asc(teamMember.specialties);
-              default:
+                return asc(person.name);
+              case "name":
+              case "wcaId":
+              case "gender":
                 return item.desc ? desc(person[item.id]) : asc(person[item.id]);
+              default:
+                return asc(person.name);
             }
           })
         : [asc(person.name)];

@@ -5,8 +5,15 @@ import { eq, inArray } from "drizzle-orm";
 import { updateTag } from "next/cache";
 
 import { getErrorMessage } from "@/lib/handle-error";
+import {
+  invalidateAfterStateRanksChange,
+  invalidateStateMemberTags,
+} from "@/lib/cache-tags";
 import { requireTeamPermission } from "@/lib/team-auth";
-import { updateStateRanks } from "@/lib/update-state-ranks";
+import {
+  clearPersonStateRanks,
+  updateStateRanks,
+} from "@/lib/update-state-ranks";
 import { person, teamMember } from "@workspace/db/schema";
 
 import { addMemberFormSchema } from "@/lib/validations";
@@ -41,7 +48,7 @@ export async function updateMember(_prevState: unknown, formData: FormData) {
         },
       });
 
-    updateTag("members");
+    updateTag(`members-list-${data.stateId}`);
 
     return {
       defaultValues: {
@@ -77,8 +84,10 @@ export async function deleteMember(input: { id: string; stateId: string }) {
         .where(eq(person.wcaId, input.id));
     });
 
-    updateTag("members");
-    updateTag("members-gender-count");
+    await clearPersonStateRanks([input.id]);
+    await updateStateRanks(input.stateId);
+    invalidateAfterStateRanksChange(input.stateId);
+    updateTag("persons-without-state");
 
     return {
       data: null,
@@ -106,15 +115,10 @@ export async function deleteMembers(input: { ids: string[]; stateId: string }) {
         .where(inArray(person.wcaId, input.ids));
     });
 
-    updateTag("members");
-    updateTag("members-gender-count");
-
+    await clearPersonStateRanks(input.ids);
     await updateStateRanks(input.stateId);
-
-    updateTag("state-kinch-ranks");
-    updateTag("combined-records");
-    updateTag("ranks-single");
-    updateTag("ranks-average");
+    invalidateAfterStateRanksChange(input.stateId);
+    updateTag("persons-without-state");
 
     return {
       data: null,
@@ -163,7 +167,7 @@ export async function updateMemberRole(input: {
         },
       });
 
-    updateTag("members");
+    invalidateStateMemberTags(input.stateId);
 
     return {
       data: null,

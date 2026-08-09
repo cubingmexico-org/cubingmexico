@@ -7,6 +7,7 @@ import { Member } from "../_types";
 import Link from "next/link";
 import { TeamMember } from "@workspace/db/schema";
 import { Badge } from "@workspace/ui/components/badge";
+import { eventNames, SPECIALTY_EVENT_IDS } from "@/lib/constants";
 
 interface GetColumnsProps {
   genderCounts: Record<string, number>;
@@ -119,6 +120,7 @@ export function getColumns({
       enableHiding: false,
     },
     {
+      id: "specialties",
       accessorKey: "specialties",
       header: ({ column }) => (
         <DataTableColumnHeader
@@ -144,45 +146,22 @@ export function getColumns({
                 ))}
               </>
             ) : (
-              <span className="text-muted-foreground">Sin especilidades</span>
+              <span className="text-muted-foreground">Sin especialidades</span>
             )}
           </div>
         );
       },
+      meta: {
+        label: "Especialidades",
+        variant: "multiSelect",
+        options: SPECIALTY_EVENT_IDS.map((eventId) => ({
+          label: eventNames[eventId] ?? eventId,
+          value: eventId,
+        })),
+      },
+      enableColumnFilter: true,
+      enableSorting: false,
       enableHiding: false,
     },
-    // {
-    //   accessorKey: "achievements",
-    //   header: ({ column }) => (
-    //     <DataTableColumnHeader
-    //       className="text-xs"
-    //       column={column}
-    //       title="Logros"
-    //     />
-    //   ),
-    //   cell: ({ row }) => {
-    //     const achievements = row.getValue(
-    //       "achievements",
-    //     ) as TeamMember["achievements"];
-
-    //     return (
-    //       <div className="flex space-x-2 w-72">
-    //         {achievements ? (
-    //           <>
-    //             {achievements.map((achievement) => (
-    //               <span className="text-accent-foreground" key={achievement}>
-    //                 {achievement}
-    //               </span>
-    //             ))}
-    //           </>
-    //         ) : (
-    //           <span className="text-muted-foreground">Sin logros</span>
-    //         )}
-    //       </div>
-    //     );
-    //   },
-    //   enableSorting: false,
-    //   enableHiding: false,
-    // },
   ];
 }

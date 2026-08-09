@@ -21,12 +21,6 @@ import {
 import { FontsCombobox } from "./fonts-combobox";
 import { Switch } from "@workspace/ui/components/switch";
 import {
-  Mention,
-  MentionContent,
-  MentionInput,
-  MentionItem,
-} from "@workspace/ui/components/mention";
-import {
   Select,
   SelectTrigger,
   SelectValue,
@@ -39,16 +33,7 @@ import {
 } from "@workspace/ui/components/radio-group";
 import { CompetitionGroups, WcaMonochrome } from "@workspace/icons";
 import type { EventId } from "@/types/wcif";
-
-const mentions = [
-  { id: "1", name: "nombre" },
-  { id: "2", name: "wcaid" },
-  { id: "3", name: "rol" },
-  { id: "4", name: "id" },
-  { id: "5", name: "país" },
-  { id: "6", name: "estado" },
-  { id: "7", name: "team" },
-];
+import { MentionTagsInput } from "./mention-tags-input";
 
 interface PropertiesPanelProps {
   eventIds: EventId[];
@@ -261,48 +246,30 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
               <Label htmlFor="content" className="text-xs">
                 Contenido del texto
               </Label>
-              <Mention
-                className="w-full max-w-[400px]"
-                inputValue={selectedElement.content || ""}
-                onInputValueChange={(value) => {
-                  // Measure text dimensions
+              <MentionTagsInput
+                className="max-w-[400px]"
+                id="content"
+                content={selectedElement.content || ""}
+                onContentChange={(content) => {
                   const canvas = document.createElement("canvas");
                   const ctx = canvas.getContext("2d");
                   if (ctx) {
                     const fontWeight = selectedElement.fontWeight || "normal";
                     ctx.font = `${fontWeight} ${selectedElement.fontSize || 24}px ${selectedElement.fontFamily || "Arial"}`;
-                    const metrics = ctx.measureText(value);
+                    const metrics = ctx.measureText(content);
                     const width = metrics.width;
                     const height = (selectedElement.fontSize || 24) * 1.2;
 
                     updateElement(selectedElement.id, {
-                      content: value,
+                      content,
                       width,
                       height,
                     });
                   } else {
-                    updateElement(selectedElement.id, { content: value });
+                    updateElement(selectedElement.id, { content });
                   }
                 }}
-              >
-                <MentionInput
-                  placeholder="Escribe @ para mencionar un dato dinámico..."
-                  value={selectedElement.content || ""}
-                  id="content"
-                  className="h-8"
-                />
-                <MentionContent>
-                  {mentions.map((mention) => (
-                    <MentionItem
-                      key={mention.id}
-                      value={mention.name}
-                      className="flex-col items-start gap-0.5"
-                    >
-                      <span className="text-sm">{mention.name}</span>
-                    </MentionItem>
-                  ))}
-                </MentionContent>
-              </Mention>
+              />
             </div>
             <div className="space-y-2">
               <FontsCombobox
@@ -657,17 +624,44 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
             <Label htmlFor="bgColor" className="text-xs">
               Color de relleno
             </Label>
-            <Input
-              id="bgColor"
-              type="color"
+            <ColorPicker
               value={selectedElement.backgroundColor || "#3b82f6"}
-              onChange={(e) =>
-                updateElement(selectedElement.id, {
-                  backgroundColor: e.target.value,
-                })
-              }
-              className="h-10"
-            />
+              onValueChange={(color) => {
+                if (color !== selectedElement.backgroundColor) {
+                  updateElement(selectedElement.id, {
+                    backgroundColor: color,
+                  });
+                }
+              }}
+              defaultFormat="hex"
+              className="w-full"
+            >
+              <div className="flex items-center gap-3">
+                <ColorPickerTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 px-3"
+                  >
+                    <ColorPickerSwatch className="size-4" />
+                    {selectedElement.backgroundColor || "#3b82f6"}
+                  </Button>
+                </ColorPickerTrigger>
+              </div>
+              <ColorPickerContent>
+                <ColorPickerArea />
+                <div className="flex items-center gap-2">
+                  <ColorPickerEyeDropper />
+                  <div className="flex flex-1 flex-col gap-2">
+                    <ColorPickerHueSlider />
+                    <ColorPickerAlphaSlider />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <ColorPickerFormatSelect />
+                  <ColorPickerInput />
+                </div>
+              </ColorPickerContent>
+            </ColorPicker>
           </div>
         )}
 

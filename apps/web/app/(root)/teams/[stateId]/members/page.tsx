@@ -56,7 +56,7 @@ export default async function Page(props: {
           fallback={
             <DataTableSkeleton
               columnCount={7}
-              filterCount={2}
+              filterCount={3}
               cellWidths={[
                 "10rem",
                 "30rem",

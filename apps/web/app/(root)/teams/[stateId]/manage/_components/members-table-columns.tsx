@@ -227,7 +227,7 @@ export function getColumns({
                 ))}
               </>
             ) : (
-              <span className="text-muted-foreground">Sin especilidades</span>
+              <span className="text-muted-foreground">Sin especialidades</span>
             )}
           </div>
         );

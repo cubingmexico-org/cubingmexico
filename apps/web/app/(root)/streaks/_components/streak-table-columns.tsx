@@ -11,10 +11,8 @@ interface GetColumnsProps {
   genderCounts: Record<string, number>;
 }
 
-export function getColumns({
-  stateCounts,
-  genderCounts,
-}: GetColumnsProps): ColumnDef<StreakRanks>[] {
+export function getColumns(props: GetColumnsProps): ColumnDef<StreakRanks>[] {
+  void props;
   return [
     {
       accessorKey: "rank",

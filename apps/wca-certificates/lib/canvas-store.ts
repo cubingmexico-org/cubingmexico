@@ -2,6 +2,26 @@
 
 import { create } from "zustand";
 import type { CanvasElement, CanvasState } from "@/types/canvas";
+import { clampElementToCanvas } from "@/lib/canvas-bounds";
+
+function clampElement(
+  element: CanvasElement,
+  canvasWidth: number,
+  canvasHeight: number,
+): CanvasElement {
+  return {
+    ...element,
+    ...clampElementToCanvas(element, canvasWidth, canvasHeight),
+  };
+}
+
+function clampElements(
+  elements: CanvasElement[],
+  canvasWidth: number,
+  canvasHeight: number,
+): CanvasElement[] {
+  return elements.map((el) => clampElement(el, canvasWidth, canvasHeight));
+}
 
 interface CanvasStore extends CanvasState {
   addElement: (element: CanvasElement) => void;
@@ -40,7 +60,10 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     set((state) => ({
       elements: {
         ...state.elements,
-        [state.activeSide]: [...state.elements[state.activeSide], element],
+        [state.activeSide]: [
+          ...state.elements[state.activeSide],
+          clampElement(element, state.canvasWidth, state.canvasHeight),
+        ],
       },
       selectedElementId: element.id,
     })),
@@ -49,9 +72,19 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     set((state) => ({
       elements: {
         ...state.elements,
-        [state.activeSide]: state.elements[state.activeSide].map((el) =>
-          el.id === id ? { ...el, ...updates } : el,
-        ),
+        [state.activeSide]: state.elements[state.activeSide].map((el) => {
+          if (el.id !== id) return el;
+          const merged = { ...el, ...updates };
+          if (
+            updates.x !== undefined ||
+            updates.y !== undefined ||
+            updates.width !== undefined ||
+            updates.height !== undefined
+          ) {
+            return clampElement(merged, state.canvasWidth, state.canvasHeight);
+          }
+          return merged;
+        }),
       },
     })),
 
@@ -79,13 +112,35 @@ export const useCanvasStore = create<CanvasStore>((set) => ({
     })),
 
   setCanvasSize: (width, height) =>
-    set({ canvasWidth: width, canvasHeight: height }),
+    set((state) => ({
+      canvasWidth: width,
+      canvasHeight: height,
+      elements: {
+        front: clampElements(state.elements.front, width, height),
+        back: clampElements(state.elements.back, width, height),
+      },
+    })),
 
   setBackgroundImage: (imageUrl) => set({ backgroundImage: imageUrl }),
 
   setBackgroundImageBack: (imageUrl) => set({ backgroundImageBack: imageUrl }),
 
-  setElements: (elements) => set({ elements, selectedElementId: null }),
+  setElements: (elements) =>
+    set((state) => ({
+      elements: {
+        front: clampElements(
+          elements.front,
+          state.canvasWidth,
+          state.canvasHeight,
+        ),
+        back: clampElements(
+          elements.back,
+          state.canvasWidth,
+          state.canvasHeight,
+        ),
+      },
+      selectedElementId: null,
+    })),
 
   setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(3, zoom)) }),
 

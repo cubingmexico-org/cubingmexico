@@ -10,17 +10,7 @@ import {
   result,
   competition,
 } from "@workspace/db/schema";
-import {
-  and,
-  count,
-  ilike,
-  gt,
-  inArray,
-  eq,
-  asc,
-  desc,
-  sql,
-} from "drizzle-orm";
+import { and, count, ilike, gt, inArray, eq, asc, desc } from "drizzle-orm";
 import type {
   GetResultAveragesSchema,
   GetResultSinglesSchema,
@@ -32,6 +22,7 @@ export async function getRankSingles(
   eventId: Event["id"],
 ) {
   cacheLife("days");
+  cacheTag(`results-single-${eventId}`);
   cacheTag("results-single");
 
   try {
@@ -52,9 +43,7 @@ export async function getRankSingles(
         ? input.sort.map((item) => {
             switch (item.id) {
               case "index":
-                return item.desc
-                  ? desc(sql<number>`row_number() over()`.mapWith(Number))
-                  : asc(sql<number>`row_number() over()`.mapWith(Number));
+                return item.desc ? desc(result.best) : asc(result.best);
               case "state":
                 return item.desc ? desc(state.name) : asc(state.name);
               case "name":
@@ -74,7 +63,6 @@ export async function getRankSingles(
     const { data, total } = await db.transaction(async (tx) => {
       const data = await tx
         .select({
-          index: sql<number>`row_number() over()`.mapWith(Number),
           personId: result.personId,
           name: person.name,
           best: result.best,
@@ -111,7 +99,13 @@ export async function getRankSingles(
     });
 
     const pageCount = Math.ceil(total / input.perPage);
-    return { data, pageCount };
+    return {
+      data: data.map((row, i) => ({
+        ...row,
+        index: offset + i + 1,
+      })),
+      pageCount,
+    };
   } catch (err) {
     console.error(err);
     return { data: [], pageCount: 0 };
@@ -120,7 +114,8 @@ export async function getRankSingles(
 
 export async function getRankSinglesStateCounts(eventId: Event["id"]) {
   cacheLife("days");
-  cacheTag("results-single-state-counts");
+  cacheTag(`results-single-state-counts-${eventId}`);
+  cacheTag("results-single");
 
   try {
     return await db
@@ -154,7 +149,8 @@ export async function getRankSinglesStateCounts(eventId: Event["id"]) {
 
 export async function getRankSinglesGenderCounts(eventId: Event["id"]) {
   cacheLife("days");
-  cacheTag("results-single-gender-counts");
+  cacheTag(`results-single-gender-counts-${eventId}`);
+  cacheTag("results-single");
 
   try {
     return await db
@@ -190,6 +186,7 @@ export async function getRankAverages(
   eventId: Event["id"],
 ) {
   cacheLife("days");
+  cacheTag(`results-average-${eventId}`);
   cacheTag("results-average");
 
   try {
@@ -210,9 +207,7 @@ export async function getRankAverages(
         ? input.sort.map((item) => {
             switch (item.id) {
               case "index":
-                return item.desc
-                  ? desc(sql<number>`row_number() over()`.mapWith(Number))
-                  : asc(sql<number>`row_number() over()`.mapWith(Number));
+                return item.desc ? desc(result.average) : asc(result.average);
               case "state":
                 return item.desc ? desc(state.name) : asc(state.name);
               case "name":
@@ -232,7 +227,6 @@ export async function getRankAverages(
     const { data, total } = await db.transaction(async (tx) => {
       const data = await tx
         .select({
-          index: sql<number>`row_number() over()`.mapWith(Number),
           personId: result.personId,
           name: person.name,
           average: result.average,
@@ -269,7 +263,13 @@ export async function getRankAverages(
     });
 
     const pageCount = Math.ceil(total / input.perPage);
-    return { data, pageCount };
+    return {
+      data: data.map((row, i) => ({
+        ...row,
+        index: offset + i + 1,
+      })),
+      pageCount,
+    };
   } catch (err) {
     console.error(err);
     return { data: [], pageCount: 0 };
@@ -278,7 +278,8 @@ export async function getRankAverages(
 
 export async function getRankAveragesStateCounts(eventId: Event["id"]) {
   cacheLife("days");
-  cacheTag("results-average-state-counts");
+  cacheTag(`results-average-state-counts-${eventId}`);
+  cacheTag("results-average");
 
   try {
     return await db
@@ -313,6 +314,7 @@ export async function getRankAveragesStateCounts(eventId: Event["id"]) {
 export async function getRankAveragesGenderCounts(eventId: Event["id"]) {
   cacheLife("days");
   cacheTag(`results-average-gender-counts-${eventId}`);
+  cacheTag("results-average");
 
   try {
     return await db

@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import type { ReactNode } from "react";
 import { TeamFrame } from "./_components/team-frame";

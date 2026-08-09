@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { and, asc, eq, ne, notInArray } from "drizzle-orm";
+import { and, asc, eq, inArray, ne, notInArray } from "drizzle-orm";
 import {
   person,
   rankAverage,
@@ -8,6 +8,30 @@ import {
   state,
 } from "@workspace/db/schema";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
+import {
+  assignSequentialRanks,
+  type RankRecord,
+} from "@/lib/assign-sequential-ranks";
+
+export { assignSequentialRanks } from "@/lib/assign-sequential-ranks";
+export type { RankRecord } from "@/lib/assign-sequential-ranks";
+
+/** Clear stateRank for people leaving a state (or changing states). */
+export async function clearPersonStateRanks(personIds: string[]) {
+  if (personIds.length === 0) {
+    return;
+  }
+
+  await db
+    .update(rankSingle)
+    .set({ stateRank: null })
+    .where(inArray(rankSingle.personId, personIds));
+
+  await db
+    .update(rankAverage)
+    .set({ stateRank: null })
+    .where(inArray(rankAverage.personId, personIds));
+}
 
 export async function updateStateRanks(stateId: string) {
   const stateData = await db
@@ -26,19 +50,27 @@ export async function updateStateRanks(stateId: string) {
       .from(event)
       .where(notInArray(event.id, EXCLUDED_EVENTS));
 
-    await tx.update(rankSingle).set({ stateRank: null });
-    await tx.update(rankAverage).set({ stateRank: null });
+    const statePersons = await tx
+      .select({ wcaId: person.wcaId })
+      .from(person)
+      .where(eq(person.stateId, stateId));
 
-    const singleUpdates: {
-      personId: string;
-      eventId: string;
-      stateRank: number;
-    }[] = [];
-    const averageUpdates: {
-      personId: string;
-      eventId: string;
-      stateRank: number;
-    }[] = [];
+    const personIds = statePersons.map((p) => p.wcaId);
+
+    if (personIds.length > 0) {
+      await tx
+        .update(rankSingle)
+        .set({ stateRank: null })
+        .where(inArray(rankSingle.personId, personIds));
+
+      await tx
+        .update(rankAverage)
+        .set({ stateRank: null })
+        .where(inArray(rankAverage.personId, personIds));
+    }
+
+    const singleUpdates: (RankRecord & { stateRank: number })[] = [];
+    const averageUpdates: (RankRecord & { stateRank: number })[] = [];
 
     for (const e of events) {
       const singleWhere = and(
@@ -58,15 +90,7 @@ export async function updateStateRanks(stateId: string) {
         .where(singleWhere)
         .orderBy(asc(rankSingle.countryRank));
 
-      let singleStateRank = 1;
-      for (const record of singleData) {
-        singleUpdates.push({
-          personId: record.personId,
-          eventId: record.eventId,
-          stateRank: singleStateRank,
-        });
-        singleStateRank++;
-      }
+      singleUpdates.push(...assignSequentialRanks(singleData));
 
       const averageWhere = and(
         ne(rankAverage.countryRank, 0),
@@ -85,39 +109,43 @@ export async function updateStateRanks(stateId: string) {
         .where(averageWhere)
         .orderBy(asc(rankAverage.countryRank));
 
-      let averageStateRank = 1;
-      for (const record of averageData) {
-        averageUpdates.push({
-          personId: record.personId,
-          eventId: record.eventId,
-          stateRank: averageStateRank,
-        });
-        averageStateRank++;
-      }
+      averageUpdates.push(...assignSequentialRanks(averageData));
     }
 
-    for (const update of singleUpdates) {
-      await tx
-        .update(rankSingle)
-        .set({ stateRank: update.stateRank })
-        .where(
-          and(
-            eq(rankSingle.personId, update.personId),
-            eq(rankSingle.eventId, update.eventId),
-          ),
-        );
+    const chunkSize = 50;
+
+    for (let i = 0; i < singleUpdates.length; i += chunkSize) {
+      const chunk = singleUpdates.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map((update) =>
+          tx
+            .update(rankSingle)
+            .set({ stateRank: update.stateRank })
+            .where(
+              and(
+                eq(rankSingle.personId, update.personId),
+                eq(rankSingle.eventId, update.eventId),
+              ),
+            ),
+        ),
+      );
     }
 
-    for (const update of averageUpdates) {
-      await tx
-        .update(rankAverage)
-        .set({ stateRank: update.stateRank })
-        .where(
-          and(
-            eq(rankAverage.personId, update.personId),
-            eq(rankAverage.eventId, update.eventId),
-          ),
-        );
+    for (let i = 0; i < averageUpdates.length; i += chunkSize) {
+      const chunk = averageUpdates.slice(i, i + chunkSize);
+      await Promise.all(
+        chunk.map((update) =>
+          tx
+            .update(rankAverage)
+            .set({ stateRank: update.stateRank })
+            .where(
+              and(
+                eq(rankAverage.personId, update.personId),
+                eq(rankAverage.eventId, update.eventId),
+              ),
+            ),
+        ),
+      );
     }
   });
 }

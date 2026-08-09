@@ -50,6 +50,7 @@ export function LeafletMap({
     };
     delete node._leaflet_id;
 
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- Leaflet must load client-side
     const L = require("leaflet") as typeof import("leaflet");
 
     const map = L.map(containerRef.current).setView(posix, zoom);
