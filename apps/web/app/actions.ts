@@ -11,13 +11,23 @@ import {
   updateTeamLogo,
 } from "@/db/queries";
 import { getErrorMessage } from "@/lib/handle-error";
+import {
+  invalidateAfterStateRanksChange,
+  invalidateStateMemberTags,
+} from "@/lib/cache-tags";
 import { getSessionUserId, requireTeamPermission } from "@/lib/team-auth";
-import { updateStateRanks } from "@/lib/update-state-ranks";
+import {
+  clearPersonStateRanks,
+  updateStateRanks,
+} from "@/lib/update-state-ranks";
 import {
   addMemberFormSchema,
   profileFormSchema,
   teamFormSchema,
 } from "@/lib/validations";
+import { db } from "@workspace/db";
+import { person } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { unauthorized } from "next/navigation";
 import { z } from "zod";
@@ -42,6 +52,14 @@ export async function profileFormAction(
       unauthorized();
     }
 
+    const existing = await db
+      .select({ stateId: person.stateId })
+      .from(person)
+      .where(eq(person.wcaId, data.personId))
+      .limit(1);
+
+    const previousStateId = existing[0]?.stateId ?? null;
+
     await saveProfile({
       stateId: data.stateId,
       personId: data.personId,
@@ -50,12 +68,15 @@ export async function profileFormAction(
     updateTag(`profile-person-${data.personId}`);
     updateTag(`person-page-${data.personId}`);
 
-    await updateStateRanks(data.stateId);
+    await clearPersonStateRanks([data.personId]);
 
-    updateTag("state-kinch-ranks");
-    updateTag("combined-records");
-    updateTag("ranks-single");
-    updateTag("ranks-average");
+    if (previousStateId && previousStateId !== data.stateId) {
+      await updateStateRanks(previousStateId);
+      invalidateAfterStateRanksChange(previousStateId);
+    }
+
+    await updateStateRanks(data.stateId);
+    invalidateAfterStateRanksChange(data.stateId);
 
     return {
       defaultValues: {
@@ -165,14 +186,10 @@ export async function addMemberFormAction(
       achievements: null,
     });
 
-    updateTag("persons-without-state");
-    updateTag(`total-members-${data.stateId}`);
-    updateTag(`members-gender-count-${data.stateId}`);
-    updateTag(`team-podiums-${data.stateId}`);
-    updateTag(`single-national-records-${data.stateId}`);
-    updateTag(`average-national-records-${data.stateId}`);
-
     await updateStateRanks(data.stateId);
+    invalidateAfterStateRanksChange(data.stateId);
+    invalidateStateMemberTags(data.stateId);
+    updateTag("persons-without-state");
 
     return {
       defaultValues: {

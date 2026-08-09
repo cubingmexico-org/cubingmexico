@@ -37,7 +37,7 @@ export function HeaderAuth() {
   }, [session?.user?.wcaId]);
 
   if (isPending) {
-    return <Skeleton className="size-12 rounded-full" />;
+    return <Skeleton className="size-12 rounded-full bg-white/20" />;
   }
 
   if (!session?.user) {

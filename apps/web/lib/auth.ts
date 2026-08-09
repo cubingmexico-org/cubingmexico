@@ -73,7 +73,7 @@ const options = {
           redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/wca`,
           discoveryUrl:
             "https://www.worldcubeassociation.org/.well-known/openid-configuration",
-          scopes: ["public", "manage_competitions"],
+          scopes: ["public"],
           getToken: async ({ code, redirectURI }) => {
             const response = await fetch(
               "https://www.worldcubeassociation.org/oauth/token",

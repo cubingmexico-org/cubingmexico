@@ -73,6 +73,11 @@ const THROTTLE_MS = 50;
 const OPEN_MENU_SHORTCUT = "f";
 const REMOVE_FILTER_SHORTCUTS = ["backspace", "delete"];
 
+const JOIN_OPERATOR_LABELS: Record<JoinOperator, string> = {
+  and: "y",
+  or: "o",
+};
+
 interface DataTableFilterListProps<TData> extends React.ComponentProps<
   typeof PopoverContent
 > {
@@ -232,7 +237,7 @@ export function DataTableFilterList<TData>({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" onKeyDown={onTriggerKeyDown}>
             <ListFilter />
-            Filter
+            Filtrar
             {filters.length > 0 && (
               <Badge
                 variant="secondary"
@@ -251,7 +256,7 @@ export function DataTableFilterList<TData>({
         >
           <div className="flex flex-col gap-1">
             <h4 id={labelId} className="font-medium leading-none">
-              {filters.length > 0 ? "Filters" : "No filters applied"}
+              {filters.length > 0 ? "Filtros" : "Sin filtros"}
             </h4>
             <p
               id={descriptionId}
@@ -261,8 +266,8 @@ export function DataTableFilterList<TData>({
               )}
             >
               {filters.length > 0
-                ? "Modify filters to refine your rows."
-                : "Add filters to refine your rows."}
+                ? "Modifica los filtros para refinar las filas."
+                : "Agrega filtros para refinar las filas."}
             </p>
           </div>
           {filters.length > 0 ? (
@@ -291,7 +296,7 @@ export function DataTableFilterList<TData>({
               ref={addButtonRef}
               onClick={onFilterAdd}
             >
-              Add filter
+              Agregar filtro
             </Button>
             {filters.length > 0 ? (
               <Button
@@ -300,7 +305,7 @@ export function DataTableFilterList<TData>({
                 className="rounded"
                 onClick={onFiltersReset}
               >
-                Reset filters
+                Restablecer filtros
               </Button>
             ) : null}
           </div>
@@ -397,34 +402,34 @@ function DataTableFilterItem<TData>({
       >
         <div className="min-w-[72px] text-center">
           {index === 0 ? (
-            <span className="text-muted-foreground text-sm">Where</span>
+            <span className="text-muted-foreground text-sm">Donde</span>
           ) : index === 1 ? (
             <Select
               value={joinOperator}
               onValueChange={(value: JoinOperator) => setJoinOperator(value)}
             >
               <SelectTrigger
-                aria-label="Select join operator"
+                aria-label="Seleccionar operador lógico"
                 aria-controls={joinOperatorListboxId}
                 className="h-8 rounded lowercase data-size:h-8"
               >
-                <SelectValue placeholder={joinOperator} />
+                <SelectValue placeholder={JOIN_OPERATOR_LABELS[joinOperator]} />
               </SelectTrigger>
               <SelectContent
                 id={joinOperatorListboxId}
                 position="popper"
                 className="min-w-(--radix-select-trigger-width) lowercase"
               >
-                {dataTableConfig.joinOperators.map((joinOperator) => (
-                  <SelectItem key={joinOperator} value={joinOperator}>
-                    {joinOperator}
+                {dataTableConfig.joinOperators.map((op) => (
+                  <SelectItem key={op} value={op}>
+                    {JOIN_OPERATOR_LABELS[op]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           ) : (
             <span className="text-muted-foreground text-sm">
-              {joinOperator}
+              {JOIN_OPERATOR_LABELS[joinOperator]}
             </span>
           )}
         </div>
@@ -438,7 +443,7 @@ function DataTableFilterItem<TData>({
             >
               <span className="truncate">
                 {columns.find((column) => column.id === filter.id)?.columnDef
-                  .meta?.label ?? "Select field"}
+                  .meta?.label ?? "Seleccionar campo"}
               </span>
               <ChevronsUpDown className="opacity-50" />
             </Button>
@@ -449,9 +454,9 @@ function DataTableFilterItem<TData>({
             className="w-40 origin-(--radix-popover-content-transform-origin) p-0"
           >
             <Command>
-              <CommandInput placeholder="Search fields..." />
+              <CommandInput placeholder="Buscar campos..." />
               <CommandList>
-                <CommandEmpty>No fields found.</CommandEmpty>
+                <CommandEmpty>No se encontraron campos.</CommandEmpty>
                 <CommandGroup>
                   {columns.map((column) => (
                     <CommandItem
@@ -615,7 +620,7 @@ function onFilterInputRender<TData>({
           aria-label={`${columnMeta?.label} filter value`}
           aria-describedby={`${inputId}-description`}
           inputMode={isNumber ? "numeric" : undefined}
-          placeholder={columnMeta?.placeholder ?? "Enter a value..."}
+          placeholder={columnMeta?.placeholder ?? "Ingresa un valor..."}
           className="h-8 w-full rounded"
           defaultValue={
             typeof filter.value === "string" ? filter.value : undefined
@@ -651,11 +656,11 @@ function onFilterInputRender<TData>({
             aria-label={`${columnMeta?.label} boolean filter`}
             className="h-8 w-full rounded data-size:h-8"
           >
-            <SelectValue placeholder={filter.value ? "True" : "False"} />
+            <SelectValue placeholder={filter.value ? "Verdadero" : "Falso"} />
           </SelectTrigger>
           <SelectContent id={inputListboxId}>
-            <SelectItem value="true">True</SelectItem>
-            <SelectItem value="false">False</SelectItem>
+            <SelectItem value="true">Verdadero</SelectItem>
+            <SelectItem value="false">Falso</SelectItem>
           </SelectContent>
         </Select>
       );
@@ -699,7 +704,7 @@ function onFilterInputRender<TData>({
                 options={columnMeta?.options}
                 placeholder={
                   columnMeta?.placeholder ??
-                  `Select option${multiple ? "s" : ""}...`
+                  `Seleccionar opción${multiple ? "es" : ""}...`
                 }
               />
             </Button>
@@ -709,11 +714,11 @@ function onFilterInputRender<TData>({
             className="w-[200px] origin-(--radix-popover-content-transform-origin)"
           >
             <FacetedInput
-              aria-label={`Search ${columnMeta?.label} options`}
-              placeholder={columnMeta?.placeholder ?? "Search options..."}
+              aria-label={`Buscar opciones de ${columnMeta?.label}`}
+              placeholder={columnMeta?.placeholder ?? "Buscar opciones..."}
             />
             <FacetedList>
-              <FacetedEmpty>No options found.</FacetedEmpty>
+              <FacetedEmpty>No se encontraron opciones.</FacetedEmpty>
               <FacetedGroup>
                 {columnMeta?.options?.map((option) => (
                   <FacetedItem key={option.value} value={option.value}>
@@ -748,7 +753,7 @@ function onFilterInputRender<TData>({
             )}`
           : dateValue[0]
             ? formatDate(new Date(Number(dateValue[0])))
-            : "Pick a date";
+            : "Elegir fecha...";
 
       return (
         <Popover open={showValueSelector} onOpenChange={setShowValueSelector}>
@@ -775,7 +780,7 @@ function onFilterInputRender<TData>({
           >
             {filter.operator === "isBetween" ? (
               <Calendar
-                aria-label={`Select ${columnMeta?.label} date range`}
+                aria-label={`Seleccionar rango de fechas de ${columnMeta?.label}`}
                 mode="range"
                 captionLayout="dropdown"
                 selected={
@@ -802,7 +807,7 @@ function onFilterInputRender<TData>({
               />
             ) : (
               <Calendar
-                aria-label={`Select ${columnMeta?.label} date`}
+                aria-label={`Seleccionar fecha de ${columnMeta?.label}`}
                 mode="single"
                 captionLayout="dropdown"
                 selected={

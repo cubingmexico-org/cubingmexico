@@ -119,7 +119,7 @@ export function AddMemberForm({
                     className="group/field grid gap-2"
                     data-invalid={!!state.errors}
                   >
-                    <PersonsCombobox state={state as never} />
+                    <PersonsCombobox stateId={stateId} state={state as never} />
                     {state.errors && (
                       <p
                         id="error-personId"

@@ -4,26 +4,15 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { person, teamMember } from "@workspace/db/schema";
 import { auth } from "@/lib/auth";
+import {
+  canManageTeam,
+  roleHasPermission,
+  type TeamPermission,
+  type TeamRole,
+} from "@/lib/team-permissions";
 
-export type TeamRole = "admin" | "editor";
-
-export type TeamPermission =
-  | "team.settings"
-  | "team.media"
-  | "team.members"
-  | "team.roles"
-  | "team.ranks";
-
-const ROLE_PERMISSIONS: Record<TeamRole, readonly TeamPermission[]> = {
-  admin: [
-    "team.settings",
-    "team.media",
-    "team.members",
-    "team.roles",
-    "team.ranks",
-  ],
-  editor: ["team.settings", "team.media", "team.members"],
-};
+export type { TeamPermission, TeamRole };
+export { canManageTeam, roleHasPermission };
 
 export async function getSessionUserId(): Promise<string | null> {
   const session = await auth.api.getSession({
@@ -61,16 +50,6 @@ export async function getTeamRole(
   }
 }
 
-export function roleHasPermission(
-  role: TeamRole | null,
-  permission: TeamPermission,
-): boolean {
-  if (!role) {
-    return false;
-  }
-  return ROLE_PERMISSIONS[role].includes(permission);
-}
-
 export async function hasTeamPermission(
   stateId: string,
   personId: string,
@@ -95,8 +74,4 @@ export async function requireTeamPermission(
   }
 
   return { userId, role: role! };
-}
-
-export function canManageTeam(role: TeamRole | null): boolean {
-  return role === "admin" || role === "editor";
 }

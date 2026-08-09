@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Button } from "@workspace/ui/components/button";
 import { Home, RotateCcw } from "lucide-react";
+import { BackButton } from "@/components/back-button";
 
 export default function NotFound() {
   return (
@@ -46,12 +47,10 @@ export default function NotFound() {
               Volver al inicio
             </Link>
           </Button>
-          <Button asChild variant="outline" size="lg">
-            <Link href="javascript:history.back()">
-              <RotateCcw />
-              Regresar
-            </Link>
-          </Button>
+          <BackButton variant="outline" size="lg">
+            <RotateCcw />
+            Regresar
+          </BackButton>
         </div>
       </div>
     </main>

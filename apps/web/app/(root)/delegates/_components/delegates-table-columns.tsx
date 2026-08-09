@@ -6,7 +6,6 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { Person } from "../_types";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
-import { Check, X } from "lucide-react";
 import {
   formatDelegateLevel,
   getDelegateLevelFilterOptions,
@@ -23,7 +22,6 @@ interface GetColumnsProps {
 export function getColumns({
   stateCounts,
   genderCounts,
-  statusCounts,
   levelCounts,
 }: GetColumnsProps): ColumnDef<Person>[] {
   return [

@@ -32,6 +32,7 @@ export async function getRankSingles(
   eventId: Event["id"],
 ) {
   cacheLife("days");
+  cacheTag(`results-single-${eventId}`);
   cacheTag("results-single");
 
   try {
@@ -120,7 +121,8 @@ export async function getRankSingles(
 
 export async function getRankSinglesStateCounts(eventId: Event["id"]) {
   cacheLife("days");
-  cacheTag("results-single-state-counts");
+  cacheTag(`results-single-state-counts-${eventId}`);
+  cacheTag("results-single");
 
   try {
     return await db
@@ -154,7 +156,8 @@ export async function getRankSinglesStateCounts(eventId: Event["id"]) {
 
 export async function getRankSinglesGenderCounts(eventId: Event["id"]) {
   cacheLife("days");
-  cacheTag("results-single-gender-counts");
+  cacheTag(`results-single-gender-counts-${eventId}`);
+  cacheTag("results-single");
 
   try {
     return await db
@@ -190,6 +193,7 @@ export async function getRankAverages(
   eventId: Event["id"],
 ) {
   cacheLife("days");
+  cacheTag(`results-average-${eventId}`);
   cacheTag("results-average");
 
   try {
@@ -278,7 +282,8 @@ export async function getRankAverages(
 
 export async function getRankAveragesStateCounts(eventId: Event["id"]) {
   cacheLife("days");
-  cacheTag("results-average-state-counts");
+  cacheTag(`results-average-state-counts-${eventId}`);
+  cacheTag("results-average");
 
   try {
     return await db
@@ -313,6 +318,7 @@ export async function getRankAveragesStateCounts(eventId: Event["id"]) {
 export async function getRankAveragesGenderCounts(eventId: Event["id"]) {
   cacheLife("days");
   cacheTag(`results-average-gender-counts-${eventId}`);
+  cacheTag("results-average");
 
   try {
     return await db

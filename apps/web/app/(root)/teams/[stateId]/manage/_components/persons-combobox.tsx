@@ -15,8 +15,10 @@ import { ChevronDown } from "lucide-react";
 import * as React from "react";
 
 export function PersonsCombobox({
+  stateId,
   state,
 }: {
+  stateId: string;
   state: {
     defaultValues: Record<string, string>;
     success: boolean;
@@ -55,9 +57,19 @@ export function PersonsCombobox({
       }, 150);
 
       try {
+        const params = new URLSearchParams({
+          search: searchTerm,
+          stateId,
+        });
         const response = await fetch(
-          `/api/get-persons-without-state?search=${encodeURIComponent(searchTerm)}`,
+          `/api/get-persons-without-state?${params.toString()}`,
         );
+
+        if (!response.ok) {
+          setFilteredItems([]);
+          setProgress(100);
+          return;
+        }
 
         const data = await response.json();
 
@@ -66,7 +78,7 @@ export function PersonsCombobox({
           name: string;
         }[];
 
-        setFilteredItems(results);
+        setFilteredItems(results ?? []);
         setProgress(100);
       } catch (error) {
         console.error("Error fetching persons:", error);
@@ -76,7 +88,7 @@ export function PersonsCombobox({
         clearInterval(interval);
       }
     }, 300),
-    [],
+    [stateId],
   );
 
   const onInputValueChange = React.useCallback(

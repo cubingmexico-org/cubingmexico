@@ -10,7 +10,7 @@ import {
   state,
 } from "@workspace/db/schema";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
 import type { SumOfStateRanks } from "../_types";
@@ -42,7 +42,7 @@ export async function getSOSR(
 
     const rankTable = getRankTable(rankType);
     const excludedEvents = getExcludedEventsList();
-    const peopleFilters: any[] = [];
+    const peopleFilters: SQL[] = [];
     if (input.name) {
       peopleFilters.push(sql`p.name ILIKE ${`%${input.name}%`}`);
     }
@@ -60,9 +60,9 @@ export async function getSOSR(
         ? sql`AND ${sql.join(peopleFilters, sql` AND `)}`
         : sql``;
 
-    const orderFragments: any[] =
+    const orderFragments: SQL[] =
       input.sort && input.sort.length > 0
-        ? input.sort.map((item: any) => {
+        ? input.sort.map((item) => {
             switch (item.id) {
               case "name":
                 return item.desc ? sql`p.name DESC` : sql`p.name ASC`;

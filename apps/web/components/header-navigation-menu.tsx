@@ -23,6 +23,16 @@ import {
 } from "@workspace/ui/components/navigation-menu";
 import { CubingMexico } from "@workspace/icons";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
+import { cn } from "@workspace/ui/lib/utils";
+
+const navItemClass = cn(
+  navigationMenuTriggerStyle(),
+  "bg-transparent text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white data-[active=true]:bg-white/10 data-[state=open]:bg-white/10 data-[state=open]:text-white data-[state=open]:hover:bg-white/15 data-[state=open]:focus:bg-white/15",
+);
+
+const triggerClass = cn(
+  "bg-transparent text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white data-[active=true]:bg-white/10 data-[state=open]:bg-white/10 data-[state=open]:text-white data-[state=open]:hover:bg-white/15 data-[state=open]:focus:bg-white/15",
+);
 
 export function HeaderNavigationMenu() {
   const isMobile = useIsMobile();
@@ -31,25 +41,19 @@ export function HeaderNavigationMenu() {
     <NavigationMenu viewport={isMobile}>
       <NavigationMenuList className="flex-wrap">
         <NavigationMenuItem>
-          <NavigationMenuLink
-            asChild
-            className={`${navigationMenuTriggerStyle()} bg-primary hover:bg-muted/10 hover:text-primary-foreground focus:bg-primary/90 focus:text-primary-foreground`}
-          >
+          <NavigationMenuLink asChild className={navItemClass}>
             <Link href="/competitions">Competencias</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <NavigationMenuLink
-            asChild
-            className={`${navigationMenuTriggerStyle()} bg-primary hover:bg-muted/10 hover:text-primary-foreground focus:bg-primary/90 focus:text-primary-foreground`}
-          >
+          <NavigationMenuLink asChild className={navItemClass}>
             <Link href="/teams">Teams estatales</Link>
           </NavigationMenuLink>
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="bg-primary hover:bg-muted/10 hover:text-primary-foreground focus:bg-primary/90 focus:text-primary-foreground data-[active=true]:bg-muted/10 data-[state=open]:hover:bg-muted/10 data-[state=open]:text-primary-foreground data-[state=open]:bg-muted/5 data-[state=open]:focus:bg-muted/10">
+          <NavigationMenuTrigger className={triggerClass}>
             Resultados
           </NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -136,7 +140,7 @@ export function HeaderNavigationMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="bg-primary hover:bg-muted/10 hover:text-primary-foreground focus:bg-primary/90 focus:text-primary-foreground data-[active=true]:bg-muted/10 data-[state=open]:hover:bg-muted/10 data-[state=open]:text-primary-foreground data-[state=open]:bg-muted/5 data-[state=open]:focus:bg-muted/10">
+          <NavigationMenuTrigger className={triggerClass}>
             Personas
           </NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -178,7 +182,7 @@ export function HeaderNavigationMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <NavigationMenuTrigger className="bg-primary hover:bg-muted/10 hover:text-primary-foreground focus:bg-primary/90 focus:text-primary-foreground data-[active=true]:bg-muted/10 data-[state=open]:hover:bg-muted/10 data-[state=open]:text-primary-foreground data-[state=open]:bg-muted/5 data-[state=open]:focus:bg-muted/10">
+          <NavigationMenuTrigger className={triggerClass}>
             Acerca de
           </NavigationMenuTrigger>
           <NavigationMenuContent>

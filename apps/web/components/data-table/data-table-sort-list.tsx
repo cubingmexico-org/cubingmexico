@@ -177,7 +177,7 @@ export function DataTableSortList<TData>({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" onKeyDown={onTriggerKeyDown}>
             <ArrowDownUp />
-            Sort
+            Ordenar
             {sorting.length > 0 && (
               <Badge
                 variant="secondary"
@@ -196,7 +196,7 @@ export function DataTableSortList<TData>({
         >
           <div className="flex flex-col gap-1">
             <h4 id={labelId} className="font-medium leading-none">
-              {sorting.length > 0 ? "Sort by" : "No sorting applied"}
+              {sorting.length > 0 ? "Ordenar por" : "Sin ordenamiento"}
             </h4>
             <p
               id={descriptionId}
@@ -206,8 +206,8 @@ export function DataTableSortList<TData>({
               )}
             >
               {sorting.length > 0
-                ? "Modify sorting to organize your rows."
-                : "Add sorting to organize your rows."}
+                ? "Modifica el ordenamiento de las filas."
+                : "Agrega un ordenamiento a las filas."}
             </p>
           </div>
           {sorting.length > 0 && (
@@ -235,7 +235,7 @@ export function DataTableSortList<TData>({
               onClick={onSortAdd}
               disabled={columns.length === 0}
             >
-              Add sort
+              Agregar orden
             </Button>
             {sorting.length > 0 && (
               <Button
@@ -244,7 +244,7 @@ export function DataTableSortList<TData>({
                 className="rounded"
                 onClick={onSortingReset}
               >
-                Reset sorting
+                Restablecer orden
               </Button>
             )}
           </div>
@@ -334,9 +334,9 @@ function DataTableSortItem({
             className="w-(--radix-popover-trigger-width) origin-(--radix-popover-content-transform-origin) p-0"
           >
             <Command>
-              <CommandInput placeholder="Search fields..." />
+              <CommandInput placeholder="Buscar campos..." />
               <CommandList>
-                <CommandEmpty>No fields found.</CommandEmpty>
+                <CommandEmpty>No se encontraron campos.</CommandEmpty>
                 <CommandGroup>
                   {columns.map((column) => (
                     <CommandItem

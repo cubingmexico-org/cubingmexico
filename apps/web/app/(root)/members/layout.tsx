@@ -20,7 +20,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Miembros | Cubing México",
   description:
-    "Encuentra el directorio de todos los miembros Mollerz mexicanos de la WCA. Filtra por estado, género y más.",
+    "Directorio de miembros Mollerz mexicanos de la WCA y sus niveles de reconocimiento.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

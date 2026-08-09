@@ -22,7 +22,7 @@ export async function getStreakRanks(input: GetStreakRanksSchema) {
         : undefined,
     );
 
-    const orderBy =
+    const _orderBy =
       input.sort.length > 0
         ? input.sort.map((item) => {
             switch (item.id) {
@@ -39,6 +39,8 @@ export async function getStreakRanks(input: GetStreakRanksSchema) {
             }
           })
         : [asc(streakRanks.rank)];
+
+    void _orderBy;
 
     const { data, total } = await db.transaction(async (tx) => {
       const data = await tx

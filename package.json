@@ -8,6 +8,8 @@
     "dev:web": "turbo dev --filter=web",
     "dev:wca-certificates": "turbo dev --filter=wca-certificates",
     "lint": "turbo lint",
+    "check-types": "turbo check-types",
+    "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:up": "docker compose up db -d",
     "db:down": "docker compose down",

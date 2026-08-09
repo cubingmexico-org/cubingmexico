@@ -39,7 +39,7 @@ export function ThemeToggle() {
       <Switch
         checked={theme === "dark"}
         onCheckedChange={toggleTheme}
-        aria-label="Toggle theme"
+        aria-label="Cambiar tema"
         className="transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] hover:scale-110"
       />
       <Moon

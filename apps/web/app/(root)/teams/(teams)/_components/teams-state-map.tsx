@@ -133,6 +133,7 @@ export function TeamsStateMap({
     };
     delete node._leaflet_id;
 
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- Leaflet must load client-side
     const L = require("leaflet") as typeof import("leaflet");
 
     const map = L.map(containerRef.current, {
@@ -285,7 +286,7 @@ export function TeamsStateMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [onTeamSelect, selectedState, statesData, teams, theme]);
+  }, [onTeamSelect, selectedState, statesData, teams, theme, router]);
 
   if (!statesData) {
     return (

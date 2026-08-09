@@ -244,7 +244,7 @@ export function DataTableFilterMenu<TData>({
       ))}
       {filters.length > 0 && (
         <Button
-          aria-label="Reset all filters"
+          aria-label="Restablecer todos los filtros"
           variant="outline"
           size="icon"
           className="size-8"
@@ -256,7 +256,7 @@ export function DataTableFilterMenu<TData>({
       <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger asChild>
           <Button
-            aria-label="Open filter command menu"
+            aria-label="Abrir menú de filtros"
             variant="outline"
             size={filters.length > 0 ? "icon" : "sm"}
             className={cn(filters.length > 0 && "size-8", "h-8")}
@@ -264,7 +264,7 @@ export function DataTableFilterMenu<TData>({
             onKeyDown={onTriggerKeyDown}
           >
             <ListFilter />
-            {filters.length > 0 ? null : "Filter"}
+            {filters.length > 0 ? null : "Filtrar"}
           </Button>
         </PopoverTrigger>
         <PopoverContent
@@ -278,7 +278,7 @@ export function DataTableFilterMenu<TData>({
               placeholder={
                 selectedColumn
                   ? (selectedColumn.columnDef.meta?.label ?? selectedColumn.id)
-                  : "Search fields..."
+                  : "Buscar campos..."
               }
               value={inputValue}
               onValueChange={setInputValue}
@@ -288,7 +288,7 @@ export function DataTableFilterMenu<TData>({
               {selectedColumn ? (
                 <>
                   {selectedColumn.columnDef.meta?.options && (
-                    <CommandEmpty>No options found.</CommandEmpty>
+                    <CommandEmpty>No se encontraron opciones.</CommandEmpty>
                   )}
                   <FilterValueSelector
                     column={selectedColumn}
@@ -298,7 +298,7 @@ export function DataTableFilterMenu<TData>({
                 </>
               ) : (
                 <>
-                  <CommandEmpty>No fields found.</CommandEmpty>
+                  <CommandEmpty>No se encontraron campos.</CommandEmpty>
                   <CommandGroup>
                     {columns.map((column) => (
                       <CommandItem
@@ -418,9 +418,9 @@ function DataTableFilterItem<TData>({
             className="w-48 origin-(--radix-popover-content-transform-origin) p-0"
           >
             <Command loop>
-              <CommandInput placeholder="Search fields..." />
+              <CommandInput placeholder="Buscar campos..." />
               <CommandList>
-                <CommandEmpty>No fields found.</CommandEmpty>
+                <CommandEmpty>No se encontraron campos.</CommandEmpty>
                 <CommandGroup>
                   {columns.map((column) => (
                     <CommandItem
@@ -533,10 +533,10 @@ function FilterValueSelector<TData>({
       return (
         <CommandGroup>
           <CommandItem value="true" onSelect={() => onSelect("true")}>
-            True
+            Verdadero
           </CommandItem>
           <CommandItem value="false" onSelect={() => onSelect("false")}>
-            False
+            Falso
           </CommandItem>
         </CommandGroup>
       );
@@ -587,12 +587,12 @@ function FilterValueSelector<TData>({
             {isEmpty ? (
               <>
                 <Text />
-                <span>Type to add filter...</span>
+                <span>Escribe para agregar un filtro...</span>
               </>
             ) : (
               <>
                 <BadgeCheck />
-                <span className="truncate">Filter by &quot;{value}&quot;</span>
+                <span className="truncate">Filtrar por &quot;{value}&quot;</span>
               </>
             )}
           </CommandItem>
@@ -661,7 +661,7 @@ function onFilterInputRender<TData>({
           id={inputId}
           type={isNumber ? "number" : "text"}
           inputMode={isNumber ? "numeric" : undefined}
-          placeholder={column.columnDef.meta?.placeholder ?? "Enter value..."}
+          placeholder={column.columnDef.meta?.placeholder ?? "Ingresa un valor..."}
           className="h-full w-24 rounded-none px-1.5"
           defaultValue={typeof filter.value === "string" ? filter.value : ""}
           onChange={(event) =>
@@ -688,11 +688,11 @@ function onFilterInputRender<TData>({
             aria-controls={inputListboxId}
             className="rounded-none bg-transparent px-1.5 py-0.5 [&_svg]:hidden"
           >
-            <SelectValue placeholder={filter.value ? "True" : "False"} />
+            <SelectValue placeholder={filter.value ? "Verdadero" : "Falso"} />
           </SelectTrigger>
           <SelectContent id={inputListboxId}>
-            <SelectItem value="true">True</SelectItem>
-            <SelectItem value="false">False</SelectItem>
+            <SelectItem value="true">Verdadero</SelectItem>
+            <SelectItem value="false">Falso</SelectItem>
           </SelectContent>
         </Select>
       );
@@ -723,9 +723,9 @@ function onFilterInputRender<TData>({
             >
               {selectedOptions.length === 0 ? (
                 filter.variant === "multiSelect" ? (
-                  "Select options..."
+                  "Seleccionar opciones..."
                 ) : (
-                  "Select option..."
+                  "Seleccionar opción..."
                 )
               ) : (
                 <>
@@ -743,7 +743,7 @@ function onFilterInputRender<TData>({
                   </div>
                   <span className="truncate">
                     {selectedOptions.length > 1
-                      ? `${selectedOptions.length} selected`
+                      ? `${selectedOptions.length} seleccionado(s)`
                       : selectedOptions[0]?.label}
                   </span>
                 </>
@@ -756,9 +756,9 @@ function onFilterInputRender<TData>({
             className="w-48 origin-(--radix-popover-content-transform-origin) p-0"
           >
             <Command>
-              <CommandInput placeholder="Search options..." />
+              <CommandInput placeholder="Buscar opciones..." />
               <CommandList>
-                <CommandEmpty>No options found.</CommandEmpty>
+                <CommandEmpty>No se encontraron opciones.</CommandEmpty>
                 <CommandGroup>
                   {options.map((option) => (
                     <CommandItem
@@ -811,7 +811,7 @@ function onFilterInputRender<TData>({
             )}`
           : dateValue[0]
             ? formatDate(new Date(Number(dateValue[0])))
-            : "Pick date...";
+            : "Elegir fecha...";
 
       return (
         <Popover open={showValueSelector} onOpenChange={setShowValueSelector}>

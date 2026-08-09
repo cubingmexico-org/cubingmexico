@@ -12,6 +12,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { Home, ArrowLeft, Mail, Lock } from "lucide-react";
 import Link from "next/link";
+import { BackButton } from "@/components/back-button";
 
 export default function CustomUnauthorized(): React.JSX.Element {
   return (
@@ -78,16 +79,10 @@ export default function CustomUnauthorized(): React.JSX.Element {
               <Home className="mr-2 h-5 w-5" />
               Ir al Inicio
             </Link>
-            <Link
-              className={cn(
-                buttonVariants({ variant: "ghost" }),
-                "w-full sm:w-auto",
-              )}
-              href="javascript:history.back()"
-            >
+            <BackButton variant="ghost" className="w-full sm:w-auto">
               <ArrowLeft className="mr-2 h-5 w-5" />
               Regresar
-            </Link>
+            </BackButton>
           </CardFooter>
         </Card>
 
