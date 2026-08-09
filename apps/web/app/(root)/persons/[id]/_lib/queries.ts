@@ -206,6 +206,7 @@ export async function getPersonData(wcaId: string): Promise<{
         world: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'WR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'WR' THEN 1 ELSE 0 END))`,
         continental: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NAR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NAR' THEN 1 ELSE 0 END))`,
         national: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NR' THEN 1 ELSE 0 END))`,
+        state: sql<number>`SUM((CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END))`,
       })
       .from(result)
       .where(eq(result.personId, wcaId));
@@ -214,6 +215,7 @@ export async function getPersonData(wcaId: string): Promise<{
       world: Number(recordsRow[0]?.world ?? 0),
       continental: Number(recordsRow[0]?.continental ?? 0),
       national: Number(recordsRow[0]?.national ?? 0),
+      state: Number(recordsRow[0]?.state ?? 0),
       total:
         Number(recordsRow[0]?.world ?? 0) +
         Number(recordsRow[0]?.continental ?? 0) +
@@ -708,6 +710,8 @@ export type PersonRecordHistoryEntry = {
   average: number;
   regionalSingleRecord: string | null;
   regionalAverageRecord: string | null;
+  stateSingleRecord: string | null;
+  stateAverageRecord: string | null;
   solves: number[];
 };
 
@@ -750,6 +754,8 @@ export async function getPersonRecordHistory(
         average: result.average,
         regionalSingleRecord: result.regionalSingleRecord,
         regionalAverageRecord: result.regionalAverageRecord,
+        stateSingleRecord: result.stateSingleRecord,
+        stateAverageRecord: result.stateAverageRecord,
       })
       .from(result)
       .innerJoin(event, eq(result.eventId, event.id))
@@ -760,6 +766,8 @@ export async function getPersonRecordHistory(
           or(
             inArray(result.regionalSingleRecord, ["NR", "NAR", "WR"]),
             inArray(result.regionalAverageRecord, ["NR", "NAR", "WR"]),
+            eq(result.stateSingleRecord, "SR"),
+            eq(result.stateAverageRecord, "SR"),
           ),
         ),
       )

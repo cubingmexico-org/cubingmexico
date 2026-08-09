@@ -44,3 +44,12 @@ export function tagsAfterStateRanksChange(stateId: string): string[] {
     "streak-ranks-gender-counts",
   ];
 }
+
+/** Person-scoped cache tags affected when historical SR markers change. */
+export function personStateRecordTags(personIds: string[]): string[] {
+  return personIds.flatMap((wcaId) => [
+    `person-page-${wcaId}`,
+    `person-data-${wcaId}`,
+    `person-record-history-${wcaId}`,
+  ]);
+}

@@ -59,6 +59,10 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
                 return item.desc
                   ? desc(sql`"state_records"`)
                   : asc(sql`"state_records"`);
+              case "historicalStateRecords":
+                return item.desc
+                  ? desc(sql`"historical_state_records"`)
+                  : asc(sql`"historical_state_records"`);
               case "podiums":
                 return item.desc ? desc(sql`"podiums"`) : asc(sql`"podiums"`);
               case "specialties":
@@ -88,7 +92,7 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
                       THEN 1 
                     END`,
           ).as("podiums"),
-          stateRecords: sql`(
+          stateRecords: sql<number>`(
                 SELECT CAST((
                   (SELECT COUNT(*)
                     FROM ranks_single
@@ -101,6 +105,14 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
                     AND state_rank = 1)
                 ) AS INTEGER) AS state_records
               )`.as("state_records"),
+          historicalStateRecords: sql<number>`(
+                SELECT CAST(COALESCE(SUM(
+                  (CASE WHEN state_single_record = 'SR' THEN 1 ELSE 0 END) +
+                  (CASE WHEN state_average_record = 'SR' THEN 1 ELSE 0 END)
+                ), 0) AS INTEGER)
+                FROM results
+                WHERE person_id = ${person.wcaId}
+              )`.as("historical_state_records"),
           specialties: teamMember.specialties,
         })
         .from(person)

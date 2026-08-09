@@ -7,6 +7,7 @@ import { updateTag } from "next/cache";
 import { getErrorMessage } from "@/lib/handle-error";
 import {
   invalidateAfterStateRanksChange,
+  invalidateAfterStateRecordsChange,
   invalidateStateMemberTags,
 } from "@/lib/cache-tags";
 import { requireTeamPermission } from "@/lib/team-auth";
@@ -14,6 +15,10 @@ import {
   clearPersonStateRanks,
   updateStateRanks,
 } from "@/lib/update-state-ranks";
+import {
+  clearPersonStateRecords,
+  updateStateRecords,
+} from "@/lib/update-state-records";
 import { person, teamMember } from "@workspace/db/schema";
 
 import { addMemberFormSchema } from "@/lib/validations";
@@ -85,8 +90,11 @@ export async function deleteMember(input: { id: string; stateId: string }) {
     });
 
     await clearPersonStateRanks([input.id]);
+    await clearPersonStateRecords([input.id]);
     await updateStateRanks(input.stateId);
     invalidateAfterStateRanksChange(input.stateId);
+    const records = await updateStateRecords(input.stateId);
+    invalidateAfterStateRecordsChange([input.id, ...records.personIds]);
     updateTag("persons-without-state");
 
     return {
@@ -116,8 +124,11 @@ export async function deleteMembers(input: { ids: string[]; stateId: string }) {
     });
 
     await clearPersonStateRanks(input.ids);
+    await clearPersonStateRecords(input.ids);
     await updateStateRanks(input.stateId);
     invalidateAfterStateRanksChange(input.stateId);
+    const records = await updateStateRecords(input.stateId);
+    invalidateAfterStateRecordsChange([...input.ids, ...records.personIds]);
     updateTag("persons-without-state");
 
     return {

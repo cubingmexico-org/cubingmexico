@@ -57,6 +57,13 @@
       "when": 1785782400000,
       "tag": "0007_team_member_role",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786300000000,
+      "tag": "0008_state_record_markers",
+      "breakpoints": true
     }
   ]
 }

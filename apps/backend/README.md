@@ -90,6 +90,7 @@ The app will be available at `http://localhost:5000`.
 - **Database & Rankings (admin/cron)**
   - `POST /update-database` — Update the full database from WCA exports
   - `POST /update-state-ranks` — Update state ranks
+  - `POST /update-state-records` — Update historical state record markers (SR)
   - `POST /update-sum-of-ranks` — Update sum of ranks
   - `POST /update-kinch-ranks` — Update Kinch ranks
   - `POST /update-streak-ranks` — Update personal-record streak ranks

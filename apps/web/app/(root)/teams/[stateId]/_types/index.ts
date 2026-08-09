@@ -6,7 +6,10 @@ export interface Member {
   gender: Person["gender"];
   role: TeamMember["role"] | null;
   podiums: number;
-  stateRecords: unknown;
+  /** Current state records (state_rank = 1). */
+  stateRecords: number;
+  /** Lifetime historical SR tags on results. */
+  historicalStateRecords: number;
   specialties: TeamMember["specialties"];
   // achievements: TeamMember["achievements"];
 }

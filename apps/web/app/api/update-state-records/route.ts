@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId, hasTeamPermission } from "@/lib/team-auth";
 import { invalidateAfterStateRecordsChange } from "@/lib/cache-tags";
-import { updateStateRanks } from "@/lib/update-state-ranks";
 import { updateStateRecords } from "@/lib/update-state-records";
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -23,13 +22,14 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    await updateStateRanks(stateId);
-    const records = await updateStateRecords(stateId);
-    invalidateAfterStateRecordsChange(records.personIds);
+    const result = await updateStateRecords(stateId);
+    invalidateAfterStateRecordsChange(result.personIds);
 
     return NextResponse.json({
       success: true,
-      message: "Database updated successfully for the given stateId",
+      message: "State records updated successfully for the given stateId",
+      singleCount: result.singleCount,
+      averageCount: result.averageCount,
     });
   } catch (error) {
     console.error(error);

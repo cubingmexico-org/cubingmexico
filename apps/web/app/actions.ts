@@ -13,6 +13,7 @@ import {
 import { getErrorMessage } from "@/lib/handle-error";
 import {
   invalidateAfterStateRanksChange,
+  invalidateAfterStateRecordsChange,
   invalidateStateMemberTags,
 } from "@/lib/cache-tags";
 import { getSessionUserId, requireTeamPermission } from "@/lib/team-auth";
@@ -20,6 +21,10 @@ import {
   clearPersonStateRanks,
   updateStateRanks,
 } from "@/lib/update-state-ranks";
+import {
+  clearPersonStateRecords,
+  updateStateRecords,
+} from "@/lib/update-state-records";
 import {
   addMemberFormSchema,
   profileFormSchema,
@@ -69,14 +74,19 @@ export async function profileFormAction(
     updateTag(`person-page-${data.personId}`);
 
     await clearPersonStateRanks([data.personId]);
+    await clearPersonStateRecords([data.personId]);
 
     if (previousStateId && previousStateId !== data.stateId) {
       await updateStateRanks(previousStateId);
       invalidateAfterStateRanksChange(previousStateId);
+      const previousRecords = await updateStateRecords(previousStateId);
+      invalidateAfterStateRecordsChange(previousRecords.personIds);
     }
 
     await updateStateRanks(data.stateId);
     invalidateAfterStateRanksChange(data.stateId);
+    const newRecords = await updateStateRecords(data.stateId);
+    invalidateAfterStateRecordsChange([data.personId, ...newRecords.personIds]);
 
     return {
       defaultValues: {
@@ -188,6 +198,8 @@ export async function addMemberFormAction(
 
     await updateStateRanks(data.stateId);
     invalidateAfterStateRanksChange(data.stateId);
+    const records = await updateStateRecords(data.stateId);
+    invalidateAfterStateRecordsChange(records.personIds);
     invalidateStateMemberTags(data.stateId);
     updateTag("persons-without-state");
 

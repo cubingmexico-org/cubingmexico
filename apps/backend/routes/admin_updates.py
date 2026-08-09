@@ -1141,6 +1141,140 @@ def update_state_ranks():
         return jsonify({"success": False, "message": "Error updating state rankings"}), 500
 
 
+@admin_bp.route("/update-state-records", methods=["POST"])
+@require_cron_auth
+def update_state_records():
+    """Recompute historical state record markers (SR) on results using current state membership."""
+    single_sr_ids = []
+    average_sr_ids = []
+    try:
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+                log.info("Clearing all historical state record markers")
+                cur.execute(
+                    """
+                    UPDATE results
+                    SET state_single_record = NULL,
+                        state_average_record = NULL
+                    """
+                )
+
+                cur.execute("SELECT id, name FROM states")
+                states = cur.fetchall()
+
+                if EXCLUDED_EVENTS:
+                    placeholders = ",".join(["%s"] * len(EXCLUDED_EVENTS))
+                    query = f"SELECT id FROM events WHERE id NOT IN ({placeholders})"
+                    cur.execute(query, EXCLUDED_EVENTS)
+                else:
+                    cur.execute("SELECT id FROM events")
+                events = cur.fetchall()
+
+                for state_row in states:
+                    state_id = state_row.id
+                    log.info("Computing historical state records for state: %s", state_row.name)
+
+                    cur.execute(
+                        "SELECT wca_id FROM persons WHERE state_id = %s",
+                        (state_id,),
+                    )
+                    person_rows = cur.fetchall()
+                    person_ids = [p.wca_id for p in person_rows]
+                    if not person_ids:
+                        continue
+
+                    for event_row in events:
+                        event_id = event_row.id
+
+                        cur.execute(
+                            """
+                            SELECT r.id, r.best AS value
+                            FROM results r
+                            INNER JOIN competitions c ON r.competition_id = c.id
+                            LEFT JOIN round_types rt ON r.round_type_id = rt.id
+                            WHERE r.event_id = %s
+                              AND r.person_id = ANY(%s)
+                              AND r.best > 0
+                            ORDER BY c.start_date ASC,
+                                     c.id ASC,
+                                     COALESCE(rt.rank, 0) ASC,
+                                     r.best ASC,
+                                     r.id ASC
+                            """,
+                            (event_id, person_ids),
+                        )
+                        best_so_far = None
+                        for row in cur.fetchall():
+                            if best_so_far is None or row.value <= best_so_far:
+                                single_sr_ids.append(row.id)
+                                best_so_far = row.value
+
+                        cur.execute(
+                            """
+                            SELECT r.id, r.average AS value
+                            FROM results r
+                            INNER JOIN competitions c ON r.competition_id = c.id
+                            LEFT JOIN round_types rt ON r.round_type_id = rt.id
+                            WHERE r.event_id = %s
+                              AND r.person_id = ANY(%s)
+                              AND r.average > 0
+                            ORDER BY c.start_date ASC,
+                                     c.id ASC,
+                                     COALESCE(rt.rank, 0) ASC,
+                                     r.average ASC,
+                                     r.id ASC
+                            """,
+                            (event_id, person_ids),
+                        )
+                        best_so_far = None
+                        for row in cur.fetchall():
+                            if best_so_far is None or row.value <= best_so_far:
+                                average_sr_ids.append(row.id)
+                                best_so_far = row.value
+
+                chunk_size = 500
+                for i in range(0, len(single_sr_ids), chunk_size):
+                    chunk = single_sr_ids[i : i + chunk_size]
+                    cur.execute(
+                        """
+                        UPDATE results
+                        SET state_single_record = 'SR'
+                        WHERE id = ANY(%s)
+                        """,
+                        (chunk,),
+                    )
+
+                for i in range(0, len(average_sr_ids), chunk_size):
+                    chunk = average_sr_ids[i : i + chunk_size]
+                    cur.execute(
+                        """
+                        UPDATE results
+                        SET state_average_record = 'SR'
+                        WHERE id = ANY(%s)
+                        """,
+                        (chunk,),
+                    )
+
+                conn.commit()
+
+        log.info(
+            "State records updated successfully (singles=%s, averages=%s)",
+            len(single_sr_ids),
+            len(average_sr_ids),
+        )
+        return jsonify(
+            {
+                "success": True,
+                "message": "State records updated successfully",
+                "singleCount": len(single_sr_ids),
+                "averageCount": len(average_sr_ids),
+            }
+        )
+    except Exception as e:
+        log.error("Error updating state records: %s", e)
+        return jsonify({"success": False, "message": "Error updating state records"}), 500
+
+
 @admin_bp.route("/update-existing-mexican-competitions", methods=["POST"])
 @require_cron_auth
 def update_existing_mexican_competitions():
@@ -1652,6 +1786,7 @@ def update_all():
         updates = [
             ("update_full_database", update_full_database),
             ("update_state_ranks", update_state_ranks),
+            ("update_state_records", update_state_records),
             ("update_sum_of_ranks", update_sum_of_ranks),
             ("update_kinch_ranks", update_kinch_ranks),
             ("update_streak_ranks", update_streak_ranks),
