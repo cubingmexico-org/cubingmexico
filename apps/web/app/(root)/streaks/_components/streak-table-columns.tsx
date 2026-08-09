@@ -11,8 +11,10 @@ interface GetColumnsProps {
   genderCounts: Record<string, number>;
 }
 
-export function getColumns(props: GetColumnsProps): ColumnDef<StreakRanks>[] {
-  void props;
+export function getColumns({
+  stateCounts,
+  genderCounts,
+}: GetColumnsProps): ColumnDef<StreakRanks>[] {
   return [
     {
       accessorKey: "rank",
@@ -73,58 +75,33 @@ export function getColumns(props: GetColumnsProps): ColumnDef<StreakRanks>[] {
       ),
       enableHiding: false,
     },
-    // {
-    //   accessorKey: "state",
-    //   header: ({ column }) => (
-    //     <DataTableColumnHeader column={column} title="Estado" />
-    //   ),
-    //   cell: ({ row }) => {
-    //     const state = row.getValue("state");
-    //     return <div className="flex space-x-2">{state}</div>;
-    //   },
-    //   meta: {
-    //     label: "Estado",
-    //     variant: "filter",
-    //     options: Object.entries(stateCounts).map(([name, count]) => ({
-    //       label: `${name} (${count})`,
-    //       value: name,
-    //     })),
-    //   },
-    //   enableColumnFilter: true,
-    // },
     {
-      accessorKey: "gender",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Género" />
-      ),
-      cell: ({ row }) => {
-        const gender = row.getValue("gender");
-        const genderMap: Record<string, string> = {
-          m: "Masculino",
-          f: "Femenino",
-          o: "Otro",
-        };
-        return (
-          <div className="flex space-x-2">
-            {gender ? genderMap[gender as string] : "-"}
-          </div>
-        );
+      id: "state",
+      accessorKey: "state",
+      meta: {
+        label: "Estado",
+        variant: "multiSelect",
+        options: Object.keys(stateCounts).map((name) => ({
+          label: name,
+          value: name,
+          count: stateCounts[name],
+        })),
       },
-      // meta: {
-      //   label: "Género",
-      //   variant: "filter",
-      //   options: Object.entries(genderCounts).map(([gender, count]) => {
-      //     const genderMap: Record<string, string> = {
-      //       m: "Masculino",
-      //       f: "Femenino",
-      //       o: "Otro",
-      //     };
-      //     return {
-      //       label: `${genderMap[gender]} (${count})`,
-      //       value: gender,
-      //     };
-      //   }),
-      // },
+      enableColumnFilter: true,
+    },
+    {
+      id: "gender",
+      accessorKey: "gender",
+      meta: {
+        label: "Género",
+        variant: "multiSelect",
+        options: Object.keys(genderCounts).map((name) => ({
+          label:
+            name === "m" ? "Masculino" : name === "f" ? "Femenino" : "Otro",
+          value: name,
+          count: genderCounts[name],
+        })),
+      },
       enableColumnFilter: true,
     },
   ];

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sum Of Ranks | Cubing México",
+  title: "Rachas de Récords Personales | Cubing México",
   description:
-    "Encuentra el ranking de los mejores cuberos de México en cada evento de la WCA. Filtra por estado, género y más.",
+    "Ranking de rachas de competencias consecutivas con récords personales (single o promedio) de los speedcubers de México.",
 };
 
 export default async function Layout({
