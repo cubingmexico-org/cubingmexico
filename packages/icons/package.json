@@ -11,6 +11,7 @@
     "@types/react-dom": "^19.2.2",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "eslint": "^9.39.1",
     "typescript": "^5.9.3"
   },
   "dependencies": {
