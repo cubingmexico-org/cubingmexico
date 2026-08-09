@@ -22,7 +22,7 @@ export async function getStreakRanks(input: GetStreakRanksSchema) {
         : undefined,
     );
 
-    const _orderBy =
+    const orderBy =
       input.sort.length > 0
         ? input.sort.map((item) => {
             switch (item.id) {
@@ -32,15 +32,13 @@ export async function getStreakRanks(input: GetStreakRanksSchema) {
                 return item.desc ? desc(state.name) : asc(state.name);
               case "gender":
                 return item.desc ? desc(person.gender) : asc(person.gender);
-              // default:
-              //   return item.desc
-              //     ? desc(streakRanks[item.id as keyof typeof streakRanks])
-              //     : asc(streakRanks[item.id as keyof typeof streakRanks]);
+              default:
+                return item.desc
+                  ? desc(streakRanks[item.id])
+                  : asc(streakRanks[item.id]);
             }
           })
         : [asc(streakRanks.rank)];
-
-    void _orderBy;
 
     const { data, total } = await db.transaction(async (tx) => {
       const data = await tx
@@ -58,8 +56,8 @@ export async function getStreakRanks(input: GetStreakRanksSchema) {
         .leftJoin(state, eq(person.stateId, state.id))
         .limit(input.perPage)
         .offset(offset)
-        .where(where);
-      // .orderBy(...orderBy);
+        .where(where)
+        .orderBy(...orderBy);
 
       const total = (await tx
         .select({

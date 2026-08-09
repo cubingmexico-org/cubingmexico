@@ -32,6 +32,7 @@ import {
   getMembershipData,
   getPersonCompetitionEventOptions,
   getPersonDataFromWCA,
+  hasPersonChampionshipPodiums,
 } from "./_lib/queries";
 import type { PersonalRecordWithStateRank } from "./_lib/queries";
 import { notFound } from "next/navigation";
@@ -81,16 +82,22 @@ async function PersonPageContent({ id }: { id: string }) {
     notFound();
   }
 
-  const [personData, organizerStatus, membershipData, eventOptions] =
-    await Promise.all([
-      getPersonData(id),
-      getOrganizerStatus(id),
-      getMembershipData(
-        id,
-        events.map((event) => event.id),
-      ),
-      getPersonCompetitionEventOptions(id),
-    ]);
+  const [
+    personData,
+    organizerStatus,
+    membershipData,
+    eventOptions,
+    showChampionshipPodiumsTab,
+  ] = await Promise.all([
+    getPersonData(id),
+    getOrganizerStatus(id),
+    getMembershipData(
+      id,
+      events.map((event) => event.id),
+    ),
+    getPersonCompetitionEventOptions(id),
+    hasPersonChampionshipPodiums(id),
+  ]);
 
   if (!personData) {
     notFound();
@@ -412,6 +419,7 @@ async function PersonPageContent({ id }: { id: string }) {
         wcaId={id}
         eventOptions={eventOptions}
         showRecordsTab={showRecordsTab}
+        showChampionshipPodiumsTab={showChampionshipPodiumsTab}
       />
     </>
   );

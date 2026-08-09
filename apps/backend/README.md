@@ -6,7 +6,7 @@ Flask backend that imports World Cube Association (WCA) export data, maintains c
 
 - Import and process official WCA TSV exports (competitions, persons, results, attempts, ranks).
 - Atomic updates and corruption checks for large TSV files.
-- State-level, national, sum-of-ranks and Kinch ranking computations.
+- State-level, national, sum-of-ranks, Kinch, and personal-record streak ranking computations.
 - Endpoints to fetch teams, states, ranks, and competitor state info via WCA WCIF.
 
 ## Requirements
@@ -92,6 +92,8 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-state-ranks` — Update state ranks
   - `POST /update-sum-of-ranks` — Update sum of ranks
   - `POST /update-kinch-ranks` — Update Kinch ranks
+  - `POST /update-streak-ranks` — Update personal-record streak ranks
+  - `POST /update-all` — Run full database import plus all derived rank updates
 
 ### Competitions API
 
@@ -138,7 +140,7 @@ Main tables used:
 
 - persons, competitions, results, result_attempts
 - ranks_single, ranks_average
-- sum_of_ranks, kinch_ranks
+- sum_of_ranks, kinch_ranks, streak_ranks
 - states, teams, events, export_metadata
 
 ## Notes

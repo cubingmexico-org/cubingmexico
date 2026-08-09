@@ -29,6 +29,7 @@ import type {
 import { getOrganizerLevel, type OrganizerLevel } from "@/lib/organizer-level";
 import {
   and,
+  asc,
   countDistinct,
   desc,
   eq,
@@ -868,5 +869,160 @@ export async function getPersonChampionshipPodiums(
   } catch (err) {
     console.error(err);
     return [];
+  }
+}
+
+export async function hasPersonChampionshipPodiums(
+  wcaId: string,
+): Promise<boolean> {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag(`person-championship-podiums-${wcaId}`);
+
+  try {
+    const rows = await db
+      .select({ resultId: result.id })
+      .from(result)
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .innerJoin(championship, eq(championship.competitionId, competition.id))
+      .where(
+        and(
+          eq(result.personId, wcaId),
+          inArray(result.roundTypeId, ["f", "c"]),
+          gt(result.best, 0),
+          sql`${result.pos} IN (1, 2, 3)`,
+        ),
+      )
+      .limit(1);
+
+    return rows.length > 0;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+export type PersonPrStreakCompetition = {
+  competitionId: string;
+  competitionName: string;
+  startDate: string;
+  endDate: string;
+};
+
+export type PersonPrStreaks = {
+  currentStreak: PersonPrStreakCompetition[];
+  longestStreak: PersonPrStreakCompetition[];
+};
+
+function isPersonalRecord(
+  eventId: string,
+  value: number,
+  records: Record<string, number>,
+): boolean {
+  if (value === 0 || value === -1) {
+    return false;
+  }
+  if (records[eventId] === undefined) {
+    return true;
+  }
+  return value <= records[eventId]!;
+}
+
+export async function getPersonPrStreaks(
+  wcaId: string,
+): Promise<PersonPrStreaks> {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag(`person-pr-streaks-${wcaId}`);
+
+  try {
+    const rows = await db
+      .select({
+        competitionId: result.competitionId,
+        eventId: result.eventId,
+        best: result.best,
+        average: result.average,
+        competitionName: competition.name,
+        startDate: competition.startDate,
+        endDate: competition.endDate,
+      })
+      .from(result)
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .where(eq(result.personId, wcaId))
+      .orderBy(asc(competition.startDate), asc(result.competitionId));
+
+    if (rows.length === 0) {
+      return { currentStreak: [], longestStreak: [] };
+    }
+
+    type CompMeta = {
+      competitionId: string;
+      competitionName: string;
+      startDate: Date;
+      endDate: Date;
+      results: Array<{ eventId: string; best: number; average: number }>;
+    };
+
+    const competitions: CompMeta[] = [];
+    let currentComp: CompMeta | null = null;
+
+    for (const row of rows) {
+      if (!currentComp || currentComp.competitionId !== row.competitionId) {
+        currentComp = {
+          competitionId: row.competitionId,
+          competitionName: row.competitionName,
+          startDate: row.startDate,
+          endDate: row.endDate,
+          results: [],
+        };
+        competitions.push(currentComp);
+      }
+      currentComp.results.push({
+        eventId: row.eventId,
+        best: row.best,
+        average: row.average,
+      });
+    }
+
+    const bestSingles: Record<string, number> = {};
+    const bestAverages: Record<string, number> = {};
+    let currentStreak: PersonPrStreakCompetition[] = [];
+    let longestStreak: PersonPrStreakCompetition[] = [];
+
+    for (const comp of competitions) {
+      let recordAttained = false;
+
+      for (const entry of comp.results) {
+        if (isPersonalRecord(entry.eventId, entry.best, bestSingles)) {
+          bestSingles[entry.eventId] = entry.best;
+          recordAttained = true;
+        }
+        if (isPersonalRecord(entry.eventId, entry.average, bestAverages)) {
+          bestAverages[entry.eventId] = entry.average;
+          recordAttained = true;
+        }
+      }
+
+      const streakComp: PersonPrStreakCompetition = {
+        competitionId: comp.competitionId,
+        competitionName: comp.competitionName,
+        startDate: comp.startDate.toISOString(),
+        endDate: comp.endDate.toISOString(),
+      };
+
+      if (recordAttained) {
+        currentStreak = [...currentStreak, streakComp];
+        if (currentStreak.length > longestStreak.length) {
+          longestStreak = currentStreak;
+        }
+      } else {
+        currentStreak = [];
+      }
+    }
+
+    return { currentStreak, longestStreak };
+  } catch (err) {
+    console.error(err);
+    return { currentStreak: [], longestStreak: [] };
   }
 }
