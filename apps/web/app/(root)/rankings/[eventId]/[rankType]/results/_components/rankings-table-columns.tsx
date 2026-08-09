@@ -27,7 +27,6 @@ export function getSingleColumns({
         <DataTableColumnHeader column={column} title="#" />
       ),
       cell: ({ row }) => <div>{row.getValue("index")}</div>,
-      enableSorting: false,
       enableHiding: false,
       size: 20,
     },
@@ -172,7 +171,6 @@ export function getAverageColumns({
         <DataTableColumnHeader column={column} title="#" />
       ),
       cell: ({ row }) => <div>{row.getValue("index")}</div>,
-      enableSorting: false,
       enableHiding: false,
       size: 20,
     },

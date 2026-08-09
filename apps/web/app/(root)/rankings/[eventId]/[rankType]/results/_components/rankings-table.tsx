@@ -48,13 +48,14 @@ export function RankSinglesTable({ promises }: RankSinglesTableProps) {
     columns,
     pageCount,
     initialState: {
-      sorting: [{ id: "index", desc: false }],
+      sorting: [{ id: "best", desc: false }],
       columnVisibility: {
         gender: false,
         stateRank: state.length > 0,
       },
     },
-    getRowId: (originalRow) => String(originalRow.index),
+    getRowId: (originalRow) =>
+      `${originalRow.personId}-${originalRow.competitionId}-${originalRow.best}`,
     shallow: false,
     clearOnDefault: true,
     enableRowSelection: false,
@@ -103,13 +104,14 @@ export function RankAveragesTable({ promises }: RankAveragesTableProps) {
     columns,
     pageCount,
     initialState: {
-      sorting: [{ id: "index", desc: false }],
+      sorting: [{ id: "average", desc: false }],
       columnVisibility: {
         gender: false,
         stateRank: state.length > 0,
       },
     },
-    getRowId: (originalRow) => String(originalRow.index),
+    getRowId: (originalRow) =>
+      `${originalRow.personId}-${originalRow.competitionId}-${originalRow.average}`,
     shallow: false,
     clearOnDefault: true,
     enableRowSelection: false,

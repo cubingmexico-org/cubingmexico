@@ -592,7 +592,9 @@ function FilterValueSelector<TData>({
             ) : (
               <>
                 <BadgeCheck />
-                <span className="truncate">Filtrar por &quot;{value}&quot;</span>
+                <span className="truncate">
+                  Filtrar por &quot;{value}&quot;
+                </span>
               </>
             )}
           </CommandItem>
@@ -661,7 +663,9 @@ function onFilterInputRender<TData>({
           id={inputId}
           type={isNumber ? "number" : "text"}
           inputMode={isNumber ? "numeric" : undefined}
-          placeholder={column.columnDef.meta?.placeholder ?? "Ingresa un valor..."}
+          placeholder={
+            column.columnDef.meta?.placeholder ?? "Ingresa un valor..."
+          }
           className="h-full w-24 rounded-none px-1.5"
           defaultValue={typeof filter.value === "string" ? filter.value : ""}
           onChange={(event) =>
