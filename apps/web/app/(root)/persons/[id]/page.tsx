@@ -16,12 +16,6 @@ import {
   getTier,
   getTierClass,
 } from "@/lib/utils";
-import { Info } from "lucide-react";
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-} from "@workspace/ui/components/tooltip";
 import { cn } from "@workspace/ui/lib/utils";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
@@ -108,7 +102,8 @@ async function PersonPageContent({ id }: { id: string }) {
   const isOrganizer = organizerStatus !== null;
   const isDelegate = person.delegateStatus !== null;
   const tier = getTier(membershipData);
-  const showRecordsTab = regionalRecords.total > 0;
+  const showRecordsTab =
+    regionalRecords.total > 0 || (regionalRecords.state ?? 0) > 0;
 
   const records = events.reduce<
     Array<{ event: string; record: PersonalRecordWithStateRank }>
@@ -125,12 +120,7 @@ async function PersonPageContent({ id }: { id: string }) {
     return accumulator;
   }, []);
 
-  const SRcount = records.reduce((total, record) => {
-    const singleRank = record.record.single?.stateRank === 1 ? 1 : 0;
-    const averageRank = record.record.average?.stateRank === 1 ? 1 : 0;
-
-    return total + singleRank + averageRank;
-  }, 0);
+  const SRcount = regionalRecords.state ?? 0;
 
   return (
     <>
@@ -385,17 +375,7 @@ async function PersonPageContent({ id }: { id: string }) {
                 <TableHead className="text-center">WR</TableHead>
                 <TableHead className="text-center">CR</TableHead>
                 <TableHead className="text-center">NR</TableHead>
-                <TableHead className="flex items-center gap-2 justify-center">
-                  SR
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="size-4" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Récords actuales, no histórico</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TableHead>
+                <TableHead className="text-center">SR</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

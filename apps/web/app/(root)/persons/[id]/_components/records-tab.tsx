@@ -28,7 +28,38 @@ function recordBadgeClass(type: string | null) {
   if (type === "NAR") return "bg-blue-500/15 text-blue-700 border-blue-500/30";
   if (type === "NR")
     return "bg-green-500/15 text-green-700 border-green-500/30";
+  if (type === "SR")
+    return "bg-violet-500/15 text-violet-700 border-violet-500/30";
   return "";
+}
+
+function RecordBadges({
+  regional,
+  state,
+}: {
+  regional: string | null;
+  state: string | null;
+}) {
+  return (
+    <>
+      {regional && (
+        <Badge
+          variant="outline"
+          className={cn("text-xs px-1 py-0 h-5", recordBadgeClass(regional))}
+        >
+          {regional}
+        </Badge>
+      )}
+      {state && (
+        <Badge
+          variant="outline"
+          className={cn("text-xs px-1 py-0 h-5", recordBadgeClass(state))}
+        >
+          {state}
+        </Badge>
+      )}
+    </>
+  );
 }
 
 export function PersonRecordsTab({ records }: Props) {
@@ -69,7 +100,7 @@ export function PersonRecordsTab({ records }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Historial de Récords Nacionales</CardTitle>
+        <CardTitle>Historial de Récords</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -113,46 +144,37 @@ export function PersonRecordsTab({ records }: Props) {
                     ? Math.max(...row.solves)
                     : undefined;
 
+                  const hasSingleRecord =
+                    !!row.regionalSingleRecord || !!row.stateSingleRecord;
+                  const hasAverageRecord =
+                    !!row.regionalAverageRecord || !!row.stateAverageRecord;
+
                   return (
                     <TableRow key={row.resultId}>
                       {/* Single */}
                       <TableCell className="whitespace-nowrap font-semibold">
-                        {row.regionalSingleRecord && (
+                        {hasSingleRecord && (
                           <div className="flex items-center gap-1.5">
                             {formatAttemptValue(row.eventId, row.best)}
-                            {row.regionalSingleRecord && (
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "text-xs px-1 py-0 h-5",
-                                  recordBadgeClass(row.regionalSingleRecord),
-                                )}
-                              >
-                                {row.regionalSingleRecord}
-                              </Badge>
-                            )}
+                            <RecordBadges
+                              regional={row.regionalSingleRecord}
+                              state={row.stateSingleRecord}
+                            />
                           </div>
                         )}
                       </TableCell>
 
                       {/* Average */}
                       <TableCell className="whitespace-nowrap font-semibold">
-                        {row.regionalAverageRecord && (
+                        {hasAverageRecord && (
                           <div className="flex items-center gap-1.5">
                             {row.eventId === "333fm"
                               ? row.average / 100
                               : formatAttemptValue(row.eventId, row.average)}
-                            {row.regionalAverageRecord && (
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "text-xs px-1 py-0 h-5",
-                                  recordBadgeClass(row.regionalAverageRecord),
-                                )}
-                              >
-                                {row.regionalAverageRecord}
-                              </Badge>
-                            )}
+                            <RecordBadges
+                              regional={row.regionalAverageRecord}
+                              state={row.stateAverageRecord}
+                            />
                           </div>
                         )}
                       </TableCell>
@@ -173,7 +195,7 @@ export function PersonRecordsTab({ records }: Props) {
                       </TableCell>
 
                       {/* Solves */}
-                      {row.regionalAverageRecord &&
+                      {hasAverageRecord &&
                         Array.from({ length: solveCount }).map((_, i) => {
                           const value = row.solves[i];
                           const formatted =

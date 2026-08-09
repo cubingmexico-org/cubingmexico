@@ -282,10 +282,15 @@ export const result = pgTable(
     formatId: varchar("format_id", { length: 1 }).notNull(),
     regionalSingleRecord: varchar("regional_single_record", { length: 3 }),
     regionalAverageRecord: varchar("regional_average_record", { length: 3 }),
+    // Cubing México — historical state records
+    stateSingleRecord: varchar("state_single_record", { length: 3 }),
+    stateAverageRecord: varchar("state_average_record", { length: 3 }),
   },
   (t) => [
     index("results_comp_event_idx").on(t.competitionId, t.eventId),
     index("results_person_idx").on(t.personId),
+    index("results_state_single_record_idx").on(t.stateSingleRecord),
+    index("results_state_average_record_idx").on(t.stateAverageRecord),
   ],
 );
 

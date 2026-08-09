@@ -77,6 +77,8 @@ export interface Records {
   national: number;
   continental: number;
   world: number;
+  /** Cubing México historical state records; absent on WCA API responses. */
+  state?: number;
   total: number;
 }
 
