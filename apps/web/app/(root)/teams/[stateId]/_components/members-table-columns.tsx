@@ -105,7 +105,7 @@ export function getColumns({
         <DataTableColumnHeader
           className="text-xs"
           column={column}
-          title="Récords Estatales"
+          title="SR actuales"
         />
       ),
       cell: ({ row }) => {
@@ -113,6 +113,26 @@ export function getColumns({
           <div className="flex space-x-2">
             <span className="text-accent-foreground">
               {row.getValue("stateRecords")}
+            </span>
+          </div>
+        );
+      },
+      enableHiding: false,
+    },
+    {
+      accessorKey: "historicalStateRecords",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          className="text-xs"
+          column={column}
+          title="SR históricos"
+        />
+      ),
+      cell: ({ row }) => {
+        return (
+          <div className="flex space-x-2">
+            <span className="text-accent-foreground">
+              {row.getValue("historicalStateRecords")}
             </span>
           </div>
         );

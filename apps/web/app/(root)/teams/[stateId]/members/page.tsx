@@ -55,13 +55,14 @@ export default async function Page(props: {
         <React.Suspense
           fallback={
             <DataTableSkeleton
-              columnCount={7}
+              columnCount={8}
               filterCount={3}
               cellWidths={[
                 "10rem",
                 "30rem",
                 "10rem",
                 "10rem",
+                "6rem",
                 "6rem",
                 "6rem",
                 "6rem",
