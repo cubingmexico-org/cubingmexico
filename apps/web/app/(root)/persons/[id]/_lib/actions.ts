@@ -4,6 +4,7 @@ import {
   getPersonChampionshipPodiums,
   getPersonCompetitionLocations,
   getPersonCompetitionResults,
+  getPersonPrStreaks,
   getPersonRecordHistory,
   getPersonStaffCompetitions,
 } from "./queries";
@@ -22,6 +23,10 @@ export async function loadPersonRecordHistory(wcaId: string) {
 
 export async function loadPersonChampionshipPodiums(wcaId: string) {
   return getPersonChampionshipPodiums(wcaId);
+}
+
+export async function loadPersonPrStreaks(wcaId: string) {
+  return getPersonPrStreaks(wcaId);
 }
 
 export async function loadPersonStaffCompetitions(wcaId: string) {

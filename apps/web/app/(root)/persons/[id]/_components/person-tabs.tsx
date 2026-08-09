@@ -16,10 +16,12 @@ import { PersonResultsTab } from "./results-tab";
 import { PersonResultsChartTab } from "./results-chart-tab";
 import { PersonRecordsTab } from "./records-tab";
 import { PersonChampionshipPodiumsTab } from "./championship-podiums-tab";
+import { PersonPrStreaksTab } from "./pr-streaks-tab";
 import { PersonStaffCompetitionsTab } from "./staff-competitions-tab";
 import { MapContainer } from "./map-container";
 import type {
   PersonChampionshipPodium,
+  PersonPrStreaks,
   PersonRecordHistoryEntry,
   PersonResultsByEventGroup,
   PersonResultsEventOption,
@@ -30,6 +32,7 @@ import {
   loadPersonChampionshipPodiums,
   loadPersonCompetitionResults,
   loadPersonMapData,
+  loadPersonPrStreaks,
   loadPersonRecordHistory,
   loadPersonStaffCompetitions,
 } from "../_lib/actions";
@@ -38,6 +41,7 @@ const TAB_VALUES = [
   "results-by-event",
   "results-chart",
   "records",
+  "pr-streaks",
   "championship-podiums",
   "map",
   "staff-competitions",
@@ -49,12 +53,14 @@ type PersonTabsProps = {
   wcaId: string;
   eventOptions: PersonResultsEventOption[];
   showRecordsTab: boolean;
+  showChampionshipPodiumsTab: boolean;
 };
 
 export function PersonTabs({
   wcaId,
   eventOptions,
   showRecordsTab,
+  showChampionshipPodiumsTab,
 }: PersonTabsProps) {
   const [{ tab, event }, setQuery] = useQueryStates({
     tab: parseAsStringLiteral(TAB_VALUES).withDefault("results-by-event"),
@@ -72,6 +78,7 @@ export function PersonTabs({
   const [recordHistory, setRecordHistory] = useState<
     PersonRecordHistoryEntry[] | null
   >(null);
+  const [prStreaks, setPrStreaks] = useState<PersonPrStreaks | null>(null);
   const [championshipPodiums, setChampionshipPodiums] = useState<
     PersonChampionshipPodium[] | null
   >(null);
@@ -84,6 +91,15 @@ export function PersonTabs({
     statesData: GeoJSONProps["data"] | undefined;
     visitedStateCount: number;
   } | null>(null);
+
+  useEffect(() => {
+    if (
+      (tab === "records" && !showRecordsTab) ||
+      (tab === "championship-podiums" && !showChampionshipPodiumsTab)
+    ) {
+      void setQuery({ tab: "results-by-event" });
+    }
+  }, [tab, showRecordsTab, showChampionshipPodiumsTab, setQuery]);
 
   useEffect(() => {
     if (
@@ -129,7 +145,30 @@ export function PersonTabs({
   }, [tab, wcaId, recordHistory]);
 
   useEffect(() => {
-    if (tab !== "championship-podiums" || championshipPodiums !== null) {
+    if (tab !== "pr-streaks" || prStreaks !== null) {
+      return;
+    }
+
+    let cancelled = false;
+    startTransition(() => {
+      void loadPersonPrStreaks(wcaId).then((streaks) => {
+        if (!cancelled) {
+          setPrStreaks(streaks);
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, wcaId, prStreaks]);
+
+  useEffect(() => {
+    if (
+      tab !== "championship-podiums" ||
+      !showChampionshipPodiumsTab ||
+      championshipPodiums !== null
+    ) {
       return;
     }
 
@@ -145,7 +184,7 @@ export function PersonTabs({
     return () => {
       cancelled = true;
     };
-  }, [tab, wcaId, championshipPodiums]);
+  }, [tab, wcaId, championshipPodiums, showChampionshipPodiumsTab]);
 
   useEffect(() => {
     if (tab !== "staff-competitions" || staffCompetitions !== null) {
@@ -194,11 +233,9 @@ export function PersonTabs({
     (staffCompetitions.organized.length > 0 ||
       staffCompetitions.delegated.length > 0);
 
-  const hasPodiums =
-    championshipPodiums !== null && championshipPodiums.length > 0;
-
-  // Always reserve slots for optional tabs that load on demand.
-  const tabCount = 5 + (showRecordsTab ? 1 : 0);
+  // Always: results, chart, pr-streaks, map, staff
+  const tabCount =
+    5 + (showRecordsTab ? 1 : 0) + (showChampionshipPodiumsTab ? 1 : 0);
 
   function selectTab(nextTab: TabValue) {
     void setQuery({ tab: nextTab });
@@ -222,15 +259,19 @@ export function PersonTabs({
           tabCount === 3 && "md:grid-cols-3",
           tabCount === 4 && "md:grid-cols-4",
           tabCount === 5 && "md:grid-cols-5",
-          tabCount >= 6 && "md:grid-cols-6",
+          tabCount === 6 && "md:grid-cols-6",
+          tabCount >= 7 && "md:grid-cols-7",
         )}
       >
         <TabsTrigger value="results-by-event">Resultados</TabsTrigger>
         <TabsTrigger value="results-chart">Gráfica</TabsTrigger>
         {showRecordsTab && <TabsTrigger value="records">Récords</TabsTrigger>}
-        <TabsTrigger value="championship-podiums">
-          Podios en Campeonatos
-        </TabsTrigger>
+        <TabsTrigger value="pr-streaks">Rachas de PRs</TabsTrigger>
+        {showChampionshipPodiumsTab && (
+          <TabsTrigger value="championship-podiums">
+            Podios en Campeonatos
+          </TabsTrigger>
+        )}
         <TabsTrigger value="map">Mapa</TabsTrigger>
         <TabsTrigger value="staff-competitions">Organización</TabsTrigger>
       </TabsList>
@@ -271,17 +312,23 @@ export function PersonTabs({
         </TabsContent>
       )}
 
-      <TabsContent value="championship-podiums" className="mt-6">
-        {championshipPodiums === null ? (
+      <TabsContent value="pr-streaks" className="mt-6">
+        {prStreaks === null ? (
           <Skeleton className="h-64 w-full" />
-        ) : hasPodiums ? (
-          <PersonChampionshipPodiumsTab podiums={championshipPodiums} />
         ) : (
-          <p className="text-sm text-muted-foreground text-center">
-            Esta persona no tiene podios en campeonatos.
-          </p>
+          <PersonPrStreaksTab streaks={prStreaks} />
         )}
       </TabsContent>
+
+      {showChampionshipPodiumsTab && (
+        <TabsContent value="championship-podiums" className="mt-6">
+          {championshipPodiums === null ? (
+            <Skeleton className="h-64 w-full" />
+          ) : (
+            <PersonChampionshipPodiumsTab podiums={championshipPodiums} />
+          )}
+        </TabsContent>
+      )}
 
       <TabsContent value="map" className="mt-6">
         {mapData === null ? (
