@@ -44,6 +44,7 @@ import {
   type YearStates,
   type RankProgressRow,
 } from "./summary-extra";
+import { isSummaryYearPublished } from "../../../_lib/summary-year";
 
 export type { SharedCuber, StateVisits };
 
@@ -153,26 +154,6 @@ function yearBounds(year: number): { start: Date; end: Date } {
 
 function isBetterResult(value: number, previousBest: number): boolean {
   return previousBest === 0 || value < previousBest;
-}
-
-/** Current-year summaries unlock on this UTC day-of-month in December. */
-const CURRENT_YEAR_SUMMARY_UNLOCK_DAY = 20;
-
-/**
- * Past years are always published. The current calendar year only becomes
- * available in the last days of December (from the 20th UTC onward).
- */
-export function isSummaryYearPublished(
-  year: number,
-  now: Date = new Date(),
-): boolean {
-  const currentYear = now.getUTCFullYear();
-  if (year < currentYear) return true;
-  if (year > currentYear) return false;
-
-  const month = now.getUTCMonth(); // 0-indexed
-  const day = now.getUTCDate();
-  return month === 11 && day >= CURRENT_YEAR_SUMMARY_UNLOCK_DAY;
 }
 
 async function getCompetedSummaryYears(wcaId: string): Promise<number[]> {

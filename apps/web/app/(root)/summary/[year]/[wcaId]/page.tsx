@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { getPerson } from "@/db/queries";
+import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
 import { getAnnualSummary } from "./_lib/queries";
 import { AnnualSummaryView } from "./_components/annual-summary-view";
 
@@ -18,6 +19,13 @@ function parseYear(raw: string): number | null {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  if (!ANNUAL_SUMMARY_ENABLED) {
+    return {
+      title: "Resumen no encontrado | Cubing México",
+      robots: { index: false, follow: false },
+    };
+  }
+
   const { year: yearRaw, wcaId } = await params;
   const year = parseYear(yearRaw);
   const person = await getPerson(wcaId);
@@ -56,6 +64,10 @@ async function SummaryPageContent({
 }
 
 async function SummaryPage({ params }: Props) {
+  if (!ANNUAL_SUMMARY_ENABLED) {
+    notFound();
+  }
+
   const { year: yearRaw, wcaId } = await params;
   const year = parseYear(yearRaw);
 

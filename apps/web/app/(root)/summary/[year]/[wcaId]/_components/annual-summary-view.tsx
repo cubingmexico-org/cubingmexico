@@ -11,6 +11,8 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { formatAttemptValue } from "@/lib/utils";
 import type { AnnualSummary } from "../_lib/queries";
+import { getShareHighlights } from "../_lib/share-highlights";
+import { SummaryShareButton } from "./summary-share-button";
 
 function subjectPronoun(gender: AnnualSummary["person"]["gender"]): string {
   if (gender === "f") return "Ella";
@@ -132,6 +134,12 @@ export function AnnualSummaryView({ summary }: Props) {
   const prevYearLabel = `≤${year - 1}`;
   const recordsTotal = records.wr + records.nar + records.nr + records.sr;
   const staffTotal = staff.organized.length + staff.delegated.length;
+  const shareData = {
+    name: displayName,
+    wcaId: person.wcaId,
+    year,
+    highlights: getShareHighlights(summary),
+  };
 
   return (
     <div className="flex flex-col gap-8 max-w-4xl mx-auto">
@@ -167,6 +175,11 @@ export function AnnualSummaryView({ summary }: Props) {
             ),
           )}
         </nav>
+        {shareData.highlights.length > 0 && (
+          <div className="flex justify-center pt-1">
+            <SummaryShareButton data={shareData} />
+          </div>
+        )}
         <p className="text-muted-foreground text-sm sm:text-base">
           En el año <Stat>{year}</Stat>, {displayName}{" "}
           {verbCompeted(person.gender)} en <Stat>{competitionCount}</Stat>{" "}
