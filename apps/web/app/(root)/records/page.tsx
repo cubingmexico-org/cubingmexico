@@ -6,6 +6,7 @@ import { StateSelector } from "./_components/state-selector";
 import { GenderSelector } from "./_components/gender-selector";
 import { EventSelector } from "./_components/event-selector";
 import { ShowSelector } from "./_components/show-selector";
+import { ClearFiltersButton } from "./_components/clear-filters-button";
 import {
   MixedRecordsTable,
   SeparateRecordsTables,
@@ -57,6 +58,8 @@ export default async function Page(props: PageProps) {
           <GenderSelector className="md:col-span-2" />
           <ShowSelector className="md:col-span-3" />
         </div>
+
+        <ClearFiltersButton />
       </div>
 
       {search.show === "mixed" ? (
