@@ -13,18 +13,8 @@ import {
   team,
   teamMember,
 } from "@workspace/db/schema";
-import {
-  and,
-  count,
-  ilike,
-  gt,
-  eq,
-  inArray,
-  asc,
-  desc,
-  sql,
-  or,
-} from "drizzle-orm";
+import { and, count, gt, eq, inArray, asc, desc, sql, or } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import { type GetMembersSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -250,7 +240,9 @@ export async function getMembers(
 
     const where = and(
       eq(person.stateId, stateId!),
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)
         : undefined,

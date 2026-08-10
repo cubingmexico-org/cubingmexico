@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import * as React from "react";
 import { RankTypeSelector } from "./rank-type-selector";
@@ -15,6 +16,7 @@ import {
 import { ResultTypeSelector } from "./result-type-selector";
 import { usePathname } from "next/navigation";
 import type { EventId } from "@/types/wca";
+import { AsOfDatePicker } from "@/components/as-of-date-picker";
 
 const searchParams = {
   name: parseAsString.withDefault(""),
@@ -22,6 +24,7 @@ const searchParams = {
   gender: parseAsArrayOf(
     parseAsStringEnum(person.gender.enumValues),
   ).withDefault([]),
+  asOf: parseAsString.withDefault(""),
   show: parseAsArrayOf(parseAsStringEnum(["results"])).withDefault([]),
 };
 const serialize = createSerializer(searchParams);
@@ -45,45 +48,31 @@ export function EventSelector({
 }: EventSelectorProps) {
   const eventName = events.find((event) => event.id === selectedEventId)?.name;
 
-  const [{ name, state, gender }] = useQueryStates(searchParams);
+  const [{ name, state, gender, asOf }] = useQueryStates(searchParams);
 
   const pathname = usePathname();
+
+  const preserved = { name, state, gender, asOf };
 
   const hrefSingle = serialize(
     pathname.includes("results")
       ? `/rankings/${selectedEventId}/single/results`
       : `/rankings/${selectedEventId}/single`,
-    {
-      name,
-      state,
-      gender,
-    },
+    preserved,
   );
   const hrefAverage = serialize(
     pathname.includes("results")
       ? `/rankings/${selectedEventId}/average/results`
       : `/rankings/${selectedEventId}/average`,
-    {
-      name,
-      state,
-      gender,
-    },
+    preserved,
   );
   const hrefPersons = serialize(
     `/rankings/${selectedEventId}/${selectedRankType}`,
-    {
-      name,
-      state,
-      gender,
-    },
+    preserved,
   );
   const hrefResults = serialize(
     `/rankings/${selectedEventId}/${selectedRankType}/results`,
-    {
-      name,
-      state,
-      gender,
-    },
+    preserved,
   );
 
   return (
@@ -100,27 +89,30 @@ export function EventSelector({
               pathname.includes("results")
                 ? `/rankings/${event.id}/${selectedRankType}/results`
                 : `/rankings/${event.id}/${selectedRankType}`,
-              {
-                name,
-                state,
-                gender,
-              },
+              preserved,
             );
 
             return (
-              <Link
+              <Button
                 key={event.id}
+                variant="outline"
+                size="icon"
+                asChild
                 className={cn(
-                  `cubing-icon event-${event.id} text-2xl hover:text-primary/50 transition-colors`,
-                  selectedEventId === event.id && "text-primary",
+                  "size-10 text-muted-foreground",
+                  selectedEventId === event.id &&
+                    "bg-accent text-primary border-primary",
                 )}
-                href={href}
-              />
+              >
+                <Link href={href} aria-label={event.name}>
+                  <span className={`cubing-icon event-${event.id} text-2xl`} />
+                </Link>
+              </Button>
             );
           })}
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <RankTypeSelector
           hrefSingle={hrefSingle}
           hrefAverage={hrefAverage}
@@ -132,6 +124,7 @@ export function EventSelector({
           hrefPersons={hrefPersons}
         />
       </div>
+      <AsOfDatePicker className="sm:max-w-xs" />
     </div>
   );
 }

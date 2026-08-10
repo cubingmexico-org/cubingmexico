@@ -24,7 +24,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <span className="text-foreground">
             Asociación Mexicana de Speedcubing (AMS)
           </span>
-          , usando el número de competencias organizadas.{" "}
+          , usando el número de competencias organizadas en los últimos 2 años.
+          Quienes no hayan organizado en ese periodo aparecen como Inactivo.{" "}
           <Link
             href={AMS_ORGANIZER_EXPERIENCE_TABLE_URL}
             target="_blank"

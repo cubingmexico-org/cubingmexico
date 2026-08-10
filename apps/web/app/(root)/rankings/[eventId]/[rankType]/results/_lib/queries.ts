@@ -10,7 +10,9 @@ import {
   result,
   competition,
 } from "@workspace/db/schema";
-import { and, count, ilike, gt, inArray, eq, asc, desc } from "drizzle-orm";
+import { and, count, gt, inArray, eq, asc, desc } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
+import { competitionAsOfCondition } from "@/lib/as-of-date";
 import type {
   GetResultAveragesSchema,
   GetResultSinglesSchema,
@@ -21,8 +23,9 @@ export async function getRankSingles(
   input: GetResultSinglesSchema,
   eventId: Event["id"],
 ) {
+  const asOfKey = input.asOf || "all";
   cacheLife("days");
-  cacheTag(`results-single-${eventId}`);
+  cacheTag(`results-single-${eventId}-${asOfKey}`);
   cacheTag("results-single");
 
   try {
@@ -31,11 +34,14 @@ export async function getRankSingles(
     const where = and(
       gt(result.best, 0),
       eq(result.eventId, eventId),
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)
         : undefined,
+      competitionAsOfCondition(input.asOf),
     );
 
     const orderBy =
@@ -112,9 +118,13 @@ export async function getRankSingles(
   }
 }
 
-export async function getRankSinglesStateCounts(eventId: Event["id"]) {
+export async function getRankSinglesStateCounts(
+  eventId: Event["id"],
+  asOf = "",
+) {
+  const asOfKey = asOf || "all";
   cacheLife("days");
-  cacheTag(`results-single-state-counts-${eventId}`);
+  cacheTag(`results-single-state-counts-${eventId}-${asOfKey}`);
   cacheTag("results-single");
 
   try {
@@ -127,7 +137,7 @@ export async function getRankSinglesStateCounts(eventId: Event["id"]) {
       .innerJoin(person, eq(result.personId, person.wcaId))
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .leftJoin(state, eq(person.stateId, state.id))
-      .where(eq(result.eventId, eventId))
+      .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
       .groupBy(state.name)
       .having(gt(count(), 0))
       .orderBy(state.name)
@@ -147,9 +157,13 @@ export async function getRankSinglesStateCounts(eventId: Event["id"]) {
   }
 }
 
-export async function getRankSinglesGenderCounts(eventId: Event["id"]) {
+export async function getRankSinglesGenderCounts(
+  eventId: Event["id"],
+  asOf = "",
+) {
+  const asOfKey = asOf || "all";
   cacheLife("days");
-  cacheTag(`results-single-gender-counts-${eventId}`);
+  cacheTag(`results-single-gender-counts-${eventId}-${asOfKey}`);
   cacheTag("results-single");
 
   try {
@@ -161,7 +175,7 @@ export async function getRankSinglesGenderCounts(eventId: Event["id"]) {
       .from(result)
       .innerJoin(person, eq(result.personId, person.wcaId))
       .innerJoin(competition, eq(result.competitionId, competition.id))
-      .where(eq(result.eventId, eventId))
+      .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
       .groupBy(person.gender)
       .having(gt(count(), 0))
       .orderBy(person.gender)
@@ -185,8 +199,9 @@ export async function getRankAverages(
   input: GetResultAveragesSchema,
   eventId: Event["id"],
 ) {
+  const asOfKey = input.asOf || "all";
   cacheLife("days");
-  cacheTag(`results-average-${eventId}`);
+  cacheTag(`results-average-${eventId}-${asOfKey}`);
   cacheTag("results-average");
 
   try {
@@ -195,11 +210,14 @@ export async function getRankAverages(
     const where = and(
       gt(result.average, 0),
       eq(result.eventId, eventId),
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)
         : undefined,
+      competitionAsOfCondition(input.asOf),
     );
 
     const orderBy =
@@ -276,9 +294,13 @@ export async function getRankAverages(
   }
 }
 
-export async function getRankAveragesStateCounts(eventId: Event["id"]) {
+export async function getRankAveragesStateCounts(
+  eventId: Event["id"],
+  asOf = "",
+) {
+  const asOfKey = asOf || "all";
   cacheLife("days");
-  cacheTag(`results-average-state-counts-${eventId}`);
+  cacheTag(`results-average-state-counts-${eventId}-${asOfKey}`);
   cacheTag("results-average");
 
   try {
@@ -291,7 +313,7 @@ export async function getRankAveragesStateCounts(eventId: Event["id"]) {
       .innerJoin(person, eq(result.personId, person.wcaId))
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .leftJoin(state, eq(person.stateId, state.id))
-      .where(eq(result.eventId, eventId))
+      .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
       .groupBy(state.name)
       .having(gt(count(), 0))
       .orderBy(state.name)
@@ -311,9 +333,13 @@ export async function getRankAveragesStateCounts(eventId: Event["id"]) {
   }
 }
 
-export async function getRankAveragesGenderCounts(eventId: Event["id"]) {
+export async function getRankAveragesGenderCounts(
+  eventId: Event["id"],
+  asOf = "",
+) {
+  const asOfKey = asOf || "all";
   cacheLife("days");
-  cacheTag(`results-average-gender-counts-${eventId}`);
+  cacheTag(`results-average-gender-counts-${eventId}-${asOfKey}`);
   cacheTag("results-average");
 
   try {
@@ -326,7 +352,7 @@ export async function getRankAveragesGenderCounts(eventId: Event["id"]) {
       .innerJoin(person, eq(result.personId, person.wcaId))
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .leftJoin(state, eq(person.stateId, state.id))
-      .where(eq(result.eventId, eventId))
+      .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
       .groupBy(person.gender)
       .having(gt(count(), 0))
       .orderBy(person.gender)

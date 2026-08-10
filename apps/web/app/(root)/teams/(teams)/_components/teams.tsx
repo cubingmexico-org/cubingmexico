@@ -7,6 +7,7 @@ import { Input } from "@workspace/ui/components/input";
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { Search } from "lucide-react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { normalizeSearchText } from "@/lib/search";
 
 const TeamsStateMap = dynamic(
   () => import("./teams-state-map").then((mod) => mod.TeamsStateMap),
@@ -25,15 +26,6 @@ export interface Team {
   members: number;
 }
 
-export function normalizeText(value: string | null | undefined) {
-  return value
-    ? value
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-    : "";
-}
-
 export function Teams({
   teams,
   statesData,
@@ -45,12 +37,12 @@ export function Teams({
   const [activeTab, setActiveTab] = useState("all");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
 
-  const normalizedSearch = normalizeText(searchQuery);
+  const normalizedSearch = normalizeSearchText(searchQuery);
 
   const filteredTeams = teams.filter((team) => {
     const matchesSearch =
-      normalizeText(team.name).includes(normalizedSearch) ||
-      normalizeText(team.state).includes(normalizedSearch);
+      normalizeSearchText(team.name).includes(normalizedSearch) ||
+      normalizeSearchText(team.state).includes(normalizedSearch);
     const matchesTab =
       activeTab === "all" ||
       (activeTab === "active" && team.isActive) ||

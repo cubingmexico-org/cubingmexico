@@ -10,7 +10,10 @@
     "UPLOADTHING_TOKEN",
     "API_URL",
     "BETTER_AUTH_URL",
-    "BETTER_AUTH_SECRET"
+    "BETTER_AUTH_SECRET",
+    "BACKEND_URL",
+    "SUPERADMIN_WCA_IDS",
+    "NEXT_PUBLIC_ANNUAL_SUMMARY_ENABLED"
   ],
   "tasks": {
     "build": {

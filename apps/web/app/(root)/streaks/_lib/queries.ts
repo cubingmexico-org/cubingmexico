@@ -3,7 +3,8 @@
 import "server-only";
 import { db } from "@workspace/db";
 import { state, person, streakRanks, type State } from "@workspace/db/schema";
-import { and, count, ilike, gt, eq, desc, asc, inArray } from "drizzle-orm";
+import { and, count, gt, eq, desc, asc, inArray } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import { type GetStreakRanksSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -15,7 +16,9 @@ export async function getStreakRanks(input: GetStreakRanksSchema) {
     const offset = (input.page - 1) * input.perPage;
 
     const where = and(
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)

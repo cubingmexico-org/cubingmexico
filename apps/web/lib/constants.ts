@@ -1,6 +1,13 @@
 export const unknownError =
   "An unknown error occurred. Please try again later.";
 
+/**
+ * Annual summary feature. Keep false until public release later this year.
+ * When enabled, entry is only via the logged-in user dropdown (not person pages).
+ */
+export const ANNUAL_SUMMARY_ENABLED =
+  process.env.NEXT_PUBLIC_ANNUAL_SUMMARY_ENABLED === "true";
+
 export const EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic"];
 
 export const SINGLE_EVENTS = ["333fm", "333bf", "333mbf", "444bf", "555bf"];

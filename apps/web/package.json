@@ -28,6 +28,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.44.7",
+    "html-to-image": "^1.11.13",
     "jszip": "^3.10.1",
     "leaflet": "^1.9.4",
     "leaflet-defaulticon-compatibility": "^0.1.2",

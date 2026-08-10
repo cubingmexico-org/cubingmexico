@@ -76,8 +76,8 @@ export default async function Page(props: PageProps) {
       },
       eventId,
     ),
-    getRankSinglesStateCounts(eventId),
-    getRankSinglesGenderCounts(eventId),
+    getRankSinglesStateCounts(eventId, searchSingle.asOf),
+    getRankSinglesGenderCounts(eventId, searchSingle.asOf),
   ]);
 
   const averagePromises = Promise.all([
@@ -88,8 +88,8 @@ export default async function Page(props: PageProps) {
       },
       eventId,
     ),
-    getRankAveragesStateCounts(eventId),
-    getRankAveragesGenderCounts(eventId),
+    getRankAveragesStateCounts(eventId, searchAverage.asOf),
+    getRankAveragesGenderCounts(eventId, searchAverage.asOf),
   ]);
 
   const events = await getEvents();

@@ -12,7 +12,6 @@ import {
 import {
   and,
   count,
-  ilike,
   gt,
   eq,
   desc,
@@ -21,6 +20,7 @@ import {
   countDistinct,
   sql,
 } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import { type GetPersonsSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -32,7 +32,9 @@ export async function getCompetitors(input: GetPersonsSchema) {
     const offset = (input.page - 1) * input.perPage;
 
     const where = and(
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)

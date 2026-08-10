@@ -16,7 +16,6 @@ import {
   asc,
   count,
   desc,
-  ilike,
   sql,
   gt,
   inArray,
@@ -25,6 +24,7 @@ import {
   eq,
   lt,
 } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import { type GetCompetitionsSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -39,7 +39,9 @@ export async function getCompetitions(input: GetCompetitionsSchema) {
 
     const where = and(
       eq(competition.countryId, "Mexico"),
-      input.name ? ilike(competition.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(competition.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.events.length > 0 ? inArray(event.name, input.events) : undefined,
       input.status.length > 0
@@ -289,7 +291,9 @@ export async function getCompetitionsLocations(input: GetCompetitionsSchema) {
 
     const where = and(
       eq(competition.countryId, "Mexico"),
-      input.name ? ilike(competition.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(competition.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.events.length > 0 ? inArray(event.name, input.events) : undefined,
       input.status.length > 0

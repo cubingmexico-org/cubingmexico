@@ -8,27 +8,30 @@ import {
   type State,
   organizer,
   competitionOrganizer,
+  competition,
 } from "@workspace/db/schema";
 import {
   organizerLevelFilterSql,
+  recentOrganizedCompetitionCountSql,
   type OrganizerLevelFilter,
 } from "@/lib/organizer-level";
 import {
   and,
   count,
-  ilike,
+  countDistinct,
   gt,
   eq,
   desc,
   asc,
   inArray,
-  countDistinct,
   sql,
 } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import { type GetOrganizersSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
-const organizedCompetitionCount = countDistinct(
+const organizedCompetitionCount = recentOrganizedCompetitionCountSql();
+const totalOrganizedCompetitionCount = countDistinct(
   competitionOrganizer.competitionId,
 );
 const organizerLevel = organizerLevelFilterSql(organizedCompetitionCount);
@@ -49,7 +52,9 @@ export async function getOrganizers(input: GetOrganizersSchema) {
         : undefined;
 
     const where = and(
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)
@@ -67,6 +72,10 @@ export async function getOrganizers(input: GetOrganizersSchema) {
                 return item.desc
                   ? desc(organizedCompetitionCount)
                   : asc(organizedCompetitionCount);
+              case "totalCompetitions":
+                return item.desc
+                  ? desc(totalOrganizedCompetitionCount)
+                  : asc(totalOrganizedCompetitionCount);
               default:
                 return item.desc ? desc(person[item.id]) : asc(person[item.id]);
             }
@@ -82,11 +91,16 @@ export async function getOrganizers(input: GetOrganizersSchema) {
           state: state.name,
           level: organizerLevel.as("level"),
           competitions: organizedCompetitionCount,
+          totalCompetitions: totalOrganizedCompetitionCount,
         })
         .from(organizer)
         .innerJoin(
           competitionOrganizer,
           eq(organizer.id, competitionOrganizer.organizerId),
+        )
+        .innerJoin(
+          competition,
+          eq(competitionOrganizer.competitionId, competition.id),
         )
         .innerJoin(person, eq(organizer.personId, person.wcaId))
         .leftJoin(state, eq(person.stateId, state.id))
@@ -105,6 +119,10 @@ export async function getOrganizers(input: GetOrganizersSchema) {
         .innerJoin(
           competitionOrganizer,
           eq(organizer.id, competitionOrganizer.organizerId),
+        )
+        .innerJoin(
+          competition,
+          eq(competitionOrganizer.competitionId, competition.id),
         )
         .innerJoin(person, eq(organizer.personId, person.wcaId))
         .leftJoin(state, eq(person.stateId, state.id))
@@ -125,6 +143,8 @@ export async function getOrganizers(input: GetOrganizersSchema) {
       data: data.map((row) => ({
         ...row,
         level: row.level as OrganizerLevelFilter,
+        competitions: Number(row.competitions),
+        totalCompetitions: Number(row.totalCompetitions),
       })),
       pageCount,
     };
@@ -202,9 +222,8 @@ export async function getOrganizerLevelCounts() {
   cacheTag("organizers-level-counts");
 
   try {
-    const innerLevel = organizerLevelFilterSql(
-      sql`COUNT(DISTINCT ${competitionOrganizer.competitionId})`,
-    );
+    const recentCount = recentOrganizedCompetitionCountSql();
+    const innerLevel = organizerLevelFilterSql(recentCount);
 
     const rows = (await db.execute(sql`
       SELECT level, COUNT(*)::int AS count
@@ -213,6 +232,8 @@ export async function getOrganizerLevelCounts() {
         FROM ${organizer}
         INNER JOIN ${competitionOrganizer}
           ON ${competitionOrganizer.organizerId} = ${organizer.id}
+        INNER JOIN ${competition}
+          ON ${competition.id} = ${competitionOrganizer.competitionId}
         INNER JOIN ${person}
           ON ${organizer.personId} = ${person.wcaId}
         GROUP BY ${person.wcaId}
@@ -224,6 +245,7 @@ export async function getOrganizerLevelCounts() {
         WHEN 'Experto' THEN 3
         WHEN 'Maestro' THEN 4
         WHEN 'Leyenda' THEN 5
+        WHEN 'Inactivo' THEN 6
       END
     `)) as unknown as { level: OrganizerLevelFilter; count: number }[];
 

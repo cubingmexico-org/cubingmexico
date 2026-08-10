@@ -7,4 +7,5 @@ export interface Person {
   state: string | null;
   level: OrganizerLevelFilter;
   competitions: number;
+  totalCompetitions: number;
 }

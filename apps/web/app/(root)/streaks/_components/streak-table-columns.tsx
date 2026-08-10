@@ -54,7 +54,7 @@ export function getColumns({
     {
       accessorKey: "currentStreak",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Racha Actual" />
+        <DataTableColumnHeader column={column} title="Actual" />
       ),
       cell: ({ row }) => (
         <div className="flex space-x-2 justify-center font-semibold">
@@ -66,7 +66,7 @@ export function getColumns({
     {
       accessorKey: "longestStreak",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Racha Más Larga" />
+        <DataTableColumnHeader column={column} title="Más Larga" />
       ),
       cell: ({ row }) => (
         <div className="flex space-x-2 justify-center font-semibold">

@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { Users, UserCheck, UserIcon, LogOut } from "lucide-react";
+import { Users, UserCheck, UserIcon, LogOut, CalendarDays } from "lucide-react";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
+import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
 import {
   Avatar,
   AvatarImage,
@@ -33,6 +35,7 @@ export function UserDropdown({
 }) {
   const isMobile = useIsMobile();
   const router = useRouter();
+  const summaryYear = getDefaultSummaryYear();
 
   return (
     <DropdownMenu>
@@ -54,6 +57,17 @@ export function UserDropdown({
             <UserCheck />
             <Link href={`/persons/${user.wcaId}`} className="w-full">
               Mis resultados
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
+        {ANNUAL_SUMMARY_ENABLED && user.wcaId ? (
+          <DropdownMenuItem>
+            <CalendarDays />
+            <Link
+              href={`/summary/${summaryYear}/${user.wcaId}`}
+              className="w-full"
+            >
+              Resumen anual
             </Link>
           </DropdownMenuItem>
         ) : null}

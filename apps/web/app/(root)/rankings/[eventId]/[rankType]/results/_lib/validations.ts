@@ -21,6 +21,7 @@ export const searchSingleParamsCache = createSearchParamsCache({
   gender: parseAsArrayOf(
     parseAsStringEnum(person.gender.enumValues),
   ).withDefault([]),
+  asOf: parseAsString.withDefault(""),
   // advanced filter
   filters: getFiltersStateParser().withDefault([]),
   joinOperator: parseAsStringEnum(["and", "or"]).withDefault("and"),
@@ -42,6 +43,7 @@ export const searchAverageParamsCache = createSearchParamsCache({
   gender: parseAsArrayOf(
     parseAsStringEnum(person.gender.enumValues),
   ).withDefault([]),
+  asOf: parseAsString.withDefault(""),
   // advanced filter
   filters: getFiltersStateParser().withDefault([]),
   joinOperator: parseAsStringEnum(["and", "or"]).withDefault("and"),
