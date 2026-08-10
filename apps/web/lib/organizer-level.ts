@@ -1,4 +1,5 @@
 import { sql, type SQL } from "drizzle-orm";
+import { competition, competitionOrganizer } from "@workspace/db/schema";
 
 export const ORGANIZER_LEVELS = [
   "Debutante",
@@ -8,6 +9,8 @@ export const ORGANIZER_LEVELS = [
   "Maestro",
   "Maestra",
   "Leyenda",
+  "Inactivo",
+  "Inactiva",
 ] as const;
 
 export type OrganizerLevel = (typeof ORGANIZER_LEVELS)[number];
@@ -18,12 +21,21 @@ export const ORGANIZER_LEVEL_FILTERS = [
   "Experto",
   "Maestro",
   "Leyenda",
+  "Inactivo",
 ] as const;
 
 export type OrganizerLevelFilter = (typeof ORGANIZER_LEVEL_FILTERS)[number];
 
 export const AMS_ORGANIZER_EXPERIENCE_TABLE_URL =
   "https://docs.google.com/spreadsheets/d/1JrbT94RB9VpDiCdHmGtC-mJeE4Mux6bh/edit?usp=sharing&ouid=116673815176459806406&rtpof=true&sd=true";
+
+/** Distinct organized competitions whose start_date is within the last 2 years. */
+export function recentOrganizedCompetitionCountSql(): SQL<number> {
+  return sql<number>`COUNT(DISTINCT CASE
+    WHEN ${competition.startDate} >= NOW() - INTERVAL '2 years'
+    THEN ${competitionOrganizer.competitionId}
+  END)`;
+}
 
 export function getOrganizerLevelFilterOptions(
   levelCounts: Partial<Record<OrganizerLevelFilter, number>>,
@@ -41,6 +53,7 @@ export function toOrganizerLevelFilter(
 ): OrganizerLevelFilter {
   if (level === "Experta") return "Experto";
   if (level === "Maestra") return "Maestro";
+  if (level === "Inactiva") return "Inactivo";
   return level;
 }
 
@@ -50,6 +63,9 @@ export function getOrganizerLevel(
 ): OrganizerLevel {
   const isFemale = gender === "f";
 
+  if (competitionCount === 0) {
+    return isFemale ? "Inactiva" : "Inactivo";
+  }
   if (competitionCount === 1) {
     return "Debutante";
   }
@@ -70,6 +86,7 @@ export function organizerLevelSql(
   genderExpr: SQL,
 ): SQL<string> {
   return sql<string>`CASE
+    WHEN ${competitionCountExpr} = 0 THEN CASE WHEN ${genderExpr} = 'f' THEN 'Inactiva' ELSE 'Inactivo' END
     WHEN ${competitionCountExpr} = 1 THEN 'Debutante'
     WHEN ${competitionCountExpr} = 2 THEN 'Super'
     WHEN ${competitionCountExpr} <= 4 THEN CASE WHEN ${genderExpr} = 'f' THEN 'Experta' ELSE 'Experto' END
@@ -82,6 +99,7 @@ export function organizerLevelFilterSql(
   competitionCountExpr: SQL,
 ): SQL<string> {
   return sql<string>`CASE
+    WHEN ${competitionCountExpr} = 0 THEN 'Inactivo'
     WHEN ${competitionCountExpr} = 1 THEN 'Debutante'
     WHEN ${competitionCountExpr} = 2 THEN 'Super'
     WHEN ${competitionCountExpr} <= 4 THEN 'Experto'

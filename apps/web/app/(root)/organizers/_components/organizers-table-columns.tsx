@@ -115,10 +115,22 @@ export function getColumns({
     {
       accessorKey: "competitions",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Competencias" />
+        <DataTableColumnHeader column={column} title="Recientes" />
       ),
       cell: ({ row }) => (
         <div className="flex space-x-2">{row.getValue("competitions")}</div>
+      ),
+      enableHiding: false,
+    },
+    {
+      accessorKey: "totalCompetitions",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Total" />
+      ),
+      cell: ({ row }) => (
+        <div className="flex space-x-2">
+          {row.getValue("totalCompetitions")}
+        </div>
       ),
       enableHiding: false,
     },

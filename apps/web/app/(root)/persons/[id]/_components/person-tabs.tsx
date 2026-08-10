@@ -54,6 +54,7 @@ type PersonTabsProps = {
   eventOptions: PersonResultsEventOption[];
   showRecordsTab: boolean;
   showChampionshipPodiumsTab: boolean;
+  showStaffCompetitionsTab: boolean;
 };
 
 export function PersonTabs({
@@ -61,6 +62,7 @@ export function PersonTabs({
   eventOptions,
   showRecordsTab,
   showChampionshipPodiumsTab,
+  showStaffCompetitionsTab,
 }: PersonTabsProps) {
   const [{ tab, event }, setQuery] = useQueryStates({
     tab: parseAsStringLiteral(TAB_VALUES).withDefault("results-by-event"),
@@ -95,11 +97,18 @@ export function PersonTabs({
   useEffect(() => {
     if (
       (tab === "records" && !showRecordsTab) ||
-      (tab === "championship-podiums" && !showChampionshipPodiumsTab)
+      (tab === "championship-podiums" && !showChampionshipPodiumsTab) ||
+      (tab === "staff-competitions" && !showStaffCompetitionsTab)
     ) {
       void setQuery({ tab: "results-by-event" });
     }
-  }, [tab, showRecordsTab, showChampionshipPodiumsTab, setQuery]);
+  }, [
+    tab,
+    showRecordsTab,
+    showChampionshipPodiumsTab,
+    showStaffCompetitionsTab,
+    setQuery,
+  ]);
 
   useEffect(() => {
     if (
@@ -187,7 +196,11 @@ export function PersonTabs({
   }, [tab, wcaId, championshipPodiums, showChampionshipPodiumsTab]);
 
   useEffect(() => {
-    if (tab !== "staff-competitions" || staffCompetitions !== null) {
+    if (
+      tab !== "staff-competitions" ||
+      !showStaffCompetitionsTab ||
+      staffCompetitions !== null
+    ) {
       return;
     }
 
@@ -203,7 +216,7 @@ export function PersonTabs({
     return () => {
       cancelled = true;
     };
-  }, [tab, wcaId, staffCompetitions]);
+  }, [tab, wcaId, staffCompetitions, showStaffCompetitionsTab]);
 
   useEffect(() => {
     if (tab !== "map" || mapData !== null) {
@@ -233,9 +246,12 @@ export function PersonTabs({
     (staffCompetitions.organized.length > 0 ||
       staffCompetitions.delegated.length > 0);
 
-  // Always: results, chart, pr-streaks, map, staff
+  // Always: results, chart, pr-streaks, map
   const tabCount =
-    5 + (showRecordsTab ? 1 : 0) + (showChampionshipPodiumsTab ? 1 : 0);
+    4 +
+    (showRecordsTab ? 1 : 0) +
+    (showChampionshipPodiumsTab ? 1 : 0) +
+    (showStaffCompetitionsTab ? 1 : 0);
 
   function selectTab(nextTab: TabValue) {
     void setQuery({ tab: nextTab });
@@ -273,7 +289,9 @@ export function PersonTabs({
           </TabsTrigger>
         )}
         <TabsTrigger value="map">Mapa</TabsTrigger>
-        <TabsTrigger value="staff-competitions">Organización</TabsTrigger>
+        {showStaffCompetitionsTab && (
+          <TabsTrigger value="staff-competitions">Organización</TabsTrigger>
+        )}
       </TabsList>
 
       <TabsContent value="results-by-event" className="mt-6">
@@ -347,20 +365,22 @@ export function PersonTabs({
         )}
       </TabsContent>
 
-      <TabsContent value="staff-competitions" className="mt-6">
-        {staffCompetitions === null ? (
-          <Skeleton className="h-64 w-full" />
-        ) : hasStaffCompetitions ? (
-          <PersonStaffCompetitionsTab
-            organized={staffCompetitions.organized}
-            delegated={staffCompetitions.delegated}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground text-center">
-            Esta persona no ha organizado ni delegado competencias.
-          </p>
-        )}
-      </TabsContent>
+      {showStaffCompetitionsTab && (
+        <TabsContent value="staff-competitions" className="mt-6">
+          {staffCompetitions === null ? (
+            <Skeleton className="h-64 w-full" />
+          ) : hasStaffCompetitions ? (
+            <PersonStaffCompetitionsTab
+              organized={staffCompetitions.organized}
+              delegated={staffCompetitions.delegated}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center">
+              Esta persona no ha organizado ni delegado competencias.
+            </p>
+          )}
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

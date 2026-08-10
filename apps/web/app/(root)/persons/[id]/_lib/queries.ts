@@ -26,7 +26,11 @@ import type {
   Records,
   WcaPersonResponse,
 } from "@/types/wca";
-import { getOrganizerLevel, type OrganizerLevel } from "@/lib/organizer-level";
+import {
+  getOrganizerLevel,
+  recentOrganizedCompetitionCountSql,
+  type OrganizerLevel,
+} from "@/lib/organizer-level";
 import {
   and,
   asc,
@@ -347,21 +351,23 @@ export async function getOrganizerStatus(
   try {
     const data = await db
       .select({
-        organizedCompetitionCount: sql<number>`COUNT(DISTINCT ${competitionOrganizer.competitionId})`,
+        recentCompetitionCount: recentOrganizedCompetitionCountSql(),
       })
       .from(organizer)
       .leftJoin(
         competitionOrganizer,
         eq(competitionOrganizer.organizerId, organizer.id),
       )
+      .leftJoin(
+        competition,
+        eq(competitionOrganizer.competitionId, competition.id),
+      )
       .where(and(eq(organizer.personId, wcaId), eq(organizer.status, "active")))
       .then((res) => res[0]);
 
-    const organizedCompetitionCount = Number(
-      data?.organizedCompetitionCount ?? 0,
-    );
+    const recentCompetitionCount = Number(data?.recentCompetitionCount ?? 0);
 
-    if (organizedCompetitionCount === 0) {
+    if (recentCompetitionCount === 0) {
       return null;
     }
 
@@ -372,10 +378,10 @@ export async function getOrganizerStatus(
       .then((res) => res[0]);
 
     const gender = personRow?.gender ?? null;
-    const level = getOrganizerLevel(organizedCompetitionCount, gender);
+    const level = getOrganizerLevel(recentCompetitionCount, gender);
 
     return {
-      organizedCompetitionCount,
+      organizedCompetitionCount: recentCompetitionCount,
       level,
     };
   } catch (err) {
@@ -904,6 +910,42 @@ export async function hasPersonChampionshipPodiums(
       .limit(1);
 
     return rows.length > 0;
+  } catch (err) {
+    console.error(err);
+    return false;
+  }
+}
+
+export async function hasPersonStaffCompetitions(
+  wcaId: string,
+): Promise<boolean> {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag(`person-staff-competitions-${wcaId}`);
+
+  try {
+    const [organized, delegated] = await Promise.all([
+      db
+        .select({ competitionId: competitionOrganizer.competitionId })
+        .from(organizer)
+        .innerJoin(
+          competitionOrganizer,
+          eq(competitionOrganizer.organizerId, organizer.id),
+        )
+        .where(eq(organizer.personId, wcaId))
+        .limit(1),
+      db
+        .select({ competitionId: competitionDelegate.competitionId })
+        .from(delegate)
+        .innerJoin(
+          competitionDelegate,
+          eq(competitionDelegate.delegateId, delegate.id),
+        )
+        .where(eq(delegate.personId, wcaId))
+        .limit(1),
+    ]);
+
+    return organized.length > 0 || delegated.length > 0;
   } catch (err) {
     console.error(err);
     return false;
