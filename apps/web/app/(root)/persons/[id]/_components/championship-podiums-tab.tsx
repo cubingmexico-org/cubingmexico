@@ -38,10 +38,10 @@ function championshipTypeLabel(type: string) {
   switch (type) {
     case "world":
       return "Campeonato Mundial";
-    case "continental":
-      return "Campeonato Continental";
-    case "national":
-      return "Campeonato Nacional";
+    case "_North America":
+      return "Campeonato Norteamericano";
+    case "MX":
+      return "Campeonato Mexicano";
     default:
       return type;
   }

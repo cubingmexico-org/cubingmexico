@@ -721,6 +721,34 @@ export type PersonRecordHistoryEntry = {
   solves: number[];
 };
 
+/** Mexican Nationals, North American Championship, and World Championship. */
+const FEATURED_CHAMPIONSHIP_TYPES = ["MX", "_North America", "world"] as const;
+
+/**
+ * Re-rank finals among eligible competitors (WCA tie-preserving).
+ * For MX nationals the DB only stores Mexican results, so this matches
+ * nationality-based championship places when foreigners finished ahead.
+ */
+function assignChampionshipPositions<
+  T extends { resultId: string; pos: number | null },
+>(rows: T[]): (T & { championshipPosition: number })[] {
+  const sorted = [...rows].sort(
+    (a, b) => (a.pos ?? Number.MAX_SAFE_INTEGER) - (b.pos ?? Number.MAX_SAFE_INTEGER),
+  );
+
+  let previousOldPos: number | null = null;
+  let previousNewPos = 0;
+
+  return sorted.map((row, index) => {
+    const oldPos = row.pos ?? Number.MAX_SAFE_INTEGER;
+    const championshipPosition =
+      oldPos === previousOldPos ? previousNewPos : index + 1;
+    previousOldPos = oldPos;
+    previousNewPos = championshipPosition;
+    return { ...row, championshipPosition };
+  });
+}
+
 export type PersonChampionshipPodium = {
   resultId: string;
   eventId: string;
@@ -846,12 +874,85 @@ export async function getPersonChampionshipPodiums(
           eq(result.personId, wcaId),
           inArray(result.roundTypeId, ["f", "c"]),
           gt(result.best, 0),
-          sql`${result.pos} IN (1, 2, 3)`,
+          inArray(championship.championshipType, [
+            ...FEATURED_CHAMPIONSHIP_TYPES,
+          ]),
         ),
       )
       .orderBy(desc(competition.startDate), event.rank);
 
     if (rows.length === 0) return [];
+
+    const mxCompetitionIds = [
+      ...new Set(
+        rows
+          .filter((row) => row.championshipType === "MX")
+          .map((row) => row.competitionId),
+      ),
+    ];
+
+    const mxChampionshipPosByResultId = new Map<string, number>();
+
+    if (mxCompetitionIds.length > 0) {
+      const peers = await db
+        .select({
+          resultId: result.id,
+          competitionId: result.competitionId,
+          eventId: result.eventId,
+          roundTypeId: result.roundTypeId,
+          pos: result.pos,
+        })
+        .from(result)
+        .innerJoin(
+          championship,
+          eq(championship.competitionId, result.competitionId),
+        )
+        .where(
+          and(
+            inArray(result.competitionId, mxCompetitionIds),
+            inArray(result.roundTypeId, ["f", "c"]),
+            gt(result.best, 0),
+            eq(championship.championshipType, "MX"),
+          ),
+        );
+
+      const peersByFinal = peers.reduce((acc, peer) => {
+        const key = `${peer.competitionId}:${peer.eventId}:${peer.roundTypeId ?? ""}`;
+        const list = acc.get(key) ?? [];
+        list.push(peer);
+        acc.set(key, list);
+        return acc;
+      }, new Map<string, typeof peers>());
+
+      for (const group of peersByFinal.values()) {
+        for (const ranked of assignChampionshipPositions(group)) {
+          if (ranked.championshipPosition <= 3) {
+            mxChampionshipPosByResultId.set(
+              ranked.resultId,
+              ranked.championshipPosition,
+            );
+          }
+        }
+      }
+    }
+
+    const podiumRows = rows.flatMap((row) => {
+      if (row.championshipType === "MX") {
+        const championshipPosition = mxChampionshipPosByResultId.get(
+          row.resultId,
+        );
+        if (championshipPosition === undefined) return [];
+        return [{ ...row, position: championshipPosition }];
+      }
+
+      if (row.position != null && row.position >= 1 && row.position <= 3) {
+        return [row];
+      }
+
+      return [];
+    });
+
+    if (podiumRows.length === 0) return [];
 
     const attempts = await db
       .select({
@@ -863,7 +964,7 @@ export async function getPersonChampionshipPodiums(
       .where(
         inArray(
           resultAttempts.resultId,
-          rows.map((r) => r.resultId),
+          podiumRows.map((r) => r.resultId),
         ),
       )
       .orderBy(resultAttempts.resultId, resultAttempts.attemptNumber);
@@ -875,7 +976,7 @@ export async function getPersonChampionshipPodiums(
       return acc;
     }, new Map<string, number[]>());
 
-    return rows.map((row) => ({
+    return podiumRows.map((row) => ({
       ...row,
       competitionStartDate: row.competitionStartDate.toISOString(),
       solves: attemptsByResultId.get(row.resultId) ?? [],
@@ -895,7 +996,14 @@ export async function hasPersonChampionshipPodiums(
 
   try {
     const rows = await db
-      .select({ resultId: result.id })
+      .select({
+        resultId: result.id,
+        competitionId: result.competitionId,
+        eventId: result.eventId,
+        roundTypeId: result.roundTypeId,
+        championshipType: championship.championshipType,
+        position: result.pos,
+      })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .innerJoin(championship, eq(championship.competitionId, competition.id))
@@ -904,12 +1012,78 @@ export async function hasPersonChampionshipPodiums(
           eq(result.personId, wcaId),
           inArray(result.roundTypeId, ["f", "c"]),
           gt(result.best, 0),
-          sql`${result.pos} IN (1, 2, 3)`,
+          inArray(championship.championshipType, [
+            ...FEATURED_CHAMPIONSHIP_TYPES,
+          ]),
         ),
-      )
-      .limit(1);
+      );
 
-    return rows.length > 0;
+    if (rows.length === 0) return false;
+
+    const hasAbsolutePodium = rows.some(
+      (row) =>
+        row.championshipType !== "MX" &&
+        row.position != null &&
+        row.position >= 1 &&
+        row.position <= 3,
+    );
+    if (hasAbsolutePodium) return true;
+
+    const mxCompetitionIds = [
+      ...new Set(
+        rows
+          .filter((row) => row.championshipType === "MX")
+          .map((row) => row.competitionId),
+      ),
+    ];
+    if (mxCompetitionIds.length === 0) return false;
+
+    const peers = await db
+      .select({
+        resultId: result.id,
+        competitionId: result.competitionId,
+        eventId: result.eventId,
+        roundTypeId: result.roundTypeId,
+        pos: result.pos,
+      })
+      .from(result)
+      .innerJoin(
+        championship,
+        eq(championship.competitionId, result.competitionId),
+      )
+      .where(
+        and(
+          inArray(result.competitionId, mxCompetitionIds),
+          inArray(result.roundTypeId, ["f", "c"]),
+          gt(result.best, 0),
+          eq(championship.championshipType, "MX"),
+        ),
+      );
+
+    const personResultIds = new Set(
+      rows.filter((row) => row.championshipType === "MX").map((row) => row.resultId),
+    );
+
+    const peersByFinal = peers.reduce((acc, peer) => {
+      const key = `${peer.competitionId}:${peer.eventId}:${peer.roundTypeId ?? ""}`;
+      const list = acc.get(key) ?? [];
+      list.push(peer);
+      acc.set(key, list);
+      return acc;
+    }, new Map<string, typeof peers>());
+
+    for (const group of peersByFinal.values()) {
+      for (const ranked of assignChampionshipPositions(group)) {
+        if (
+          ranked.championshipPosition <= 3 &&
+          personResultIds.has(ranked.resultId)
+        ) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   } catch (err) {
     console.error(err);
     return false;
