@@ -23,8 +23,8 @@ export async function RankSinglesLoader({
   const validFilters = getValidFilters(search.filters);
   const promises = Promise.all([
     getRankSingles({ ...search, filters: validFilters }, eventId),
-    getRankSinglesStateCounts(eventId),
-    getRankSinglesGenderCounts(eventId),
+    getRankSinglesStateCounts(eventId, search.asOf),
+    getRankSinglesGenderCounts(eventId, search.asOf),
   ]);
   return <RankSinglesTable promises={promises} />;
 }
@@ -40,8 +40,8 @@ export async function RankAveragesLoader({
   const validFilters = getValidFilters(search.filters);
   const promises = Promise.all([
     getRankAverages({ ...search, filters: validFilters }, eventId),
-    getRankAveragesStateCounts(eventId),
-    getRankAveragesGenderCounts(eventId),
+    getRankAveragesStateCounts(eventId, search.asOf),
+    getRankAveragesGenderCounts(eventId, search.asOf),
   ]);
   return <RankAveragesTable promises={promises} />;
 }

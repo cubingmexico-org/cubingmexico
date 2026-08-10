@@ -12,6 +12,7 @@ import {
 } from "@workspace/db/schema";
 import { and, desc, eq, gt, notInArray, sql, inArray, or } from "drizzle-orm";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { competitionAsOfCondition } from "@/lib/as-of-date";
 import { GetRecordsSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -52,7 +53,9 @@ export type RecordHistoryEntry = {
 };
 
 export async function getRecords(input: GetRecordsSchema) {
+  const asOfKey = input.asOf || "all";
   cacheLife("days");
+  cacheTag(`records-${asOfKey}`);
   cacheTag("records");
 
   try {
@@ -62,6 +65,7 @@ export async function getRecords(input: GetRecordsSchema) {
       input.event ? eq(result.eventId, input.event) : undefined,
       notInArray(result.eventId, EXCLUDED_EVENTS),
       gt(result.best, 0),
+      competitionAsOfCondition(input.asOf),
     );
 
     const averageWhere = and(
@@ -70,6 +74,7 @@ export async function getRecords(input: GetRecordsSchema) {
       input.event ? eq(result.eventId, input.event) : undefined,
       notInArray(result.eventId, EXCLUDED_EVENTS),
       gt(result.average, 0),
+      competitionAsOfCondition(input.asOf),
     );
 
     const combinedRecords = await db.transaction(async (tx) => {
@@ -88,6 +93,7 @@ export async function getRecords(input: GetRecordsSchema) {
           })
           .from(result)
           .innerJoin(person, eq(result.personId, person.wcaId))
+          .innerJoin(competition, eq(result.competitionId, competition.id))
           .leftJoin(state, eq(person.stateId, state.id))
           .where(singleWhere),
       );
@@ -132,6 +138,7 @@ export async function getRecords(input: GetRecordsSchema) {
           })
           .from(result)
           .innerJoin(person, eq(result.personId, person.wcaId))
+          .innerJoin(competition, eq(result.competitionId, competition.id))
           .leftJoin(state, eq(person.stateId, state.id))
           .where(averageWhere),
       );
@@ -237,7 +244,9 @@ export async function getRecords(input: GetRecordsSchema) {
 export async function getRecordHistory(
   input: GetRecordsSchema,
 ): Promise<RecordHistoryEntry[]> {
+  const asOfKey = input.asOf || "all";
   cacheLife("days");
+  cacheTag(`records-history-${asOfKey}`);
   cacheTag("records");
 
   try {
@@ -259,6 +268,7 @@ export async function getRecordHistory(
       input.gender ? eq(person.gender, input.gender) : undefined,
       input.event ? eq(result.eventId, input.event) : undefined,
       notInArray(result.eventId, EXCLUDED_EVENTS),
+      competitionAsOfCondition(input.asOf),
     );
 
     const rows = await db

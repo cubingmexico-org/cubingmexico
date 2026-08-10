@@ -2,11 +2,7 @@
 
 import { X } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
-import {
-  parseAsString,
-  parseAsStringEnum,
-  useQueryStates,
-} from "nuqs";
+import { parseAsString, parseAsStringEnum, useQueryStates } from "nuqs";
 import { SHOW_MODES } from "../_lib/show-modes";
 
 export function ClearFiltersButton() {
@@ -16,6 +12,7 @@ export function ClearFiltersButton() {
       state: parseAsString.withDefault(""),
       gender: parseAsString.withDefault(""),
       show: parseAsStringEnum([...SHOW_MODES]).withDefault("mixed"),
+      asOf: parseAsString.withDefault(""),
     },
     {
       clearOnDefault: true,
@@ -27,7 +24,8 @@ export function ClearFiltersButton() {
     queryState.event !== "" ||
     queryState.state !== "" ||
     queryState.gender !== "" ||
-    queryState.show !== "mixed";
+    queryState.show !== "mixed" ||
+    queryState.asOf !== "";
 
   if (!hasFilters) return null;
 
@@ -43,6 +41,7 @@ export function ClearFiltersButton() {
           state: "",
           gender: "",
           show: "mixed",
+          asOf: "",
         })
       }
     >

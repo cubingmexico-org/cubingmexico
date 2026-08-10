@@ -13,6 +13,7 @@ export const searchParamsCache = createSearchParamsCache({
   gender: parseAsStringEnum(person.gender.enumValues),
   event: parseAsString.withDefault(""),
   show: parseAsStringEnum([...SHOW_MODES]).withDefault("mixed"),
+  asOf: parseAsString.withDefault(""),
 });
 
 export type GetRecordsSchema = Awaited<
