@@ -30,6 +30,7 @@ import {
   hasPersonStaffCompetitions,
 } from "./_lib/queries";
 import type { PersonalRecordWithStateRank } from "./_lib/queries";
+import { getLatestSummaryYear } from "@/app/(root)/summary/[year]/[wcaId]/_lib/queries";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { formatDelegateLevel } from "@/lib/delegate-level";
@@ -84,6 +85,7 @@ async function PersonPageContent({ id }: { id: string }) {
     eventOptions,
     showChampionshipPodiumsTab,
     showStaffCompetitionsTab,
+    latestSummaryYear,
   ] = await Promise.all([
     getPersonData(id),
     getOrganizerStatus(id),
@@ -94,6 +96,7 @@ async function PersonPageContent({ id }: { id: string }) {
     getPersonCompetitionEventOptions(id),
     hasPersonChampionshipPodiums(id),
     hasPersonStaffCompetitions(id),
+    getLatestSummaryYear(id),
   ]);
 
   if (!personData) {
@@ -150,6 +153,16 @@ async function PersonPageContent({ id }: { id: string }) {
           </Badge>
         )}
       </div>
+      {latestSummaryYear !== null && (
+        <p className="text-center text-sm mb-4">
+          <Link
+            href={`/summary/${latestSummaryYear}/${id}`}
+            className="text-primary hover:underline"
+          >
+            Resumen anual {latestSummaryYear}
+          </Link>
+        </p>
+      )}
       <div className="w-full flex justify-center mb-6">
         <Image
           src={wcaData?.person.avatar.url}

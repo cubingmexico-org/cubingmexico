@@ -282,7 +282,7 @@ export function PersonTabs({
         <TabsTrigger value="results-by-event">Resultados</TabsTrigger>
         <TabsTrigger value="results-chart">Gráfica</TabsTrigger>
         {showRecordsTab && <TabsTrigger value="records">Récords</TabsTrigger>}
-        <TabsTrigger value="pr-streaks">Rachas de PRs</TabsTrigger>
+        <TabsTrigger value="pr-streaks">Rachas</TabsTrigger>
         {showChampionshipPodiumsTab && (
           <TabsTrigger value="championship-podiums">
             Podios en Campeonatos
