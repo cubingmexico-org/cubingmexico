@@ -3,16 +3,7 @@
 import "server-only";
 import { db } from "@workspace/db";
 import { type Person, person, result, teamMember } from "@workspace/db/schema";
-import {
-  and,
-  asc,
-  count,
-  desc,
-  eq,
-  gt,
-  inArray,
-  sql,
-} from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
 import { cacheLife, cacheTag } from "next/cache";
 

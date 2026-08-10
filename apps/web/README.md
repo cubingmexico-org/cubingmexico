@@ -41,7 +41,22 @@ WCA_CLIENT_SECRET="..."
 
 # UploadThing
 UPLOADTHING_TOKEN="..."
+
+# Superadmin panel (/admin) — comma-separated WCA IDs
+SUPERADMIN_WCA_IDS="2015XXXX01,2016YYYY02"
+
+# Flask backend proxy for /admin/ops
+BACKEND_URL="http://localhost:8080"
+CRON_SECRET="local-dev-cron-secret-12345"
 ```
+
+### Superadmin panel
+
+Allowlisted WCA IDs can open `/admin` (not linked in the public nav) to:
+
+- Trigger Flask data pipelines (`/admin/ops`) via `BACKEND_URL` + `CRON_SECRET`
+- Override person↔state and team roles (`/admin/people`)
+- Fix Mexican competition↔state mapping (`/admin/competitions`)
 
 ### Installation
 

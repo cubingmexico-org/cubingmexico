@@ -49,8 +49,9 @@ function getTeamForState(teams: Team[], stateName: string | null) {
 
   const normalizedStateName = normalizeSearchText(stateName);
   return (
-    teams.find((team) => normalizeSearchText(team.state) === normalizedStateName) ??
-    null
+    teams.find(
+      (team) => normalizeSearchText(team.state) === normalizedStateName,
+    ) ?? null
   );
 }
 
