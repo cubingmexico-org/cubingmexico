@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -7,10 +8,11 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { buttonVariants } from "@workspace/ui/components/button";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import { cn } from "@workspace/ui/lib/utils";
 import { getAdminOverviewCounts, getExportMetadata } from "./_lib/queries";
 
-export default async function AdminOverviewPage() {
+async function AdminOverviewContent() {
   const [counts, metadata] = await Promise.all([
     getAdminOverviewCounts(),
     getExportMetadata(),
@@ -106,5 +108,23 @@ export default async function AdminOverviewPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AdminOverviewPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+          </div>
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
+      }
+    >
+      <AdminOverviewContent />
+    </Suspense>
   );
 }

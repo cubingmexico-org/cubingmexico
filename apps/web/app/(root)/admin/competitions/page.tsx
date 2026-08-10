@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import { getStates } from "@/db/queries";
 import { getMexicanCompetitions } from "../_lib/queries";
 import {
@@ -14,7 +15,7 @@ import {
 } from "./_components/competitions-admin";
 import { RefreshMxCompetitionsButton } from "./_components/refresh-mx-button";
 
-export default async function AdminCompetitionsPage({
+async function CompetitionsAdminContent({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -39,6 +40,30 @@ export default async function AdminCompetitionsPage({
   ]);
 
   return (
+    <>
+      <Suspense fallback={null}>
+        <CompetitionsFilters
+          states={states}
+          missingOnly={missingOnly}
+          stateId={stateId}
+          search={search}
+        />
+      </Suspense>
+      <CompetitionsTable competitions={competitions} states={states} />
+    </>
+  );
+}
+
+export default function AdminCompetitionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    missing?: string;
+    stateId?: string;
+    q?: string;
+  }>;
+}) {
+  return (
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -51,15 +76,16 @@ export default async function AdminCompetitionsPage({
           <RefreshMxCompetitionsButton />
         </CardHeader>
         <CardContent className="space-y-4">
-          <Suspense fallback={null}>
-            <CompetitionsFilters
-              states={states}
-              missingOnly={missingOnly}
-              stateId={stateId}
-              search={search}
-            />
+          <Suspense
+            fallback={
+              <div className="space-y-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-48 w-full" />
+              </div>
+            }
+          >
+            <CompetitionsAdminContent searchParams={searchParams} />
           </Suspense>
-          <CompetitionsTable competitions={competitions} states={states} />
         </CardContent>
       </Card>
     </div>

@@ -1,11 +1,8 @@
+import { Suspense } from "react";
 import { requireSuperadmin } from "@/lib/superadmin";
 import { AdminNav } from "./_components/admin-nav";
 
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+async function AdminShell({ children }: { children: React.ReactNode }) {
   await requireSuperadmin();
 
   return (
@@ -21,5 +18,17 @@ export default async function AdminLayout({
       </div>
       {children}
     </main>
+  );
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <Suspense fallback={null}>
+      <AdminShell>{children}</AdminShell>
+    </Suspense>
   );
 }

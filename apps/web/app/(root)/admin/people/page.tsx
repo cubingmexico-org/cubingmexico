@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import { getStates } from "@/db/queries";
 import {
   getPersonsWithoutStateList,
@@ -16,7 +17,7 @@ import { AssignPersonForm } from "./_components/assign-person-form";
 import { StateFilter } from "./_components/state-filter";
 import { TeamRolesTable } from "./_components/team-roles-table";
 
-export default async function AdminPeoplePage({
+async function PeopleAdminContent({
   searchParams,
 }: {
   searchParams: Promise<{ stateId?: string }>;
@@ -95,5 +96,25 @@ export default async function AdminPeoplePage({
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AdminPeoplePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ stateId?: string }>;
+}) {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <Skeleton className="h-40 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+          <Skeleton className="h-48 w-full rounded-xl" />
+        </div>
+      }
+    >
+      <PeopleAdminContent searchParams={searchParams} />
+    </Suspense>
   );
 }
