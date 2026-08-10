@@ -17,9 +17,7 @@ async function OpsExportMetadata() {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Estado del export</CardTitle>
-        <CardDescription>
-          Valores actuales en `export_metadata`
-        </CardDescription>
+        <CardDescription>Valores actuales en `export_metadata`</CardDescription>
       </CardHeader>
       <CardContent>
         {metadata.length === 0 ? (

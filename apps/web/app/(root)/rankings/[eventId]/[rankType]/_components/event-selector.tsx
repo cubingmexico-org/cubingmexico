@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@workspace/ui/lib/utils";
+import { Button } from "@workspace/ui/components/button";
 import Link from "next/link";
 import * as React from "react";
 import { RankTypeSelector } from "./rank-type-selector";
@@ -108,19 +109,26 @@ export function EventSelector({
             );
 
             return (
-              <Link
+              <Button
                 key={event.id}
+                variant="outline"
+                size="icon"
+                asChild
                 className={cn(
-                  `cubing-icon event-${event.id} text-2xl hover:text-primary/50 transition-colors`,
-                  selectedEventId === event.id && "text-primary",
+                  "size-10 text-muted-foreground",
+                  selectedEventId === event.id &&
+                    "bg-accent text-primary border-primary",
                 )}
-                href={href}
-              />
+              >
+                <Link href={href} aria-label={event.name}>
+                  <span className={`cubing-icon event-${event.id} text-2xl`} />
+                </Link>
+              </Button>
             );
           })}
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <RankTypeSelector
           hrefSingle={hrefSingle}
           hrefAverage={hrefAverage}

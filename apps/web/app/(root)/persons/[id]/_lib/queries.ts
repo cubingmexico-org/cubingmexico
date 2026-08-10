@@ -733,7 +733,8 @@ function assignChampionshipPositions<
   T extends { resultId: string; pos: number | null },
 >(rows: T[]): (T & { championshipPosition: number })[] {
   const sorted = [...rows].sort(
-    (a, b) => (a.pos ?? Number.MAX_SAFE_INTEGER) - (b.pos ?? Number.MAX_SAFE_INTEGER),
+    (a, b) =>
+      (a.pos ?? Number.MAX_SAFE_INTEGER) - (b.pos ?? Number.MAX_SAFE_INTEGER),
   );
 
   let previousOldPos: number | null = null;
@@ -1061,7 +1062,9 @@ export async function hasPersonChampionshipPodiums(
       );
 
     const personResultIds = new Set(
-      rows.filter((row) => row.championshipType === "MX").map((row) => row.resultId),
+      rows
+        .filter((row) => row.championshipType === "MX")
+        .map((row) => row.resultId),
     );
 
     const peersByFinal = peers.reduce((acc, peer) => {
