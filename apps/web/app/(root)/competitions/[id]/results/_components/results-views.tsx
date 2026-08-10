@@ -29,6 +29,7 @@ import {
   type ResultsByPersonGroup,
 } from "../../_lib/results";
 import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
+import { normalizeSearchText } from "@/lib/search";
 
 interface CompetitionHeaderData {
   event_ids: string[];
@@ -371,15 +372,15 @@ export function ResultsByPersonView({
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredGroups = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const normalizedQuery = normalizeSearchText(searchQuery.trim());
 
     if (!normalizedQuery) {
       return groupedByPerson;
     }
 
     return groupedByPerson.filter((personGroup) => {
-      const personName = personGroup.personName?.toLowerCase() ?? "";
-      const personId = personGroup.personId.toLowerCase();
+      const personName = normalizeSearchText(personGroup.personName);
+      const personId = normalizeSearchText(personGroup.personId);
 
       return (
         personName.includes(normalizedQuery) ||

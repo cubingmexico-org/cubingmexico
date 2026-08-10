@@ -10,6 +10,7 @@ import {
   state,
 } from "@workspace/db/schema";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { accentInsensitiveContains } from "@/lib/search";
 import { and, eq, sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -44,7 +45,7 @@ export async function getSOSR(
     const excludedEvents = getExcludedEventsList();
     const peopleFilters: SQL[] = [];
     if (input.name) {
-      peopleFilters.push(sql`p.name ILIKE ${`%${input.name}%`}`);
+      peopleFilters.push(accentInsensitiveContains(sql`p.name`, input.name));
     }
     if (input.gender && input.gender.length > 0) {
       peopleFilters.push(

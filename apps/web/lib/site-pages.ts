@@ -1,3 +1,5 @@
+import { normalizeSearchText } from "@/lib/search";
+
 export type SitePage = {
   title: string;
   href: string;
@@ -85,13 +87,13 @@ export const SITE_PAGES: SitePage[] = [
 ];
 
 export function filterSitePages(query: string): SitePage[] {
-  const q = query.trim().toLowerCase();
+  const q = normalizeSearchText(query.trim());
   if (!q) return SITE_PAGES;
 
   return SITE_PAGES.filter((page) => {
-    const haystack = [page.title, page.href, ...(page.keywords ?? [])]
-      .join(" ")
-      .toLowerCase();
+    const haystack = normalizeSearchText(
+      [page.title, page.href, ...(page.keywords ?? [])].join(" "),
+    );
     return haystack.includes(q);
   });
 }

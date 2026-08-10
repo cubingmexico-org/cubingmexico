@@ -17,6 +17,7 @@ import {
   AccordionTrigger,
 } from "@workspace/ui/components/accordion";
 import { Search, ExternalLink, Mail, HelpCircle } from "lucide-react";
+import { normalizeSearchText } from "@/lib/search";
 
 const faqData = {
   general: [
@@ -163,10 +164,11 @@ export function FAQ() {
     }[],
   ) => {
     if (!searchQuery) return questions;
+    const q = normalizeSearchText(searchQuery);
     return questions.filter(
-      (q) =>
-        q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        q.answer.toLowerCase().includes(searchQuery.toLowerCase()),
+      (item) =>
+        normalizeSearchText(item.question).includes(q) ||
+        normalizeSearchText(item.answer).includes(q),
     );
   };
 

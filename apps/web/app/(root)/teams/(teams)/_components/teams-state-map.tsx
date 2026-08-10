@@ -12,15 +12,7 @@ import "leaflet-defaulticon-compatibility";
 
 import type { Team } from "./teams";
 import { useRouter } from "next/navigation";
-
-function normalizeText(value: string | null | undefined) {
-  return value
-    ? value
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-    : "";
-}
+import { normalizeSearchText } from "@/lib/search";
 
 interface TeamsStateMapProps {
   teams: Team[];
@@ -55,9 +47,9 @@ function getFeatureStateName(feature: {
 function getTeamForState(teams: Team[], stateName: string | null) {
   if (!stateName) return null;
 
-  const normalizedStateName = normalizeText(stateName);
+  const normalizedStateName = normalizeSearchText(stateName);
   return (
-    teams.find((team) => normalizeText(team.state) === normalizedStateName) ??
+    teams.find((team) => normalizeSearchText(team.state) === normalizedStateName) ??
     null
   );
 }
@@ -77,7 +69,7 @@ function getFeatureStyle({
   const team = getTeamForState(teams, stateName);
   const isSelected =
     Boolean(selectedState && stateName) &&
-    normalizeText(selectedState) === normalizeText(stateName);
+    normalizeSearchText(selectedState) === normalizeSearchText(stateName);
   const hasTeam = Boolean(team);
 
   if (isSelected) {

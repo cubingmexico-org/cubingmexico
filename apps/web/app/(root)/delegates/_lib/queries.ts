@@ -12,7 +12,6 @@ import {
 import {
   and,
   count,
-  ilike,
   gt,
   eq,
   desc,
@@ -20,6 +19,7 @@ import {
   inArray,
   countDistinct,
 } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import { type GetDelegatesSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 import type { DelegateLevel } from "@/lib/delegate-level";
@@ -32,7 +32,9 @@ export async function getDelegates(input: GetDelegatesSchema) {
     const offset = (input.page - 1) * input.perPage;
 
     const where = and(
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.status.length > 0
         ? inArray(delegate.status, input.status)

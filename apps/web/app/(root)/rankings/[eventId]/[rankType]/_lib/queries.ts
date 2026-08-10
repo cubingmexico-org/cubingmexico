@@ -10,7 +10,8 @@ import {
   rankSingle,
   rankAverage,
 } from "@workspace/db/schema";
-import { and, asc, count, desc, ilike, gt, inArray, ne, eq } from "drizzle-orm";
+import { and, asc, count, desc, gt, inArray, ne, eq } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import type {
   GetRankAveragesSchema,
   GetRankSinglesSchema,
@@ -31,7 +32,9 @@ export async function getRankSingles(
     const where = and(
       ne(rankSingle.countryRank, 0),
       eq(rankSingle.eventId, eventId),
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)
@@ -181,7 +184,9 @@ export async function getRankAverages(
     const where = and(
       ne(rankAverage.countryRank, 0),
       eq(rankAverage.eventId, eventId),
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)

@@ -2,7 +2,8 @@ import "server-only";
 
 import { db } from "@workspace/db";
 import { competition, person, state, team } from "@workspace/db/schema";
-import { and, eq, ilike, or } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import type { SiteSearchResults } from "@/lib/site-search-types";
 
 export type {
@@ -15,8 +16,6 @@ export type {
 const LIMIT = 8;
 
 async function searchPersons(q: string): Promise<SiteSearchResults["persons"]> {
-  const pattern = `%${q}%`;
-
   try {
     return await db
       .select({
@@ -24,7 +23,12 @@ async function searchPersons(q: string): Promise<SiteSearchResults["persons"]> {
         name: person.name,
       })
       .from(person)
-      .where(or(ilike(person.name, pattern), ilike(person.wcaId, pattern)))
+      .where(
+        or(
+          accentInsensitiveContains(person.name, q),
+          accentInsensitiveContains(person.wcaId, q),
+        ),
+      )
       .orderBy(person.name)
       .limit(LIMIT);
   } catch (err) {
@@ -36,8 +40,6 @@ async function searchPersons(q: string): Promise<SiteSearchResults["persons"]> {
 async function searchCompetitions(
   q: string,
 ): Promise<SiteSearchResults["competitions"]> {
-  const pattern = `%${q}%`;
-
   try {
     return await db
       .select({
@@ -50,8 +52,8 @@ async function searchCompetitions(
         and(
           eq(competition.countryId, "Mexico"),
           or(
-            ilike(competition.name, pattern),
-            ilike(competition.cityName, pattern),
+            accentInsensitiveContains(competition.name, q),
+            accentInsensitiveContains(competition.cityName, q),
           ),
         ),
       )
@@ -64,8 +66,6 @@ async function searchCompetitions(
 }
 
 async function searchTeams(q: string): Promise<SiteSearchResults["teams"]> {
-  const pattern = `%${q}%`;
-
   try {
     return await db
       .select({
@@ -77,9 +77,9 @@ async function searchTeams(q: string): Promise<SiteSearchResults["teams"]> {
       .innerJoin(state, eq(team.stateId, state.id))
       .where(
         or(
-          ilike(team.name, pattern),
-          ilike(state.name, pattern),
-          ilike(team.stateId, pattern),
+          accentInsensitiveContains(team.name, q),
+          accentInsensitiveContains(state.name, q),
+          accentInsensitiveContains(team.stateId, q),
         ),
       )
       .orderBy(team.name)

@@ -18,7 +18,8 @@ import {
   result,
 } from "@workspace/db/schema";
 import { cacheLife, cacheTag } from "next/cache";
-import { and, desc, eq, ilike, isNull, lt, notInArray, or } from "drizzle-orm";
+import { and, desc, eq, isNull, lt, notInArray, or } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 
 export async function getEvents() {
   cacheLife("max");
@@ -374,8 +375,8 @@ export async function getPersonsWithoutState({ search }: { search: string }) {
         and(
           isNull(person.stateId),
           or(
-            ilike(person.name, `%${search}%`),
-            ilike(person.wcaId, `%${search}%`),
+            accentInsensitiveContains(person.name, search),
+            accentInsensitiveContains(person.wcaId, search),
           ),
         ),
       )

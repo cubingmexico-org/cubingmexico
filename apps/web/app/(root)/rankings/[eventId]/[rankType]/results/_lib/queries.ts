@@ -10,7 +10,8 @@ import {
   result,
   competition,
 } from "@workspace/db/schema";
-import { and, count, ilike, gt, inArray, eq, asc, desc } from "drizzle-orm";
+import { and, count, gt, inArray, eq, asc, desc } from "drizzle-orm";
+import { accentInsensitiveContains } from "@/lib/search";
 import type {
   GetResultAveragesSchema,
   GetResultSinglesSchema,
@@ -31,7 +32,9 @@ export async function getRankSingles(
     const where = and(
       gt(result.best, 0),
       eq(result.eventId, eventId),
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)
@@ -195,7 +198,9 @@ export async function getRankAverages(
     const where = and(
       gt(result.average, 0),
       eq(result.eventId, eventId),
-      input.name ? ilike(person.name, `%${input.name}%`) : undefined,
+      input.name
+        ? accentInsensitiveContains(person.name, input.name)
+        : undefined,
       input.state.length > 0 ? inArray(state.name, input.state) : undefined,
       input.gender.length > 0
         ? inArray(person.gender, input.gender)
