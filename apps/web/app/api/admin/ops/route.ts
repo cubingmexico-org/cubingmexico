@@ -4,7 +4,7 @@ import { isSuperadmin } from "@/lib/superadmin";
 import { isAllowedOpsPath } from "@/app/(root)/admin/_lib/ops-jobs";
 import { triggerBackendJob } from "@/app/(root)/admin/_lib/ops";
 
-export const maxDuration = 800;
+export const maxDuration = 300;
 
 export async function POST(request: Request): Promise<NextResponse> {
   await connection();
