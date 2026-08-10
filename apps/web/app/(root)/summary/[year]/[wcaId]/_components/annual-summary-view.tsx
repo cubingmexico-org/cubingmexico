@@ -20,10 +20,6 @@ function subjectPronoun(gender: AnnualSummary["person"]["gender"]): string {
   return "La persona";
 }
 
-function verbCompeted(gender: AnnualSummary["person"]["gender"]): string {
-  return "compitió";
-}
-
 function formatSummaryDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
@@ -181,8 +177,8 @@ export function AnnualSummaryView({ summary }: Props) {
           </div>
         )}
         <p className="text-muted-foreground text-sm sm:text-base">
-          En el año <Stat>{year}</Stat>, {displayName}{" "}
-          {verbCompeted(person.gender)} en <Stat>{competitionCount}</Stat>{" "}
+          En el año <Stat>{year}</Stat>, {displayName} compitió en{" "}
+          <Stat>{competitionCount}</Stat>{" "}
           {competitionCount === 1 ? "competencia" : "competencias"} y{" "}
           <Stat>{roundCount}</Stat> {roundCount === 1 ? "ronda" : "rondas"} a
           través de <Stat>{eventCount}</Stat>{" "}
