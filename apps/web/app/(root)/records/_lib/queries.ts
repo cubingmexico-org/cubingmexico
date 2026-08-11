@@ -45,6 +45,7 @@ export type RecordHistoryEntry = {
   competitionId: string;
   competitionName: string;
   competitionStartDate: string;
+  roundTypeId: string | null;
   best: number;
   average: number;
   isSingleRecord: boolean;
@@ -283,6 +284,7 @@ export async function getRecordHistory(
         competitionId: competition.id,
         competitionName: competition.name,
         competitionStartDate: competition.startDate,
+        roundTypeId: result.roundTypeId,
         best: result.best,
         average: result.average,
         regionalSingleRecord: result.regionalSingleRecord,
@@ -341,6 +343,7 @@ export async function getRecordHistory(
         competitionId: row.competitionId,
         competitionName: row.competitionName,
         competitionStartDate: row.competitionStartDate.toISOString(),
+        roundTypeId: row.roundTypeId,
         best: row.best,
         average: row.average,
         isSingleRecord,

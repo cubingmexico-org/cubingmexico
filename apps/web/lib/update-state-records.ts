@@ -159,7 +159,9 @@ export async function updateStateRecords(stateId: string) {
           inArray(result.id, chunk),
           or(
             isNull(result.regionalSingleRecord),
-            notInArray(result.regionalSingleRecord, [...REGIONAL_RECORD_MARKERS]),
+            notInArray(result.regionalSingleRecord, [
+              ...REGIONAL_RECORD_MARKERS,
+            ]),
           ),
         ),
       );
@@ -175,7 +177,9 @@ export async function updateStateRecords(stateId: string) {
           inArray(result.id, chunk),
           or(
             isNull(result.regionalAverageRecord),
-            notInArray(result.regionalAverageRecord, [...REGIONAL_RECORD_MARKERS]),
+            notInArray(result.regionalAverageRecord, [
+              ...REGIONAL_RECORD_MARKERS,
+            ]),
           ),
         ),
       );
