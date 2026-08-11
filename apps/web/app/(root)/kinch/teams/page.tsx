@@ -17,7 +17,10 @@ export default async function Page() {
         <TableRow key={team.stateId}>
           <TableCell>{index + 1}</TableCell>
           <TableCell className="whitespace-nowrap">
-            <Link className="hover:underline" href={`/teams/${team.stateId}`}>
+            <Link
+              className="text-link hover:text-link/80"
+              href={`/teams/${team.stateId}`}
+            >
               {team.name}
             </Link>
           </TableCell>

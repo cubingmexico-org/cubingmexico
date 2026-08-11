@@ -41,7 +41,10 @@ export function getSingleColumns({
         const personId = row.original.personId;
         return (
           <div className="flex space-x-2 whitespace-nowrap">
-            <Link className="hover:underline" href={`/persons/${personId}`}>
+            <Link
+              className="text-link hover:text-link/80"
+              href={`/persons/${personId}`}
+            >
               {row.getValue("name")}
             </Link>
           </div>
@@ -129,7 +132,7 @@ export function getSingleColumns({
         return (
           <div className="flex space-x-2 whitespace-nowrap">
             <Link
-              className="hover:underline"
+              className="text-link hover:text-link/80"
               href={`/competitions/${competitionId}`}
             >
               {row.getValue("competition")}
@@ -183,7 +186,10 @@ export function getAverageColumns({
         const personId = row.original.personId;
         return (
           <div className="flex space-x-2 whitespace-nowrap">
-            <Link className="hover:underline" href={`/persons/${personId}`}>
+            <Link
+              className="text-link hover:text-link/80"
+              href={`/persons/${personId}`}
+            >
               {row.getValue("name")}
             </Link>
           </div>
@@ -271,7 +277,7 @@ export function getAverageColumns({
         return (
           <div className="flex space-x-2 whitespace-nowrap">
             <Link
-              className="hover:underline"
+              className="text-link hover:text-link/80"
               href={`/competitions/${competitionId}`}
             >
               {row.getValue("competition")}

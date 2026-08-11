@@ -22,6 +22,7 @@ import { StateLabel } from "@/components/state-flag";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { WcaMonochrome } from "@workspace/icons";
 import {
   getPersonData,
   getOrganizerStatus,
@@ -135,14 +136,8 @@ async function PersonPageContent({ id }: { id: string }) {
 
   return (
     <>
-      <h1 className="text-center font-semibold text-2xl mb-4 hover:underline">
-        <Link
-          href={`https://www.worldcubeassociation.org/persons/${id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {person.name ?? id}
-        </Link>
+      <h1 className="text-center font-semibold text-2xl mb-4">
+        {person.name ?? id}
       </h1>
       <div className="w-full flex flex-wrap justify-center gap-2 mb-2">
         {tier && <Badge className={getTierClass(tier)}>Miembro {tier}</Badge>}
@@ -197,12 +192,25 @@ async function PersonPageContent({ id }: { id: string }) {
           <TableRow>
             <TableCell className="text-center">
               {person.state ? (
-                <StateLabel stateName={person.state} className="justify-center" />
+                <StateLabel
+                  stateName={person.state}
+                  className="justify-center"
+                />
               ) : (
                 <span className="text-muted-foreground font-thin">N/A</span>
               )}
             </TableCell>
-            <TableCell className="text-center">{person.wcaId}</TableCell>
+            <TableCell className="text-center">
+              <Link
+                href={`https://www.worldcubeassociation.org/persons/${id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 text-link hover:text-link/80"
+              >
+                <WcaMonochrome className="size-4" />
+                {person.wcaId}
+              </Link>
+            </TableCell>
             <TableCell className="text-center">
               {person.gender === "m"
                 ? "Masculino"

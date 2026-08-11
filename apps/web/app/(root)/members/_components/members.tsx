@@ -1,5 +1,6 @@
 "use client";
 
+import { StateLabel } from "@/components/state-flag";
 import { getTier, getTierClass } from "@/lib/utils";
 import type { Tier } from "@/types";
 import { Badge } from "@workspace/ui/components/badge";
@@ -45,13 +46,18 @@ export function Members({ members }: MembersProps) {
         <TableRow key={member.wcaId}>
           <TableCell className="whitespace-nowrap">
             <div className="flex">
-              <Link href={`/persons/${member.wcaId}`} className="font-medium">
+              <Link
+                href={`/persons/${member.wcaId}`}
+                className="font-medium text-link hover:text-link/80"
+              >
                 {member.name}
               </Link>
             </div>
           </TableCell>
           <TableCell className="whitespace-nowrap">
-            {member.state ?? (
+            {member.state ? (
+              <StateLabel stateName={member.state} />
+            ) : (
               <span className="text-muted-foreground font-light">N/A</span>
             )}
           </TableCell>

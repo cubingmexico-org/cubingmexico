@@ -148,7 +148,10 @@ export function AnnualSummaryView({ summary }: Props) {
     <div className="flex flex-col gap-8 max-w-4xl mx-auto">
       <div className="text-center space-y-3">
         <h1 className="text-2xl sm:text-3xl font-bold">
-          <Link href={`/persons/${person.wcaId}`} className="hover:underline">
+          <Link
+            href={`/persons/${person.wcaId}`}
+            className="text-link hover:text-link/80"
+          >
             {displayName}
           </Link>
           {` — Resumen anual `}
@@ -360,7 +363,7 @@ export function AnnualSummaryView({ summary }: Props) {
                     <TableCell>
                       <Link
                         href={`/competitions/${comp.competitionId}`}
-                        className="hover:underline"
+                        className="text-link hover:text-link/80"
                       >
                         {comp.competitionName}
                       </Link>
@@ -578,7 +581,7 @@ export function AnnualSummaryView({ summary }: Props) {
                     <TableCell>
                       <Link
                         href={`/persons/${row.wcaId}`}
-                        className="hover:underline"
+                        className="text-link hover:text-link/80"
                       >
                         {row.name ?? row.wcaId}
                       </Link>
@@ -611,7 +614,7 @@ export function AnnualSummaryView({ summary }: Props) {
                         <TableCell>
                           <Link
                             href={`/persons/${row.wcaId}`}
-                            className="hover:underline"
+                            className="text-link hover:text-link/80"
                           >
                             {row.name ?? row.wcaId}
                           </Link>
@@ -909,7 +912,7 @@ export function AnnualSummaryView({ summary }: Props) {
                   <li key={comp.id}>
                     <Link
                       href={`/competitions/${comp.id}`}
-                      className="hover:underline"
+                      className="text-link hover:text-link/80"
                     >
                       {comp.name}
                     </Link>
@@ -929,7 +932,7 @@ export function AnnualSummaryView({ summary }: Props) {
                   <li key={comp.id}>
                     <Link
                       href={`/competitions/${comp.id}`}
-                      className="hover:underline"
+                      className="text-link hover:text-link/80"
                     >
                       {comp.name}
                     </Link>

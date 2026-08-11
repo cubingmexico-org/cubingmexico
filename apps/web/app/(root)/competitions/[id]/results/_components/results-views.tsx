@@ -119,7 +119,7 @@ export function ResultsPodiumsView({ podiumGroups }: ResultsPodiumsViewProps) {
                                 <div>
                                   <Link
                                     href={`/persons/${resultRow.personId}`}
-                                    className="hover:underline"
+                                    className="text-link hover:text-link/80"
                                   >
                                     {resultRow.personName ?? resultRow.personId}
                                   </Link>
@@ -301,7 +301,7 @@ export function ResultsAllView({
                                   <div>
                                     <Link
                                       href={`/persons/${resultRow.personId}`}
-                                      className="hover:underline"
+                                      className="text-link hover:text-link/80"
                                     >
                                       {resultRow.personName ??
                                         resultRow.personId}
@@ -434,7 +434,7 @@ export function ResultsByPersonView({
                 <h3 className="text-base font-semibold">
                   <Link
                     href={`/persons/${personGroup.personId}`}
-                    className="hover:underline"
+                    className="text-link hover:text-link/80"
                   >
                     {personGroup.personName ?? personGroup.personId}
                   </Link>

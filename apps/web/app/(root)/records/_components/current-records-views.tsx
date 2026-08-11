@@ -40,7 +40,10 @@ function PersonLink({
 }) {
   if (!name) return null;
   return (
-    <Link className="hover:underline" href={`/persons/${personId}`}>
+    <Link
+      className="text-link hover:text-link/80"
+      href={`/persons/${personId}`}
+    >
       {name}
     </Link>
   );
@@ -55,7 +58,10 @@ function CompetitionLink({
 }) {
   if (!competitionId || !name) return null;
   return (
-    <Link className="hover:underline" href={`/competitions/${competitionId}`}>
+    <Link
+      className="text-link hover:text-link/80"
+      href={`/competitions/${competitionId}`}
+    >
       {name}
     </Link>
   );

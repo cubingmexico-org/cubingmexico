@@ -53,7 +53,7 @@ export function getColumns({
               </Badge>
             )}
             <Link
-              className="hover:underline text-accent-foreground"
+              className="text-link hover:text-link/80"
               href={`/persons/${row.original.wcaId}`}
             >
               {row.getValue("name")}

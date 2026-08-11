@@ -56,7 +56,7 @@ function StreakCompetitionTable({
               </TableCell>
               <TableCell>
                 <Link
-                  className="font-medium hover:underline"
+                  className="font-medium text-link hover:text-link/80"
                   href={`/competitions/${competition.competitionId}`}
                 >
                   {competition.competitionName}

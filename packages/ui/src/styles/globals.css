@@ -44,6 +44,8 @@
   /* Cubing México brand accents (landing / header) */
   --brand: #9a002b;
   --brand-warm: #ad4b32;
+  /* Content entity links (person / competition names) */
+  --link: #1a9e45;
 }
 
 .dark {
@@ -81,6 +83,7 @@
   --sidebar-ring: oklch(0.439 0 0);
   --brand: #9a002b;
   --brand-warm: #ad4b32;
+  --link: #4ade80;
 }
 
 @theme inline {
@@ -110,6 +113,7 @@
   --color-chart-5: var(--chart-5);
   --color-brand: var(--brand);
   --color-brand-warm: var(--brand-warm);
+  --color-link: var(--link);
   --font-display: var(--font-oswald), ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

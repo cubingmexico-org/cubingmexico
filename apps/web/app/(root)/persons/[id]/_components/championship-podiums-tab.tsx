@@ -120,7 +120,7 @@ export function PersonChampionshipPodiumsTab({ podiums }: Props) {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
                       <Link
                         href={`/competitions/${group.competitionId}`}
-                        className="font-semibold text-primary hover:underline"
+                        className="font-semibold text-link hover:text-link/80"
                       >
                         {group.competitionName}
                       </Link>

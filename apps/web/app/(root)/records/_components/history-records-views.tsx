@@ -64,7 +64,10 @@ function HistoryRow({
       ) : null}
       <TableCell className="whitespace-nowrap">
         {entry.personName ? (
-          <Link className="hover:underline" href={`/persons/${entry.personId}`}>
+          <Link
+            className="text-link hover:text-link/80"
+            href={`/persons/${entry.personId}`}
+          >
             {entry.personName}
           </Link>
         ) : null}
@@ -84,7 +87,7 @@ function HistoryRow({
       </TableCell>
       <TableCell className="whitespace-nowrap">
         <Link
-          className="hover:underline"
+          className="text-link hover:text-link/80"
           href={`/competitions/${entry.competitionId}`}
         >
           {entry.competitionName}
