@@ -11,20 +11,27 @@ import {
 import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import {
+  Calendar,
   CalendarRange,
   ChartNoAxesCombined,
+  Flame,
+  History,
   Plus,
   Trophy,
   Users,
 } from "lucide-react";
 import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
 import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
-import { getStatisticsPageData } from "./_lib/queries";
+import {
+  getStatisticsPageData,
+  getTeamCompetitionEventOptions,
+} from "./_lib/queries";
 import {
   KeyStat,
   MedalStrip,
   NationalRecordsList,
 } from "../_components/team-profile-shared";
+import { TeamResultsChart } from "./_components/team-results-chart";
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -44,7 +51,10 @@ export default async function Page(props: {
   params: Promise<{ stateId: string }>;
 }) {
   const stateId = (await props.params).stateId;
-  const data = await getStatisticsPageData(stateId);
+  const [data, eventOptions] = await Promise.all([
+    getStatisticsPageData(stateId),
+    getTeamCompetitionEventOptions(stateId),
+  ]);
 
   if (!data) {
     return notFound();
@@ -61,6 +71,9 @@ export default async function Page(props: {
 
   const summaryYear = getDefaultSummaryYear();
   const stateName = team.state ?? "";
+  const recordsAsOfYear = summaryYear - 1;
+  const recordsAsOfDate = `${recordsAsOfYear}-12-31`;
+  const recordsAsOfLabel = `31 dic ${recordsAsOfYear}`;
 
   const exploreLinks = [
     {
@@ -72,6 +85,21 @@ export default async function Page(props: {
       href: `/records?state=${encodeURIComponent(stateName)}`,
       label: `Récords de ${stateName}`,
       icon: Trophy,
+    },
+    {
+      href: `/records?state=${encodeURIComponent(stateName)}&asOf=${recordsAsOfDate}`,
+      label: `Récords hasta ${recordsAsOfLabel}`,
+      icon: Calendar,
+    },
+    {
+      href: `/records?state=${encodeURIComponent(stateName)}&show=history`,
+      label: `Historial de récords de ${stateName}`,
+      icon: History,
+    },
+    {
+      href: `/streaks?state=${encodeURIComponent(stateName)}`,
+      label: `Rachas de PRs de ${stateName}`,
+      icon: Flame,
     },
     {
       href: `/sor/single?state=${encodeURIComponent(stateName)}`,
@@ -96,7 +124,7 @@ export default async function Page(props: {
         <div>
           <h2 className="text-lg font-semibold">Estadísticas</h2>
           <p className="text-sm text-muted-foreground">
-            Medallas, récords nacionales y enlaces de {stateName}
+            Medallas, gráfica de resoluciones y enlaces de {stateName}
           </p>
         </div>
         {ANNUAL_SUMMARY_ENABLED ? (
@@ -126,6 +154,8 @@ export default async function Page(props: {
           ) : null}
         </div>
       </section>
+
+      <TeamResultsChart stateId={stateId} eventOptions={eventOptions} />
 
       <Card>
         <CardHeader>
