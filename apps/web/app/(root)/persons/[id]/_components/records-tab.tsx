@@ -168,9 +168,11 @@ export function PersonRecordsTab({ records }: Props) {
                       <TableCell className="whitespace-nowrap font-semibold">
                         {hasAverageRecord && (
                           <div className="flex items-center gap-1.5">
-                            {row.eventId === "333fm"
-                              ? row.average / 100
-                              : formatAttemptValue(row.eventId, row.average)}
+                            {formatAttemptValue(
+                              row.eventId,
+                              row.average,
+                              "average",
+                            )}
                             <RecordBadges
                               regional={row.regionalAverageRecord}
                               state={row.stateAverageRecord}

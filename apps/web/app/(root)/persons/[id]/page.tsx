@@ -11,6 +11,7 @@ import {
 import Image from "next/image";
 import { getEvents, getPerson } from "@/db/queries";
 import {
+  formatAttemptValue,
   formatTime,
   formatTime333mbf,
   getTier,
@@ -285,7 +286,11 @@ async function PersonPageContent({ id }: { id: string }) {
               </TableCell>
               <TableCell className="text-center font-semibold">
                 {record?.record?.average?.best
-                  ? formatTime(record?.record?.average?.best)
+                  ? formatAttemptValue(
+                      record.event,
+                      record.record.average.best,
+                      "average",
+                    )
                   : null}
               </TableCell>
               <TableCell

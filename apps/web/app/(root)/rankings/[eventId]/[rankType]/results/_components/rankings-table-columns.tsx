@@ -3,7 +3,7 @@
 import * as React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { formatTime, formatTime333mbf } from "@/lib/utils";
+import { formatAttemptValue, formatTime, formatTime333mbf } from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -212,7 +212,11 @@ export function getAverageColumns({
         if (eventId === "333fm") {
           return (
             <div className="flex space-x-2">
-              {Number(row.getValue("average")) / 100}
+              {formatAttemptValue(
+                eventId,
+                Number(row.getValue("average")),
+                "average",
+              )}
             </div>
           );
         }

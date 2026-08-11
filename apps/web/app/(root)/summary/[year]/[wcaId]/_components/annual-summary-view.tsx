@@ -30,18 +30,24 @@ function formatSummaryDate(iso: string): string {
   }).format(date);
 }
 
-function formatResultValue(eventId: string, value: number | null): string {
+function formatResultValue(
+  eventId: string,
+  value: number | null,
+  resultType: "single" | "average" = "single",
+): string {
   if (value === null) return "—";
-  return formatAttemptValue(eventId, value) ?? "—";
+  return formatAttemptValue(eventId, value, resultType) ?? "—";
 }
 
 function formatImprovement(
   eventId: string,
   improvement: number | null,
   improvementPercent: number | null,
+  resultType: "single" | "average" = "single",
 ): string {
   if (improvement === null || improvementPercent === null) return "—";
-  const abs = formatAttemptValue(eventId, improvement) ?? String(improvement);
+  const abs =
+    formatAttemptValue(eventId, improvement, resultType) ?? String(improvement);
   return `${abs} (${improvementPercent.toFixed(2)}%)`;
 }
 
@@ -511,16 +517,25 @@ export function AnnualSummaryView({ summary }: Props) {
                           <span className="ml-2">{row.eventName}</span>
                         </TableCell>
                         <TableCell className="text-center">
-                          {formatResultValue(row.eventId, row.before)}
+                          {formatResultValue(
+                            row.eventId,
+                            row.before,
+                            "average",
+                          )}
                         </TableCell>
                         <AccentCell>
-                          {formatResultValue(row.eventId, row.during)}
+                          {formatResultValue(
+                            row.eventId,
+                            row.during,
+                            "average",
+                          )}
                         </AccentCell>
                         <AccentCell>
                           {formatImprovement(
                             row.eventId,
                             row.improvement,
                             row.improvementPercent,
+                            "average",
                           )}
                         </AccentCell>
                       </TableRow>

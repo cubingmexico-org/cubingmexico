@@ -187,13 +187,11 @@ export function PersonResultsTab({
                       >
                         {resultRow.average === 0
                           ? null
-                          : resultRow.eventId === "333fm" &&
-                              resultRow.average > 0
-                            ? resultRow.average / 100
-                            : formatAttemptValue(
-                                resultRow.eventId,
-                                resultRow.average,
-                              )}
+                          : formatAttemptValue(
+                              resultRow.eventId,
+                              resultRow.average,
+                              "average",
+                            )}
                       </TableCell>
                     )}
                     {Array.from({ length: solveCount }).map((_, index) => {

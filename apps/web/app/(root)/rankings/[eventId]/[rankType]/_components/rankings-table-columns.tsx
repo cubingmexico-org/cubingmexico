@@ -3,7 +3,7 @@
 import * as React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { formatTime, formatTime333mbf } from "@/lib/utils";
+import { formatAttemptValue, formatTime, formatTime333mbf } from "@/lib/utils";
 import { RankSingle } from "../_types";
 import { cn } from "@workspace/ui/lib/utils";
 import { usePathname } from "next/navigation";
@@ -81,9 +81,11 @@ export function getColumns({
         if (eventId === "333fm") {
           return (
             <div className="flex space-x-2">
-              {rankType === "single"
-                ? row.getValue("best")
-                : Number(row.getValue("best")) / 100}
+              {formatAttemptValue(
+                eventId,
+                Number(row.getValue("best")),
+                rankType === "average" ? "average" : "single",
+              )}
             </div>
           );
         }

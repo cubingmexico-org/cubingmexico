@@ -58,7 +58,7 @@ export function SummaryShareButton({ data }: Props) {
       const filename = `resumen-${data.year}-${data.wcaId}.png`;
       const file = new File([blob], filename, { type: "image/png" });
       const summaryUrl = `https://www.cubingmexico.net/summary/${data.year}/${data.wcaId}`;
-      const shareText = `Mi resumen anual ${data.year} en Cubing México\n${summaryUrl}`;
+      const shareText = `Mi resumen anual ${data.year} en Cubing México`;
 
       if (canShareFiles(file)) {
         try {

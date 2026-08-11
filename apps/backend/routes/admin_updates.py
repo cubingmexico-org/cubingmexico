@@ -1141,6 +1141,69 @@ def update_state_ranks():
         return jsonify({"success": False, "message": "Error updating state rankings"}), 500
 
 
+REGIONAL_RECORD_MARKERS = frozenset({"NR", "NAR", "WR"})
+
+
+def _to_date_key(start_date):
+    if hasattr(start_date, "isoformat"):
+        return start_date.isoformat()[:10]
+    return str(start_date)[:10]
+
+
+def _is_regional_record(marker):
+    return marker is not None and marker in REGIONAL_RECORD_MARKERS
+
+
+def _mark_state_records(rows, out_ids):
+    """Tag SR for chronological improvements.
+
+    Same competition start_date → only the best improvement that day is tagged.
+    Results that already have NR/NAR/WR are not tagged SR, but still advance best_so_far.
+    """
+    best_so_far = None
+    day_key = None
+    day_candidates = []
+
+    def flush_day():
+        nonlocal best_so_far, day_candidates
+
+        if not day_candidates:
+            return
+
+        improvements = [
+            row
+            for row in day_candidates
+            if best_so_far is None or row.value <= best_so_far
+        ]
+
+        if not improvements:
+            day_candidates = []
+            return
+
+        day_best = min(row.value for row in improvements)
+
+        for row in improvements:
+            if row.value == day_best and not _is_regional_record(row.regional_record):
+                out_ids.append(row.id)
+
+        best_so_far = day_best
+        day_candidates = []
+
+    for row in rows:
+        if row.value <= 0:
+            continue
+
+        key = _to_date_key(row.start_date)
+
+        if day_key is not None and key != day_key:
+            flush_day()
+
+        day_key = key
+        day_candidates.append(row)
+
+    flush_day()
+
+
 @admin_bp.route("/update-state-records", methods=["POST"])
 @require_cron_auth
 def update_state_records():
@@ -1188,7 +1251,10 @@ def update_state_records():
 
                         cur.execute(
                             """
-                            SELECT r.id, r.best AS value
+                            SELECT r.id,
+                                   r.best AS value,
+                                   c.start_date,
+                                   r.regional_single_record AS regional_record
                             FROM results r
                             INNER JOIN competitions c ON r.competition_id = c.id
                             LEFT JOIN round_types rt ON r.round_type_id = rt.id
@@ -1203,15 +1269,14 @@ def update_state_records():
                             """,
                             (event_id, person_ids),
                         )
-                        best_so_far = None
-                        for row in cur.fetchall():
-                            if best_so_far is None or row.value <= best_so_far:
-                                single_sr_ids.append(row.id)
-                                best_so_far = row.value
+                        _mark_state_records(cur.fetchall(), single_sr_ids)
 
                         cur.execute(
                             """
-                            SELECT r.id, r.average AS value
+                            SELECT r.id,
+                                   r.average AS value,
+                                   c.start_date,
+                                   r.regional_average_record AS regional_record
                             FROM results r
                             INNER JOIN competitions c ON r.competition_id = c.id
                             LEFT JOIN round_types rt ON r.round_type_id = rt.id
@@ -1226,11 +1291,7 @@ def update_state_records():
                             """,
                             (event_id, person_ids),
                         )
-                        best_so_far = None
-                        for row in cur.fetchall():
-                            if best_so_far is None or row.value <= best_so_far:
-                                average_sr_ids.append(row.id)
-                                best_so_far = row.value
+                        _mark_state_records(cur.fetchall(), average_sr_ids)
 
                 chunk_size = 500
                 for i in range(0, len(single_sr_ids), chunk_size):
