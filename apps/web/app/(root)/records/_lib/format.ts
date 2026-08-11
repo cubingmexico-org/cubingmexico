@@ -1,11 +1,12 @@
-import { formatAttemptValue } from "@/lib/utils";
+import { formatAttemptValue, type ResultValueType } from "@/lib/utils";
 
 export function formatRecordResult(
   eventId: string,
   value: number | null | undefined,
+  resultType: ResultValueType = "single",
 ): string {
   if (value == null) return "N/A";
-  return formatAttemptValue(eventId, value) ?? "N/A";
+  return formatAttemptValue(eventId, value, resultType) ?? "N/A";
 }
 
 export function formatRecordSolves(

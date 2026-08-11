@@ -74,7 +74,7 @@ function HistoryRow({
       </TableCell>
       <TableCell>
         {entry.isAverageRecord && entry.average > 0
-          ? formatRecordResult(entry.eventId, entry.average)
+          ? formatRecordResult(entry.eventId, entry.average, "average")
           : null}
       </TableCell>
       <TableCell className="whitespace-nowrap">{entry.personState}</TableCell>

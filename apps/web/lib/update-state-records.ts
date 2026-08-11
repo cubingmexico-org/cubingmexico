@@ -11,6 +11,14 @@ import {
 import { EXCLUDED_EVENTS } from "@/lib/constants";
 
 const SR = "SR";
+const REGIONAL_RECORD_MARKERS = new Set(["NR", "NAR", "WR"]);
+
+type StateRecordRow = {
+  id: string;
+  value: number;
+  startDate: Date | string;
+  regionalRecord: string | null;
+};
 
 /** Clear historical SR tags for people leaving a state (or changing states). */
 export async function clearPersonStateRecords(personIds: string[]) {
@@ -30,6 +38,9 @@ export async function clearPersonStateRecords(personIds: string[]) {
 /**
  * Recompute historical state record markers for all current members of a state.
  * Attributes every past result to the person's current state_id (WCA-style running best).
+ *
+ * Same competition start_date → only the best improvement that day is tagged.
+ * Results that already have NR/NAR/WR are not tagged SR, but still advance bestSoFar.
  */
 export async function updateStateRecords(stateId: string) {
   const stateData = await db
@@ -74,6 +85,8 @@ export async function updateStateRecords(stateId: string) {
       .select({
         id: result.id,
         value: result.best,
+        startDate: competition.startDate,
+        regionalRecord: result.regionalSingleRecord,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
@@ -99,6 +112,8 @@ export async function updateStateRecords(stateId: string) {
       .select({
         id: result.id,
         value: result.average,
+        startDate: competition.startDate,
+        regionalRecord: result.regionalAverageRecord,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
@@ -146,18 +161,64 @@ export async function updateStateRecords(stateId: string) {
   };
 }
 
-function markStateRecords(
-  rows: { id: string; value: number }[],
-  outIds: string[],
-) {
+function toDateKey(startDate: Date | string): string {
+  if (startDate instanceof Date) {
+    return startDate.toISOString().slice(0, 10);
+  }
+  return String(startDate).slice(0, 10);
+}
+
+function isRegionalRecord(marker: string | null): boolean {
+  return marker !== null && REGIONAL_RECORD_MARKERS.has(marker);
+}
+
+/**
+ * Tag SR for chronological improvements, collapsing to the best value per
+ * competition start_date and skipping results that already hold NR/NAR/WR.
+ */
+function markStateRecords(rows: StateRecordRow[], outIds: string[]) {
   let bestSoFar: number | null = null;
+  let dayKey: string | null = null;
+  let dayCandidates: StateRecordRow[] = [];
+
+  const flushDay = () => {
+    if (dayCandidates.length === 0) {
+      return;
+    }
+
+    const improvements = dayCandidates.filter(
+      (row) => bestSoFar === null || row.value <= bestSoFar,
+    );
+
+    if (improvements.length === 0) {
+      dayCandidates = [];
+      return;
+    }
+
+    const dayBest = Math.min(...improvements.map((row) => row.value));
+
+    for (const row of improvements) {
+      if (row.value === dayBest && !isRegionalRecord(row.regionalRecord)) {
+        outIds.push(row.id);
+      }
+    }
+
+    bestSoFar = dayBest;
+    dayCandidates = [];
+  };
 
   for (const row of rows) {
     if (row.value <= 0) continue;
 
-    if (bestSoFar === null || row.value <= bestSoFar) {
-      outIds.push(row.id);
-      bestSoFar = row.value;
+    const key = toDateKey(row.startDate);
+
+    if (dayKey !== null && key !== dayKey) {
+      flushDay();
     }
+
+    dayKey = key;
+    dayCandidates.push(row);
   }
+
+  flushDay();
 }

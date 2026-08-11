@@ -194,9 +194,12 @@ export function roundTypeLabel(id?: string | null) {
   }
 }
 
+export type ResultValueType = "single" | "average";
+
 export function formatAttemptValue(
   eventId: string,
   value: number,
+  resultType: ResultValueType = "single",
 ): string | null {
   if (value === 0) {
     return null;
@@ -209,6 +212,10 @@ export function formatAttemptValue(
   if (eventId === "333fm") {
     if (value === -1) return "DNF";
     if (value === -2) return "DNS";
+    // WCA stores FMC means as moves × 100 (e.g. 2450 → 24.50)
+    if (resultType === "average") {
+      return (value / 100).toFixed(2);
+    }
     return `${value}`;
   }
 

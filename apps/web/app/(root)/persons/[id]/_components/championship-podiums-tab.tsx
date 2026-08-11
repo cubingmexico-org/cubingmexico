@@ -171,9 +171,11 @@ export function PersonChampionshipPodiumsTab({ podiums }: Props) {
                       {/* Average */}
                       <TableCell className="text-center font-semibold whitespace-nowrap">
                         {row.average > 0
-                          ? row.eventId === "333fm"
-                            ? row.average / 100
-                            : formatAttemptValue(row.eventId, row.average)
+                          ? formatAttemptValue(
+                              row.eventId,
+                              row.average,
+                              "average",
+                            )
                           : null}
                       </TableCell>
 

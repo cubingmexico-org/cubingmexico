@@ -97,7 +97,11 @@ export function MixedRecordsTable({ records }: { records: CurrentRecord[] }) {
               {record.eventId === "333mbf" || !record.average ? (
                 <span className="text-muted-foreground font-thin">N/A</span>
               ) : (
-                formatRecordResult(record.eventId, record.average.best)
+                formatRecordResult(
+                  record.eventId,
+                  record.average.best,
+                  "average",
+                )
               )}
             </TableCell>
             <TableCell className="whitespace-nowrap">
@@ -201,7 +205,11 @@ export function SlimRecordsTables({ records }: { records: CurrentRecord[] }) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {formatRecordResult(record.eventId, record.average!.best)}
+                  {formatRecordResult(
+                    record.eventId,
+                    record.average!.best,
+                    "average",
+                  )}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <PersonLink
@@ -292,7 +300,11 @@ export function SeparateRecordsTables({
                   </TableCell>
                   <TableCell>
                     {record.average ? (
-                      formatRecordResult(record.eventId, record.average.best)
+                      formatRecordResult(
+                        record.eventId,
+                        record.average.best,
+                        "average",
+                      )
                     ) : (
                       <span className="text-muted-foreground font-thin">
                         N/A
