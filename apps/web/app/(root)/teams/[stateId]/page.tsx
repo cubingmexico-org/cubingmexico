@@ -3,7 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { getTeam } from "@/db/queries";
+import type { GeoJSONProps } from "react-leaflet";
+import { getStatesGeoJSON, getTeam } from "@/db/queries";
 import {
   Card,
   CardContent,
@@ -34,6 +35,7 @@ import {
   NationalRecordsList,
   TeamPersonLink,
 } from "./_components/team-profile-shared";
+import { TeamLocation } from "./_components/team-location";
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -55,7 +57,10 @@ export default async function Page({
   params: Promise<{ stateId: string }>;
 }) {
   const stateId = (await params).stateId;
-  const data = await getTeamOverviewData(stateId);
+  const [data, statesGeoJSON] = await Promise.all([
+    getTeamOverviewData(stateId),
+    getStatesGeoJSON(),
+  ]);
 
   if (!data) {
     return notFound();
@@ -71,6 +76,16 @@ export default async function Page({
     topMembers,
     upcomingCompetitions,
   } = data;
+
+  const stateFeature = statesGeoJSON?.features.find(
+    (feature) => feature.properties.id === stateId,
+  );
+  const stateGeoJSON = stateFeature
+    ? ({
+        type: "FeatureCollection",
+        features: [stateFeature],
+      } as GeoJSONProps["data"])
+    : null;
 
   const socialLinks = [
     team.socialLinks?.email
@@ -309,6 +324,19 @@ export default async function Page({
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ubicación</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TeamLocation
+                stateId={stateId}
+                stateName={team.state}
+                statesData={stateGeoJSON}
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
               <CardTitle>Próximas competencias</CardTitle>

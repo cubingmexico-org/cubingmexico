@@ -13,9 +13,8 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
 import { cn } from "@workspace/ui/lib/utils";
-import { CalendarRange, Settings, Users } from "lucide-react";
+import { CalendarRange, MapPin, Settings, Users } from "lucide-react";
 import type { getTeamInfo } from "../_lib/queries";
-import { StateLabel } from "@/components/state-flag";
 import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
 import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
 
@@ -98,12 +97,10 @@ export function TeamShell({
                   ) : null}
                 </div>
                 <div className="mt-2 flex flex-col items-start gap-2 text-sm text-white/90 sm:flex-row sm:items-center sm:gap-4">
-                  <StateLabel
-                    stateId={stateId}
-                    stateName={team.state}
-                    size={18}
-                    className="text-white/90"
-                  />
+                  <div className="flex items-center">
+                    <MapPin className="mr-1 h-4 w-4" />
+                    {team.state}
+                  </div>
                   <div className="flex items-center">
                     <Users className="mr-1 h-4 w-4" />
                     {totalMembers} miembros
