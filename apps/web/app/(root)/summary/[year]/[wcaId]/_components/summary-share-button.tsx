@@ -58,7 +58,9 @@ export function SummaryShareButton({ data }: Props) {
       const filename = `resumen-${data.year}-${data.wcaId}.png`;
       const file = new File([blob], filename, { type: "image/png" });
       const summaryUrl = `https://www.cubingmexico.net/summary/${data.year}/${data.wcaId}`;
-      const shareText = `Mi resumen anual ${data.year} en Cubing México`;
+      // Put the URL in the text body on its own paragraph. Passing `url`
+      // separately often concatenates it onto the same line (WhatsApp, etc.).
+      const shareText = `Mi resumen anual ${data.year} en Cubing México\n\n${summaryUrl}`;
 
       if (canShareFiles(file)) {
         try {
@@ -66,7 +68,6 @@ export function SummaryShareButton({ data }: Props) {
             files: [file],
             title: `Resumen ${data.year} — ${data.name}`,
             text: shareText,
-            url: summaryUrl,
           });
           return;
         } catch (error) {

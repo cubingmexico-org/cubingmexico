@@ -20,9 +20,12 @@ export type ShareHighlightSource = {
   };
   personalBests: {
     totalBreaks: number;
+    singleBreaks: number;
+    averageBreaks: number;
   };
   solves: {
     totalSolves: number;
+    totalAttempts: number;
   };
   records: {
     wr: number;
@@ -91,6 +94,15 @@ export function getShareHighlights(
   }
 
   if (source.personalBests.totalBreaks > 0) {
+    const { singleBreaks, averageBreaks } = source.personalBests;
+    const prParts = [
+      singleBreaks > 0
+        ? `${formatInt(singleBreaks)} ${singleBreaks === 1 ? "single" : "singles"}`
+        : null,
+      averageBreaks > 0
+        ? `${formatInt(averageBreaks)} ${averageBreaks === 1 ? "average" : "averages"}`
+        : null,
+    ].filter(Boolean);
     push({
       id: "prs",
       label:
@@ -98,6 +110,7 @@ export function getShareHighlights(
           ? "Récord personal"
           : "Récords personales",
       value: formatInt(source.personalBests.totalBreaks),
+      detail: prParts.length > 0 ? prParts.join(" · ") : undefined,
     });
   }
 
@@ -106,6 +119,12 @@ export function getShareHighlights(
       id: "solves",
       label: source.solves.totalSolves === 1 ? "Resolución" : "Resoluciones",
       value: formatInt(source.solves.totalSolves),
+      detail:
+        source.solves.totalAttempts > 0
+          ? `${formatInt(source.solves.totalAttempts)} ${
+              source.solves.totalAttempts === 1 ? "intento" : "intentos"
+            }`
+          : undefined,
     });
   }
 
@@ -153,10 +172,12 @@ export function getShareHighlights(
   if (source.prStreak != null && source.prStreak.length >= 2) {
     push({
       id: "pr-streak",
-      label: "Racha de PRs",
+      label: "Mejor racha",
       value: formatInt(source.prStreak.length),
       detail:
-        source.prStreak.length === 1 ? "competencia" : "competencias seguidas",
+        source.prStreak.length === 1
+          ? "competencia con PR"
+          : "competencias con PR",
     });
   }
 
