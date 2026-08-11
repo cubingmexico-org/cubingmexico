@@ -9,6 +9,7 @@ import {
 } from "@workspace/ui/components/table";
 import type { CurrentRecord } from "../_lib/queries";
 import { formatRecordResult, formatRecordSolves } from "../_lib/format";
+import { StateLabel } from "@/components/state-flag";
 
 function SolvesCell({
   eventId,
@@ -39,7 +40,10 @@ function PersonLink({
 }) {
   if (!name) return null;
   return (
-    <Link className="hover:underline" href={`/persons/${personId}`}>
+    <Link
+      className="text-link hover:text-link/80"
+      href={`/persons/${personId}`}
+    >
       {name}
     </Link>
   );
@@ -54,7 +58,10 @@ function CompetitionLink({
 }) {
   if (!competitionId || !name) return null;
   return (
-    <Link className="hover:underline" href={`/competitions/${competitionId}`}>
+    <Link
+      className="text-link hover:text-link/80"
+      href={`/competitions/${competitionId}`}
+    >
       {name}
     </Link>
   );
@@ -167,7 +174,7 @@ export function SlimRecordsTables({ records }: { records: CurrentRecord[] }) {
                   />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {record.single.state}
+                  <StateLabel stateName={record.single.state} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <CompetitionLink
@@ -218,7 +225,7 @@ export function SlimRecordsTables({ records }: { records: CurrentRecord[] }) {
                   />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {record.average!.state}
+                  <StateLabel stateName={record.average!.state} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <CompetitionLink
@@ -272,7 +279,7 @@ export function SeparateRecordsTables({
                   {formatRecordResult(record.eventId, record.single.best)}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {record.single.state}
+                  <StateLabel stateName={record.single.state} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <CompetitionLink
@@ -312,7 +319,9 @@ export function SeparateRecordsTables({
                     )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {record.average?.state}
+                    {record.average?.state ? (
+                      <StateLabel stateName={record.average.state} />
+                    ) : null}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {record.average ? (

@@ -153,7 +153,7 @@ export function PersonResultsTab({
                     <TableCell className="whitespace-nowrap">
                       {isFirstForCompetition ? (
                         <Link
-                          className="hover:underline"
+                          className="text-link hover:text-link/80"
                           href={`/competitions/${resultRow.competitionId}`}
                         >
                           {resultRow.competitionName}

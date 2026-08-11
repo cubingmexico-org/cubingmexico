@@ -38,7 +38,10 @@ function CompetitionItem({
       <Calendar className="h-6 w-6" />
       <div className="grow">
         <h3 className="font-semibold">
-          <Link href={`/competitions/${competition.id}`}>
+          <Link
+            href={`/competitions/${competition.id}`}
+            className="text-link hover:text-link/80"
+          >
             {competition.name}
           </Link>
         </h3>

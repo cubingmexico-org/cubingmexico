@@ -10,6 +10,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { formatStatusName, getStatusIcon } from "../_lib/utils";
 import { ExternalLink, Trophy } from "lucide-react";
 import { WcaMonochrome } from "@workspace/icons";
+import { StateLabel } from "@/components/state-flag";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
@@ -72,7 +73,7 @@ export function getColumns({
               {label}
             </Badge>
             <Link
-              className="truncate font-medium hover:underline"
+              className="truncate font-medium text-link hover:text-link/80"
               href={`/competitions/${row.original.id}`}
             >
               {row.getValue("name")}
@@ -112,11 +113,19 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="Estado" />
       ),
       cell: ({ row }) => {
+        const stateName = row.getValue("state") as string | null;
         return (
           <div className="flex space-x-2">
-            <span className="truncate font-medium">
-              {row.getValue("state")}
-            </span>
+            {stateName ? (
+              <StateLabel
+                stateName={stateName}
+                nameClassName="truncate font-medium"
+              />
+            ) : (
+              <span className="truncate font-medium text-muted-foreground">
+                N/A
+              </span>
+            )}
           </div>
         );
       },

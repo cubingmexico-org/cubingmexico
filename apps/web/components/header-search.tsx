@@ -28,6 +28,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog";
 import { cn } from "@workspace/ui/lib/utils";
+import { StateLabel } from "@/components/state-flag";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { filterSitePages, type SitePage } from "@/lib/site-pages";
 import type { SiteSearchResults } from "@/lib/site-search-types";
@@ -247,7 +248,11 @@ export function HeaderSearch() {
                       <Building2 className="size-4" />
                       <span className="truncate">{t.name}</span>
                       <span className="ml-auto truncate text-xs text-muted-foreground">
-                        {t.stateName}
+                        <StateLabel
+                          stateId={t.stateId}
+                          stateName={t.stateName}
+                          size={12}
+                        />
                       </span>
                     </CommandItem>
                   ))}

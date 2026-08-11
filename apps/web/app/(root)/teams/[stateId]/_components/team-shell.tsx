@@ -14,6 +14,7 @@ import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
 import { cn } from "@workspace/ui/lib/utils";
 import { MapPin, Settings, Users } from "lucide-react";
 import type { getTeamInfo } from "../_lib/queries";
+import { StateLabel } from "@/components/state-flag";
 
 type Team = NonNullable<Awaited<ReturnType<typeof getTeamInfo>>>;
 
@@ -81,7 +82,7 @@ export function TeamShell({
                 <div className="mt-2 flex flex-col items-start gap-2 sm:flex-row sm:gap-4">
                   <div className="flex items-center">
                     <MapPin className="mr-1 h-4 w-4" />
-                    {team.state}
+                    <StateLabel stateId={stateId} stateName={team.state} />
                   </div>
                   <div className="flex items-center">
                     <Users className="mr-1 h-4 w-4" />

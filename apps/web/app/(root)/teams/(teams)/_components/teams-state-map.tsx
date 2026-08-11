@@ -13,6 +13,7 @@ import "leaflet-defaulticon-compatibility";
 import type { Team } from "./teams";
 import { useRouter } from "next/navigation";
 import { normalizeSearchText } from "@/lib/search";
+import { StateLabel } from "@/components/state-flag";
 
 interface TeamsStateMapProps {
   teams: Team[];
@@ -110,7 +111,7 @@ export function TeamsStateMap({
 }: TeamsStateMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -137,7 +138,7 @@ export function TeamsStateMap({
     mapRef.current = map;
 
     const tileUrl =
-      theme === "dark"
+      resolvedTheme === "dark"
         ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
@@ -203,8 +204,13 @@ export function TeamsStateMap({
 
                     <div className="flex-1">
                       <h3 className="text-sm font-semibold">{team.name}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {team.state}
+                      <p className="text-xs text-muted-foreground inline-flex justify-center w-full">
+                        <StateLabel
+                          stateId={team.id}
+                          stateName={team.state}
+                          size={12}
+                          className="justify-center"
+                        />
                       </p>
                     </div>
                   </div>
@@ -279,7 +285,7 @@ export function TeamsStateMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [onTeamSelect, selectedState, statesData, teams, theme, router]);
+  }, [onTeamSelect, selectedState, statesData, teams, resolvedTheme, router]);
 
   if (!statesData) {
     return (

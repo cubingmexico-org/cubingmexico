@@ -34,7 +34,7 @@ export function LeafletMap({
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -57,7 +57,7 @@ export function LeafletMap({
     mapRef.current = map;
 
     const tileUrl =
-      theme === "dark"
+      resolvedTheme === "dark"
         ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
@@ -82,7 +82,7 @@ export function LeafletMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [posix, zoom, statesData, locations, theme]);
+  }, [posix, zoom, statesData, locations, resolvedTheme]);
 
   return <div ref={containerRef} style={{ height: "100%", width: "100%" }} />;
 }

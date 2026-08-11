@@ -19,6 +19,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import type { State } from "@workspace/db/schema";
+import { StateFlag, StateLabel } from "@/components/state-flag";
 
 interface StateSelectorProps {
   states: State[];
@@ -49,7 +50,7 @@ export function StateSelector({
           size="sm"
           className="gap-2 focus:outline-none focus:ring-1 focus:ring-ring focus-visible:ring-0 w-full"
         >
-          {stateName}
+          <StateLabel stateId={stateId} stateName={stateName} />
           <ChevronsUpDown className="ml-auto shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -64,6 +65,7 @@ export function StateSelector({
                   key={state.id}
                   onSelect={() => handleToggle(state.id)}
                 >
+                  <StateFlag stateId={state.id} />
                   <span className="truncate">{state.name}</span>
                   <Check
                     className={cn(

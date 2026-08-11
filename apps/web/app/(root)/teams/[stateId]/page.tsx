@@ -240,7 +240,10 @@ export default async function Page({
               {upcomingCompetitions.map((competition) => (
                 <div key={competition.id} className="space-y-2">
                   <h3 className="font-semibold">
-                    <Link href={`/competitions/${competition.id}`}>
+                    <Link
+                      href={`/competitions/${competition.id}`}
+                      className="text-link hover:text-link/80"
+                    >
                       {competition.name}
                     </Link>
                   </h3>

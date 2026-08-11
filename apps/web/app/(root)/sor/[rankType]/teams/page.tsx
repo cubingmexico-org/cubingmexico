@@ -116,7 +116,7 @@ export default async function Page(props: PageProps) {
                 <TableCell>{index + 1}</TableCell>
                 <TableCell className="whitespace-nowrap">
                   <Link
-                    className="hover:underline"
+                    className="text-link hover:text-link/80"
                     href={`/teams/${team.stateId}`}
                   >
                     {team.name}
@@ -230,7 +230,7 @@ export default async function Page(props: PageProps) {
               <TableCell>{index + 1}</TableCell>
               <TableCell className="whitespace-nowrap">
                 <Link
-                  className="hover:underline"
+                  className="text-link hover:text-link/80"
                   href={`/teams/${team.stateId}`}
                 >
                   {team.name}

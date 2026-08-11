@@ -184,7 +184,7 @@ export function PersonRecordsTab({ records }: Props) {
                       {/* Competition */}
                       <TableCell className="whitespace-nowrap">
                         <Link
-                          className="hover:underline text-primary"
+                          className="text-link hover:text-link/80"
                           href={`/competitions/${row.competitionId}`}
                         >
                           {row.competitionName}

@@ -22,6 +22,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { updateCompetitionState } from "../../_lib/actions";
+import { StateFlag } from "@/components/state-flag";
 
 type StateOption = { id: string; name: string };
 
@@ -105,7 +106,10 @@ export function CompetitionsFilters({
             <SelectItem value="all">Todos</SelectItem>
             {states.map((state) => (
               <SelectItem key={state.id} value={state.id}>
-                {state.name}
+                <span className="inline-flex items-center gap-1.5">
+                  <StateFlag stateId={state.id} />
+                  {state.name}
+                </span>
               </SelectItem>
             ))}
           </SelectContent>
@@ -213,7 +217,10 @@ export function CompetitionsTable({
                     <SelectItem value="none">Sin estado</SelectItem>
                     {states.map((state) => (
                       <SelectItem key={state.id} value={state.id}>
-                        {state.name}
+                        <span className="inline-flex items-center gap-1.5">
+                          <StateFlag stateId={state.id} />
+                          {state.name}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>

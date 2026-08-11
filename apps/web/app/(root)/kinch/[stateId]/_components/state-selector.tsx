@@ -19,6 +19,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { State } from "@workspace/db/schema";
 import { redirect } from "next/navigation";
+import { StateFlag, StateLabel } from "@/components/state-flag";
 
 interface StateSelecorProps {
   stateName: string;
@@ -40,7 +41,7 @@ export function StateSelector({ stateName, states }: StateSelecorProps) {
           size="sm"
           className="ml-auto h-8 gap-2 focus:outline-none focus:ring-1 focus:ring-ring focus-visible:ring-0 mb-6"
         >
-          {stateName}
+          <StateLabel stateName={stateName} />
           <ChevronsUpDown className="ml-auto shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -55,6 +56,7 @@ export function StateSelector({ stateName, states }: StateSelecorProps) {
                   key={state.id}
                   onSelect={() => handleToggle(state.id)}
                 >
+                  <StateFlag stateId={state.id} />
                   <span className="truncate">{state.name}</span>
                   <Check
                     className={cn(

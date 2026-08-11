@@ -10,6 +10,7 @@ import {
 import { roundRank } from "@/lib/utils";
 import type { RecordHistoryEntry } from "../_lib/queries";
 import { formatRecordResult, formatRecordSolves } from "../_lib/format";
+import { StateLabel } from "@/components/state-flag";
 
 function formatCircaDate(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString("es-MX", {
@@ -63,7 +64,10 @@ function HistoryRow({
       ) : null}
       <TableCell className="whitespace-nowrap">
         {entry.personName ? (
-          <Link className="hover:underline" href={`/persons/${entry.personId}`}>
+          <Link
+            className="text-link hover:text-link/80"
+            href={`/persons/${entry.personId}`}
+          >
             {entry.personName}
           </Link>
         ) : null}
@@ -78,10 +82,12 @@ function HistoryRow({
           ? formatRecordResult(entry.eventId, entry.average, "average")
           : null}
       </TableCell>
-      <TableCell className="whitespace-nowrap">{entry.personState}</TableCell>
+      <TableCell className="whitespace-nowrap">
+        <StateLabel stateName={entry.personState} />
+      </TableCell>
       <TableCell className="whitespace-nowrap">
         <Link
-          className="hover:underline"
+          className="text-link hover:text-link/80"
           href={`/competitions/${entry.competitionId}`}
         >
           {entry.competitionName}

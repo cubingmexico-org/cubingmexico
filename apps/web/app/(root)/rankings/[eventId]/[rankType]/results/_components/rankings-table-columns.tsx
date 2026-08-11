@@ -8,6 +8,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ResultAverage, ResultSingle } from "../_types";
+import { StateLabel } from "@/components/state-flag";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
@@ -40,7 +41,10 @@ export function getSingleColumns({
         const personId = row.original.personId;
         return (
           <div className="flex space-x-2 whitespace-nowrap">
-            <Link className="hover:underline" href={`/persons/${personId}`}>
+            <Link
+              className="text-link hover:text-link/80"
+              href={`/persons/${personId}`}
+            >
               {row.getValue("name")}
             </Link>
           </div>
@@ -92,18 +96,16 @@ export function getSingleColumns({
         <DataTableColumnHeader column={column} title="Estado" />
       ),
       cell: ({ row }) => {
+        const stateName = row.getValue("state") as string | null;
         return (
           <div className="flex space-x-2">
-            <span
-              className={cn(
-                row.getValue("state") === null
-                  ? "text-muted-foreground"
-                  : "font-medium",
+            <StateLabel
+              stateName={stateName}
+              nameClassName={cn(
+                stateName === null ? "text-muted-foreground" : "font-medium",
                 "max-w-125 truncate",
               )}
-            >
-              {row.getValue("state") ?? "N/A"}
-            </span>
+            />
           </div>
         );
       },
@@ -130,7 +132,7 @@ export function getSingleColumns({
         return (
           <div className="flex space-x-2 whitespace-nowrap">
             <Link
-              className="hover:underline"
+              className="text-link hover:text-link/80"
               href={`/competitions/${competitionId}`}
             >
               {row.getValue("competition")}
@@ -184,7 +186,10 @@ export function getAverageColumns({
         const personId = row.original.personId;
         return (
           <div className="flex space-x-2 whitespace-nowrap">
-            <Link className="hover:underline" href={`/persons/${personId}`}>
+            <Link
+              className="text-link hover:text-link/80"
+              href={`/persons/${personId}`}
+            >
               {row.getValue("name")}
             </Link>
           </div>
@@ -236,18 +241,16 @@ export function getAverageColumns({
         <DataTableColumnHeader column={column} title="Estado" />
       ),
       cell: ({ row }) => {
+        const stateName = row.getValue("state") as string | null;
         return (
           <div className="flex space-x-2">
-            <span
-              className={cn(
-                row.getValue("state") === null
-                  ? "text-muted-foreground"
-                  : "font-medium",
+            <StateLabel
+              stateName={stateName}
+              nameClassName={cn(
+                stateName === null ? "text-muted-foreground" : "font-medium",
                 "max-w-125 truncate",
               )}
-            >
-              {row.getValue("state") ?? "N/A"}
-            </span>
+            />
           </div>
         );
       },
@@ -274,7 +277,7 @@ export function getAverageColumns({
         return (
           <div className="flex space-x-2 whitespace-nowrap">
             <Link
-              className="hover:underline"
+              className="text-link hover:text-link/80"
               href={`/competitions/${competitionId}`}
             >
               {row.getValue("competition")}

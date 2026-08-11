@@ -260,7 +260,7 @@ export default async function Page({
                       <div className="min-w-0">
                         <Link
                           href={`/persons/${resultRow.personId}`}
-                          className="truncate font-medium hover:underline"
+                          className="truncate font-medium text-link hover:text-link/80"
                         >
                           {resultRow.personName ?? resultRow.personId}
                         </Link>
