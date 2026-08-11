@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { roundRank } from "@/lib/utils";
 import type { RecordHistoryEntry } from "../_lib/queries";
 import { formatRecordResult, formatRecordSolves } from "../_lib/format";
 
@@ -95,6 +96,66 @@ function HistoryRow({
   );
 }
 
+type HistoryDisplayRow = {
+  key: string;
+  entry: RecordHistoryEntry;
+};
+
+/** Split a result that set both single and average into two rows (WCA style). */
+function expandRecordHistoryRows(
+  rows: RecordHistoryEntry[],
+): HistoryDisplayRow[] {
+  const expanded: HistoryDisplayRow[] = [];
+
+  for (const row of rows) {
+    if (row.isSingleRecord) {
+      expanded.push({
+        key: `${row.resultId}-single`,
+        entry: { ...row, isAverageRecord: false },
+      });
+    }
+    if (row.isAverageRecord) {
+      expanded.push({
+        key: `${row.resultId}-average`,
+        entry: { ...row, isSingleRecord: false },
+      });
+    }
+  }
+
+  return expanded;
+}
+
+/** Newest first; same day ordered by round (later rounds first), then single before average. */
+function byChronologicalDesc(
+  a: HistoryDisplayRow,
+  b: HistoryDisplayRow,
+): number {
+  const dateDelta =
+    new Date(b.entry.competitionStartDate).getTime() -
+    new Date(a.entry.competitionStartDate).getTime();
+  if (dateDelta !== 0) return dateDelta;
+
+  const roundDelta =
+    roundRank(a.entry.roundTypeId) - roundRank(b.entry.roundTypeId);
+  if (roundDelta !== 0) return roundDelta;
+
+  if (a.entry.isSingleRecord !== b.entry.isSingleRecord) {
+    return a.entry.isSingleRecord ? -1 : 1;
+  }
+
+  return a.entry.eventRank - b.entry.eventRank;
+}
+
+/** Per-event history: all singles first (date desc), then all averages (date desc). */
+function toWcaHistoryRows(rows: RecordHistoryEntry[]): HistoryDisplayRow[] {
+  return expandRecordHistoryRows(rows).sort((a, b) => {
+    if (a.entry.isSingleRecord !== b.entry.isSingleRecord) {
+      return a.entry.isSingleRecord ? -1 : 1;
+    }
+    return byChronologicalDesc(a, b);
+  });
+}
+
 export function HistoryRecordsTables({
   records,
 }: {
@@ -128,37 +189,41 @@ export function HistoryRecordsTables({
 
   return (
     <>
-      {groups.map((group) => (
-        <div key={group.eventId} className="space-y-4 py-4">
-          <div className="flex gap-2 items-center">
-            <span className={`cubing-icon event-${group.eventId} text-2xl`} />
-            <h2 className="text-lg font-medium">{group.eventName}</h2>
+      {groups.map((group) => {
+        const historyRows = toWcaHistoryRows(group.rows);
+
+        return (
+          <div key={group.eventId} className="space-y-4 py-4">
+            <div className="flex gap-2 items-center">
+              <span className={`cubing-icon event-${group.eventId} text-2xl`} />
+              <h2 className="text-lg font-medium">{group.eventName}</h2>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Single</TableHead>
+                  <TableHead>Average</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Competencia</TableHead>
+                  <TableHead>Resoluciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {historyRows.map(({ key, entry }) => (
+                  <HistoryRow
+                    key={key}
+                    entry={entry}
+                    showEvent={false}
+                    showSolves
+                  />
+                ))}
+              </TableBody>
+            </Table>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Single</TableHead>
-                <TableHead>Average</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead>Competencia</TableHead>
-                <TableHead>Resoluciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {group.rows.map((entry) => (
-                <HistoryRow
-                  key={entry.resultId}
-                  entry={entry}
-                  showEvent={false}
-                  showSolves
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }
@@ -168,6 +233,9 @@ export function MixedHistoryRecordsTable({
 }: {
   records: RecordHistoryEntry[];
 }) {
+  const historyRows =
+    expandRecordHistoryRows(records).sort(byChronologicalDesc);
+
   return (
     <div className="py-4">
       <Table>
@@ -180,16 +248,12 @@ export function MixedHistoryRecordsTable({
             <TableHead>Average</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Competencia</TableHead>
+            <TableHead>Resoluciones</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {records.map((entry) => (
-            <HistoryRow
-              key={entry.resultId}
-              entry={entry}
-              showEvent
-              showSolves={false}
-            />
+          {historyRows.map(({ key, entry }) => (
+            <HistoryRow key={key} entry={entry} showEvent showSolves />
           ))}
         </TableBody>
       </Table>

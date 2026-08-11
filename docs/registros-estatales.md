@@ -68,12 +68,12 @@ Propiedades importantes:
 
 ## Qué ya alineamos con la WCA
 
-| Comportamiento | WCA | Cubing México (SR) |
-| --- | --- | --- |
-| Solo la marca más alta | WR / NAR / NR en una columna | No poner SR si ya hay NR/NAR/WR |
-| Empate con el récord vigente (`<=`) | Sí | Sí |
-| Mismo día calendario → solo el mejor | 9i2 | Sí (con la clave de fecha que tenemos) |
-| Mejor histórico corriendo en el tiempo | Sí | Sí |
+| Comportamiento                         | WCA                          | Cubing México (SR)                     |
+| -------------------------------------- | ---------------------------- | -------------------------------------- |
+| Solo la marca más alta                 | WR / NAR / NR en una columna | No poner SR si ya hay NR/NAR/WR        |
+| Empate con el récord vigente (`<=`)    | Sí                           | Sí                                     |
+| Mismo día calendario → solo el mejor   | 9i2                          | Sí (con la clave de fecha que tenemos) |
+| Mejor histórico corriendo en el tiempo | Sí                           | Sí                                     |
 
 ---
 
