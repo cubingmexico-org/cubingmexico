@@ -33,6 +33,7 @@ import {
 } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { isSummaryYearPublished } from "../../../../_lib/summary-year";
+import { computeTeamYearKinchSor } from "../../../../[year]/[wcaId]/_lib/summary-extra";
 
 const FEATURED_CHAMPIONSHIP_TYPES = ["MX", "_North America", "world"] as const;
 const TOP_N = 10;
@@ -92,6 +93,70 @@ export type TeamSummaryTravelState = {
   competitions: number;
 };
 
+export type TeamSummaryCrossedTeam = {
+  stateId: string;
+  teamName: string;
+  teamImage: string | null;
+  sharedCompetitions: number;
+  competitorsMet: number;
+};
+
+export type TeamSummaryBiggestTurnout = {
+  competitionId: string;
+  competitionName: string;
+  memberCount: number;
+};
+
+export type TeamSummarySeason = {
+  activeMembers: number;
+  competitionCount: number;
+  eventCount: number;
+  roundCount: number;
+  firstCompetitionDate: string | null;
+  lastCompetitionDate: string | null;
+};
+
+export type TeamSummaryGrowth = {
+  prevYear: number | null;
+  activeMembersDelta: number | null;
+  hostedCompetitionsDelta: number | null;
+  podiumsDelta: number | null;
+};
+
+export type TeamSummaryRetention = {
+  previousActive: number;
+  returned: number;
+};
+
+export type TeamSummaryDominantEvent = {
+  eventId: string;
+  eventName: string;
+  eventRank: number;
+  total: number;
+  gold: number;
+  silver: number;
+  bronze: number;
+};
+
+export type TeamSummaryRecurringVisitor = TeamSummaryPerson & {
+  competitions: number;
+};
+
+export type TeamSummaryDiverseComp = {
+  competitionId: string;
+  competitionName: string;
+  distinctTeams: number;
+};
+
+export type TeamSummaryKinchSor = {
+  kinchBefore: number;
+  kinchAfter: number;
+  sorSingleBefore: number;
+  sorSingleAfter: number;
+  sorAverageBefore: number;
+  sorAverageAfter: number;
+};
+
 export type TeamSummaryChampionshipPodium = {
   wcaId: string;
   name: string | null;
@@ -144,8 +209,18 @@ export type TeamAnnualSummary = {
       totalAttempts: number;
     };
     visitors: TeamSummaryVisitorState[];
+    recurringVisitors: TeamSummaryRecurringVisitor[];
   };
   members: {
+    season: TeamSummarySeason;
+    growth: TeamSummaryGrowth;
+    retention: TeamSummaryRetention;
+    biggestTurnout: TeamSummaryBiggestTurnout | null;
+    mostDiverseComp: TeamSummaryDiverseComp | null;
+    crossedTeams: TeamSummaryCrossedTeam[];
+    debuts: number;
+    firstTimeAway: TeamSummaryPerson[];
+    dominantEvents: TeamSummaryDominantEvent[];
     mostActive: TeamSummaryCompetitorCount[];
     foreign: {
       competitorCount: number;
@@ -180,6 +255,7 @@ export type TeamAnnualSummary = {
       topSrBreakers: TeamSummaryRecordHolder[];
       regionalRecords: TeamSummaryRegionalRecord[];
     };
+    kinchSor: TeamSummaryKinchSor;
   };
   staff: {
     newDelegates: TeamSummaryNewDelegate[];
@@ -269,7 +345,7 @@ async function getTeamAnnualSummaryCached(
 ): Promise<TeamAnnualSummary | null> {
   "use cache";
   cacheLife("days");
-  cacheTag(`team-summary-v1-${year}-${stateId}`);
+  cacheTag(`team-summary-v4-${year}-${stateId}`);
 
   try {
     const [teamRow] = await db
@@ -294,6 +370,10 @@ async function getTeamAnnualSummaryCached(
     }
 
     const { start: yearStart, end: yearEnd } = yearBounds(year);
+    const prevYear = year - 1;
+    const { start: prevYearStart, end: prevYearEnd } = yearBounds(prevYear);
+    const includePrevYear =
+      isSummaryYearPublished(prevYear) && activityYears.includes(prevYear);
 
     const hostedYearFilter = and(
       eq(competition.stateId, stateId),
@@ -308,6 +388,28 @@ async function getTeamAnnualSummaryCached(
       lt(competition.startDate, yearEnd),
     );
 
+    const prevHostedYearFilter = and(
+      eq(competition.stateId, stateId),
+      gte(competition.startDate, prevYearStart),
+      lt(competition.startDate, prevYearEnd),
+      eq(competition.cancelled, false),
+    );
+
+    const prevMemberYearFilter = and(
+      eq(person.stateId, stateId),
+      gte(competition.startDate, prevYearStart),
+      lt(competition.startDate, prevYearEnd),
+    );
+
+    const awayLocationFilter = or(
+      ne(competition.countryId, "Mexico"),
+      and(
+        eq(competition.countryId, "Mexico"),
+        isNotNull(competition.stateId),
+        ne(competition.stateId, stateId),
+      ),
+    );
+
     const [
       hostedIntro,
       biggestCompRows,
@@ -316,6 +418,9 @@ async function getTeamAnnualSummaryCached(
       popularEventRows,
       solveRows,
       visitorRows,
+      recurringVisitorRows,
+      seasonIntro,
+      biggestTurnoutRows,
       mostActiveRows,
       foreignRows,
       foreignTopRows,
@@ -323,12 +428,21 @@ async function getTeamAnnualSummaryCached(
       otherStateCompetitorRow,
       podiumAggRows,
       topPodiumerRows,
+      dominantEventRows,
       srEventRows,
       recordTotals,
       topSrBreakerRows,
       regionalRecordRows,
       championshipRows,
       firstPodiumYearRows,
+      debutRows,
+      firstTimeAwayRows,
+      prevSeasonIntro,
+      prevHostedIntro,
+      prevPodiumAggRows,
+      prevActiveMemberRows,
+      activeMemberRows,
+      rosterMemberRows,
       newDelegateCandidates,
       hostedOrganizerRows,
       hostedDelegateRows,
@@ -434,6 +548,59 @@ async function getTeamAnnualSummaryCached(
         .groupBy(person.stateId, state.name)
         .orderBy(desc(countDistinct(person.wcaId)), asc(state.name))
         .limit(TOP_N),
+
+      // Recurring visitors: other-state people in ≥2 hosted comps
+      db
+        .select({
+          wcaId: person.wcaId,
+          name: person.name,
+          competitions: countDistinct(result.competitionId),
+        })
+        .from(result)
+        .innerJoin(competition, eq(result.competitionId, competition.id))
+        .innerJoin(person, eq(result.personId, person.wcaId))
+        .where(
+          and(
+            hostedYearFilter,
+            isNotNull(person.stateId),
+            ne(person.stateId, stateId),
+          ),
+        )
+        .groupBy(person.wcaId, person.name)
+        .having(sql`COUNT(DISTINCT ${result.competitionId}) >= 2`)
+        .orderBy(desc(countDistinct(result.competitionId)), asc(person.name))
+        .limit(TOP_N),
+
+      // Member season intro
+      db
+        .select({
+          activeMembers: countDistinct(result.personId),
+          competitionCount: countDistinct(result.competitionId),
+          eventCount: countDistinct(result.eventId),
+          roundCount: sql<number>`COUNT(DISTINCT (${result.competitionId} || ':' || ${result.eventId} || ':' || ${result.roundTypeId}))::int`,
+          firstCompetitionDate: sql<string>`MIN(${competition.startDate})`,
+          lastCompetitionDate: sql<string>`MAX(${competition.endDate})`,
+        })
+        .from(result)
+        .innerJoin(competition, eq(result.competitionId, competition.id))
+        .innerJoin(person, eq(result.personId, person.wcaId))
+        .where(memberYearFilter)
+        .then((rows) => rows[0]),
+
+      // Biggest team turnout at a single competition
+      db
+        .select({
+          competitionId: competition.id,
+          competitionName: competition.name,
+          memberCount: countDistinct(result.personId),
+        })
+        .from(result)
+        .innerJoin(competition, eq(result.competitionId, competition.id))
+        .innerJoin(person, eq(result.personId, person.wcaId))
+        .where(memberYearFilter)
+        .groupBy(competition.id, competition.name)
+        .orderBy(desc(countDistinct(result.personId)), asc(competition.name))
+        .limit(1),
 
       // Most active team members
       db
@@ -564,6 +731,37 @@ async function getTeamAnnualSummaryCached(
           desc(sql`COUNT(*)`),
           desc(sql`COUNT(*) FILTER (WHERE ${result.pos} = 1)`),
           asc(person.name),
+        )
+        .limit(TOP_N),
+
+      // Dominant events: podiums by event
+      db
+        .select({
+          eventId: result.eventId,
+          eventName: event.name,
+          eventRank: event.rank,
+          gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1)::int`,
+          silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2)::int`,
+          bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3)::int`,
+          total: sql<number>`COUNT(*)::int`,
+        })
+        .from(result)
+        .innerJoin(competition, eq(result.competitionId, competition.id))
+        .innerJoin(person, eq(result.personId, person.wcaId))
+        .innerJoin(event, eq(result.eventId, event.id))
+        .where(
+          and(
+            memberYearFilter,
+            inArray(result.roundTypeId, ["f", "c"]),
+            inArray(result.pos, [1, 2, 3]),
+            gt(result.best, 0),
+          ),
+        )
+        .groupBy(result.eventId, event.name, event.rank)
+        .orderBy(
+          desc(sql`COUNT(*)`),
+          desc(sql`COUNT(*) FILTER (WHERE ${result.pos} = 1)`),
+          asc(event.rank),
         )
         .limit(TOP_N),
 
@@ -718,6 +916,106 @@ async function getTeamAnnualSummaryCached(
         )
         .orderBy(asc(person.name)),
 
+      // Roster debuts: members whose first-ever WCA year is this year
+      db
+        .select({
+          wcaId: person.wcaId,
+          name: person.name,
+        })
+        .from(result)
+        .innerJoin(competition, eq(result.competitionId, competition.id))
+        .innerJoin(person, eq(result.personId, person.wcaId))
+        .where(eq(person.stateId, stateId))
+        .groupBy(person.wcaId, person.name)
+        .having(
+          sql`EXTRACT(YEAR FROM MIN(${competition.startDate}) AT TIME ZONE 'UTC')::int = ${year}`,
+        )
+        .orderBy(asc(person.name)),
+
+      // First time competing away from home state
+      db
+        .select({
+          wcaId: person.wcaId,
+          name: person.name,
+        })
+        .from(result)
+        .innerJoin(competition, eq(result.competitionId, competition.id))
+        .innerJoin(person, eq(result.personId, person.wcaId))
+        .where(and(eq(person.stateId, stateId), awayLocationFilter))
+        .groupBy(person.wcaId, person.name)
+        .having(
+          sql`EXTRACT(YEAR FROM MIN(${competition.startDate}) AT TIME ZONE 'UTC')::int = ${year}`,
+        )
+        .orderBy(asc(person.name)),
+
+      // Previous year season (for YoY)
+      includePrevYear
+        ? db
+            .select({
+              activeMembers: countDistinct(result.personId),
+            })
+            .from(result)
+            .innerJoin(competition, eq(result.competitionId, competition.id))
+            .innerJoin(person, eq(result.personId, person.wcaId))
+            .where(prevMemberYearFilter)
+            .then((rows) => rows[0])
+        : Promise.resolve({ activeMembers: 0 }),
+
+      includePrevYear
+        ? db
+            .select({
+              competitionCount: countDistinct(competition.id),
+            })
+            .from(competition)
+            .where(prevHostedYearFilter)
+            .then((rows) => rows[0])
+        : Promise.resolve({ competitionCount: 0 }),
+
+      includePrevYear
+        ? db
+            .select({
+              gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1)::int`,
+              silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2)::int`,
+              bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3)::int`,
+            })
+            .from(result)
+            .innerJoin(competition, eq(result.competitionId, competition.id))
+            .innerJoin(person, eq(result.personId, person.wcaId))
+            .where(
+              and(
+                prevMemberYearFilter,
+                inArray(result.roundTypeId, ["f", "c"]),
+                inArray(result.pos, [1, 2, 3]),
+                gt(result.best, 0),
+              ),
+            )
+            .then((rows) => rows[0])
+        : Promise.resolve({ gold: 0, silver: 0, bronze: 0 }),
+
+      // Prev-year active member ids (retention)
+      includePrevYear
+        ? db
+            .selectDistinct({ wcaId: person.wcaId })
+            .from(result)
+            .innerJoin(competition, eq(result.competitionId, competition.id))
+            .innerJoin(person, eq(result.personId, person.wcaId))
+            .where(prevMemberYearFilter)
+        : Promise.resolve([] as { wcaId: string }[]),
+
+      // This-year active member ids (retention)
+      db
+        .selectDistinct({ wcaId: person.wcaId })
+        .from(result)
+        .innerJoin(competition, eq(result.competitionId, competition.id))
+        .innerJoin(person, eq(result.personId, person.wcaId))
+        .where(memberYearFilter),
+
+      // Full roster for team Kinch/SoR (current membership)
+      db
+        .select({ wcaId: person.wcaId })
+        .from(person)
+        .where(eq(person.stateId, stateId)),
+
       // Delegate candidates for new-delegate heuristic
       db
         .select({
@@ -784,6 +1082,62 @@ async function getTeamAnnualSummaryCached(
         .groupBy(person.wcaId, person.name)
         .orderBy(desc(countDistinct(competition.id)), asc(person.name)),
     ]);
+
+    // Crossed teams: other Mexican states met at comps where team members competed
+    const memberComps = db
+      .$with("member_comps")
+      .as(
+        db
+          .selectDistinct({ competitionId: result.competitionId })
+          .from(result)
+          .innerJoin(competition, eq(result.competitionId, competition.id))
+          .innerJoin(person, eq(result.personId, person.wcaId))
+          .where(memberYearFilter),
+      );
+
+    const crossedTeamRows = await db
+      .with(memberComps)
+      .select({
+        stateId: person.stateId,
+        teamName: team.name,
+        teamImage: team.image,
+        sharedCompetitions: countDistinct(result.competitionId),
+        competitorsMet: countDistinct(person.wcaId),
+      })
+      .from(result)
+      .innerJoin(
+        memberComps,
+        eq(result.competitionId, memberComps.competitionId),
+      )
+      .innerJoin(person, eq(result.personId, person.wcaId))
+      .innerJoin(team, eq(person.stateId, team.stateId))
+      .where(and(isNotNull(person.stateId), ne(person.stateId, stateId)))
+      .groupBy(person.stateId, team.name, team.image)
+      .orderBy(
+        desc(countDistinct(result.competitionId)),
+        desc(countDistinct(person.wcaId)),
+        asc(team.name),
+      )
+      .limit(TOP_N);
+
+    const mostDiverseCompRows = await db
+      .with(memberComps)
+      .select({
+        competitionId: competition.id,
+        competitionName: competition.name,
+        distinctTeams: countDistinct(person.stateId),
+      })
+      .from(result)
+      .innerJoin(
+        memberComps,
+        eq(result.competitionId, memberComps.competitionId),
+      )
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .innerJoin(person, eq(result.personId, person.wcaId))
+      .where(and(isNotNull(person.stateId), ne(person.stateId, stateId)))
+      .groupBy(competition.id, competition.name)
+      .orderBy(desc(countDistinct(person.stateId)), asc(competition.name))
+      .limit(1);
 
     // Newcomers: team members whose first-ever competition is in this year
     // and who competed in a hosted competition this year.
@@ -955,9 +1309,119 @@ async function getTeamAnnualSummaryCached(
     const biggest = biggestCompRows[0] ?? null;
     const competitionCount = Number(hostedIntro?.competitionCount ?? 0);
 
+    const season: TeamSummarySeason = {
+      activeMembers: Number(seasonIntro?.activeMembers ?? 0),
+      competitionCount: Number(seasonIntro?.competitionCount ?? 0),
+      eventCount: Number(seasonIntro?.eventCount ?? 0),
+      roundCount: Number(seasonIntro?.roundCount ?? 0),
+      firstCompetitionDate: seasonIntro?.firstCompetitionDate
+        ? String(seasonIntro.firstCompetitionDate)
+        : null,
+      lastCompetitionDate: seasonIntro?.lastCompetitionDate
+        ? String(seasonIntro.lastCompetitionDate)
+        : null,
+    };
+
+    const turnoutRow = biggestTurnoutRows[0] ?? null;
+    const biggestTurnout: TeamSummaryBiggestTurnout | null =
+      turnoutRow && Number(turnoutRow.memberCount) >= 2
+        ? {
+            competitionId: turnoutRow.competitionId,
+            competitionName: turnoutRow.competitionName,
+            memberCount: Number(turnoutRow.memberCount),
+          }
+        : null;
+
+    const crossedTeams: TeamSummaryCrossedTeam[] = crossedTeamRows
+      .filter(
+        (row): row is typeof row & { stateId: string } => row.stateId !== null,
+      )
+      .map((row) => ({
+        stateId: row.stateId,
+        teamName: row.teamName,
+        teamImage: row.teamImage,
+        sharedCompetitions: Number(row.sharedCompetitions),
+        competitorsMet: Number(row.competitorsMet),
+      }));
+
+    const debuts = debutRows.length;
+
+    const firstTimeAway: TeamSummaryPerson[] = firstTimeAwayRows.map((row) => ({
+      wcaId: row.wcaId,
+      name: row.name,
+    }));
+
+    const dominantEvents: TeamSummaryDominantEvent[] = dominantEventRows.map(
+      (row) => ({
+        eventId: row.eventId,
+        eventName: row.eventName,
+        eventRank: row.eventRank,
+        total: Number(row.total),
+        gold: Number(row.gold),
+        silver: Number(row.silver),
+        bronze: Number(row.bronze),
+      }),
+    );
+
+    const recurringVisitors: TeamSummaryRecurringVisitor[] =
+      recurringVisitorRows.map((row) => ({
+        wcaId: row.wcaId,
+        name: row.name,
+        competitions: Number(row.competitions),
+      }));
+
+    const diverseRow = mostDiverseCompRows[0] ?? null;
+    const mostDiverseComp: TeamSummaryDiverseComp | null =
+      diverseRow && Number(diverseRow.distinctTeams) >= 2
+        ? {
+            competitionId: diverseRow.competitionId,
+            competitionName: diverseRow.competitionName,
+            distinctTeams: Number(diverseRow.distinctTeams),
+          }
+        : null;
+
+    const prevActiveMembers = Number(prevSeasonIntro?.activeMembers ?? 0);
+    const prevHostedCount = Number(prevHostedIntro?.competitionCount ?? 0);
+    const prevPodiums =
+      Number(prevPodiumAggRows?.gold ?? 0) +
+      Number(prevPodiumAggRows?.silver ?? 0) +
+      Number(prevPodiumAggRows?.bronze ?? 0);
+
+    const growth: TeamSummaryGrowth = includePrevYear
+      ? {
+          prevYear,
+          activeMembersDelta: season.activeMembers - prevActiveMembers,
+          hostedCompetitionsDelta: competitionCount - prevHostedCount,
+          podiumsDelta: gold + silver + bronze - prevPodiums,
+        }
+      : {
+          prevYear: null,
+          activeMembersDelta: null,
+          hostedCompetitionsDelta: null,
+          podiumsDelta: null,
+        };
+
+    const prevActiveSet = new Set(prevActiveMemberRows.map((r) => r.wcaId));
+    const returned = activeMemberRows.filter((r) =>
+      prevActiveSet.has(r.wcaId),
+    ).length;
+    const retention: TeamSummaryRetention = {
+      previousActive: includePrevYear ? prevActiveMembers : 0,
+      returned: includePrevYear ? returned : 0,
+    };
+
+    const rosterMemberIds = rosterMemberRows.map((r) => r.wcaId);
+    const kinchSor = await computeTeamYearKinchSor(
+      rosterMemberIds,
+      yearStart,
+      yearEnd,
+    );
+
     // Empty activity in year (shouldn't happen if years include it, but guard)
     const hasMemberActivity =
-      mostActiveRows.length > 0 || gold + silver + bronze > 0;
+      season.activeMembers > 0 ||
+      mostActiveRows.length > 0 ||
+      gold + silver + bronze > 0;
     if (competitionCount === 0 && !hasMemberActivity) {
       return null;
     }
@@ -1010,8 +1474,18 @@ async function getTeamAnnualSummaryCached(
             stateName: row.stateName,
             competitors: Number(row.competitors),
           })),
+        recurringVisitors,
       },
       members: {
+        season,
+        growth,
+        retention,
+        biggestTurnout,
+        mostDiverseComp,
+        crossedTeams,
+        debuts,
+        firstTimeAway,
+        dominantEvents,
         mostActive: mostActiveRows.map((row) => ({
           wcaId: row.wcaId,
           name: row.name,
@@ -1095,6 +1569,7 @@ async function getTeamAnnualSummaryCached(
             .filter((row) => row.count > 0),
           regionalRecords,
         },
+        kinchSor,
       },
       staff: {
         newDelegates,

@@ -29,6 +29,11 @@ function formatSummaryDate(iso: string): string {
   }).format(date);
 }
 
+function formatDelta(n: number): string {
+  if (n > 0) return `+${n.toLocaleString("es-MX")}`;
+  return n.toLocaleString("es-MX");
+}
+
 function championshipLabel(type: string): string {
   switch (type) {
     case "MX":
@@ -174,6 +179,92 @@ export function TeamAnnualSummaryView({ summary }: Props) {
         )}
       </div>
 
+      {members.season.activeMembers > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Actividad de los miembros</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            En <Stat>{year}</Stat>, <Stat>{members.season.activeMembers}</Stat>{" "}
+            {members.season.activeMembers === 1
+              ? "miembro del Team compitió"
+              : "miembros del Team compitieron"}{" "}
+            en <Stat>{members.season.competitionCount}</Stat>{" "}
+            {members.season.competitionCount === 1
+              ? "competencia"
+              : "competencias"}{" "}
+            y <Stat>{members.season.roundCount}</Stat>{" "}
+            {members.season.roundCount === 1 ? "ronda" : "rondas"} a través de{" "}
+            <Stat>{members.season.eventCount}</Stat>{" "}
+            {members.season.eventCount === 1 ? "evento" : "eventos"}
+            {members.season.firstCompetitionDate &&
+            members.season.lastCompetitionDate ? (
+              <>
+                , del{" "}
+                <Stat>
+                  {formatSummaryDate(members.season.firstCompetitionDate)}
+                </Stat>{" "}
+                al{" "}
+                <Stat>
+                  {formatSummaryDate(members.season.lastCompetitionDate)}
+                </Stat>
+              </>
+            ) : null}
+            .
+          </p>
+        </section>
+      )}
+
+      {members.growth.prevYear !== null && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Crecimiento</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Respecto a <Stat>{members.growth.prevYear}</Stat>
+            {members.growth.activeMembersDelta !== null ? (
+              <>
+                : <Stat>{formatDelta(members.growth.activeMembersDelta)}</Stat>{" "}
+                {Math.abs(members.growth.activeMembersDelta) === 1
+                  ? "miembro activo"
+                  : "miembros activos"}
+              </>
+            ) : null}
+            {members.growth.hostedCompetitionsDelta !== null ? (
+              <>
+                ,{" "}
+                <Stat>
+                  {formatDelta(members.growth.hostedCompetitionsDelta)}
+                </Stat>{" "}
+                {Math.abs(members.growth.hostedCompetitionsDelta) === 1
+                  ? "competencia organizada"
+                  : "competencias organizadas"}
+              </>
+            ) : null}
+            {members.growth.podiumsDelta !== null ? (
+              <>
+                {" "}
+                y <Stat>{formatDelta(members.growth.podiumsDelta)}</Stat>{" "}
+                {Math.abs(members.growth.podiumsDelta) === 1
+                  ? "podio"
+                  : "podios"}
+              </>
+            ) : null}
+            .
+          </p>
+        </section>
+      )}
+
+      {members.retention.previousActive > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Retención</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            <Stat>{members.retention.returned}</Stat> de{" "}
+            <Stat>{members.retention.previousActive}</Stat>{" "}
+            {members.retention.previousActive === 1
+              ? "miembro activo"
+              : "miembros activos"}{" "}
+            de <Stat>{year - 1}</Stat> volvieron a competir en {year}.
+          </p>
+        </section>
+      )}
+
       {hosted.competitionCount > 0 && (
         <section className="space-y-3">
           <h2 className="text-xl font-semibold">Competencias en el estado</h2>
@@ -305,6 +396,36 @@ export function TeamAnnualSummaryView({ summary }: Props) {
         </section>
       )}
 
+      {hosted.recurringVisitors.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Visitantes recurrentes</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Competidores de otros estados que asistieron a al menos 2
+            competencias en {team.stateName}.
+          </p>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Persona</TableHead>
+                  <TableHead className="text-center">Competencias</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {hosted.recurringVisitors.map((row) => (
+                  <TableRow key={row.wcaId}>
+                    <TableCell>
+                      <PersonLink wcaId={row.wcaId} name={row.name} />
+                    </TableCell>
+                    <AccentCell>{row.competitions}</AccentCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
+      )}
+
       {members.mostActive.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-xl font-semibold">Más activos</h2>
@@ -405,6 +526,174 @@ export function TeamAnnualSummaryView({ summary }: Props) {
                     </TableCell>
                     <AccentCell>{row.competitors}</AccentCell>
                     <AccentCell>{row.competitions}</AccentCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
+      )}
+
+      {members.firstTimeAway.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">
+            Primera vez fuera del estado
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            <Stat>{members.firstTimeAway.length}</Stat>{" "}
+            {members.firstTimeAway.length === 1
+              ? "miembro compitió"
+              : "miembros compitieron"}{" "}
+            fuera de {team.stateName} por primera vez.
+          </p>
+          <p className="text-muted-foreground text-sm">
+            {members.firstTimeAway.map((row, index) => (
+              <span key={row.wcaId}>
+                {index > 0 ? ", " : null}
+                <PersonLink wcaId={row.wcaId} name={row.name} />
+              </span>
+            ))}
+          </p>
+        </section>
+      )}
+
+      {members.biggestTurnout && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Mayor reunión del Team</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            La mayor reunión del Team fue{" "}
+            <Link
+              href={`/competitions/${members.biggestTurnout.competitionId}`}
+              className="text-link hover:text-link/80 font-medium"
+            >
+              {members.biggestTurnout.competitionName}
+            </Link>{" "}
+            con <Stat>{members.biggestTurnout.memberCount}</Stat>{" "}
+            {members.biggestTurnout.memberCount === 1 ? "miembro" : "miembros"}.
+          </p>
+        </section>
+      )}
+
+      {members.mostDiverseComp && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Competencia con más Teams</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            La competencia con más Teams distintos fue{" "}
+            <Link
+              href={`/competitions/${members.mostDiverseComp.competitionId}`}
+              className="text-link hover:text-link/80 font-medium"
+            >
+              {members.mostDiverseComp.competitionName}
+            </Link>
+            , con <Stat>{members.mostDiverseComp.distinctTeams}</Stat>{" "}
+            {members.mostDiverseComp.distinctTeams === 1
+              ? "otro Team"
+              : "otros Teams"}
+            .
+          </p>
+        </section>
+      )}
+
+      {members.crossedTeams.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">
+            Teams con los que más coincidimos
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Otros Teams presentes en las mismas competencias.
+          </p>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Team</TableHead>
+                  <TableHead className="text-center">Competencias</TableHead>
+                  <TableHead className="text-center">Competidores</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.crossedTeams.map((row) => {
+                  const initials =
+                    row.teamName
+                      .split(" ")
+                      .map((part) => part[0])
+                      .join("")
+                      .slice(0, 3) || row.stateId;
+                  return (
+                    <TableRow key={row.stateId}>
+                      <TableCell>
+                        <Link
+                          href={`/teams/${row.stateId}`}
+                          className="inline-flex items-center gap-2 text-link hover:text-link/80"
+                        >
+                          <Avatar className="size-7 border border-border">
+                            <AvatarImage
+                              src={row.teamImage ?? undefined}
+                              alt={row.teamName}
+                            />
+                            <AvatarFallback className="text-[10px] font-semibold">
+                              {initials}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{row.teamName}</span>
+                        </Link>
+                      </TableCell>
+                      <AccentCell>{row.sharedCompetitions}</AccentCell>
+                      <AccentCell>{row.competitorsMet}</AccentCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </section>
+      )}
+
+      {members.debuts > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Debutantes del Team</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            <Stat>{members.debuts}</Stat>{" "}
+            {members.debuts === 1 ? "miembro debutó" : "miembros debutaron"} en
+            la WCA este año.
+          </p>
+        </section>
+      )}
+
+      {members.dominantEvents.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-xl font-semibold">Eventos con más podios</h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            Eventos donde el Team acumuló más podios en {year}.
+          </p>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Evento</TableHead>
+                  <TableHead className="text-center">Total</TableHead>
+                  <TableHead className="text-center">Oro</TableHead>
+                  <TableHead className="text-center">Plata</TableHead>
+                  <TableHead className="text-center">Bronce</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.dominantEvents.map((row) => (
+                  <TableRow key={row.eventId}>
+                    <TableCell>
+                      <span className={`cubing-icon event-${row.eventId}`} />
+                      <span className="ml-2">{row.eventName}</span>
+                    </TableCell>
+                    <AccentCell>{row.total}</AccentCell>
+                    <TableCell className="text-center font-semibold text-amber-500 dark:text-amber-400">
+                      {row.gold || ""}
+                    </TableCell>
+                    <TableCell className="text-center font-semibold text-slate-500 dark:text-slate-300">
+                      {row.silver || ""}
+                    </TableCell>
+                    <TableCell className="text-center font-semibold text-yellow-700 dark:text-yellow-600">
+                      {row.bronze || ""}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -640,6 +929,50 @@ export function TeamAnnualSummaryView({ summary }: Props) {
           )}
         </section>
       )}
+
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Kinch y Sum of Ranks</h2>
+        <p className="text-muted-foreground text-sm sm:text-base">
+          Puntajes del Team (mejor miembro por evento) al inicio y al final de{" "}
+          {year}.
+        </p>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Métrica</TableHead>
+                <TableHead className="text-center">{year - 1}</TableHead>
+                <TableHead className="text-center">{year}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow>
+                <TableCell>Kinch overall</TableCell>
+                <TableCell className="text-center">
+                  {members.kinchSor.kinchBefore.toFixed(2)}
+                </TableCell>
+                <AccentCell>
+                  {members.kinchSor.kinchAfter.toFixed(2)}
+                </AccentCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Sum of Ranks (single)</TableCell>
+                <TableCell className="text-center">
+                  {members.kinchSor.sorSingleBefore}
+                </TableCell>
+                <AccentCell>{members.kinchSor.sorSingleAfter}</AccentCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>Sum of Ranks (average)</TableCell>
+                <TableCell className="text-center">
+                  {members.kinchSor.sorAverageBefore}
+                </TableCell>
+                <AccentCell>{members.kinchSor.sorAverageAfter}</AccentCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
+      </section>
 
       {(staff.newDelegates.length > 0 ||
         staff.hostedOrganizers.length > 0 ||

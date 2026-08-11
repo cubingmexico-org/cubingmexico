@@ -20,11 +20,39 @@ export type TeamShareHighlightSource = {
     };
   };
   members: {
+    season: {
+      activeMembers: number;
+      competitionCount: number;
+    };
+    growth: {
+      prevYear: number | null;
+      activeMembersDelta: number | null;
+    };
+    retention: {
+      previousActive: number;
+      returned: number;
+    };
+    biggestTurnout: {
+      memberCount: number;
+    } | null;
+    mostDiverseComp: {
+      distinctTeams: number;
+    } | null;
+    crossedTeams: unknown[];
+    debuts: number;
+    dominantEvents: Array<{
+      eventName: string;
+      total: number;
+      gold: number;
+    }>;
     podiums: {
       total: number;
       gold: number;
       silver: number;
       bronze: number;
+    };
+    championshipPodiums: {
+      total: number;
     };
     records: {
       wr: number;
@@ -34,6 +62,10 @@ export type TeamShareHighlightSource = {
     };
     foreign: {
       competitorCount: number;
+    };
+    kinchSor: {
+      kinchBefore: number;
+      kinchAfter: number;
     };
   };
   staff: {
@@ -46,6 +78,11 @@ const MAX_HIGHLIGHTS = 8;
 
 function formatInt(n: number): string {
   return n.toLocaleString("es-MX");
+}
+
+function formatDelta(n: number): string {
+  if (n > 0) return `+${formatInt(n)}`;
+  return formatInt(n);
 }
 
 /**
@@ -70,22 +107,32 @@ export function getTeamShareHighlights(
     });
   }
 
-  if (source.hosted.totalCompetitors > 0) {
+  if (source.members.season.activeMembers > 0) {
     push({
-      id: "competitors",
-      label:
-        source.hosted.totalCompetitors === 1 ? "Competidor" : "Competidores",
-      value: formatInt(source.hosted.totalCompetitors),
-      detail: "en competencias del estado",
+      id: "active-members",
+      label: source.members.season.activeMembers === 1 ? "Miembro" : "Miembros",
+      value: formatInt(source.members.season.activeMembers),
+      detail:
+        source.members.season.competitionCount > 0
+          ? `${formatInt(source.members.season.competitionCount)} ${
+              source.members.season.competitionCount === 1
+                ? "competencia"
+                : "competencias"
+            }`
+          : undefined,
     });
   }
 
-  if (source.hosted.newcomers > 0) {
+  if (
+    source.members.growth.prevYear !== null &&
+    source.members.growth.activeMembersDelta !== null &&
+    source.members.growth.activeMembersDelta !== 0
+  ) {
     push({
-      id: "newcomers",
-      label: source.hosted.newcomers === 1 ? "Debutante" : "Debutantes",
-      value: formatInt(source.hosted.newcomers),
-      detail: "del Team",
+      id: "growth",
+      label: "Crecimiento",
+      value: formatDelta(source.members.growth.activeMembersDelta),
+      detail: `miembros vs ${source.members.growth.prevYear}`,
     });
   }
 
@@ -102,6 +149,18 @@ export function getTeamShareHighlights(
       value: formatInt(source.members.podiums.total),
       detail: medals.length > 0 ? medals.join(" · ") : undefined,
       tone: "gold",
+    });
+  }
+
+  if (
+    source.members.biggestTurnout &&
+    source.members.biggestTurnout.memberCount >= 2
+  ) {
+    push({
+      id: "turnout",
+      label: "Mayor reunión",
+      value: formatInt(source.members.biggestTurnout.memberCount),
+      detail: "miembros en una competencia",
     });
   }
 
@@ -130,6 +189,103 @@ export function getTeamShareHighlights(
       label: regionalTotal === 1 ? "Récord" : "Récords",
       value: formatInt(regionalTotal),
       detail: parts.join(" · "),
+    });
+  }
+
+  if (source.members.debuts > 0) {
+    push({
+      id: "debuts",
+      label: source.members.debuts === 1 ? "Debutante" : "Debutantes",
+      value: formatInt(source.members.debuts),
+      detail: "del Team en la WCA",
+    });
+  } else if (source.hosted.newcomers > 0) {
+    push({
+      id: "newcomers",
+      label: source.hosted.newcomers === 1 ? "Debutante" : "Debutantes",
+      value: formatInt(source.hosted.newcomers),
+      detail: "en competencias del estado",
+    });
+  }
+
+  if (
+    source.members.retention.previousActive >= 5 &&
+    source.members.retention.returned > 0
+  ) {
+    const rate = Math.round(
+      (source.members.retention.returned /
+        source.members.retention.previousActive) *
+        100,
+    );
+    push({
+      id: "retention",
+      label: "Retención",
+      value: `${rate}%`,
+      detail: `${formatInt(source.members.retention.returned)} de ${formatInt(source.members.retention.previousActive)}`,
+    });
+  }
+
+  if (source.members.championshipPodiums.total > 0) {
+    push({
+      id: "championship",
+      label:
+        source.members.championshipPodiums.total === 1
+          ? "Podio de campeonato"
+          : "Podios de campeonato",
+      value: formatInt(source.members.championshipPodiums.total),
+      tone: "gold",
+    });
+  }
+
+  const kinchDelta =
+    source.members.kinchSor.kinchAfter - source.members.kinchSor.kinchBefore;
+  if (source.members.kinchSor.kinchAfter > 0) {
+    push({
+      id: "kinch",
+      label: "Kinch",
+      value: source.members.kinchSor.kinchAfter.toFixed(1),
+      detail:
+        kinchDelta !== 0
+          ? `${kinchDelta > 0 ? "+" : ""}${kinchDelta.toFixed(1)} en el año`
+          : undefined,
+    });
+  }
+
+  if (
+    source.members.mostDiverseComp &&
+    source.members.mostDiverseComp.distinctTeams >= 2
+  ) {
+    push({
+      id: "diverse-comp",
+      label: "Más Teams",
+      value: formatInt(source.members.mostDiverseComp.distinctTeams),
+      detail: "en una competencia",
+    });
+  }
+
+  const topEvent = source.members.dominantEvents[0];
+  if (topEvent && topEvent.total > 0) {
+    push({
+      id: "dominant-event",
+      label: topEvent.eventName,
+      value: formatInt(topEvent.total),
+      detail:
+        topEvent.gold > 0
+          ? `${formatInt(topEvent.gold)} oro · podios`
+          : "podios",
+      tone: "gold",
+    });
+  }
+
+  if (source.members.crossedTeams.length > 0) {
+    push({
+      id: "crossed-teams",
+      label:
+        source.members.crossedTeams.length === 1
+          ? "Team coincidente"
+          : "Teams coincidentes",
+      value: formatInt(source.members.crossedTeams.length),
+      detail: "en las mismas competencias",
     });
   }
 
@@ -164,6 +320,16 @@ export function getTeamShareHighlights(
           ? "Nuevo delegado"
           : "Nuevos delegados",
       value: formatInt(source.staff.newDelegates.length),
+    });
+  }
+
+  if (source.hosted.totalCompetitors > 0) {
+    push({
+      id: "competitors",
+      label:
+        source.hosted.totalCompetitors === 1 ? "Competidor" : "Competidores",
+      value: formatInt(source.hosted.totalCompetitors),
+      detail: "en competencias del estado",
     });
   }
 
