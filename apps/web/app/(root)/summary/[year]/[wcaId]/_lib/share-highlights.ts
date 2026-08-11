@@ -95,8 +95,8 @@ export function getShareHighlights(
       id: "prs",
       label:
         source.personalBests.totalBreaks === 1
-          ? "Marca personal"
-          : "Marcas personales",
+          ? "Récord personal"
+          : "Récords personales",
       value: formatInt(source.personalBests.totalBreaks),
     });
   }
@@ -146,7 +146,7 @@ export function getShareHighlights(
       id: "travel",
       label: "Kilómetros",
       value: formatInt(Math.round(source.travelKm)),
-      detail: "km recorridos",
+      detail: "recorridos en línea recta",
     });
   }
 

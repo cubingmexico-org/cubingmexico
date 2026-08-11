@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import { Label } from "@workspace/ui/components/label";
+import { StateFlag } from "@/components/state-flag";
 
 type StateOption = { id: string; name: string };
 
@@ -40,7 +41,10 @@ export function StateFilter({
         <SelectContent>
           {states.map((state) => (
             <SelectItem key={state.id} value={state.id}>
-              {state.name}
+              <span className="inline-flex items-center gap-1.5">
+                <StateFlag stateId={state.id} />
+                {state.name}
+              </span>
             </SelectItem>
           ))}
         </SelectContent>

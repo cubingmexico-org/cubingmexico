@@ -13,6 +13,7 @@ import { formatAttemptValue } from "@/lib/utils";
 import type { AnnualSummary } from "../_lib/queries";
 import { getShareHighlights } from "../_lib/share-highlights";
 import { SummaryShareButton } from "./summary-share-button";
+import { StateLabel } from "@/components/state-flag";
 
 function subjectPronoun(gender: AnnualSummary["person"]["gender"]): string {
   if (gender === "f") return "Ella";
@@ -408,9 +409,9 @@ export function AnnualSummaryView({ summary }: Props) {
       {personalBests.totalBreaks > 0 && (
         <section className="space-y-4">
           <div className="space-y-3">
-            <h2 className="text-xl font-semibold">Marcas personales</h2>
+            <h2 className="text-xl font-semibold">Récords personales</h2>
             <p className="text-muted-foreground text-sm sm:text-base">
-              {pronoun} mejoró su marca personal{" "}
+              {pronoun} mejoró sus récords personales{" "}
               <Stat>{personalBests.totalBreaks}</Stat>{" "}
               {personalBests.totalBreaks === 1 ? "vez" : "veces"} en{" "}
               <Stat>{personalBests.events}</Stat>{" "}
@@ -667,7 +668,17 @@ export function AnnualSummaryView({ summary }: Props) {
           {states.firstTime.length > 0 && (
             <p className="text-muted-foreground text-sm">
               Estados nuevos:{" "}
-              {states.firstTime.map((s) => s.stateName).join(", ")}.
+              {states.firstTime.map((s, index) => (
+                <span key={s.stateId}>
+                  {index > 0 ? ", " : null}
+                  <StateLabel
+                    stateId={s.stateId}
+                    stateName={s.stateName}
+                    size={14}
+                  />
+                </span>
+              ))}
+              .
             </p>
           )}
           <div className="overflow-x-auto">
@@ -681,7 +692,12 @@ export function AnnualSummaryView({ summary }: Props) {
               <TableBody>
                 {states.visits.map((row) => (
                   <TableRow key={row.stateId}>
-                    <TableCell>{row.stateName}</TableCell>
+                    <TableCell>
+                      <StateLabel
+                        stateId={row.stateId}
+                        stateName={row.stateName}
+                      />
+                    </TableCell>
                     <AccentCell>{row.times}</AccentCell>
                   </TableRow>
                 ))}

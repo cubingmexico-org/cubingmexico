@@ -15,6 +15,7 @@ import {
   resultAttempts,
   state,
   event,
+  team,
 } from "@workspace/db/schema";
 import {
   SPEEDSOLVING_AVERAGES_EVENTS,
@@ -60,6 +61,7 @@ export type PersonStaffCompetition = {
   name: string;
   startDate: Date;
   endDate: Date;
+  stateId: string | null;
   stateName: string | null;
   cityName: string;
   cancelled: boolean;
@@ -133,6 +135,11 @@ export async function getPersonData(wcaId: string): Promise<{
     delegateStatus: DelegateStatus;
     state: string | null;
   };
+  team: {
+    id: string;
+    name: string;
+    image: string | null;
+  } | null;
   competitionCount: number;
   solveCount: number;
   personalRecords: Record<string, PersonalRecordWithStateRank>;
@@ -150,9 +157,13 @@ export async function getPersonData(wcaId: string): Promise<{
         gender: person.gender,
         wcaId: person.wcaId,
         state: state.name,
+        stateId: person.stateId,
+        teamName: team.name,
+        teamImage: team.image,
       })
       .from(person)
       .leftJoin(state, eq(person.stateId, state.id))
+      .leftJoin(team, eq(person.stateId, team.stateId))
       .where(eq(person.wcaId, wcaId))
       .then((res) => res[0]);
 
@@ -292,6 +303,14 @@ export async function getPersonData(wcaId: string): Promise<{
         delegateStatus: delegateRow?.level ?? null,
         state: personDataRow.state ?? null,
       },
+      team:
+        personDataRow.stateId && personDataRow.teamName
+          ? {
+              id: personDataRow.stateId,
+              name: personDataRow.teamName,
+              image: personDataRow.teamImage ?? null,
+            }
+          : null,
       competitionCount,
       solveCount,
       personalRecords,
@@ -395,6 +414,7 @@ const staffCompetitionSelect = {
   name: competition.name,
   startDate: competition.startDate,
   endDate: competition.endDate,
+  stateId: competition.stateId,
   stateName: state.name,
   cityName: competition.cityName,
   cancelled: competition.cancelled,
@@ -428,6 +448,7 @@ export async function getPersonStaffCompetitions(wcaId: string): Promise<{
           competition.name,
           competition.startDate,
           competition.endDate,
+          competition.stateId,
           state.name,
           competition.cityName,
           competition.cancelled,
@@ -451,6 +472,7 @@ export async function getPersonStaffCompetitions(wcaId: string): Promise<{
           competition.name,
           competition.startDate,
           competition.endDate,
+          competition.stateId,
           state.name,
           competition.cityName,
           competition.cancelled,

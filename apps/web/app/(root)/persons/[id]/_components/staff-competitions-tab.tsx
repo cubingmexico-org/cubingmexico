@@ -16,6 +16,7 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { formatDate } from "@/lib/utils";
 import type { PersonStaffCompetition } from "../_lib/queries";
+import { StateLabel } from "@/components/state-flag";
 
 type PersonStaffCompetitionsTabProps = {
   organized: PersonStaffCompetition[];
@@ -63,7 +64,12 @@ function StaffCompetitionTable({
                 </div>
               </TableCell>
               <TableCell>
-                {competition.stateName ?? (
+                {competition.stateName ? (
+                  <StateLabel
+                    stateId={competition.stateId}
+                    stateName={competition.stateName}
+                  />
+                ) : (
                   <span className="text-muted-foreground font-thin">N/A</span>
                 )}
               </TableCell>

@@ -19,6 +19,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { State } from "@workspace/db/schema";
 import { parseAsString, useQueryStates } from "nuqs";
+import { StateFlag, StateLabel } from "@/components/state-flag";
 
 interface StateSelecorProps {
   states: State[];
@@ -54,7 +55,11 @@ export function StateSelector({ states }: StateSelecorProps) {
           role="combobox"
           className="gap-2 focus:outline-none focus:ring-1 focus:ring-ring focus-visible:ring-0 w-full"
         >
-          {memoizedState.length ? memoizedState : "Seleccionar estado"}
+          {memoizedState.length ? (
+            <StateLabel stateName={memoizedState} />
+          ) : (
+            "Seleccionar estado"
+          )}
           <ChevronsUpDown className="ml-auto shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -73,6 +78,7 @@ export function StateSelector({ states }: StateSelecorProps) {
                   key={state.id}
                   onSelect={() => handleToggle(state.name)}
                 >
+                  <StateFlag stateId={state.id} />
                   <span className="truncate">{state.name}</span>
                   <Check
                     className={cn(

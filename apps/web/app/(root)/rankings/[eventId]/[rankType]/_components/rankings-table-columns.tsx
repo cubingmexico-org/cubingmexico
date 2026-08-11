@@ -8,6 +8,7 @@ import { RankSingle } from "../_types";
 import { cn } from "@workspace/ui/lib/utils";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { StateLabel } from "@/components/state-flag";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
@@ -113,18 +114,16 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="Estado" />
       ),
       cell: ({ row }) => {
+        const stateName = row.getValue("state") as string | null;
         return (
           <div className="flex space-x-2">
-            <span
-              className={cn(
-                row.getValue("state") === null
-                  ? "text-muted-foreground"
-                  : "font-medium",
+            <StateLabel
+              stateName={stateName}
+              nameClassName={cn(
+                stateName === null ? "text-muted-foreground" : "font-medium",
                 "max-w-125 truncate",
               )}
-            >
-              {row.getValue("state") ?? "N/A"}
-            </span>
+            />
           </div>
         );
       },

@@ -5,6 +5,7 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Person } from "../_types";
 import Link from "next/link";
+import { StateLabel } from "@/components/state-flag";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
@@ -58,13 +59,18 @@ export function getColumns({
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Estado" />
       ),
-      cell: ({ row }) => (
-        <div className="flex space-x-2 whitespace-nowrap">
-          {row.getValue("state") ?? (
-            <span className="text-muted-foreground font-light">N/A</span>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const stateName = row.getValue("state") as string | null;
+        return (
+          <div className="flex space-x-2 whitespace-nowrap">
+            {stateName ? (
+              <StateLabel stateName={stateName} />
+            ) : (
+              <span className="text-muted-foreground font-light">N/A</span>
+            )}
+          </div>
+        );
+      },
       meta: {
         label: "Estado",
         variant: "multiSelect",

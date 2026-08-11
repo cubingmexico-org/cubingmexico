@@ -23,6 +23,7 @@ import {
 import type { User } from "better-auth";
 import { Label } from "@workspace/ui/components/label";
 import { State } from "@workspace/db/schema";
+import { StateFlag } from "@/components/state-flag";
 import { Check, Info, X } from "lucide-react";
 import { useActionState } from "react";
 import { profileFormAction } from "@/app/actions";
@@ -176,7 +177,10 @@ export function Profile({ user, person, states }: ProfileProps) {
                   >
                     {states.map((state) => (
                       <SelectItem key={state.id} value={state.id}>
-                        {state.name}
+                        <span className="inline-flex items-center gap-1.5">
+                          <StateFlag stateId={state.id} />
+                          {state.name}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>

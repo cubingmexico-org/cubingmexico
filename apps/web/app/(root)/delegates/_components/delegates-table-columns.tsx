@@ -11,6 +11,7 @@ import {
   getDelegateLevelFilterOptions,
   type DelegateLevel,
 } from "@/lib/delegate-level";
+import { StateLabel } from "@/components/state-flag";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
@@ -74,13 +75,18 @@ export function getColumns({
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Estado" />
       ),
-      cell: ({ row }) => (
-        <div className="flex space-x-2 whitespace-nowrap">
-          {row.getValue("state") ?? (
-            <span className="text-muted-foreground font-light">N/A</span>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const stateName = row.getValue("state") as string | null;
+        return (
+          <div className="flex space-x-2 whitespace-nowrap">
+            {stateName ? (
+              <StateLabel stateName={stateName} />
+            ) : (
+              <span className="text-muted-foreground font-light">N/A</span>
+            )}
+          </div>
+        );
+      },
       meta: {
         label: "Estado",
         variant: "multiSelect",

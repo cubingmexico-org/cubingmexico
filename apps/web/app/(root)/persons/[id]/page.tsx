@@ -18,6 +18,7 @@ import {
   getTierClass,
 } from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
+import { StateLabel } from "@/components/state-flag";
 import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -101,8 +102,14 @@ async function PersonPageContent({ id }: { id: string }) {
     notFound();
   }
 
-  const { person, competitionCount, personalRecords, medals, regionalRecords } =
-    personData;
+  const {
+    person,
+    team,
+    competitionCount,
+    personalRecords,
+    medals,
+    regionalRecords,
+  } = personData;
   const isOrganizer = organizerStatus !== null;
   const isDelegate = person.delegateStatus !== null;
   const tier = getTier(membershipData);
@@ -137,7 +144,7 @@ async function PersonPageContent({ id }: { id: string }) {
           {person.name ?? id}
         </Link>
       </h1>
-      <div className="w-full flex justify-center gap-2 mb-2">
+      <div className="w-full flex flex-wrap justify-center gap-2 mb-2">
         {tier && <Badge className={getTierClass(tier)}>Miembro {tier}</Badge>}
         {isDelegate && (
           <Badge>
@@ -148,6 +155,23 @@ async function PersonPageContent({ id }: { id: string }) {
           <Badge variant="outline">
             Organizador{person.gender === "f" ? "a" : ""}{" "}
             {organizerStatus.level}
+          </Badge>
+        )}
+        {team && (
+          <Badge variant="outline" asChild>
+            <Link href={`/teams/${team.id}`} className="gap-1.5">
+              {team.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={team.image}
+                  alt=""
+                  width={14}
+                  height={14}
+                  className="size-3.5 rounded-sm object-cover"
+                />
+              ) : null}
+              {team.name}
+            </Link>
           </Badge>
         )}
       </div>
@@ -172,7 +196,9 @@ async function PersonPageContent({ id }: { id: string }) {
         <TableBody>
           <TableRow>
             <TableCell className="text-center">
-              {person.state ?? (
+              {person.state ? (
+                <StateLabel stateName={person.state} className="justify-center" />
+              ) : (
                 <span className="text-muted-foreground font-thin">N/A</span>
               )}
             </TableCell>

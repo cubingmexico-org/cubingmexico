@@ -58,10 +58,10 @@ export function Map({
   markers = [],
   height = DEFAULTS.height,
 }: MapProps) {
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
 
   const tileLayerUrl =
-    theme === "dark"
+    resolvedTheme === "dark"
       ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
       : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
@@ -75,6 +75,7 @@ export function Map({
       >
         <ResetView center={center} zoom={zoom} />
         <TileLayer
+          key={resolvedTheme}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url={tileLayerUrl}
         />

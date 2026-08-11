@@ -9,6 +9,7 @@ import {
 } from "@workspace/ui/components/table";
 import type { CurrentRecord } from "../_lib/queries";
 import { formatRecordResult, formatRecordSolves } from "../_lib/format";
+import { StateLabel } from "@/components/state-flag";
 
 function SolvesCell({
   eventId,
@@ -167,7 +168,7 @@ export function SlimRecordsTables({ records }: { records: CurrentRecord[] }) {
                   />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {record.single.state}
+                  <StateLabel stateName={record.single.state} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <CompetitionLink
@@ -218,7 +219,7 @@ export function SlimRecordsTables({ records }: { records: CurrentRecord[] }) {
                   />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {record.average!.state}
+                  <StateLabel stateName={record.average!.state} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <CompetitionLink
@@ -272,7 +273,7 @@ export function SeparateRecordsTables({
                   {formatRecordResult(record.eventId, record.single.best)}
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
-                  {record.single.state}
+                  <StateLabel stateName={record.single.state} />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <CompetitionLink
@@ -312,7 +313,9 @@ export function SeparateRecordsTables({
                     )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
-                    {record.average?.state}
+                    {record.average?.state ? (
+                      <StateLabel stateName={record.average.state} />
+                    ) : null}
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     {record.average ? (

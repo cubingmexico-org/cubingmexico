@@ -28,6 +28,7 @@ import {
   type ResultsByEventGroup,
   type ResultsByPersonGroup,
 } from "../../_lib/results";
+import { StateLabel } from "@/components/state-flag";
 import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
 import { normalizeSearchText } from "@/lib/search";
 
@@ -125,7 +126,10 @@ export function ResultsPodiumsView({ podiumGroups }: ResultsPodiumsViewProps) {
                                 </div>
                                 {resultRow.personState && (
                                   <div className="text-xs text-muted-foreground">
-                                    {resultRow.personState}
+                                    <StateLabel
+                                      stateName={resultRow.personState}
+                                      size={12}
+                                    />
                                   </div>
                                 )}
                               </TableCell>
@@ -305,7 +309,10 @@ export function ResultsAllView({
                                   </div>
                                   {resultRow.personState && (
                                     <div className="text-xs text-muted-foreground">
-                                      {resultRow.personState}
+                                      <StateLabel
+                                        stateName={resultRow.personState}
+                                        size={12}
+                                      />
                                     </div>
                                   )}
                                 </TableCell>
@@ -433,7 +440,10 @@ export function ResultsByPersonView({
                   </Link>
                   {personGroup.results[0]?.personState && (
                     <span className="ml-2 text-sm text-muted-foreground">
-                      {personGroup.results[0].personState}
+                      <StateLabel
+                        stateName={personGroup.results[0].personState}
+                        size={14}
+                      />
                     </span>
                   )}
                 </h3>

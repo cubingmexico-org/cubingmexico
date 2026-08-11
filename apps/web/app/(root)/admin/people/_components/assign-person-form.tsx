@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { assignPersonState } from "../../_lib/actions";
+import { StateFlag } from "@/components/state-flag";
 
 type StateOption = { id: string; name: string };
 
@@ -163,7 +164,10 @@ export function AssignPersonForm({ states }: { states: StateOption[] }) {
                 <SelectContent>
                   {states.map((state) => (
                     <SelectItem key={state.id} value={state.id}>
-                      {state.name}
+                      <span className="inline-flex items-center gap-1.5">
+                        <StateFlag stateId={state.id} />
+                        {state.name}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
