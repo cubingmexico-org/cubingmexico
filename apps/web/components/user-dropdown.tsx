@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Users, UserCheck, UserIcon, LogOut, CalendarDays } from "lucide-react";
+import {
+  Users,
+  UserCheck,
+  UserIcon,
+  LogOut,
+  CalendarDays,
+  CalendarRange,
+} from "lucide-react";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
@@ -79,6 +86,17 @@ export function UserDropdown({
             </Link>
           </DropdownMenuItem>
         )}
+        {ANNUAL_SUMMARY_ENABLED && team ? (
+          <DropdownMenuItem>
+            <CalendarRange />
+            <Link
+              href={`/summary/team/${summaryYear}/${team.id}`}
+              className="w-full"
+            >
+              Resumen del Team
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         <DropdownMenuItem
           onClick={async () => {
             await authClient.signOut({

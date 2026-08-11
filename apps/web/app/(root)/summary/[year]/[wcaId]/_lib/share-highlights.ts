@@ -213,7 +213,7 @@ export function getShareHighlights(
     ].filter(Boolean);
     push({
       id: "staff",
-      label: "Staff",
+      label: "Organización",
       value: formatInt(staffTotal),
       detail: parts.join(" · "),
     });

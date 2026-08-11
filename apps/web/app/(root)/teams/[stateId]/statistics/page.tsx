@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getTeam } from "@/db/queries";
 import {
   Card,
@@ -6,7 +7,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { Clock, Medal, Trophy, Users } from "lucide-react";
+import { buttonVariants } from "@workspace/ui/components/button";
+import { cn } from "@workspace/ui/lib/utils";
+import { CalendarRange, Clock, Medal, Trophy, Users } from "lucide-react";
+import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
+import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
 import { getStatisticsPageData } from "./_lib/queries";
 
 type Props = {
@@ -41,10 +46,21 @@ export default async function Page(props: {
     activeYears,
   } = data;
 
+  const summaryYear = getDefaultSummaryYear();
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
         <CardTitle>Estadísticas</CardTitle>
+        {ANNUAL_SUMMARY_ENABLED ? (
+          <Link
+            href={`/summary/team/${summaryYear}/${stateId}`}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <CalendarRange />
+            Resumen anual {summaryYear}
+          </Link>
+        ) : null}
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
