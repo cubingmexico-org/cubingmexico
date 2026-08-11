@@ -61,38 +61,75 @@ export async function getTeamShellData(stateId: string) {
   };
 }
 
+const OVERVIEW_UPCOMING_LIMIT = 3;
+const OVERVIEW_TOP_MEMBERS_LIMIT = 5;
+const OVERVIEW_NR_TEASER_LIMIT = 6;
+
+export type TeamMedals = {
+  gold: number;
+  silver: number;
+  bronze: number;
+  total: number;
+};
+
+export type TeamNationalRecord = {
+  eventId: string;
+  personId: string;
+  personName: string | null;
+  value: number;
+  type: "single" | "average";
+};
+
+export type TeamTopMember = {
+  wcaId: string;
+  name: string | null;
+  podiums: number;
+};
+
 export async function getTeamOverviewData(stateId: string) {
   const [
     team,
     competitions,
-    totalPodiums,
-    totalSingleNationalRecords,
-    totalAverageNationalRecords,
+    medals,
+    singleNationalRecords,
+    averageNationalRecords,
+    topMembers,
   ] = await Promise.all([
     getTeamInfo(stateId),
     getTeamCompetitions(stateId),
-    getTeamPodiums(stateId),
+    getTeamMedals(stateId),
     getSingleNationalRecords(stateId),
     getAverageNationalRecords(stateId),
+    getTopMembersByPodiums(stateId, OVERVIEW_TOP_MEMBERS_LIMIT),
   ]);
 
   if (!team) {
     return null;
   }
 
-  const upcomingCompetitions = competitions.filter(
-    (competition) => competition.startDate >= new Date(),
+  const now = new Date();
+  const upcomingCompetitions = competitions
+    .filter((competition) => competition.startDate >= now)
+    .slice(0, OVERVIEW_UPCOMING_LIMIT);
+
+  const nationalRecords = mergeNationalRecords(
+    singleNationalRecords,
+    averageNationalRecords,
   );
 
-  const totalNationalRecords =
-    totalSingleNationalRecords.length + totalAverageNationalRecords.length;
+  const foundedYear = team.founded
+    ? new Date(team.founded).getFullYear()
+    : null;
 
   return {
     team,
-    competitions,
+    medals,
+    competitionsCount: competitions.length,
+    activeYears: foundedYear ? new Date().getFullYear() - foundedYear : 0,
+    totalNationalRecords: nationalRecords.length,
+    nationalRecordsTeaser: nationalRecords.slice(0, OVERVIEW_NR_TEASER_LIMIT),
+    topMembers,
     upcomingCompetitions,
-    totalPodiums,
-    totalNationalRecords,
   };
 }
 
@@ -100,13 +137,13 @@ export async function getTeamStatisticsData(stateId: string) {
   const [
     team,
     competitions,
-    totalPodiums,
-    totalSingleNationalRecords,
-    totalAverageNationalRecords,
+    medals,
+    singleNationalRecords,
+    averageNationalRecords,
   ] = await Promise.all([
     getTeamInfo(stateId),
     getTeamCompetitions(stateId),
-    getTeamPodiums(stateId),
+    getTeamMedals(stateId),
     getSingleNationalRecords(stateId),
     getAverageNationalRecords(stateId),
   ]);
@@ -115,8 +152,10 @@ export async function getTeamStatisticsData(stateId: string) {
     return null;
   }
 
-  const totalNationalRecords =
-    totalSingleNationalRecords.length + totalAverageNationalRecords.length;
+  const nationalRecords = mergeNationalRecords(
+    singleNationalRecords,
+    averageNationalRecords,
+  );
 
   const foundedYear = team.founded
     ? new Date(team.founded).getFullYear()
@@ -124,11 +163,38 @@ export async function getTeamStatisticsData(stateId: string) {
 
   return {
     team,
-    competitions,
-    totalPodiums,
-    totalNationalRecords,
+    medals,
+    competitionsCount: competitions.length,
+    nationalRecords,
+    totalNationalRecords: nationalRecords.length,
     activeYears: new Date().getFullYear() - foundedYear,
   };
+}
+
+function mergeNationalRecords(
+  singles: Awaited<ReturnType<typeof getSingleNationalRecords>>,
+  averages: Awaited<ReturnType<typeof getAverageNationalRecords>>,
+): TeamNationalRecord[] {
+  const singlesMapped: TeamNationalRecord[] = singles.map((record) => ({
+    eventId: record.eventId,
+    personId: record.personId,
+    personName: record.personName,
+    value: record.value,
+    type: "single" as const,
+  }));
+  const averagesMapped: TeamNationalRecord[] = averages.map((record) => ({
+    eventId: record.eventId,
+    personId: record.personId,
+    personName: record.personName,
+    value: record.value,
+    type: "average" as const,
+  }));
+
+  return [...singlesMapped, ...averagesMapped].sort((a, b) => {
+    if (a.eventId !== b.eventId) return a.eventId.localeCompare(b.eventId);
+    if (a.type !== b.type) return a.type === "single" ? -1 : 1;
+    return (a.personName ?? "").localeCompare(b.personName ?? "");
+  });
 }
 
 export async function getTotalMembers(stateId: string) {
@@ -173,26 +239,34 @@ export async function getTeamCompetitions(stateId: string) {
   }
 }
 
-export async function getTeamPodiums(stateId: string) {
+export async function getTeamMedals(stateId: string): Promise<TeamMedals> {
   cacheLife("days");
   cacheTag(`team-podiums-${stateId}`);
 
   try {
-    return await db
-      .select({ pos: result.pos })
+    const medalsRow = await db
+      .select({
+        gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1 AND ${result.roundTypeId} IN ('f', 'c'))`,
+        silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2 AND ${result.roundTypeId} IN ('f', 'c'))`,
+        bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3 AND ${result.roundTypeId} IN ('f', 'c'))`,
+      })
       .from(result)
       .innerJoin(person, eq(result.personId, person.wcaId))
-      .where(
-        and(
-          eq(person.stateId, stateId),
-          or(eq(result.roundTypeId, "f"), eq(result.roundTypeId, "c")),
-          inArray(result.pos, [1, 2, 3]),
-          gt(result.best, 0),
-        ),
-      );
+      .where(and(eq(person.stateId, stateId), gt(result.best, 0)));
+
+    const gold = Number(medalsRow[0]?.gold ?? 0);
+    const silver = Number(medalsRow[0]?.silver ?? 0);
+    const bronze = Number(medalsRow[0]?.bronze ?? 0);
+
+    return {
+      gold,
+      silver,
+      bronze,
+      total: gold + silver + bronze,
+    };
   } catch (err) {
     console.error(err);
-    return [];
+    return { gold: 0, silver: 0, bronze: 0, total: 0 };
   }
 }
 
@@ -202,10 +276,16 @@ export async function getSingleNationalRecords(stateId: string) {
 
   try {
     return await db
-      .select({ eventId: rankSingle.eventId })
+      .select({
+        eventId: rankSingle.eventId,
+        personId: person.wcaId,
+        personName: person.name,
+        value: rankSingle.best,
+      })
       .from(rankSingle)
       .innerJoin(person, eq(rankSingle.personId, person.wcaId))
-      .where(and(eq(person.stateId, stateId), eq(rankSingle.countryRank, 1)));
+      .where(and(eq(person.stateId, stateId), eq(rankSingle.countryRank, 1)))
+      .orderBy(asc(rankSingle.eventId), asc(person.name));
   } catch (err) {
     console.error(err);
     return [];
@@ -218,10 +298,49 @@ export async function getAverageNationalRecords(stateId: string) {
 
   try {
     return await db
-      .select({ eventId: rankAverage.eventId })
+      .select({
+        eventId: rankAverage.eventId,
+        personId: person.wcaId,
+        personName: person.name,
+        value: rankAverage.best,
+      })
       .from(rankAverage)
       .innerJoin(person, eq(rankAverage.personId, person.wcaId))
-      .where(and(eq(person.stateId, stateId), eq(rankAverage.countryRank, 1)));
+      .where(and(eq(person.stateId, stateId), eq(rankAverage.countryRank, 1)))
+      .orderBy(asc(rankAverage.eventId), asc(person.name));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
+export async function getTopMembersByPodiums(
+  stateId: string,
+  limit = OVERVIEW_TOP_MEMBERS_LIMIT,
+): Promise<TeamTopMember[]> {
+  cacheLife("days");
+  cacheTag(`team-top-members-${stateId}`);
+
+  try {
+    return await db
+      .select({
+        wcaId: person.wcaId,
+        name: person.name,
+        podiums: count().as("podiums"),
+      })
+      .from(person)
+      .innerJoin(result, eq(person.wcaId, result.personId))
+      .where(
+        and(
+          eq(person.stateId, stateId),
+          or(eq(result.roundTypeId, "f"), eq(result.roundTypeId, "c")),
+          inArray(result.pos, [1, 2, 3]),
+          gt(result.best, 0),
+        ),
+      )
+      .groupBy(person.wcaId, person.name)
+      .orderBy(desc(count()), asc(person.name))
+      .limit(limit);
   } catch (err) {
     console.error(err);
     return [];

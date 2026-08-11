@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { getTeam } from "@/db/queries";
 import {
   Card,
@@ -9,10 +10,21 @@ import {
 } from "@workspace/ui/components/card";
 import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
-import { CalendarRange, Clock, Medal, Trophy, Users } from "lucide-react";
+import {
+  CalendarRange,
+  ChartNoAxesCombined,
+  Plus,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
 import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
 import { getStatisticsPageData } from "./_lib/queries";
+import {
+  KeyStat,
+  MedalStrip,
+  NationalRecordsList,
+} from "../_components/team-profile-shared";
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -35,23 +47,58 @@ export default async function Page(props: {
   const data = await getStatisticsPageData(stateId);
 
   if (!data) {
-    return null;
+    return notFound();
   }
 
   const {
     team,
-    competitions,
-    totalPodiums,
+    medals,
+    competitionsCount,
+    nationalRecords,
     totalNationalRecords,
     activeYears,
   } = data;
 
   const summaryYear = getDefaultSummaryYear();
+  const stateName = team.state ?? "";
+
+  const exploreLinks = [
+    {
+      href: `/rankings/333/single?state=${encodeURIComponent(stateName)}`,
+      label: `Rankings de ${stateName}`,
+      icon: Users,
+    },
+    {
+      href: `/records?state=${encodeURIComponent(stateName)}`,
+      label: `Récords de ${stateName}`,
+      icon: Trophy,
+    },
+    {
+      href: `/sor/single?state=${encodeURIComponent(stateName)}`,
+      label: `Sum of Ranks de ${stateName}`,
+      icon: Plus,
+    },
+    {
+      href: `/sosr/${stateId}/single`,
+      label: `Sum of State Ranks de ${stateName}`,
+      icon: Plus,
+    },
+    {
+      href: `/kinch/${stateId}`,
+      label: `Kinch Ranks de ${stateName}`,
+      icon: ChartNoAxesCombined,
+    },
+  ];
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-        <CardTitle>Estadísticas</CardTitle>
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold">Estadísticas</h2>
+          <p className="text-sm text-muted-foreground">
+            Medallas, récords nacionales y enlaces de {stateName}
+          </p>
+        </div>
         {ANNUAL_SUMMARY_ENABLED ? (
           <Link
             href={`/summary/team/${summaryYear}/${stateId}`}
@@ -61,61 +108,56 @@ export default async function Page(props: {
             Resumen anual {summaryYear}
           </Link>
         ) : null}
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center">
-              <Medal className="mr-3 h-5 w-5 text-yellow-500" />
-              <div>
-                <div className="font-semibold">Total de podios</div>
-                <div className="text-sm text-muted-foreground">
-                  A lo largo de la historia
-                </div>
-              </div>
-            </div>
-            <div className="text-2xl font-bold">{totalPodiums.length}</div>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center">
-              <Trophy className="mr-3 h-5 w-5 text-yellow-500" />
-              <div>
-                <div className="font-semibold">Récords nacionales</div>
-                <div className="text-sm text-muted-foreground">
-                  Récords nacionales actuales
-                </div>
-              </div>
-            </div>
-            <div className="text-2xl font-bold">{totalNationalRecords}</div>
-          </div>
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center">
-              <Users className="mr-3 h-5 w-5" />
-              <div>
-                <div className="font-semibold">Competencias organizadas</div>
-                <div className="text-sm text-muted-foreground">
-                  Total de competencias en {team.state}
-                </div>
-              </div>
-            </div>
-            <div className="text-2xl font-bold">{competitions.length}</div>
-          </div>
+      </div>
+
+      <section className="space-y-4">
+        <h3 className="text-sm font-medium text-muted-foreground">Medallas</h3>
+        <MedalStrip medals={medals} />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          <KeyStat label="Podios totales" value={medals.total} />
+          <KeyStat label="Récords nacionales" value={totalNationalRecords} />
+          <KeyStat
+            label="Competencias"
+            value={competitionsCount}
+            href={`/teams/${stateId}/competitions`}
+          />
           {activeYears > 0 ? (
-            <div className="flex items-center justify-between rounded-lg border p-4">
-              <div className="flex items-center">
-                <Clock className="mr-3 h-5 w-5" />
-                <div>
-                  <div className="font-semibold">Años activo</div>
-                  <div className="text-sm text-muted-foreground">
-                    Desde la fundación del team
-                  </div>
-                </div>
-              </div>
-              <div className="text-2xl font-bold">{activeYears}</div>
-            </div>
+            <KeyStat label="Años activo" value={activeYears} />
           ) : null}
         </div>
-      </CardContent>
-    </Card>
+      </section>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Récords nacionales actuales</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <NationalRecordsList records={nationalRecords} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Explorar más</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {exploreLinks.map((link) => {
+              const Icon = link.icon;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex items-center gap-3 rounded-lg border px-4 py-3 text-sm transition-colors hover:bg-muted"
+                >
+                  <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="font-medium">{link.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

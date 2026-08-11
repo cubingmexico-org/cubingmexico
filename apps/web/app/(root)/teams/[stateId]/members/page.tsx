@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
 import { getTeam } from "@/db/queries";
 import React from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
 import { DataTableSkeleton } from "@/components/data-table/data-table-skeleton";
 import { getValidFilters } from "@/lib/data-table";
 import { SearchParams } from "@/types";
@@ -47,33 +41,34 @@ export default async function Page(props: {
   );
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Miembros</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <React.Suspense
-          fallback={
-            <DataTableSkeleton
-              columnCount={8}
-              filterCount={3}
-              cellWidths={[
-                "10rem",
-                "30rem",
-                "10rem",
-                "10rem",
-                "6rem",
-                "6rem",
-                "6rem",
-                "6rem",
-              ]}
-              shrinkZero
-            />
-          }
-        >
-          <MembersTable promises={promises} />
-        </React.Suspense>
-      </CardContent>
-    </Card>
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-semibold">Miembros</h2>
+        <p className="text-sm text-muted-foreground">
+          Roster competitivo del team
+        </p>
+      </div>
+      <React.Suspense
+        fallback={
+          <DataTableSkeleton
+            columnCount={8}
+            filterCount={3}
+            cellWidths={[
+              "10rem",
+              "30rem",
+              "10rem",
+              "10rem",
+              "6rem",
+              "6rem",
+              "6rem",
+              "6rem",
+            ]}
+            shrinkZero
+          />
+        }
+      >
+        <MembersTable promises={promises} />
+      </React.Suspense>
+    </div>
   );
 }

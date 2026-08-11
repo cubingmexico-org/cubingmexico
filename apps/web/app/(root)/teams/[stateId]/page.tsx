@@ -1,3 +1,4 @@
+import type { ComponentType } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,16 +10,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import { buttonVariants } from "@workspace/ui/components/button";
+import { cn } from "@workspace/ui/lib/utils";
 import {
+  ArrowRight,
   Calendar,
   ChartNoAxesCombined,
-  Clock,
   Mail,
   MapPin,
   Medal,
-  Plus,
-  Trophy,
-  Users,
 } from "lucide-react";
 import {
   Facebook,
@@ -28,6 +28,12 @@ import {
   WhatsApp,
 } from "@workspace/icons";
 import { getTeamOverviewData } from "./_lib/queries";
+import {
+  KeyStat,
+  MedalStrip,
+  NationalRecordsList,
+  TeamPersonLink,
+} from "./_components/team-profile-shared";
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -57,231 +63,323 @@ export default async function Page({
 
   const {
     team,
-    competitions,
-    totalPodiums,
+    medals,
+    competitionsCount,
+    activeYears,
     totalNationalRecords,
+    nationalRecordsTeaser,
+    topMembers,
     upcomingCompetitions,
   } = data;
-  const activeYears = team.founded
-    ? new Date().getFullYear() - new Date(team.founded).getFullYear()
-    : 0;
+
+  const socialLinks = [
+    team.socialLinks?.email
+      ? {
+          key: "email",
+          href: `mailto:${team.socialLinks.email}`,
+          label: "Correo",
+          icon: Mail,
+          external: false,
+        }
+      : null,
+    team.socialLinks?.whatsapp
+      ? {
+          key: "whatsapp",
+          href: `https://wa.me/${team.socialLinks.whatsapp}`,
+          label: "WhatsApp",
+          icon: WhatsApp,
+          external: true,
+        }
+      : null,
+    team.socialLinks?.facebook
+      ? {
+          key: "facebook",
+          href: team.socialLinks.facebook,
+          label: "Facebook",
+          icon: Facebook,
+          external: true,
+        }
+      : null,
+    team.socialLinks?.instagram
+      ? {
+          key: "instagram",
+          href: team.socialLinks.instagram,
+          label: "Instagram",
+          icon: Instagram,
+          external: true,
+        }
+      : null,
+    team.socialLinks?.tiktok
+      ? {
+          key: "tiktok",
+          href: team.socialLinks.tiktok,
+          label: "TikTok",
+          icon: TikTok,
+          external: true,
+        }
+      : null,
+    team.socialLinks?.twitter
+      ? {
+          key: "twitter",
+          href: team.socialLinks.twitter,
+          label: "Twitter",
+          icon: Twitter,
+          external: true,
+        }
+      : null,
+  ].filter(Boolean) as Array<{
+    key: string;
+    href: string;
+    label: string;
+    icon: ComponentType<{ className?: string }>;
+    external: boolean;
+  }>;
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <div className="md:col-span-2 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Acerca de</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{team.description}</p>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              {team.socialLinks?.email ? (
-                <a
-                  href={`mailto:${team.socialLinks.email}`}
-                  className="flex items-center text-sm text-muted-foreground hover:underline"
-                >
-                  <Mail className="mr-2 h-4 w-4" />
-                  Correo electrónico
-                </a>
-              ) : null}
-              {team.socialLinks?.whatsapp ? (
-                <Link
-                  href={`https://wa.me/${team.socialLinks.whatsapp}`}
-                  className="flex items-center text-sm text-muted-foreground hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <WhatsApp className="mr-2 h-4 w-4" />
-                  WhatsApp
-                </Link>
-              ) : null}
-              {team.socialLinks?.facebook ? (
-                <Link
-                  href={team.socialLinks.facebook}
-                  className="flex items-center text-sm text-muted-foreground hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Facebook className="mr-2 h-4 w-4" />
-                  Facebook
-                </Link>
-              ) : null}
-              {team.socialLinks?.instagram ? (
-                <Link
-                  href={team.socialLinks.instagram}
-                  className="flex items-center text-sm text-muted-foreground hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Instagram className="mr-2 h-4 w-4" />
-                  Instagram
-                </Link>
-              ) : null}
-              {team.socialLinks?.tiktok ? (
-                <Link
-                  href={team.socialLinks.tiktok}
-                  className="flex items-center text-sm text-muted-foreground hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <TikTok className="mr-2 h-4 w-4" />
-                  TikTok
-                </Link>
-              ) : null}
-              {team.socialLinks?.twitter ? (
-                <Link
-                  href={team.socialLinks.twitter}
-                  className="flex items-center text-sm text-muted-foreground hover:underline"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Twitter className="mr-2 h-4 w-4" />
-                  Twitter
-                </Link>
-              ) : null}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+    <div className="space-y-8">
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Logros del Team</h2>
+            <p className="text-sm text-muted-foreground">
+              Medallas y récords nacionales de sus miembros
+            </p>
+          </div>
+          <Link
+            href={`/teams/${stateId}/statistics`}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "gap-1.5",
+            )}
+          >
+            <ChartNoAxesCombined className="h-4 w-4" />
+            Ver estadísticas
+          </Link>
+        </div>
 
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Estadísticas del Team</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Medal className="mr-2 h-4 w-4 text-yellow-500" />
-                  Total de podios
-                </div>
-                <span className="font-semibold">{totalPodiums.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Trophy className="mr-2 h-4 w-4 text-yellow-500" />
-                  Récords nacionales
-                </div>
-                <span className="font-semibold">{totalNationalRecords}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Users className="mr-2 h-4 w-4" />
-                  Competencias
-                </div>
-                <span className="font-semibold">{competitions.length}</span>
-              </div>
-              {activeYears > 0 ? (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Clock className="mr-2 h-4 w-4" />
-                    Años activo
-                  </div>
-                  <span className="font-semibold">{activeYears}</span>
+        <MedalStrip medals={medals} />
+
+        <div
+          className={
+            activeYears > 0
+              ? "grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
+              : "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4"
+          }
+        >
+          <KeyStat
+            label="Podios totales"
+            value={medals.total}
+            href={`/teams/${stateId}/statistics`}
+          />
+          <KeyStat
+            label="Récords nacionales"
+            value={totalNationalRecords}
+            href={`/teams/${stateId}/statistics`}
+          />
+          <KeyStat
+            label="Competencias"
+            value={competitionsCount}
+            href={`/teams/${stateId}/competitions`}
+          />
+          {activeYears > 0 ? (
+            <KeyStat label="Años activo" value={activeYears} />
+          ) : null}
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Acerca de</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {team.description ? (
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                  {team.description}
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Este team aún no tiene una descripción.
+                </p>
+              )}
+
+              {socialLinks.length > 0 ? (
+                <div className="flex flex-wrap gap-2 border-t pt-4">
+                  {socialLinks.map((social) => {
+                    const Icon = social.icon;
+                    const className =
+                      "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
+
+                    if (social.external) {
+                      return (
+                        <Link
+                          key={social.key}
+                          href={social.href}
+                          className={className}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <Icon className="h-4 w-4" />
+                          {social.label}
+                        </Link>
+                      );
+                    }
+
+                    return (
+                      <a
+                        key={social.key}
+                        href={social.href}
+                        className={className}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {social.label}
+                      </a>
+                    );
+                  })}
                 </div>
               ) : null}
-              <div className="mt-3 border-t pt-3">
-                <div className="mb-2 text-sm font-medium">Ver más:</div>
-                <div className="flex flex-col space-y-2">
-                  <Link
-                    href={`/rankings/333/single?state=${encodeURIComponent(team.state ?? "")}`}
-                    className="flex items-center text-sm text-blue-600 hover:underline"
-                  >
-                    <Users className="mr-2 h-4 w-4" />
-                    Rankings de {team.state}
-                  </Link>
-                  <Link
-                    href={`/records?state=${encodeURIComponent(team.state ?? "")}`}
-                    className="flex items-center text-sm text-blue-600 hover:underline"
-                  >
-                    <Trophy className="mr-2 h-4 w-4" />
-                    Récords de {team.state}
-                  </Link>
-                  <Link
-                    href={`/sor/single?state=${encodeURIComponent(team.state ?? "")}`}
-                    className="flex items-center text-sm text-blue-600 hover:underline"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Sum of Ranks de {team.state}
-                  </Link>
-                  <Link
-                    href={`/sosr/${stateId}/single`}
-                    className="flex items-center text-sm text-blue-600 hover:underline"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Sum of State Ranks de {team.state}
-                  </Link>
-                  <Link
-                    href={`/kinch/${stateId}`}
-                    className="flex items-center text-sm text-blue-600 hover:underline"
-                  >
-                    <ChartNoAxesCombined className="mr-2 h-4 w-4" />
-                    Kinch Ranks de {team.state}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Próximas competencias</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+              <CardTitle>Miembros destacados</CardTitle>
+              <Link
+                href={`/teams/${stateId}/members`}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "gap-1",
+                )}
+              >
+                Ver todos
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {topMembers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aún no hay podios registrados para este team.
+                </p>
+              ) : (
+                <ul className="divide-y rounded-lg border">
+                  {topMembers.map((member, index) => (
+                    <li
+                      key={member.wcaId}
+                      className="flex items-center gap-3 px-3 py-2.5 text-sm"
+                    >
+                      <span className="w-5 text-center tabular-nums text-muted-foreground">
+                        {index + 1}
+                      </span>
+                      <span className="min-w-0 grow truncate font-medium">
+                        <TeamPersonLink
+                          wcaId={member.wcaId}
+                          name={member.name}
+                        />
+                      </span>
+                      <span className="inline-flex items-center gap-1 tabular-nums text-muted-foreground">
+                        <Medal className="h-3.5 w-3.5 text-amber-500" />
+                        {member.podiums}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+              <CardTitle>Récords nacionales</CardTitle>
+              <Link
+                href={`/teams/${stateId}/statistics`}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "gap-1",
+                )}
+              >
+                Ver todos
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <NationalRecordsList records={nationalRecordsTeaser} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+              <CardTitle>Próximas competencias</CardTitle>
+              <Link
+                href={`/teams/${stateId}/competitions`}
+                className={cn(
+                  buttonVariants({ variant: "ghost", size: "sm" }),
+                  "gap-1",
+                )}
+              >
+                Ver todas
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </CardHeader>
+            <CardContent>
               {upcomingCompetitions.length === 0 ? (
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   No hay competencias próximas
                 </p>
-              ) : null}
-              {upcomingCompetitions.map((competition) => (
-                <div key={competition.id} className="space-y-2">
-                  <h3 className="font-semibold">
-                    <Link
-                      href={`/competitions/${competition.id}`}
-                      className="text-link hover:text-link/80"
-                    >
-                      {competition.name}
-                    </Link>
-                  </h3>
-                  <div className="text-sm text-muted-foreground">
-                    <div className="flex items-center">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {competition.startDate.toLocaleDateString("es-ES", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        timeZone: "UTC",
-                      })}
-                    </div>
-                    <div className="mt-1 flex items-center">
-                      <MapPin className="mr-2 h-4 w-4" />
-                      <ReactMarkdown
-                        components={{
-                          a: ({ children, href }) => (
-                            <Link
-                              className="hover:underline"
-                              href={href ?? ""}
-                              target="_blank"
+              ) : (
+                <div className="space-y-4">
+                  {upcomingCompetitions.map((competition) => (
+                    <div key={competition.id} className="space-y-1.5">
+                      <h3 className="font-semibold leading-snug">
+                        <Link
+                          href={`/competitions/${competition.id}`}
+                          className="text-link hover:text-link/80"
+                        >
+                          {competition.name}
+                        </Link>
+                      </h3>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 shrink-0" />
+                          {competition.startDate.toLocaleDateString("es-ES", {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            timeZone: "UTC",
+                          })}
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                          <span className="line-clamp-2">
+                            <ReactMarkdown
+                              components={{
+                                a: ({ children, href }) => (
+                                  <Link
+                                    className="hover:underline"
+                                    href={href ?? ""}
+                                    target="_blank"
+                                  >
+                                    {children}
+                                  </Link>
+                                ),
+                                p: ({ children }) => <>{children}</>,
+                              }}
                             >
-                              {children}
-                            </Link>
-                          ),
-                        }}
-                      >
-                        {competition.venue}
-                      </ReactMarkdown>
-                      , {competition.cityName}
+                              {competition.venue}
+                            </ReactMarkdown>
+                            , {competition.cityName}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );
