@@ -1151,7 +1151,9 @@ def _to_date_key(start_date):
 
 
 def _is_regional_record(marker):
-    return marker is not None and marker in REGIONAL_RECORD_MARKERS
+    if marker is None:
+        return False
+    return str(marker).strip() in REGIONAL_RECORD_MARKERS
 
 
 def _mark_state_records(rows, out_ids):
@@ -1294,6 +1296,7 @@ def update_state_records():
                         _mark_state_records(cur.fetchall(), average_sr_ids)
 
                 chunk_size = 500
+                regional_markers = tuple(REGIONAL_RECORD_MARKERS)
                 for i in range(0, len(single_sr_ids), chunk_size):
                     chunk = single_sr_ids[i : i + chunk_size]
                     cur.execute(
@@ -1301,8 +1304,12 @@ def update_state_records():
                         UPDATE results
                         SET state_single_record = 'SR'
                         WHERE id = ANY(%s)
+                          AND (
+                            regional_single_record IS NULL
+                            OR regional_single_record NOT IN %s
+                          )
                         """,
-                        (chunk,),
+                        (chunk, regional_markers),
                     )
 
                 for i in range(0, len(average_sr_ids), chunk_size):
@@ -1312,8 +1319,12 @@ def update_state_records():
                         UPDATE results
                         SET state_average_record = 'SR'
                         WHERE id = ANY(%s)
+                          AND (
+                            regional_average_record IS NULL
+                            OR regional_average_record NOT IN %s
+                          )
                         """,
-                        (chunk,),
+                        (chunk, regional_markers),
                     )
 
                 conn.commit()

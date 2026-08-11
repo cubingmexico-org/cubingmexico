@@ -1,5 +1,15 @@
 import { db } from "@workspace/db";
-import { and, asc, eq, gt, inArray, notInArray, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  eq,
+  gt,
+  inArray,
+  isNull,
+  notInArray,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   competition,
   event,
@@ -11,7 +21,8 @@ import {
 import { EXCLUDED_EVENTS } from "@/lib/constants";
 
 const SR = "SR";
-const REGIONAL_RECORD_MARKERS = new Set(["NR", "NAR", "WR"]);
+const REGIONAL_RECORD_MARKERS = ["NR", "NAR", "WR"] as const;
+const REGIONAL_RECORD_MARKER_SET = new Set<string>(REGIONAL_RECORD_MARKERS);
 
 type StateRecordRow = {
   id: string;
@@ -143,7 +154,15 @@ export async function updateStateRecords(stateId: string) {
     await db
       .update(result)
       .set({ stateSingleRecord: SR })
-      .where(inArray(result.id, chunk));
+      .where(
+        and(
+          inArray(result.id, chunk),
+          or(
+            isNull(result.regionalSingleRecord),
+            notInArray(result.regionalSingleRecord, [...REGIONAL_RECORD_MARKERS]),
+          ),
+        ),
+      );
   }
 
   for (let i = 0; i < averageSrIds.length; i += chunkSize) {
@@ -151,7 +170,15 @@ export async function updateStateRecords(stateId: string) {
     await db
       .update(result)
       .set({ stateAverageRecord: SR })
-      .where(inArray(result.id, chunk));
+      .where(
+        and(
+          inArray(result.id, chunk),
+          or(
+            isNull(result.regionalAverageRecord),
+            notInArray(result.regionalAverageRecord, [...REGIONAL_RECORD_MARKERS]),
+          ),
+        ),
+      );
   }
 
   return {
@@ -168,8 +195,9 @@ function toDateKey(startDate: Date | string): string {
   return String(startDate).slice(0, 10);
 }
 
-function isRegionalRecord(marker: string | null): boolean {
-  return marker !== null && REGIONAL_RECORD_MARKERS.has(marker);
+function isRegionalRecord(marker: string | null | undefined): boolean {
+  if (marker == null) return false;
+  return REGIONAL_RECORD_MARKER_SET.has(marker.trim());
 }
 
 /**
