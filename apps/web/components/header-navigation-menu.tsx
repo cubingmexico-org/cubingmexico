@@ -11,6 +11,7 @@ import {
   Info,
   Hammer,
   Flame,
+  BookOpen,
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -207,6 +208,12 @@ export function HeaderNavigationMenu() {
                   <Link href="/tools" className="flex-row items-center gap-2">
                     <Hammer className="size-4" />
                     Herramientas
+                  </Link>
+                </NavigationMenuLink>
+                <NavigationMenuLink asChild>
+                  <Link href="/docs" className="flex-row items-center gap-2">
+                    <BookOpen className="size-4" />
+                    API pública
                   </Link>
                 </NavigationMenuLink>
               </li>
