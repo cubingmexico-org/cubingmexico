@@ -21,7 +21,16 @@ from social.meta import MetaApiError, post_facebook_photo, post_instagram_image
 from social.records_image import generate_record_png
 from social.resultados_image import generate_resultados_png, png_bytes_to_jpeg
 from social.image_common import format_place_line
-from social.upcoming_image import format_competition_date, generate_upcoming_png
+from social.upcoming_image import (
+    format_competition_date,
+    format_competition_datetime,
+    generate_upcoming_png,
+)
+from social.wca_competition import (
+    fetch_wca_competition,
+    format_entry_fee,
+    parse_wca_datetime,
+)
 
 POST_TYPE_RESULTADOS = "resultados"
 POST_TYPE_RECORD = "record"
@@ -46,11 +55,15 @@ RECORD_MARKERS_SQL = """
         r.regional_average_record,
         p.name AS person_name,
         e.name AS event_name,
-        s.name AS state_name
+        s.name AS state_name,
+        c.name AS competition_name,
+        c.start_date AS competition_start_date,
+        c.city_name AS competition_city_name
     FROM results r
     JOIN persons p ON p.wca_id = r.person_id
     JOIN events e ON e.id = r.event_id
     LEFT JOIN states s ON s.id = p.state_id
+    LEFT JOIN competitions c ON c.id = r.competition_id
     WHERE r.regional_single_record IN ('NR', 'NAR', 'WR')
        OR r.regional_average_record IN ('NR', 'NAR', 'WR')
 """
@@ -74,6 +87,9 @@ def fetch_record_markers(cur) -> dict[str, dict]:
             "event_id": row.event_id,
             "event_name": row.event_name,
             "competition_id": row.competition_id,
+            "competition_name": row.competition_name,
+            "competition_start_date": row.competition_start_date,
+            "competition_city_name": row.competition_city_name,
         }
         if row.regional_single_record in ("NR", "NAR", "WR"):
             key = f"{row.result_id}:single"
@@ -479,16 +495,46 @@ def build_record_caption(
     level: str,
     time_text: str,
     state_name: str | None = None,
+    competition_name: str | None = None,
+    competition_id: str | None = None,  # unused; only CM profile link is shared
+    competition_start_date=None,
+    competition_city_name: str | None = None,
     include_link: bool = True,
 ) -> str:
+    _ = competition_id
     level_label = _LEVEL_CAPTION.get((level or "").upper(), "récord")
     kind_label = _KIND_CAPTION.get(kind, kind)
+    person = (person_name or "").strip() or "Un competidor"
     state = (state_name or "").strip()
-    who = f"{person_name} ({state})" if state else person_name
-    parts = [
-        f"¡{who} establece un nuevo {level_label}!",
-        f"{event_name} ({kind_label}): {time_text}",
-    ]
+    event = (event_name or "").strip() or "su evento"
+    who = f"{person} de {state}" if state else person
+
+    sentence = (
+        f"{who} establece un nuevo {level_label} en {event} ({kind_label}) "
+        f"con un resultado de {time_text}"
+    )
+
+    comp_name = (competition_name or "").strip()
+    date_text = format_competition_date(competition_start_date)
+    place = (competition_city_name or "").strip()
+
+    if comp_name:
+        sentence += f" en {comp_name}"
+        if date_text:
+            sentence += f" celebrado el pasado {date_text}"
+        if place:
+            sentence += f" en {place}"
+    elif date_text or place:
+        bits = []
+        if date_text:
+            bits.append(f"el pasado {date_text}")
+        if place:
+            bits.append(f"en {place}")
+        sentence += " " + " ".join(bits)
+
+    sentence += "."
+
+    parts = [sentence]
     if include_link:
         parts.append("")
         parts.append(f"https://cubingmexico.net/persons/{person_id}")
@@ -511,6 +557,10 @@ def _record_captions(marker: dict) -> dict[str, str]:
         level=marker["level"],
         time_text=time_text,
         state_name=marker.get("state_name"),
+        competition_name=marker.get("competition_name"),
+        competition_id=marker.get("competition_id"),
+        competition_start_date=marker.get("competition_start_date"),
+        competition_city_name=marker.get("competition_city_name"),
     )
     return {
         "facebook": build_record_caption(**kwargs, include_link=True),
@@ -544,6 +594,7 @@ def generate_record_png_for_subject(subject_key: str) -> tuple[bytes, dict] | No
         level=marker["level"],
         value=marker["value"],
         state_name=marker.get("state_name"),
+        competition_name=marker.get("competition_name"),
     )
     return png, marker
 
@@ -583,6 +634,7 @@ def post_record(subject_key: str) -> dict:
         level=marker["level"],
         value=marker["value"],
         state_name=marker.get("state_name"),
+        competition_name=marker.get("competition_name"),
     )
     captions = _record_captions(marker)
     return _publish_image_to_platforms(
@@ -636,6 +688,25 @@ def post_new_records(
 # --- PRÓXIMAS -------------------------------------------------------------------
 
 
+def _event_names_for_ids(cur, event_ids: list[str]) -> list[str]:
+    if not event_ids:
+        return []
+    cur.execute(
+        """
+        SELECT id, name, rank
+        FROM events
+        WHERE id IN %s
+        ORDER BY rank ASC, name ASC
+        """,
+        (tuple(event_ids),),
+    )
+    by_id = {row.id: row.name for row in cur.fetchall()}
+    # Preserve WCA event order when known; fall back to DB order for the rest.
+    ordered = [by_id[eid] for eid in event_ids if eid in by_id]
+    missing = [eid for eid in event_ids if eid not in by_id]
+    return ordered + missing
+
+
 def build_upcoming_caption(
     *,
     competition_name: str,
@@ -643,33 +714,109 @@ def build_upcoming_caption(
     start_date,
     city_name: str,
     state_name: str | None = None,
+    entry_fee: str | None = None,
+    registration_open_text: str | None = None,
+    registration_close_text: str | None = None,
+    event_names: list[str] | None = None,
+    competitor_limit: int | None = None,
     include_link: bool = True,
 ) -> str:
     name = (competition_name or "").strip() or competition_id
     date_text = format_competition_date(start_date)
     place = format_place_line(city_name, state_name)
 
-    parts = [f"¡Nueva competencia en México! {name}"]
+    parts = [f"¡Próxima competencia en México! {name}"]
     if date_text:
-        parts.append(date_text)
+        parts.append(f"Fecha: {date_text}")
     if place:
-        parts.append(place)
+        parts.append(f"Lugar: {place}")
+    if entry_fee:
+        parts.append(f"Cuota: {entry_fee}")
+    if registration_open_text and registration_close_text:
+        parts.append(
+            f"Inscripciones: del {registration_open_text} al {registration_close_text}"
+        )
+    elif registration_open_text:
+        parts.append(f"Inscripciones abren: {registration_open_text}")
+    elif registration_close_text:
+        parts.append(f"Inscripciones cierran: {registration_close_text}")
+    if event_names:
+        parts.append(f"Eventos ({len(event_names)}): {', '.join(event_names)}")
+    if competitor_limit:
+        parts.append(f"Límite: {competitor_limit} competidores")
     if include_link:
         parts.append("")
-        parts.append(f"https://cubingmexico.net/competitions/{competition_id}")
+        parts.append(
+            f"https://www.worldcubeassociation.org/competitions/{competition_id}/register"
+        )
     parts.append("")
     parts.append("#CubingMéxico #WCA #Speedcubing")
     return "\n".join(parts)
 
 
-def _upcoming_captions(comp: dict) -> dict[str, str]:
-    kwargs = dict(
-        competition_name=comp.get("name") or "",
-        competition_id=comp["id"],
-        start_date=comp.get("start_date"),
-        city_name=comp.get("city_name") or "",
-        state_name=comp.get("state_name"),
+def _upcoming_caption_details(comp: dict) -> dict:
+    """Merge local competition row with live WCA API details for captions."""
+    competition_id = comp["id"]
+    details: dict = {
+        "competition_name": comp.get("name") or "",
+        "competition_id": competition_id,
+        "start_date": comp.get("start_date"),
+        "city_name": comp.get("city_name") or "",
+        "state_name": comp.get("state_name"),
+        "entry_fee": None,
+        "registration_open_text": None,
+        "registration_close_text": None,
+        "event_names": None,
+        "competitor_limit": None,
+    }
+
+    wca = fetch_wca_competition(competition_id)
+    if not wca:
+        return details
+
+    fee = format_entry_fee(
+        wca.get("base_entry_fee_lowest_denomination"),
+        wca.get("currency_code"),
     )
+    if fee:
+        details["entry_fee"] = fee
+
+    open_dt = parse_wca_datetime(wca.get("registration_open"))
+    close_dt = parse_wca_datetime(wca.get("registration_close"))
+    # Present registration times in Mexico City for social posts.
+    try:
+        from zoneinfo import ZoneInfo
+
+        mx = ZoneInfo("America/Mexico_City")
+        if open_dt and open_dt.tzinfo is not None:
+            open_dt = open_dt.astimezone(mx)
+        if close_dt and close_dt.tzinfo is not None:
+            close_dt = close_dt.astimezone(mx)
+    except Exception:
+        pass
+
+    open_text = format_competition_datetime(open_dt)
+    close_text = format_competition_datetime(close_dt)
+    if open_text:
+        details["registration_open_text"] = open_text
+    if close_text:
+        details["registration_close_text"] = close_text
+
+    event_ids = wca.get("event_ids") or []
+    if isinstance(event_ids, list) and event_ids:
+        with get_connection() as conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+                details["event_names"] = _event_names_for_ids(cur, [str(e) for e in event_ids])
+
+    limit = wca.get("competitor_limit")
+    if isinstance(limit, int) and limit > 0:
+        details["competitor_limit"] = limit
+
+    return details
+
+
+def _upcoming_captions(comp: dict) -> dict[str, str]:
+    kwargs = _upcoming_caption_details(comp)
     return {
         "facebook": build_upcoming_caption(**kwargs, include_link=True),
         "instagram": build_upcoming_caption(**kwargs, include_link=False),

@@ -49,6 +49,18 @@ def format_competition_date(start: date | datetime | None) -> str:
     return f"{start.day} de {_MONTHS_ES[start.month - 1]} de {start.year}"
 
 
+def format_competition_datetime(value: date | datetime | None) -> str:
+    """Date (and time when not midnight) in Spanish for registration windows."""
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        date_part = format_competition_date(value)
+        if value.hour or value.minute:
+            return f"{date_part} a las {value.hour:02d}:{value.minute:02d}"
+        return date_part
+    return format_competition_date(value)
+
+
 def generate_upcoming_png(
     *,
     competition_name: str,
@@ -69,14 +81,19 @@ def generate_upcoming_png(
 
     paste_logo(canvas, max_size=(260, 260), y=90)
 
-    title_font = load_font(56)
-    center_text(draw, "PRÓXIMA", title_font, BAND_TOP + 36, RED)
+    title_font = load_font(40)
+    title_lines = ["PRÓXIMA", "COMPETENCIA"]
+    title_y = BAND_TOP + 28
+    title_gap = 8
+    title_line_h = text_height("Ay", title_font) + title_gap
+    for i, line in enumerate(title_lines):
+        center_text(draw, line, title_font, title_y + i * title_line_h, RED)
 
     name = (competition_name or "").strip() or "México"
-    name_font, name_lines = layout_wrapped_name(name, max_size=52, min_size=28)
+    name_font, name_lines = layout_wrapped_name(name, max_size=48, min_size=26)
     line_gap = max(6, int(text_height("Ay", name_font) * 0.22))
     line_height = text_height("Ay", name_font) + line_gap
-    name_top = BAND_TOP + 120
+    name_top = title_y + title_line_h * len(title_lines) + 28
     for i, line in enumerate(name_lines):
         center_text(draw, line, name_font, name_top + i * line_height, BLACK)
 

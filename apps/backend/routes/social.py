@@ -11,7 +11,6 @@ from social.poster import (
     POST_TYPE_RESULTADOS,
     POST_TYPE_UPCOMING,
     build_resultados_caption,
-    build_upcoming_caption,
     generate_competition_resultados_png,
     generate_record_png_for_subject,
     generate_upcoming_png_for_competition,
@@ -302,14 +301,9 @@ def upcoming_image(competition_id: str):
             404,
         )
 
-    png, comp = generated
-    caption = build_upcoming_caption(
-        competition_name=comp["name"],
-        competition_id=comp["id"],
-        start_date=comp.get("start_date"),
-        city_name=comp.get("city_name") or "",
-        state_name=comp.get("state_name"),
-    )
+    png, _comp = generated
+    captions = get_upcoming_captions(competition_id) or {}
+    caption = captions.get("facebook") or ""
     filename = f"proxima-{competition_id}.png"
     return Response(
         png,
