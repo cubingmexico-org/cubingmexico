@@ -1,71 +1,100 @@
-"""Short-lived filesystem store for Instagram image_url hosting.
+"""Short-lived Postgres store for Instagram image_url hosting.
 
-Uses /tmp so all Gunicorn workers can serve the same media token.
+Cloud Run may route Meta's GET to a different instance than the publish
+request, so /tmp is not shared across replicas.
 """
 
 from __future__ import annotations
 
 import secrets
-import time
-from pathlib import Path
+from datetime import datetime, timedelta, timezone
+
+from psycopg2 import Binary
+
+from common import get_connection
 
 TTL_SECONDS = 10 * 60
-MEDIA_DIR = Path("/tmp/cubingmexico-social-media")
+
+_ENSURED = False
+
+_ENSURE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS social_temp_media (
+    token TEXT PRIMARY KEY,
+    content_type TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL
+)
+"""
+
+_ENSURE_INDEX_SQL = """
+CREATE INDEX IF NOT EXISTS social_temp_media_expires_idx
+    ON social_temp_media (expires_at)
+"""
 
 
-def _ensure_dir() -> None:
-    MEDIA_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def _meta_path(token: str) -> Path:
-    return MEDIA_DIR / f"{token}.meta"
-
-
-def _data_path(token: str) -> Path:
-    return MEDIA_DIR / f"{token}.bin"
-
-
-def _purge_expired(now: float | None = None) -> None:
-    now = time.time() if now is None else now
-    if not MEDIA_DIR.exists():
+def _ensure_table(cur) -> None:
+    global _ENSURED
+    if _ENSURED:
         return
-    for meta in MEDIA_DIR.glob("*.meta"):
-        try:
-            expires_at = float(meta.read_text().split("\n", 1)[0])
-        except (OSError, ValueError):
-            expires_at = 0
-        if expires_at <= now:
-            token = meta.stem
-            meta.unlink(missing_ok=True)
-            _data_path(token).unlink(missing_ok=True)
+    cur.execute(_ENSURE_TABLE_SQL)
+    cur.execute(_ENSURE_INDEX_SQL)
+    _ENSURED = True
 
 
-def put_media(data: bytes, content_type: str = "image/png", ttl_seconds: int = TTL_SECONDS) -> str:
-    _ensure_dir()
-    _purge_expired()
+def _purge_expired(cur, now: datetime | None = None) -> None:
+    now = now or datetime.now(timezone.utc)
+    cur.execute("DELETE FROM social_temp_media WHERE expires_at <= %s", (now,))
+
+
+def put_media(
+    data: bytes,
+    content_type: str = "image/jpeg",
+    ttl_seconds: int = TTL_SECONDS,
+) -> str:
     token = secrets.token_urlsafe(24)
-    _data_path(token).write_bytes(data)
-    _meta_path(token).write_text(f"{time.time() + ttl_seconds}\n{content_type}\n")
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            _ensure_table(cur)
+            _purge_expired(cur)
+            cur.execute(
+                """
+                INSERT INTO social_temp_media (token, content_type, data, expires_at)
+                VALUES (%s, %s, %s, %s)
+                """,
+                (token, content_type, Binary(data), expires_at),
+            )
+        conn.commit()
     return token
 
 
 def get_media(token: str) -> tuple[bytes, str] | None:
-    _purge_expired()
-    meta = _meta_path(token)
-    data_file = _data_path(token)
-    if not meta.exists() or not data_file.exists():
+    now = datetime.now(timezone.utc)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            _ensure_table(cur)
+            _purge_expired(cur, now)
+            cur.execute(
+                """
+                SELECT data, content_type
+                FROM social_temp_media
+                WHERE token = %s AND expires_at > %s
+                """,
+                (token, now),
+            )
+            row = cur.fetchone()
+        conn.commit()
+    if not row:
         return None
-    try:
-        expires_line, content_type, *_ = meta.read_text().split("\n")
-        expires_at = float(expires_line)
-    except (OSError, ValueError):
-        return None
-    if expires_at <= time.time():
-        delete_media(token)
-        return None
-    return data_file.read_bytes(), content_type or "image/png"
+    data, content_type = row
+    if isinstance(data, memoryview):
+        data = data.tobytes()
+    return bytes(data), content_type or "image/jpeg"
 
 
 def delete_media(token: str) -> None:
-    _meta_path(token).unlink(missing_ok=True)
-    _data_path(token).unlink(missing_ok=True)
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            _ensure_table(cur)
+            cur.execute("DELETE FROM social_temp_media WHERE token = %s", (token,))
+        conn.commit()

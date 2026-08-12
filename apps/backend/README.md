@@ -102,7 +102,7 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-all` — Run full database import plus all derived rank updates
 
 - **Social media (RESULTADOS)**
-  - `GET /social/media/<token>.png` — Short-lived public image URL used by Instagram Content Publishing (unguessable token, ~10 min TTL)
+  - `GET /social/media/<token>.jpg` — Short-lived public JPEG URL used by Instagram Content Publishing (unguessable token, ~10 min TTL; stored in Postgres so any Cloud Run replica can serve it)
   - `GET /social/resultados/<competition_id>/caption` — Caption text for the post (cron auth)
   - `GET /social/resultados/<competition_id>/image.png` — Generate RESULTADOS PNG (cron auth; used by Superadmin download)
   - `POST /social/resultados/<competition_id>/publish` — Manually publish missing platforms to Facebook/Instagram (cron auth)
@@ -184,7 +184,7 @@ Image text: `RESULTADOS` / `{competition.name}` (and `{year}` only if the name d
    - `META_PAGE_ACCESS_TOKEN` / `meta-page-access-token`
    - `FACEBOOK_PAGE_ID` / `facebook-page-id`
    - `INSTAGRAM_BUSINESS_ACCOUNT_ID` / `instagram-business-account-id`
-5. Set `PUBLIC_BASE_URL` to the publicly reachable HTTPS origin of this backend (Meta must be able to `GET` `/social/media/<token>.png`).
+5. Set `PUBLIC_BASE_URL` to the publicly reachable HTTPS origin of this backend (Meta must be able to `GET` `/social/media/<token>.jpg`). Instagram requires JPEG for `image_url`.
 6. Set `SOCIAL_POSTS_ENABLED=true` on the backend service.
 
 Keep `SOCIAL_POSTS_ENABLED=false` until secrets and `PUBLIC_BASE_URL` are verified.

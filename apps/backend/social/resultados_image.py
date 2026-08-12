@@ -134,6 +134,14 @@ def _layout_competition_name(
     return _load_font(NAME_MIN_SIZE), [text]
 
 
+def png_bytes_to_jpeg(png_bytes: bytes, *, quality: int = 92) -> bytes:
+    """Convert PNG bytes to baseline JPEG for Instagram Content Publishing."""
+    img = Image.open(io.BytesIO(png_bytes)).convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=quality, optimize=True)
+    return buf.getvalue()
+
+
 def generate_resultados_png(*, competition_name: str, year: str) -> bytes:
     """Return a PNG (RGB) matching the Cubing México RESULTADOS Canva template."""
     canvas = Image.new("RGBA", (SIZE, SIZE), GREEN)
