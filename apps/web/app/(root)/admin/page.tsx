@@ -20,7 +20,7 @@ async function AdminOverviewContent() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Personas sin estado</CardTitle>
@@ -58,6 +58,25 @@ async function AdminOverviewContent() {
               className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
             >
               Corregir
+            </Link>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Posts RESULTADOS</CardTitle>
+            <CardDescription>
+              Publicaciones en Facebook / Instagram
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex items-end justify-between gap-4">
+            <p className="text-3xl font-semibold tabular-nums">
+              {counts.socialPostsTotal}
+            </p>
+            <Link
+              href="/admin/social"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              Ver
             </Link>
           </CardContent>
         </Card>
@@ -116,7 +135,8 @@ export default function AdminOverviewPage() {
     <Suspense
       fallback={
         <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-32 w-full rounded-xl" />
             <Skeleton className="h-32 w-full rounded-xl" />
             <Skeleton className="h-32 w-full rounded-xl" />
           </div>

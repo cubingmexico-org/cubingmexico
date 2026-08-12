@@ -5,6 +5,7 @@ import {
   competition,
   exportMetadata,
   person,
+  socialPost,
   state,
   teamMember,
 } from "@workspace/db/schema";
@@ -35,10 +36,101 @@ export async function getAdminOverviewCounts() {
       and(eq(competition.countryId, "Mexico"), isNull(competition.stateId)),
     );
 
+  const [socialPostsTotal] = await db
+    .select({ value: count() })
+    .from(socialPost);
+
   return {
     personsWithoutState: personsWithoutState?.value ?? 0,
     compsMissingState: compsMissingState?.value ?? 0,
+    socialPostsTotal: socialPostsTotal?.value ?? 0,
   };
+}
+
+export async function getSocialPosts(limit = 100) {
+  return await db
+    .select({
+      id: socialPost.id,
+      competitionId: socialPost.competitionId,
+      competitionName: competition.name,
+      cityName: competition.cityName,
+      platform: socialPost.platform,
+      externalId: socialPost.externalId,
+      postedAt: socialPost.postedAt,
+    })
+    .from(socialPost)
+    .innerJoin(competition, eq(socialPost.competitionId, competition.id))
+    .orderBy(desc(socialPost.postedAt))
+    .limit(limit);
+}
+
+export async function getSocialPostStats() {
+  const [totals] = await db
+    .select({
+      total: count(),
+      competitions: sql<number>`count(distinct ${socialPost.competitionId})`,
+      facebook: sql<number>`count(*) filter (where ${socialPost.platform} = 'facebook')`,
+      instagram: sql<number>`count(*) filter (where ${socialPost.platform} = 'instagram')`,
+    })
+    .from(socialPost);
+
+  return {
+    total: Number(totals?.total ?? 0),
+    competitions: Number(totals?.competitions ?? 0),
+    facebook: Number(totals?.facebook ?? 0),
+    instagram: Number(totals?.instagram ?? 0),
+  };
+}
+
+export async function getPendingResultadosCompetitions(limit = 50) {
+  const rows = (await db.execute(sql`
+    SELECT
+      c.id,
+      c.name,
+      c.city_name AS "cityName",
+      c.end_date AS "endDate",
+      EXISTS (
+        SELECT 1 FROM social_posts sp
+        WHERE sp.competition_id = c.id AND sp.platform = 'facebook'
+      ) AS "facebookPosted",
+      EXISTS (
+        SELECT 1 FROM social_posts sp
+        WHERE sp.competition_id = c.id AND sp.platform = 'instagram'
+      ) AS "instagramPosted"
+    FROM competitions c
+    WHERE c.country_id = 'Mexico'
+      AND EXISTS (
+        SELECT 1 FROM results r WHERE r.competition_id = c.id
+      )
+      AND (
+        NOT EXISTS (
+          SELECT 1 FROM social_posts sp
+          WHERE sp.competition_id = c.id AND sp.platform = 'facebook'
+        )
+        OR NOT EXISTS (
+          SELECT 1 FROM social_posts sp
+          WHERE sp.competition_id = c.id AND sp.platform = 'instagram'
+        )
+      )
+    ORDER BY c.end_date DESC
+    LIMIT ${limit}
+  `)) as unknown as Array<{
+    id: string;
+    name: string;
+    cityName: string;
+    endDate: Date;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>;
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    cityName: row.cityName,
+    endDate: row.endDate,
+    facebookPosted: Boolean(row.facebookPosted),
+    instagramPosted: Boolean(row.instagramPosted),
+  }));
 }
 
 export async function searchPersons(search: string, limit = 20) {

@@ -28,12 +28,12 @@ Old path shapes still get hit by crawlers and bookmarks. We handle them in two l
 
 Known, migratable URLs get a **301** to the current route (or query-param equivalent), for example:
 
-| Old | New |
-|-----|-----|
-| `/team/:id` | `/teams/:id` |
-| `/records/:state` (2–3 letter code) | `/records?state=:state` |
-| `/rankings/a/:eventId/:rankType…` | `/rankings/:eventId/:rankType…` |
-| `/rankings/:gender/:eventId/:rankType…` | `/rankings/:eventId/:rankType?gender=…` |
+| Old                                       | New                                      |
+| ----------------------------------------- | ---------------------------------------- |
+| `/team/:id`                               | `/teams/:id`                             |
+| `/records/:state` (2–3 letter code)       | `/records?state=:state`                  |
+| `/rankings/a/:eventId/:rankType…`         | `/rankings/:eventId/:rankType…`          |
+| `/rankings/:gender/:eventId/:rankType…`   | `/rankings/:eventId/:rankType?gender=…`  |
 | `/rankings/333mbf/average` (+ `/results`) | `/rankings/333mbf/single` (+ `/results`) |
 
 These keep share links and bookmarks working while teaching search engines the new location.
