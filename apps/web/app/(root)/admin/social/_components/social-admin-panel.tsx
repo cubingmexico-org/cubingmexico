@@ -4,6 +4,14 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  CheckCheck,
+  ClipboardCopy,
+  Download,
+  MoreHorizontal,
+  Send,
+} from "lucide-react";
+import { SiFacebook, SiInstagram } from "@icons-pack/react-simple-icons";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -13,6 +21,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -30,7 +45,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@workspace/ui/components/alert-dialog";
 
 export type PendingResultadosRow = {
@@ -63,6 +77,18 @@ function platformLabel(platform: string) {
   if (platform === "facebook") return "Facebook";
   if (platform === "instagram") return "Instagram";
   return platform;
+}
+
+function PlatformIcon({
+  platform,
+  className = "size-3.5",
+}: {
+  platform: string;
+  className?: string;
+}) {
+  if (platform === "facebook") return <SiFacebook className={className} />;
+  if (platform === "instagram") return <SiInstagram className={className} />;
+  return null;
 }
 
 function missingLabel(row: PendingResultadosRow) {
@@ -135,6 +161,11 @@ export function SocialAdminPanel({
   const [busyAction, setBusyAction] = React.useState<
     "download" | "publish" | "mark" | "caption" | null
   >(null);
+  const [confirmAction, setConfirmAction] = React.useState<{
+    competitionId: string;
+    name: string;
+    action: "publish" | "mark";
+  } | null>(null);
 
   async function runAction(
     competitionId: string,
@@ -227,15 +258,25 @@ export function SocialAdminPanel({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Por plataforma</CardTitle>
-            <CardDescription>Facebook / Instagram</CardDescription>
+            <CardDescription className="flex items-center gap-1.5">
+              <SiFacebook className="size-3.5" />
+              Facebook
+              <span className="text-muted-foreground">/</span>
+              <SiInstagram className="size-3.5" />
+              Instagram
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-semibold tabular-nums">
-              {stats.facebook}
-              <span className="text-muted-foreground mx-1 text-xl font-normal">
+            <p className="flex items-center gap-2 text-3xl font-semibold tabular-nums">
+              <span className="inline-flex items-center gap-1.5">
+                {stats.facebook}
+              </span>
+              <span className="text-muted-foreground text-xl font-normal">
                 /
               </span>
-              {stats.instagram}
+              <span className="inline-flex items-center gap-1.5">
+                {stats.instagram}
+              </span>
             </p>
           </CardContent>
         </Card>
@@ -281,104 +322,85 @@ export function SocialAdminPanel({
                         <TableCell>
                           <div className="flex flex-wrap gap-1">
                             {!row.facebookPosted ? (
-                              <Badge variant="outline">Facebook</Badge>
+                              <Badge variant="outline" className="gap-1">
+                                <SiFacebook className="size-3" />
+                                Facebook
+                              </Badge>
                             ) : null}
                             {!row.instagramPosted ? (
-                              <Badge variant="outline">Instagram</Badge>
+                              <Badge variant="outline" className="gap-1">
+                                <SiInstagram className="size-3" />
+                                Instagram
+                              </Badge>
                             ) : null}
                             <span className="sr-only">{missingLabel(row)}</span>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={busyId !== null}
-                              onClick={() => runAction(row.id, "download")}
-                            >
-                              {busy && busyAction === "download"
-                                ? "Descargando..."
-                                : "Descargar"}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={busyId !== null}
-                              onClick={() => runAction(row.id, "caption")}
-                            >
-                              {busy && busyAction === "caption"
-                                ? "Copiando..."
-                                : "Copiar texto"}
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button size="sm" disabled={busyId !== null}>
-                                  {busy && busyAction === "publish"
-                                    ? "Publicando..."
-                                    : "Publicar"}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Publicar RESULTADOS
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Se publicará la imagen con texto del post en
-                                    las plataformas faltantes para{" "}
-                                    <strong>{row.name}</strong> vía Meta Graph
-                                    API.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>
-                                    Cancelar
-                                  </AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => runAction(row.id, "publish")}
-                                  >
-                                    Publicar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  disabled={busyId !== null}
-                                >
-                                  {busy && busyAction === "mark"
-                                    ? "Registrando..."
-                                    : "Marcar manual"}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Registrar publicación manual
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Marca las plataformas faltantes como
-                                    publicadas (sin llamar a Meta). Úsalo si ya
-                                    subiste la imagen a mano.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>
-                                    Cancelar
-                                  </AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => runAction(row.id, "mark")}
-                                  >
-                                    Registrar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="size-8"
+                                disabled={busyId !== null}
+                                aria-label={`Acciones para ${row.name}`}
+                              >
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                disabled={busy}
+                                onClick={() => runAction(row.id, "download")}
+                              >
+                                <Download />
+                                {busy && busyAction === "download"
+                                  ? "Descargando..."
+                                  : "Descargar imagen"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                disabled={busy}
+                                onClick={() => runAction(row.id, "caption")}
+                              >
+                                <ClipboardCopy />
+                                {busy && busyAction === "caption"
+                                  ? "Copiando..."
+                                  : "Copiar texto"}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                disabled={busy}
+                                onClick={() =>
+                                  setConfirmAction({
+                                    competitionId: row.id,
+                                    name: row.name,
+                                    action: "publish",
+                                  })
+                                }
+                              >
+                                <Send />
+                                {busy && busyAction === "publish"
+                                  ? "Publicando..."
+                                  : "Publicar"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                disabled={busy}
+                                onClick={() =>
+                                  setConfirmAction({
+                                    competitionId: row.id,
+                                    name: row.name,
+                                    action: "mark",
+                                  })
+                                }
+                              >
+                                <CheckCheck />
+                                {busy && busyAction === "mark"
+                                  ? "Registrando..."
+                                  : "Marcar manual"}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
@@ -441,7 +463,12 @@ export function SocialAdminPanel({
                               ? "default"
                               : "secondary"
                           }
+                          className="gap-1"
                         >
+                          <PlatformIcon
+                            platform={post.platform}
+                            className="size-3"
+                          />
                           {platformLabel(post.platform)}
                         </Badge>
                       </TableCell>
@@ -456,34 +483,45 @@ export function SocialAdminPanel({
                           : "—"}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={busyId !== null}
-                            onClick={() =>
-                              runAction(post.competitionId, "download")
-                            }
-                          >
-                            {busyId === post.competitionId &&
-                            busyAction === "download"
-                              ? "..."
-                              : "Descargar"}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={busyId !== null}
-                            onClick={() =>
-                              runAction(post.competitionId, "caption")
-                            }
-                          >
-                            {busyId === post.competitionId &&
-                            busyAction === "caption"
-                              ? "..."
-                              : "Copiar texto"}
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="size-8"
+                              disabled={busyId !== null}
+                              aria-label={`Acciones para ${post.competitionName}`}
+                            >
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              disabled={busyId === post.competitionId}
+                              onClick={() =>
+                                runAction(post.competitionId, "download")
+                              }
+                            >
+                              <Download />
+                              {busyId === post.competitionId &&
+                              busyAction === "download"
+                                ? "Descargando..."
+                                : "Descargar imagen"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={busyId === post.competitionId}
+                              onClick={() =>
+                                runAction(post.competitionId, "caption")
+                              }
+                            >
+                              <ClipboardCopy />
+                              {busyId === post.competitionId &&
+                              busyAction === "caption"
+                                ? "Copiando..."
+                                : "Copiar texto"}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -493,6 +531,51 @@ export function SocialAdminPanel({
           )}
         </CardContent>
       </Card>
+
+      <AlertDialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmAction(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction?.action === "publish"
+                ? "Publicar RESULTADOS"
+                : "Registrar publicación manual"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction?.action === "publish" ? (
+                <>
+                  Se publicará la imagen con texto del post en las plataformas
+                  faltantes para <strong>{confirmAction.name}</strong> vía Meta
+                  Graph API.
+                </>
+              ) : (
+                <>
+                  Marca las plataformas faltantes de{" "}
+                  <strong>{confirmAction?.name}</strong> como publicadas (sin
+                  llamar a Meta). Úsalo si ya subiste la imagen a mano.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (!confirmAction) return;
+                const { competitionId, action } = confirmAction;
+                setConfirmAction(null);
+                void runAction(competitionId, action);
+              }}
+            >
+              {confirmAction?.action === "publish" ? "Publicar" : "Registrar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

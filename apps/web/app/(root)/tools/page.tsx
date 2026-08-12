@@ -1,4 +1,4 @@
-import { GitHub } from "@workspace/icons";
+import { SiGithub } from "@icons-pack/react-simple-icons";
 import { buttonVariants } from "@workspace/ui/components/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
@@ -36,7 +36,7 @@ function ToolLinks({
         target="_blank"
         rel="noopener noreferrer"
       >
-        <GitHub />
+        <SiGithub />
         {sourceLabel}
       </Link>
     </div>
@@ -182,7 +182,7 @@ export default function Page(): React.JSX.Element {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <GitHub />
+            <SiGithub />
             GitHub
           </Link>
         </div>

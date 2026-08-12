@@ -1,5 +1,10 @@
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { Discord, Facebook, GitHub, Instagram } from "@workspace/icons";
+import {
+  SiDiscord,
+  SiFacebook,
+  SiGithub,
+  SiInstagram,
+} from "@icons-pack/react-simple-icons";
 import Link from "next/link";
 import { Clock, Trophy } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
@@ -14,7 +19,7 @@ export function FooterSkeleton() {
             href="https://github.com/cubingmexico-org"
           >
             <span className="flex gap-2 items-center ml-3 text-xl">
-              <GitHub className="size-6" />
+              <SiGithub className="size-6" />
               Cubing México
             </span>
           </Link>
@@ -26,7 +31,7 @@ export function FooterSkeleton() {
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary"
             >
-              <Facebook className="h-5 w-5" />
+              <SiFacebook className="h-5 w-5" />
             </Link>
             <Link
               href="https://instagram.com/cubingmexico"
@@ -34,7 +39,7 @@ export function FooterSkeleton() {
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary"
             >
-              <Instagram className="h-5 w-5" />
+              <SiInstagram className="h-5 w-5" />
             </Link>
             <Link
               href="https://discord.gg/N9KcpWngz7"
@@ -42,7 +47,7 @@ export function FooterSkeleton() {
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary"
             >
-              <Discord className="h-5 w-5" />
+              <SiDiscord className="h-5 w-5" />
             </Link>
           </span>
         </div>

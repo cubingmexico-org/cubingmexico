@@ -18,7 +18,7 @@ from common import (
 )
 from social.media_store import delete_media, put_media
 from social.meta import MetaApiError, post_facebook_photo, post_instagram_image
-from social.resultados_image import generate_resultados_png
+from social.resultados_image import generate_resultados_png, png_bytes_to_jpeg
 
 MX_COMPS_WITH_RESULTS_SQL = """
     SELECT DISTINCT r.competition_id
@@ -138,7 +138,8 @@ def _public_media_url(token: str) -> str:
         raise RuntimeError(
             "PUBLIC_BASE_URL is required to host temporary images for Instagram"
         )
-    return f"{base}/social/media/{token}.png"
+    # Instagram Content Publishing requires JPEG (not PNG).
+    return f"{base}/social/media/{token}.jpg"
 
 
 def generate_competition_resultados_png(competition_id: str) -> tuple[bytes, dict] | None:
@@ -219,7 +220,10 @@ def post_competition_resultados(competition_id: str) -> dict:
                 result["errors"].append("public_base_url_missing")
             else:
                 try:
-                    media_token = put_media(png)
+                    # Meta fetches image_url from any Cloud Run replica; store in DB.
+                    # IG image_url must be JPEG per Graph API image specifications.
+                    jpeg = png_bytes_to_jpeg(png)
+                    media_token = put_media(jpeg, content_type="image/jpeg")
                     image_url = _public_media_url(media_token)
                     ig_id = post_instagram_image(
                         ig_user_id=ig_user_id,

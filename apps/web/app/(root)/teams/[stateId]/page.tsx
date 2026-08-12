@@ -22,12 +22,12 @@ import {
   Medal,
 } from "lucide-react";
 import {
-  Facebook,
-  Instagram,
-  TikTok,
-  Twitter,
-  WhatsApp,
-} from "@workspace/icons";
+  SiFacebook,
+  SiInstagram,
+  SiTiktok,
+  SiWhatsapp,
+  SiX,
+} from "@icons-pack/react-simple-icons";
 import { getTeamOverviewData } from "./_lib/queries";
 import {
   KeyStat,
@@ -102,7 +102,7 @@ export default async function Page({
           key: "whatsapp",
           href: `https://wa.me/${team.socialLinks.whatsapp}`,
           label: "WhatsApp",
-          icon: WhatsApp,
+          icon: SiWhatsapp,
           external: true,
         }
       : null,
@@ -111,7 +111,7 @@ export default async function Page({
           key: "facebook",
           href: team.socialLinks.facebook,
           label: "Facebook",
-          icon: Facebook,
+          icon: SiFacebook,
           external: true,
         }
       : null,
@@ -120,7 +120,7 @@ export default async function Page({
           key: "instagram",
           href: team.socialLinks.instagram,
           label: "Instagram",
-          icon: Instagram,
+          icon: SiInstagram,
           external: true,
         }
       : null,
@@ -129,7 +129,7 @@ export default async function Page({
           key: "tiktok",
           href: team.socialLinks.tiktok,
           label: "TikTok",
-          icon: TikTok,
+          icon: SiTiktok,
           external: true,
         }
       : null,
@@ -138,7 +138,7 @@ export default async function Page({
           key: "twitter",
           href: team.socialLinks.twitter,
           label: "Twitter",
-          icon: Twitter,
+          icon: SiX,
           external: true,
         }
       : null,
