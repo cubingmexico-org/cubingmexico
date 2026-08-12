@@ -417,9 +417,7 @@ export async function importMissingCompetitionLogos(input?: {
         information: competition.information,
       })
       .from(competition)
-      .where(
-        and(eq(competition.countryId, "Mexico"), isNull(competition.logo)),
-      )
+      .where(and(eq(competition.countryId, "Mexico"), isNull(competition.logo)))
       .orderBy(desc(competition.startDate))
       .limit(limit * 3);
 

@@ -6,19 +6,22 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { formatAttemptValue, formatTime, formatTime333mbf } from "@/lib/utils";
 import { RankSingle } from "../_types";
 import { cn } from "@workspace/ui/lib/utils";
-import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { StateLabel } from "@/components/state-flag";
+import type { EventId } from "@/types/wca";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
   genderCounts: Record<string, number>;
-  isState?: boolean;
+  eventId: EventId;
+  rankType: "single" | "average";
 }
 
 export function getColumns({
   stateCounts,
   genderCounts,
+  eventId,
+  rankType,
 }: GetColumnsProps): ColumnDef<RankSingle>[] {
   return [
     {
@@ -77,11 +80,6 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="Resultado" />
       ),
       cell: ({ row }) => {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const pathname = usePathname();
-        const eventId = pathname.split("/")[2];
-        const rankType = pathname.split("/")[3];
-
         if (eventId === "333fm") {
           return (
             <div className="flex space-x-2">

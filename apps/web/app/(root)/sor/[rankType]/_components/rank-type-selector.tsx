@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@workspace/ui/components/toggle-group";
-import { useRouter } from "next/navigation";
-import { cn } from "@workspace/ui/lib/utils";
+import { RankTypeSelector as SharedRankTypeSelector } from "@/components/rank-type-selector";
 import {
   createSerializer,
   parseAsArrayOf,
@@ -35,7 +30,6 @@ export function RankTypeSelector({
   className,
   ...props
 }: RankTypeSelectorProps) {
-  const router = useRouter();
   const [{ name, state, gender }] = useQueryStates(searchParams);
   const hrefSingle = serialize(`/sor/single`, {
     name,
@@ -49,31 +43,12 @@ export function RankTypeSelector({
   });
 
   return (
-    <div className={cn("flex flex-col gap-2", className)} {...props}>
-      <span className="font-semibold text-sm">Tipo</span>
-      <ToggleGroup
-        type="single"
-        variant="outline"
-        value={selectedRankType}
-        className="w-full"
-      >
-        <ToggleGroupItem
-          className="w-[50%]"
-          value="single"
-          aria-label="single"
-          onClick={() => router.push(hrefSingle)}
-        >
-          Single
-        </ToggleGroupItem>
-        <ToggleGroupItem
-          className="w-[50%]"
-          value="average"
-          aria-label="average"
-          onClick={() => router.push(hrefAverage)}
-        >
-          Average
-        </ToggleGroupItem>
-      </ToggleGroup>
-    </div>
+    <SharedRankTypeSelector
+      selectedRankType={selectedRankType}
+      hrefSingle={hrefSingle}
+      hrefAverage={hrefAverage}
+      className={className}
+      {...props}
+    />
   );
 }

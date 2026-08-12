@@ -122,9 +122,9 @@ export default async function Page(props: PageProps) {
           }
         >
           {rankType === "single" ? (
-            <RankSinglesTable promises={singlePromises} />
+            <RankSinglesTable promises={singlePromises} eventId={eventId} />
           ) : (
-            <RankAveragesTable promises={averagePromises} />
+            <RankAveragesTable promises={averagePromises} eventId={eventId} />
           )}
         </React.Suspense>
       </div>

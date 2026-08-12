@@ -5,20 +5,21 @@ import { type ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { formatAttemptValue, formatTime, formatTime333mbf } from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
-import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { ResultAverage, ResultSingle } from "../_types";
 import { StateLabel } from "@/components/state-flag";
+import type { EventId } from "@/types/wca";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
   genderCounts: Record<string, number>;
-  isState?: boolean;
+  eventId: EventId;
 }
 
 export function getSingleColumns({
   stateCounts,
   genderCounts,
+  eventId,
 }: GetColumnsProps): ColumnDef<ResultSingle>[] {
   return [
     {
@@ -65,10 +66,6 @@ export function getSingleColumns({
         <DataTableColumnHeader column={column} title="Resultado" />
       ),
       cell: ({ row }) => {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const pathname = usePathname();
-        const eventId = pathname.split("/")[2];
-
         if (eventId === "333fm") {
           return <div className="flex space-x-2">{row.getValue("best")}</div>;
         }
@@ -164,6 +161,7 @@ export function getSingleColumns({
 export function getAverageColumns({
   stateCounts,
   genderCounts,
+  eventId,
 }: GetColumnsProps): ColumnDef<ResultAverage>[] {
   return [
     {
@@ -210,10 +208,6 @@ export function getAverageColumns({
         <DataTableColumnHeader column={column} title="Resultado" />
       ),
       cell: ({ row }) => {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        const pathname = usePathname();
-        const eventId = pathname.split("/")[2];
-
         if (eventId === "333fm") {
           return (
             <div className="flex space-x-2">

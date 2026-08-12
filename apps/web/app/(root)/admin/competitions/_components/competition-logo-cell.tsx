@@ -172,8 +172,7 @@ export function CompetitionLogoCell({
           err instanceof UploadThingError
             ? ((err.data && "error" in err.data
                 ? String(err.data.error)
-                : null) ??
-              err.message)
+                : null) ?? err.message)
             : err instanceof Error
               ? err.message
               : "Error al subir",
@@ -238,7 +237,10 @@ export function CompetitionLogoCell({
 
       if (erasedBlob) {
         source = erasedBlob;
-      } else if (previewUrl?.startsWith("blob:") || previewUrl?.startsWith("data:")) {
+      } else if (
+        previewUrl?.startsWith("blob:") ||
+        previewUrl?.startsWith("data:")
+      ) {
         source = previewUrl;
       } else if (logo || previewUrl) {
         // Remote URLs (WCA Active Storage) need a server fetch to avoid CORS.
@@ -268,9 +270,7 @@ export function CompetitionLogoCell({
         URL.revokeObjectURL(temporaryBlobUrl);
       }
       toast.error(
-        err instanceof Error
-          ? err.message
-          : "No se pudo eliminar el fondo",
+        err instanceof Error ? err.message : "No se pudo eliminar el fondo",
       );
     } finally {
       setErasing(false);
@@ -316,11 +316,7 @@ export function CompetitionLogoCell({
         >
           {logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logo}
-              alt=""
-              className="size-full object-contain p-0.5"
-            />
+            <img src={logo} alt="" className="size-full object-contain p-0.5" />
           ) : (
             <ImagePlus className="text-muted-foreground size-4" />
           )}

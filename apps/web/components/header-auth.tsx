@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import {
-  getCurrentUserTeamAction,
-  isSuperadminAction,
-} from "@/app/actions";
+import { getCurrentUserTeamAction, isSuperadminAction } from "@/app/actions";
 import { authClient } from "@/lib/auth-client";
 import { UserAuthForm } from "./user-auth-form";
 import { UserDropdown } from "./user-dropdown";
@@ -54,10 +51,6 @@ export function HeaderAuth() {
   }
 
   return (
-    <UserDropdown
-      user={session.user}
-      team={team}
-      isSuperadmin={isSuperadmin}
-    />
+    <UserDropdown user={session.user} team={team} isSuperadmin={isSuperadmin} />
   );
 }

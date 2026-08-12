@@ -175,9 +175,8 @@ export async function getMexicanCompetitions({
       .orderBy(desc(competition.startDate))
       .limit(limit);
 
-    const { informationHasExtractableLogo } = await import(
-      "@/lib/competition-logo"
-    );
+    const { informationHasExtractableLogo } =
+      await import("@/lib/competition-logo");
 
     return rows.map((row) => ({
       id: row.id,
