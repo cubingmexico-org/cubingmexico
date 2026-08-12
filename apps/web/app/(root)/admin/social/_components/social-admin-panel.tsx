@@ -373,12 +373,7 @@ export function SocialAdminPanel({
 
       if (action === "download") {
         await downloadImage(postType, subjectKey);
-        try {
-          await copyCaption(postType, subjectKey, platform);
-          toast.success("Imagen descargada y texto copiado");
-        } catch {
-          toast.success("Imagen descargada (no se pudo copiar el texto)");
-        }
+        toast.success("Imagen descargada");
         return;
       }
 
