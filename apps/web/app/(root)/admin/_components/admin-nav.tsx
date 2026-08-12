@@ -12,6 +12,7 @@ const NAV_ITEMS: {
 }[] = [
   { href: "/admin", label: "Resumen", exact: true },
   { href: "/admin/ops", label: "Ops" },
+  { href: "/admin/social", label: "Social" },
   { href: "/admin/people", label: "Personas" },
   { href: "/admin/competitions", label: "Competencias" },
 ];

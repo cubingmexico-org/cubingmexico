@@ -31,6 +31,7 @@ def update_full_database():
     try:
         with zipfile.ZipFile(zip_bytes, "r") as z:
             results_updated = False
+            mx_results_before = None
             file_processing_order = [
                 "WCA_export_events.tsv",
                 "WCA_export_formats.tsv",
@@ -569,6 +570,30 @@ def update_full_database():
                         file_name,
                     )
 
+                    try:
+                        from social.poster import (
+                            fetch_mexican_competition_ids_with_results,
+                        )
+
+                        with get_connection() as conn:
+                            with conn.cursor(
+                                cursor_factory=psycopg2.extras.NamedTupleCursor
+                            ) as cur:
+                                mx_results_before = fetch_mexican_competition_ids_with_results(
+                                    cur
+                                )
+                        log.info(
+                            "Snapshot: %s Mexican competitions currently have results.",
+                            len(mx_results_before),
+                        )
+                    except Exception as e:
+                        log.error(
+                            "Failed to snapshot Mexican competitions with results before "
+                            "import: %s. Social posts may be skipped.",
+                            e,
+                        )
+                        mx_results_before = None
+
                     chunk_size = 10_000_000
                     total_chunks = -(-len(file_bytes) // chunk_size) if len(file_bytes) > 0 else 0
                     headers = None
@@ -813,6 +838,27 @@ def update_full_database():
                                         )
                         except Exception as e:
                             log.error("Failed to update 'last_competition' metadata: %s", e)
+
+                        if mx_results_before is not None:
+                            try:
+                                from social.poster import (
+                                    fetch_mexican_competition_ids_with_results,
+                                    post_new_mexican_results,
+                                )
+
+                                with get_connection() as conn:
+                                    with conn.cursor(
+                                        cursor_factory=psycopg2.extras.NamedTupleCursor
+                                    ) as cur:
+                                        mx_results_after = (
+                                            fetch_mexican_competition_ids_with_results(cur)
+                                        )
+                                post_new_mexican_results(mx_results_before, mx_results_after)
+                            except Exception as e:
+                                log.error(
+                                    "Social RESULTADOS posting failed (database import succeeded): %s",
+                                    e,
+                                )
 
                 elif file_name == "WCA_export_result_attempts.tsv":
                     if not results_updated:

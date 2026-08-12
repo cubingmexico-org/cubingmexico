@@ -42,6 +42,9 @@ services:
       - FLASK_ENV=development
       # Avoid Nominatim 429s during bulk WCA import (state_id left null)
       - SKIP_GEOCODING=true
+      # Auto RESULTADOS posts stay off in local compose unless you set Meta secrets
+      - SOCIAL_POSTS_ENABLED=false
+      - PUBLIC_BASE_URL=http://localhost:8080
     depends_on:
       db:
         condition: service_healthy
@@ -52,6 +55,8 @@ services:
       - ./apps/backend/common.py:/app/common.py
       - ./apps/backend/utils.py:/app/utils.py
       - ./apps/backend/routes:/app/routes
+      - ./apps/backend/social:/app/social
+      - ./apps/backend/assets:/app/assets
 
 volumes:
   postgres_data:

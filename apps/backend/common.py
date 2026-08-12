@@ -6,7 +6,7 @@ import psycopg2
 from flask import abort, request
 from google.cloud import secretmanager
 
-EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic"]
+EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic", "fto"]
 SINGLE_EVENTS = ["333fm", "333bf", "333mbf", "444bf", "555bf"]
 
 logging.basicConfig(
@@ -52,6 +52,55 @@ if not CRON_SECRET:
         log.info("Defaulting CRON_SECRET to local development token")
 else:
     log.info("Using CRON_SECRET from environment variable")
+
+
+def _env_or_secret(env_key: str, secret_id: str | None = None) -> str | None:
+    value = os.environ.get(env_key)
+    if value:
+        return value
+    if secret_id:
+        return get_secret(secret_id, GCP_PROJECT_ID)
+    return None
+
+
+SOCIAL_POSTS_ENABLED = os.environ.get("SOCIAL_POSTS_ENABLED", "").lower() in (
+    "1",
+    "true",
+    "yes",
+)
+
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/") or None
+
+# Meta credentials are resolved lazily so local boot does not block on Secret Manager.
+_UNSET = object()
+_meta_page_access_token = _UNSET
+_facebook_page_id = _UNSET
+_instagram_business_account_id = _UNSET
+
+
+def get_meta_page_access_token() -> str | None:
+    global _meta_page_access_token
+    if _meta_page_access_token is _UNSET:
+        _meta_page_access_token = _env_or_secret(
+            "META_PAGE_ACCESS_TOKEN", "meta-page-access-token"
+        )
+    return _meta_page_access_token  # type: ignore[return-value]
+
+
+def get_facebook_page_id() -> str | None:
+    global _facebook_page_id
+    if _facebook_page_id is _UNSET:
+        _facebook_page_id = _env_or_secret("FACEBOOK_PAGE_ID", "facebook-page-id")
+    return _facebook_page_id  # type: ignore[return-value]
+
+
+def get_instagram_business_account_id() -> str | None:
+    global _instagram_business_account_id
+    if _instagram_business_account_id is _UNSET:
+        _instagram_business_account_id = _env_or_secret(
+            "INSTAGRAM_BUSINESS_ACCOUNT_ID", "instagram-business-account-id"
+        )
+    return _instagram_business_account_id  # type: ignore[return-value]
 
 
 def get_connection():

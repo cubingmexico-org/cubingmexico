@@ -4,6 +4,7 @@ from routes.admin_updates import admin_bp
 from routes.competitions import competitions_bp
 from routes.misc import misc_bp
 from routes.persons import persons_bp
+from routes.social import social_bp
 
 
 def create_app():
@@ -12,6 +13,7 @@ def create_app():
     app.register_blueprint(competitions_bp)
     app.register_blueprint(persons_bp)
     app.register_blueprint(misc_bp)
+    app.register_blueprint(social_bp)
     return app
 
 

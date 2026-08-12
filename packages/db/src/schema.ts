@@ -11,6 +11,7 @@ import {
   boolean,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // WCA
@@ -420,6 +421,28 @@ export const exportMetadata = pgTable("export_metadata", {
   value: text("value"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export const socialPost = pgTable(
+  "social_posts",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    competitionId: varchar("competition_id", { length: 32 })
+      .references(() => competition.id, { onDelete: "cascade" })
+      .notNull(),
+    platform: varchar("platform", { length: 20 }).notNull(),
+    externalId: varchar("external_id", { length: 64 }),
+    postedAt: timestamp("posted_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("social_posts_comp_platform_idx").on(
+      t.competitionId,
+      t.platform,
+    ),
+    index("social_posts_competition_idx").on(t.competitionId),
+  ],
+);
+
+export type SocialPost = InferSelectModel<typeof socialPost>;
 
 export const sponsor = pgTable("sponsors", {
   id: varchar("id", { length: 32 }).primaryKey(),
