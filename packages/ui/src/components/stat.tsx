@@ -59,7 +59,8 @@ const statIndicatorVariants = cva(
 );
 
 interface StatIndicatorProps
-  extends Omit<React.ComponentProps<"div">, "color">,
+  extends
+    Omit<React.ComponentProps<"div">, "color">,
     VariantProps<typeof statIndicatorVariants> {}
 
 function StatIndicator({
