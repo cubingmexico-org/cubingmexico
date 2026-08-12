@@ -6,7 +6,7 @@ import psycopg2
 from flask import abort, request
 from google.cloud import secretmanager
 
-EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic"]
+EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic", "fto"]
 SINGLE_EVENTS = ["333fm", "333bf", "333mbf", "444bf", "555bf"]
 
 logging.basicConfig(
