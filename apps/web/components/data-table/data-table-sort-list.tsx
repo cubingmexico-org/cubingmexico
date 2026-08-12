@@ -11,6 +11,7 @@ import * as React from "react";
 
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
   Command,
   CommandEmpty,
@@ -191,7 +192,7 @@ export function DataTableSortList<TData>({
         <PopoverContent
           aria-labelledby={labelId}
           aria-describedby={descriptionId}
-          className="flex w-full max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) flex-col gap-3.5 p-4 sm:min-w-[380px]"
+          className="flex w-full max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) flex-col gap-3.5 p-4 sm:min-w-95"
           {...props}
         >
           <div className="flex flex-col gap-1">
@@ -212,7 +213,7 @@ export function DataTableSortList<TData>({
           </div>
           {sorting.length > 0 && (
             <SortableContent asChild>
-              <ul className="flex max-h-[300px] flex-col gap-2 overflow-y-auto p-1">
+              <ul className="flex max-h-75 flex-col gap-2 overflow-y-auto p-1">
                 {sorting.map((sort) => (
                   <DataTableSortItem
                     key={sort.id}
@@ -252,10 +253,10 @@ export function DataTableSortList<TData>({
       </Popover>
       <SortableOverlay>
         <div className="flex items-center gap-2">
-          <div className="h-8 w-[180px] rounded-sm bg-primary/10" />
-          <div className="h-8 w-24 rounded-sm bg-primary/10" />
-          <div className="size-8 shrink-0 rounded-sm bg-primary/10" />
-          <div className="size-8 shrink-0 rounded-sm bg-primary/10" />
+          <Skeleton className="h-8 w-45 rounded-sm" />
+          <Skeleton className="h-8 w-24 rounded-sm" />
+          <Skeleton className="size-8 shrink-0 rounded-sm" />
+          <Skeleton className="size-8 shrink-0 rounded-sm" />
         </div>
       </SortableOverlay>
     </Sortable>

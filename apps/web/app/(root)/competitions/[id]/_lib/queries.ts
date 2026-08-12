@@ -28,15 +28,11 @@ export async function getWcaCompetitionData(
   cacheLife("weeks");
   cacheTag(`wca-competition-data-${competitionId}`);
 
-  try {
-    const response = await fetch(
-      `https://www.worldcubeassociation.org/api/v0/competitions/${competitionId}`,
-    );
-    if (!response.ok) return null;
-    return response.json();
-  } catch {
-    return null;
-  }
+  const response = await fetch(
+    `https://www.worldcubeassociation.org/api/v0/competitions/${competitionId}`,
+  );
+  if (!response.ok) return null;
+  return response.json();
 }
 
 export async function getCompetitionMainEventResults(
@@ -46,68 +42,60 @@ export async function getCompetitionMainEventResults(
   cacheLife("weeks");
   cacheTag(`competition-main-event-results-${competitionId}`);
 
-  try {
-    return await db.transaction(async (tx) => {
-      const hasResultsCount = await tx
-        .select({ value: count() })
-        .from(result)
-        .where(eq(result.competitionId, competitionId));
+  return await db.transaction(async (tx) => {
+    const hasResultsCount = await tx
+      .select({ value: count() })
+      .from(result)
+      .where(eq(result.competitionId, competitionId));
 
-      const hasResults = (hasResultsCount[0]?.value ?? 0) > 0;
+    const hasResults = (hasResultsCount[0]?.value ?? 0) > 0;
 
-      if (!mainEventId) {
-        return {
-          hasResults,
-          mainEventResults: [] as CompetitionResultRow[],
-        };
-      }
-
-      const mainEventResults = await tx
-        .select({
-          resultId: result.id,
-          eventId: result.eventId,
-          eventName: event.name,
-          eventRank: event.rank,
-          personId: result.personId,
-          personName: person.name,
-          personState: state.name,
-          roundTypeId: result.roundTypeId,
-          position: result.pos,
-          best: result.best,
-          average: result.average,
-        })
-        .from(result)
-        .innerJoin(event, eq(result.eventId, event.id))
-        .innerJoin(person, eq(result.personId, person.wcaId))
-        .leftJoin(state, eq(person.stateId, state.id))
-        .where(
-          and(
-            eq(result.competitionId, competitionId),
-            eq(result.eventId, mainEventId),
-            inArray(result.roundTypeId, ["f", "c"]),
-            or(gt(result.best, 0), gt(result.average, 0)),
-          ),
-        )
-        .orderBy(result.pos);
-
-      const top3 = mainEventResults
-        .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
-        .slice(0, 3);
-
+    if (!mainEventId) {
       return {
         hasResults,
-        mainEventResults: top3.map((row, index) => ({
-          ...row,
-          position: index + 1,
-          solves: [],
-        })),
+        mainEventResults: [] as CompetitionResultRow[],
       };
-    });
-  } catch (err) {
-    console.error(err);
+    }
+
+    const mainEventResults = await tx
+      .select({
+        resultId: result.id,
+        eventId: result.eventId,
+        eventName: event.name,
+        eventRank: event.rank,
+        personId: result.personId,
+        personName: person.name,
+        personState: state.name,
+        roundTypeId: result.roundTypeId,
+        position: result.pos,
+        best: result.best,
+        average: result.average,
+      })
+      .from(result)
+      .innerJoin(event, eq(result.eventId, event.id))
+      .innerJoin(person, eq(result.personId, person.wcaId))
+      .leftJoin(state, eq(person.stateId, state.id))
+      .where(
+        and(
+          eq(result.competitionId, competitionId),
+          eq(result.eventId, mainEventId),
+          inArray(result.roundTypeId, ["f", "c"]),
+          or(gt(result.best, 0), gt(result.average, 0)),
+        ),
+      )
+      .orderBy(result.pos);
+
+    const top3 = mainEventResults
+      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+      .slice(0, 3);
+
     return {
-      hasResults: false,
-      mainEventResults: [] as CompetitionResultRow[],
+      hasResults,
+      mainEventResults: top3.map((row, index) => ({
+        ...row,
+        position: index + 1,
+        solves: [],
+      })),
     };
-  }
+  });
 }

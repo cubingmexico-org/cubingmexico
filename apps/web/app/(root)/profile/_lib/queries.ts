@@ -10,20 +10,15 @@ export async function getProfile(userId: string) {
   cacheLife("max");
   cacheTag(`profile-person-${userId}`);
 
-  try {
-    const persons = await db
-      .select({
-        wcaId: person.wcaId,
-        name: person.name,
-        gender: person.gender,
-        stateId: person.stateId,
-      })
-      .from(person)
-      .where(eq(person.wcaId, userId));
+  const persons = await db
+    .select({
+      wcaId: person.wcaId,
+      name: person.name,
+      gender: person.gender,
+      stateId: person.stateId,
+    })
+    .from(person)
+    .where(eq(person.wcaId, userId));
 
-    return persons.length > 0 ? persons[0] : null;
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
+  return persons.length > 0 ? persons[0] : null;
 }

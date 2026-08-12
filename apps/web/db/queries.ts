@@ -25,75 +25,55 @@ export async function getEvents() {
   cacheLife("max");
   cacheTag("events");
 
-  try {
-    return await db
-      .select({
-        id: event.id,
-        name: event.name,
-      })
-      .from(event)
-      .where(lt(event.rank, 200))
-      .orderBy(event.rank)
-      .then((res) => res);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+  return await db
+    .select({
+      id: event.id,
+      name: event.name,
+    })
+    .from(event)
+    .where(lt(event.rank, 200))
+    .orderBy(event.rank)
+    .then((res) => res);
 }
 
 export async function getStates() {
   cacheLife("max");
   cacheTag("states");
 
-  try {
-    return await db
-      .select({
-        id: state.id,
-        name: state.name,
-      })
-      .from(state)
-      .then((res) => res);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+  return await db
+    .select({
+      id: state.id,
+      name: state.name,
+    })
+    .from(state)
+    .then((res) => res);
 }
 
 export async function getPersons() {
   cacheLife("days");
   cacheTag("persons");
 
-  try {
-    return await db
-      .select({
-        wcaId: person.wcaId,
-        name: person.name,
-      })
-      .from(person)
-      .then((res) => res);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+  return await db
+    .select({
+      wcaId: person.wcaId,
+      name: person.name,
+    })
+    .from(person)
+    .then((res) => res);
 }
 
 export async function getCompetitions() {
   cacheLife("days");
   cacheTag("competitions-sitemap");
 
-  try {
-    return await db
-      .select({
-        id: competition.id,
-        name: competition.name,
-      })
-      .from(competition)
-      .where(eq(competition.countryId, "Mexico"))
-      .then((res) => res);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+  return await db
+    .select({
+      id: competition.id,
+      name: competition.name,
+    })
+    .from(competition)
+    .where(eq(competition.countryId, "Mexico"))
+    .then((res) => res);
 }
 
 export async function getCurrentUserTeam({
@@ -104,61 +84,46 @@ export async function getCurrentUserTeam({
   cacheLife("hours");
   cacheTag(`current-user-team-${userId}`);
 
-  try {
-    return (await db
-      .select({
-        id: person.stateId,
-        name: team.name,
-      })
-      .from(person)
-      .innerJoin(team, eq(person.stateId, team.stateId))
-      .where(eq(person.wcaId, userId))
-      .then((res) => res[0])) as {
-      id: string;
-      name: string;
-    };
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
+  return (await db
+    .select({
+      id: person.stateId,
+      name: team.name,
+    })
+    .from(person)
+    .innerJoin(team, eq(person.stateId, team.stateId))
+    .where(eq(person.wcaId, userId))
+    .then((res) => res[0])) as {
+    id: string;
+    name: string;
+  };
 }
 
 export async function getPerson(id: string) {
   cacheLife("hours");
   cacheTag(`person-${id}`);
 
-  try {
-    const res = await db
-      .select({
-        name: person.name,
-      })
-      .from(person)
-      .where(eq(person.wcaId, id));
-    return res[0];
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
+  const res = await db
+    .select({
+      name: person.name,
+    })
+    .from(person)
+    .where(eq(person.wcaId, id));
+  return res[0];
 }
 
 export async function getTeam(stateId: string) {
   cacheLife("hours");
   cacheTag(`team-${stateId}`);
 
-  try {
-    const res = await db
-      .select({
-        name: team.name,
-        state: state.name,
-      })
-      .from(team)
-      .innerJoin(state, eq(team.stateId, state.id))
-      .where(eq(team.stateId, stateId));
-    return res[0];
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
+  const res = await db
+    .select({
+      name: team.name,
+      state: state.name,
+    })
+    .from(team)
+    .innerJoin(state, eq(team.stateId, state.id))
+    .where(eq(team.stateId, stateId));
+  return res[0];
 }
 
 export async function saveTeam({
@@ -324,69 +289,59 @@ export async function getLastCompetitionWithResults() {
   cacheLife("hours");
   cacheTag("last-competition-with-results");
 
-  try {
-    const lastCompetitionWithResults = await db
-      .select({
-        name: competition.name,
-      })
-      .from(competition)
-      .innerJoin(result, eq(competition.id, result.competitionId))
-      .where(eq(competition.countryId, "Mexico"))
-      .orderBy(desc(competition.endDate))
-      .limit(1);
+  const lastCompetitionWithResults = await db
+    .select({
+      name: competition.name,
+    })
+    .from(competition)
+    .innerJoin(result, eq(competition.id, result.competitionId))
+    .where(eq(competition.countryId, "Mexico"))
+    .orderBy(desc(competition.endDate))
+    .limit(1);
 
-    const competitionsWithNoResults = await db
-      .select({
-        name: competition.name,
-      })
-      .from(competition)
-      .leftJoin(result, eq(competition.id, result.competitionId))
-      .where(
-        and(
-          eq(competition.countryId, "Mexico"),
-          lt(competition.endDate, new Date()),
-          isNull(result.competitionId),
-          notInArray(competition.id, [
-            "PerryOpen2013",
-            "ChapingoOpen2020",
-            "FMCTijuasII2026",
-          ]),
-        ),
-      );
-    return { lastCompetitionWithResults, competitionsWithNoResults };
-  } catch (err) {
-    console.error(err);
-    return { lastCompetitionWithResults: [], competitionsWithNoResults: [] };
-  }
+  const competitionsWithNoResults = await db
+    .select({
+      name: competition.name,
+    })
+    .from(competition)
+    .leftJoin(result, eq(competition.id, result.competitionId))
+    .where(
+      and(
+        eq(competition.countryId, "Mexico"),
+        lt(competition.endDate, new Date()),
+        isNull(result.competitionId),
+        notInArray(competition.id, [
+          "PerryOpen2013",
+          "ChapingoOpen2020",
+          "FMCTijuasII2026",
+        ]),
+      ),
+    );
+  return { lastCompetitionWithResults, competitionsWithNoResults };
 }
 
 export async function getPersonsWithoutState({ search }: { search: string }) {
   cacheLife("hours");
   cacheTag("persons-without-state");
 
-  try {
-    return await db
-      .select({
-        id: person.wcaId,
-        name: person.name,
-      })
-      .from(person)
-      .where(
-        and(
-          isNull(person.stateId),
-          or(
-            accentInsensitiveContains(person.name, search),
-            accentInsensitiveContains(person.wcaId, search),
-          ),
+  return await db
+    .select({
+      id: person.wcaId,
+      name: person.name,
+    })
+    .from(person)
+    .where(
+      and(
+        isNull(person.stateId),
+        or(
+          accentInsensitiveContains(person.name, search),
+          accentInsensitiveContains(person.wcaId, search),
         ),
-      )
-      .orderBy(person.name)
-      .limit(5)
-      .then((res) => res);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+      ),
+    )
+    .orderBy(person.name)
+    .limit(5)
+    .then((res) => res);
 }
 
 interface StatesGeoJSON {
@@ -408,12 +363,7 @@ export async function getStatesGeoJSON(): Promise<StatesGeoJSON | null> {
   cacheLife("max");
   cacheTag("geojson");
 
-  try {
-    const filePath = join(process.cwd(), "public", "states.geojson");
-    const fileContent = await readFile(filePath, "utf-8");
-    return JSON.parse(fileContent) as StatesGeoJSON;
-  } catch (err) {
-    console.error(err);
-    return null;
-  }
+  const filePath = join(process.cwd(), "public", "states.geojson");
+  const fileContent = await readFile(filePath, "utf-8");
+  return JSON.parse(fileContent) as StatesGeoJSON;
 }

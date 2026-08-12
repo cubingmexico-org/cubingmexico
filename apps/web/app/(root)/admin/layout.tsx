@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { requireSuperadmin } from "@/lib/superadmin";
 import { AdminNav } from "./_components/admin-nav";
+import { AdminPageSkeleton } from "./loading";
 
 async function AdminShell({ children }: { children: React.ReactNode }) {
   await requireSuperadmin();
@@ -27,7 +28,13 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Suspense fallback={null}>
+    <Suspense
+      fallback={
+        <main className="grow container mx-auto px-4 py-8 max-w-5xl">
+          <AdminPageSkeleton />
+        </main>
+      }
+    >
       <AdminShell>{children}</AdminShell>
     </Suspense>
   );

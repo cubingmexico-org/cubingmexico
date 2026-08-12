@@ -4,6 +4,7 @@ import { createUploadthing } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import type { FileRouter } from "uploadthing/next";
 import { hasTeamPermission } from "@/lib/team-auth";
+import { isSuperadmin } from "@/lib/superadmin";
 
 const f = createUploadthing();
 
@@ -33,6 +34,23 @@ async function requireMediaPermission(req: Request) {
   return { userId: session.user.wcaId, stateId };
 }
 
+async function requireCompetitionLogoPermission(req: Request) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user?.wcaId || !isSuperadmin(session.user.wcaId)) {
+    throw new UploadThingError("Unauthorized");
+  }
+
+  const competitionId = req.headers.get("x-competition-id") ?? "";
+  if (!competitionId) {
+    throw new UploadThingError("Missing competitionId");
+  }
+
+  return { userId: session.user.wcaId, competitionId };
+}
+
 export const ourFileRouter: FileRouter = {
   imageUploader: f({
     image: {
@@ -53,6 +71,17 @@ export const ourFileRouter: FileRouter = {
     .middleware(async ({ req }) => requireMediaPermission(req))
     .onUploadComplete(async ({ metadata, file }) => {
       return { stateId: metadata.stateId, coverImage: file.ufsUrl };
+    }),
+  competitionLogoUploader: f({
+    image: {
+      // Erased PNGs from WCA banners can exceed 2MB uncompressed.
+      maxFileSize: "8MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async ({ req }) => requireCompetitionLogoPermission(req))
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { competitionId: metadata.competitionId, logo: file.ufsUrl };
     }),
 };
 

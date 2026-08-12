@@ -22,7 +22,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <Card className="mb-8">
           <CardContent className="pt-6">
             <div className="bg-background p-8 rounded-lg border mb-6 flex justify-center">
-              <CubingMexico className="size-[512px]" />
+              <CubingMexico className="size-128" />
             </div>
 
             <div className="flex justify-center gap-3 mb-6">

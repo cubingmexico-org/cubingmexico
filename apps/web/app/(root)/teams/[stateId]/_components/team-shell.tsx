@@ -10,11 +10,13 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@workspace/ui/components/avatar";
+import { Badge } from "@workspace/ui/components/badge";
 import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
 import { cn } from "@workspace/ui/lib/utils";
-import { MapPin, Settings, Users } from "lucide-react";
+import { CalendarRange, MapPin, Settings, Users } from "lucide-react";
 import type { getTeamInfo } from "../_lib/queries";
-import { StateLabel } from "@/components/state-flag";
+import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
+import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
 
 type Team = NonNullable<Awaited<ReturnType<typeof getTeamInfo>>>;
 
@@ -34,14 +36,19 @@ export function TeamShell({
   children,
 }: TeamShellProps) {
   const pathname = usePathname();
+  const summaryYear = getDefaultSummaryYear();
+  const basePath = `/teams/${stateId}`;
+  const isManage = pathname.startsWith(`${basePath}/manage`);
 
-  const activeTab = pathname.endsWith(`/teams/${stateId}/members`)
+  const activeTab = pathname.endsWith(`${basePath}/members`)
     ? "members"
-    : pathname.endsWith(`/teams/${stateId}/competitions`)
+    : pathname.endsWith(`${basePath}/competitions`)
       ? "competitions"
-      : pathname.endsWith(`/teams/${stateId}/statistics`)
+      : pathname.endsWith(`${basePath}/statistics`)
         ? "statistics"
-        : "overview";
+        : pathname === basePath || pathname === `${basePath}/`
+          ? "overview"
+          : null;
 
   const tabClass = (isActive: boolean) =>
     cn(
@@ -78,11 +85,21 @@ export function TeamShell({
                 </AvatarFallback>
               </Avatar>
               <div className="mb-2 text-white">
-                <h1 className="text-3xl font-bold">{team.name}</h1>
-                <div className="mt-2 flex flex-col items-start gap-2 sm:flex-row sm:gap-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-3xl font-bold">{team.name}</h1>
+                  {!team.isActive ? (
+                    <Badge
+                      variant="secondary"
+                      className="border-white/30 bg-black/40 text-white"
+                    >
+                      Inactivo
+                    </Badge>
+                  ) : null}
+                </div>
+                <div className="mt-2 flex flex-col items-start gap-2 text-sm text-white/90 sm:flex-row sm:items-center sm:gap-4">
                   <div className="flex items-center">
                     <MapPin className="mr-1 h-4 w-4" />
-                    <StateLabel stateId={stateId} stateName={team.state} />
+                    {team.state}
                   </div>
                   <div className="flex items-center">
                     <Users className="mr-1 h-4 w-4" />
@@ -90,7 +107,6 @@ export function TeamShell({
                   </div>
                   {team.founded ? (
                     <div className="flex items-center">
-                      <span className="mr-1">•</span>
                       Desde{" "}
                       {team.founded.toLocaleDateString("es-ES", {
                         year: "numeric",
@@ -100,18 +116,20 @@ export function TeamShell({
                 </div>
               </div>
             </div>
-            <div className="ml-auto flex gap-2">
-              <Link
-                className={cn(
-                  buttonVariants({
-                    variant: "secondary",
-                    size: "default",
-                  }),
-                )}
-                href="/teams"
-              >
-                <Users /> Ver todos los Teams
-              </Link>
+            <div className="ml-auto flex flex-wrap justify-end gap-2">
+              {ANNUAL_SUMMARY_ENABLED ? (
+                <Link
+                  className={cn(
+                    buttonVariants({
+                      variant: "secondary",
+                      size: "default",
+                    }),
+                  )}
+                  href={`/summary/team/${summaryYear}/${stateId}`}
+                >
+                  <CalendarRange /> Resumen anual
+                </Link>
+              ) : null}
               {canManage ? (
                 <Link
                   className={cn(
@@ -126,41 +144,55 @@ export function TeamShell({
                   Administrar Team
                 </Link>
               ) : null}
+              <Link
+                className={cn(
+                  buttonVariants({
+                    variant: "ghost",
+                    size: "default",
+                  }),
+                  "bg-black/20 text-white hover:bg-black/30 hover:text-white",
+                )}
+                href="/teams"
+              >
+                <Users /> Ver todos
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <ScrollArea className="max-w-screen">
-          <div className="mb-8 inline-flex w-full items-center justify-start gap-2 rounded-lg bg-muted p-1">
-            <Link
-              className={tabClass(activeTab === "overview")}
-              href={`/teams/${stateId}`}
-            >
-              Resumen
-            </Link>
-            <Link
-              className={tabClass(activeTab === "members")}
-              href={`/teams/${stateId}/members`}
-            >
-              Miembros
-            </Link>
-            <Link
-              className={tabClass(activeTab === "competitions")}
-              href={`/teams/${stateId}/competitions`}
-            >
-              Competencias
-            </Link>
-            <Link
-              className={tabClass(activeTab === "statistics")}
-              href={`/teams/${stateId}/statistics`}
-            >
-              Estadísticas
-            </Link>
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+        {!isManage ? (
+          <ScrollArea className="max-w-screen">
+            <div className="mb-8 inline-flex w-full items-center justify-start gap-2 rounded-lg bg-muted p-1">
+              <Link
+                className={tabClass(activeTab === "overview")}
+                href={`/teams/${stateId}`}
+              >
+                Resumen
+              </Link>
+              <Link
+                className={tabClass(activeTab === "members")}
+                href={`/teams/${stateId}/members`}
+              >
+                Miembros
+              </Link>
+              <Link
+                className={tabClass(activeTab === "competitions")}
+                href={`/teams/${stateId}/competitions`}
+              >
+                Competencias
+              </Link>
+              <Link
+                className={tabClass(activeTab === "statistics")}
+                href={`/teams/${stateId}/statistics`}
+              >
+                Estadísticas
+              </Link>
+            </div>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+        ) : null}
 
         {children}
       </div>

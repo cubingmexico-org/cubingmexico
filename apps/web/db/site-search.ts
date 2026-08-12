@@ -16,78 +16,63 @@ export type {
 const LIMIT = 8;
 
 async function searchPersons(q: string): Promise<SiteSearchResults["persons"]> {
-  try {
-    return await db
-      .select({
-        wcaId: person.wcaId,
-        name: person.name,
-      })
-      .from(person)
-      .where(
-        or(
-          accentInsensitiveContains(person.name, q),
-          accentInsensitiveContains(person.wcaId, q),
-        ),
-      )
-      .orderBy(person.name)
-      .limit(LIMIT);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+  return await db
+    .select({
+      wcaId: person.wcaId,
+      name: person.name,
+    })
+    .from(person)
+    .where(
+      or(
+        accentInsensitiveContains(person.name, q),
+        accentInsensitiveContains(person.wcaId, q),
+      ),
+    )
+    .orderBy(person.name)
+    .limit(LIMIT);
 }
 
 async function searchCompetitions(
   q: string,
 ): Promise<SiteSearchResults["competitions"]> {
-  try {
-    return await db
-      .select({
-        id: competition.id,
-        name: competition.name,
-        cityName: competition.cityName,
-      })
-      .from(competition)
-      .where(
-        and(
-          eq(competition.countryId, "Mexico"),
-          or(
-            accentInsensitiveContains(competition.name, q),
-            accentInsensitiveContains(competition.cityName, q),
-          ),
+  return await db
+    .select({
+      id: competition.id,
+      name: competition.name,
+      cityName: competition.cityName,
+    })
+    .from(competition)
+    .where(
+      and(
+        eq(competition.countryId, "Mexico"),
+        or(
+          accentInsensitiveContains(competition.name, q),
+          accentInsensitiveContains(competition.cityName, q),
         ),
-      )
-      .orderBy(competition.name)
-      .limit(LIMIT);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+      ),
+    )
+    .orderBy(competition.name)
+    .limit(LIMIT);
 }
 
 async function searchTeams(q: string): Promise<SiteSearchResults["teams"]> {
-  try {
-    return await db
-      .select({
-        stateId: team.stateId,
-        name: team.name,
-        stateName: state.name,
-      })
-      .from(team)
-      .innerJoin(state, eq(team.stateId, state.id))
-      .where(
-        or(
-          accentInsensitiveContains(team.name, q),
-          accentInsensitiveContains(state.name, q),
-          accentInsensitiveContains(team.stateId, q),
-        ),
-      )
-      .orderBy(team.name)
-      .limit(LIMIT);
-  } catch (err) {
-    console.error(err);
-    return [];
-  }
+  return await db
+    .select({
+      stateId: team.stateId,
+      name: team.name,
+      stateName: state.name,
+    })
+    .from(team)
+    .innerJoin(state, eq(team.stateId, state.id))
+    .where(
+      or(
+        accentInsensitiveContains(team.name, q),
+        accentInsensitiveContains(state.name, q),
+        accentInsensitiveContains(team.stateId, q),
+      ),
+    )
+    .orderBy(team.name)
+    .limit(LIMIT);
 }
 
 export async function searchSite(q: string): Promise<SiteSearchResults> {

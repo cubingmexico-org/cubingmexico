@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { getPerson } from "@/db/queries";
+import { SummaryLoading } from "../../_components/summary-loading";
 import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
 import { getAnnualSummary } from "./_lib/queries";
 import { AnnualSummaryView } from "./_components/annual-summary-view";
@@ -80,16 +81,7 @@ async function SummaryPage({ params }: Props) {
 
 export default function Page({ params }: Props) {
   return (
-    <Suspense
-      fallback={
-        <div className="flex flex-col gap-4 max-w-4xl mx-auto animate-pulse">
-          <div className="h-8 bg-muted rounded w-2/3 mx-auto" />
-          <div className="h-4 bg-muted rounded w-1/2 mx-auto" />
-          <div className="h-20 bg-muted rounded w-full" />
-          <div className="h-40 bg-muted rounded w-full" />
-        </div>
-      }
-    >
+    <Suspense fallback={<SummaryLoading />}>
       <SummaryPage params={params} />
     </Suspense>
   );

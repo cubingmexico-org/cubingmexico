@@ -28,94 +28,83 @@ export async function getRankSingles(
   cacheTag(`results-single-${eventId}-${asOfKey}`);
   cacheTag("results-single");
 
-  try {
-    const offset = (input.page - 1) * input.perPage;
+  const offset = (input.page - 1) * input.perPage;
 
-    const where = and(
-      gt(result.best, 0),
-      eq(result.eventId, eventId),
-      input.name
-        ? accentInsensitiveContains(person.name, input.name)
-        : undefined,
-      input.state.length > 0 ? inArray(state.name, input.state) : undefined,
-      input.gender.length > 0
-        ? inArray(person.gender, input.gender)
-        : undefined,
-      competitionAsOfCondition(input.asOf),
-    );
+  const where = and(
+    gt(result.best, 0),
+    eq(result.eventId, eventId),
+    input.name ? accentInsensitiveContains(person.name, input.name) : undefined,
+    input.state.length > 0 ? inArray(state.name, input.state) : undefined,
+    input.gender.length > 0 ? inArray(person.gender, input.gender) : undefined,
+    competitionAsOfCondition(input.asOf),
+  );
 
-    const orderBy =
-      input.sort.length > 0
-        ? input.sort.map((item) => {
-            switch (item.id) {
-              case "index":
-                return item.desc ? desc(result.best) : asc(result.best);
-              case "state":
-                return item.desc ? desc(state.name) : asc(state.name);
-              case "name":
-                return item.desc ? desc(person.name) : asc(person.name);
-              case "gender":
-                return item.desc ? desc(person.gender) : asc(person.gender);
-              case "competition":
-                return item.desc
-                  ? desc(competition.name)
-                  : asc(competition.name);
-              default:
-                return item.desc ? desc(result[item.id]) : asc(result[item.id]);
-            }
-          })
-        : [asc(result.best)];
-
-    const { data, total } = await db.transaction(async (tx) => {
-      const data = await tx
-        .select({
-          personId: result.personId,
-          name: person.name,
-          best: result.best,
-          state: state.name,
-          gender: person.gender,
-          competition: competition.name,
-          competitionId: result.competitionId,
+  const orderBy =
+    input.sort.length > 0
+      ? input.sort.map((item) => {
+          switch (item.id) {
+            case "index":
+              return item.desc ? desc(result.best) : asc(result.best);
+            case "state":
+              return item.desc ? desc(state.name) : asc(state.name);
+            case "name":
+              return item.desc ? desc(person.name) : asc(person.name);
+            case "gender":
+              return item.desc ? desc(person.gender) : asc(person.gender);
+            case "competition":
+              return item.desc ? desc(competition.name) : asc(competition.name);
+            default:
+              return item.desc ? desc(result[item.id]) : asc(result[item.id]);
+          }
         })
-        .from(result)
-        .innerJoin(person, eq(result.personId, person.wcaId))
-        .innerJoin(competition, eq(result.competitionId, competition.id))
-        .leftJoin(state, eq(person.stateId, state.id))
-        .limit(input.perPage)
-        .offset(offset)
-        .where(where)
-        .orderBy(...orderBy);
+      : [asc(result.best)];
 
-      const total = (await tx
-        .select({
-          count: count(),
-        })
-        .from(result)
-        .innerJoin(person, eq(result.personId, person.wcaId))
-        .innerJoin(competition, eq(result.competitionId, competition.id))
-        .leftJoin(state, eq(person.stateId, state.id))
-        .where(where)
-        .execute()
-        .then((res) => res[0]?.count ?? 0)) as number;
+  const { data, total } = await db.transaction(async (tx) => {
+    const data = await tx
+      .select({
+        personId: result.personId,
+        name: person.name,
+        best: result.best,
+        state: state.name,
+        gender: person.gender,
+        competition: competition.name,
+        competitionId: result.competitionId,
+      })
+      .from(result)
+      .innerJoin(person, eq(result.personId, person.wcaId))
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .leftJoin(state, eq(person.stateId, state.id))
+      .limit(input.perPage)
+      .offset(offset)
+      .where(where)
+      .orderBy(...orderBy);
 
-      return {
-        data,
-        total,
-      };
-    });
+    const total = (await tx
+      .select({
+        count: count(),
+      })
+      .from(result)
+      .innerJoin(person, eq(result.personId, person.wcaId))
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .leftJoin(state, eq(person.stateId, state.id))
+      .where(where)
+      .execute()
+      .then((res) => res[0]?.count ?? 0)) as number;
 
-    const pageCount = Math.ceil(total / input.perPage);
     return {
-      data: data.map((row, i) => ({
-        ...row,
-        index: offset + i + 1,
-      })),
-      pageCount,
+      data,
+      total,
     };
-  } catch (err) {
-    console.error(err);
-    return { data: [], pageCount: 0 };
-  }
+  });
+
+  const pageCount = Math.ceil(total / input.perPage);
+  return {
+    data: data.map((row, i) => ({
+      ...row,
+      index: offset + i + 1,
+    })),
+    pageCount,
+  };
 }
 
 export async function getRankSinglesStateCounts(
@@ -127,34 +116,29 @@ export async function getRankSinglesStateCounts(
   cacheTag(`results-single-state-counts-${eventId}-${asOfKey}`);
   cacheTag("results-single");
 
-  try {
-    return await db
-      .select({
-        state: state.name,
-        count: count(),
-      })
-      .from(result)
-      .innerJoin(person, eq(result.personId, person.wcaId))
-      .innerJoin(competition, eq(result.competitionId, competition.id))
-      .leftJoin(state, eq(person.stateId, state.id))
-      .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
-      .groupBy(state.name)
-      .having(gt(count(), 0))
-      .orderBy(state.name)
-      .then((res) =>
-        res.reduce(
-          (acc, { state, count }) => {
-            if (!state) return acc;
-            acc[state] = count;
-            return acc;
-          },
-          {} as Record<State["name"], number>,
-        ),
-      );
-  } catch (err) {
-    console.error(err);
-    return {} as Record<State["name"], number>;
-  }
+  return await db
+    .select({
+      state: state.name,
+      count: count(),
+    })
+    .from(result)
+    .innerJoin(person, eq(result.personId, person.wcaId))
+    .innerJoin(competition, eq(result.competitionId, competition.id))
+    .leftJoin(state, eq(person.stateId, state.id))
+    .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
+    .groupBy(state.name)
+    .having(gt(count(), 0))
+    .orderBy(state.name)
+    .then((res) =>
+      res.reduce(
+        (acc, { state, count }) => {
+          if (!state) return acc;
+          acc[state] = count;
+          return acc;
+        },
+        {} as Record<State["name"], number>,
+      ),
+    );
 }
 
 export async function getRankSinglesGenderCounts(
@@ -166,33 +150,28 @@ export async function getRankSinglesGenderCounts(
   cacheTag(`results-single-gender-counts-${eventId}-${asOfKey}`);
   cacheTag("results-single");
 
-  try {
-    return await db
-      .select({
-        gender: person.gender,
-        count: count(),
-      })
-      .from(result)
-      .innerJoin(person, eq(result.personId, person.wcaId))
-      .innerJoin(competition, eq(result.competitionId, competition.id))
-      .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
-      .groupBy(person.gender)
-      .having(gt(count(), 0))
-      .orderBy(person.gender)
-      .then((res) =>
-        res.reduce(
-          (acc, { gender, count }) => {
-            if (!gender) return acc;
-            acc[gender] = count;
-            return acc;
-          },
-          {} as Record<string, number>,
-        ),
-      );
-  } catch (err) {
-    console.error(err);
-    return {} as Record<string, number>;
-  }
+  return await db
+    .select({
+      gender: person.gender,
+      count: count(),
+    })
+    .from(result)
+    .innerJoin(person, eq(result.personId, person.wcaId))
+    .innerJoin(competition, eq(result.competitionId, competition.id))
+    .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
+    .groupBy(person.gender)
+    .having(gt(count(), 0))
+    .orderBy(person.gender)
+    .then((res) =>
+      res.reduce(
+        (acc, { gender, count }) => {
+          if (!gender) return acc;
+          acc[gender] = count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+    );
 }
 
 export async function getRankAverages(
@@ -204,94 +183,83 @@ export async function getRankAverages(
   cacheTag(`results-average-${eventId}-${asOfKey}`);
   cacheTag("results-average");
 
-  try {
-    const offset = (input.page - 1) * input.perPage;
+  const offset = (input.page - 1) * input.perPage;
 
-    const where = and(
-      gt(result.average, 0),
-      eq(result.eventId, eventId),
-      input.name
-        ? accentInsensitiveContains(person.name, input.name)
-        : undefined,
-      input.state.length > 0 ? inArray(state.name, input.state) : undefined,
-      input.gender.length > 0
-        ? inArray(person.gender, input.gender)
-        : undefined,
-      competitionAsOfCondition(input.asOf),
-    );
+  const where = and(
+    gt(result.average, 0),
+    eq(result.eventId, eventId),
+    input.name ? accentInsensitiveContains(person.name, input.name) : undefined,
+    input.state.length > 0 ? inArray(state.name, input.state) : undefined,
+    input.gender.length > 0 ? inArray(person.gender, input.gender) : undefined,
+    competitionAsOfCondition(input.asOf),
+  );
 
-    const orderBy =
-      input.sort.length > 0
-        ? input.sort.map((item) => {
-            switch (item.id) {
-              case "index":
-                return item.desc ? desc(result.average) : asc(result.average);
-              case "state":
-                return item.desc ? desc(state.name) : asc(state.name);
-              case "name":
-                return item.desc ? desc(person.name) : asc(person.name);
-              case "gender":
-                return item.desc ? desc(person.gender) : asc(person.gender);
-              case "competition":
-                return item.desc
-                  ? desc(competition.name)
-                  : asc(competition.name);
-              default:
-                return item.desc ? desc(result[item.id]) : asc(result[item.id]);
-            }
-          })
-        : [asc(result.average)];
-
-    const { data, total } = await db.transaction(async (tx) => {
-      const data = await tx
-        .select({
-          personId: result.personId,
-          name: person.name,
-          average: result.average,
-          state: state.name,
-          gender: person.gender,
-          competition: competition.name,
-          competitionId: competition.id,
+  const orderBy =
+    input.sort.length > 0
+      ? input.sort.map((item) => {
+          switch (item.id) {
+            case "index":
+              return item.desc ? desc(result.average) : asc(result.average);
+            case "state":
+              return item.desc ? desc(state.name) : asc(state.name);
+            case "name":
+              return item.desc ? desc(person.name) : asc(person.name);
+            case "gender":
+              return item.desc ? desc(person.gender) : asc(person.gender);
+            case "competition":
+              return item.desc ? desc(competition.name) : asc(competition.name);
+            default:
+              return item.desc ? desc(result[item.id]) : asc(result[item.id]);
+          }
         })
-        .from(result)
-        .innerJoin(person, eq(result.personId, person.wcaId))
-        .innerJoin(competition, eq(result.competitionId, competition.id))
-        .leftJoin(state, eq(person.stateId, state.id))
-        .limit(input.perPage)
-        .offset(offset)
-        .where(where)
-        .orderBy(...orderBy);
+      : [asc(result.average)];
 
-      const total = (await tx
-        .select({
-          count: count(),
-        })
-        .from(result)
-        .innerJoin(person, eq(result.personId, person.wcaId))
-        .innerJoin(competition, eq(result.competitionId, competition.id))
-        .leftJoin(state, eq(person.stateId, state.id))
-        .where(where)
-        .execute()
-        .then((res) => res[0]?.count ?? 0)) as number;
+  const { data, total } = await db.transaction(async (tx) => {
+    const data = await tx
+      .select({
+        personId: result.personId,
+        name: person.name,
+        average: result.average,
+        state: state.name,
+        gender: person.gender,
+        competition: competition.name,
+        competitionId: competition.id,
+      })
+      .from(result)
+      .innerJoin(person, eq(result.personId, person.wcaId))
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .leftJoin(state, eq(person.stateId, state.id))
+      .limit(input.perPage)
+      .offset(offset)
+      .where(where)
+      .orderBy(...orderBy);
 
-      return {
-        data,
-        total,
-      };
-    });
+    const total = (await tx
+      .select({
+        count: count(),
+      })
+      .from(result)
+      .innerJoin(person, eq(result.personId, person.wcaId))
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .leftJoin(state, eq(person.stateId, state.id))
+      .where(where)
+      .execute()
+      .then((res) => res[0]?.count ?? 0)) as number;
 
-    const pageCount = Math.ceil(total / input.perPage);
     return {
-      data: data.map((row, i) => ({
-        ...row,
-        index: offset + i + 1,
-      })),
-      pageCount,
+      data,
+      total,
     };
-  } catch (err) {
-    console.error(err);
-    return { data: [], pageCount: 0 };
-  }
+  });
+
+  const pageCount = Math.ceil(total / input.perPage);
+  return {
+    data: data.map((row, i) => ({
+      ...row,
+      index: offset + i + 1,
+    })),
+    pageCount,
+  };
 }
 
 export async function getRankAveragesStateCounts(
@@ -303,34 +271,29 @@ export async function getRankAveragesStateCounts(
   cacheTag(`results-average-state-counts-${eventId}-${asOfKey}`);
   cacheTag("results-average");
 
-  try {
-    return await db
-      .select({
-        state: state.name,
-        count: count(),
-      })
-      .from(result)
-      .innerJoin(person, eq(result.personId, person.wcaId))
-      .innerJoin(competition, eq(result.competitionId, competition.id))
-      .leftJoin(state, eq(person.stateId, state.id))
-      .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
-      .groupBy(state.name)
-      .having(gt(count(), 0))
-      .orderBy(state.name)
-      .then((res) =>
-        res.reduce(
-          (acc, { state, count }) => {
-            if (!state) return acc;
-            acc[state] = count;
-            return acc;
-          },
-          {} as Record<State["name"], number>,
-        ),
-      );
-  } catch (err) {
-    console.error(err);
-    return {} as Record<State["name"], number>;
-  }
+  return await db
+    .select({
+      state: state.name,
+      count: count(),
+    })
+    .from(result)
+    .innerJoin(person, eq(result.personId, person.wcaId))
+    .innerJoin(competition, eq(result.competitionId, competition.id))
+    .leftJoin(state, eq(person.stateId, state.id))
+    .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
+    .groupBy(state.name)
+    .having(gt(count(), 0))
+    .orderBy(state.name)
+    .then((res) =>
+      res.reduce(
+        (acc, { state, count }) => {
+          if (!state) return acc;
+          acc[state] = count;
+          return acc;
+        },
+        {} as Record<State["name"], number>,
+      ),
+    );
 }
 
 export async function getRankAveragesGenderCounts(
@@ -342,32 +305,27 @@ export async function getRankAveragesGenderCounts(
   cacheTag(`results-average-gender-counts-${eventId}-${asOfKey}`);
   cacheTag("results-average");
 
-  try {
-    return await db
-      .select({
-        gender: person.gender,
-        count: count(),
-      })
-      .from(result)
-      .innerJoin(person, eq(result.personId, person.wcaId))
-      .innerJoin(competition, eq(result.competitionId, competition.id))
-      .leftJoin(state, eq(person.stateId, state.id))
-      .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
-      .groupBy(person.gender)
-      .having(gt(count(), 0))
-      .orderBy(person.gender)
-      .then((res) =>
-        res.reduce(
-          (acc, { gender, count }) => {
-            if (!gender) return acc;
-            acc[gender] = count;
-            return acc;
-          },
-          {} as Record<string, number>,
-        ),
-      );
-  } catch (err) {
-    console.error(err);
-    return {} as Record<string, number>;
-  }
+  return await db
+    .select({
+      gender: person.gender,
+      count: count(),
+    })
+    .from(result)
+    .innerJoin(person, eq(result.personId, person.wcaId))
+    .innerJoin(competition, eq(result.competitionId, competition.id))
+    .leftJoin(state, eq(person.stateId, state.id))
+    .where(and(eq(result.eventId, eventId), competitionAsOfCondition(asOf)))
+    .groupBy(person.gender)
+    .having(gt(count(), 0))
+    .orderBy(person.gender)
+    .then((res) =>
+      res.reduce(
+        (acc, { gender, count }) => {
+          if (!gender) return acc;
+          acc[gender] = count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      ),
+    );
 }

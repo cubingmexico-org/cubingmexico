@@ -26,7 +26,7 @@ export async function RankSinglesLoader({
     getRankSinglesStateCounts(eventId, search.asOf),
     getRankSinglesGenderCounts(eventId, search.asOf),
   ]);
-  return <RankSinglesTable promises={promises} />;
+  return <RankSinglesTable promises={promises} eventId={eventId} />;
 }
 
 export async function RankAveragesLoader({
@@ -43,5 +43,5 @@ export async function RankAveragesLoader({
     getRankAveragesStateCounts(eventId, search.asOf),
     getRankAveragesGenderCounts(eventId, search.asOf),
   ]);
-  return <RankAveragesTable promises={promises} />;
+  return <RankAveragesTable promises={promises} eventId={eventId} />;
 }

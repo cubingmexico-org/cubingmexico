@@ -33,21 +33,21 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { rankType } = await params;
-  // const eventId = (await params).eventId;
-
-  // const team = await getTeam(rankType);
+  const { eventId, rankType } = await params;
+  const events = await getEvents();
+  const eventName =
+    events.find((event) => event.id === eventId)?.name ?? eventId;
 
   if (rankType === "single") {
     return {
-      title: `Ranking de resultados de Singles | Cubing México`,
+      title: `${eventName} · Ranking de resultados de Singles | Cubing México`,
       description:
         "Encuentra el ranking de los mejores resultados de México en cada evento de la WCA. Filtra por estado, género y más.",
     };
   }
 
   return {
-    title: `Ranking de resultados de Averages | Cubing México`,
+    title: `${eventName} · Ranking de resultados de Averages | Cubing México`,
     description:
       "Encuentra el ranking de los mejores resultados de México en cada evento de la WCA. Filtra por estado, género y más.",
   };
@@ -122,9 +122,9 @@ export default async function Page(props: PageProps) {
           }
         >
           {rankType === "single" ? (
-            <RankSinglesTable promises={singlePromises} />
+            <RankSinglesTable promises={singlePromises} eventId={eventId} />
           ) : (
-            <RankAveragesTable promises={averagePromises} />
+            <RankAveragesTable promises={averagePromises} eventId={eventId} />
           )}
         </React.Suspense>
       </div>

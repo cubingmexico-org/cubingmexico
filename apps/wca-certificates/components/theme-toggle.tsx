@@ -19,7 +19,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="flex items-center space-x-2 h-6 w-[99px]">
+      <div className="flex items-center space-x-2 h-6 w-24.75">
         <div className="h-[1.2rem] w-[1.2rem] bg-muted rounded-full animate-pulse" />
         <div className="h-6 w-11 bg-muted rounded-full animate-pulse" />
         <div className="h-[1.2rem] w-[1.2rem] bg-muted rounded-full animate-pulse" />

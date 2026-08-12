@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { getCurrentUserTeamAction } from "@/app/actions";
+import { getCurrentUserTeamAction, isSuperadminAction } from "@/app/actions";
 import { authClient } from "@/lib/auth-client";
 import { UserAuthForm } from "./user-auth-form";
 import { UserDropdown } from "./user-dropdown";
@@ -15,19 +15,25 @@ type Team = {
 export function HeaderAuth() {
   const { data: session, isPending } = authClient.useSession();
   const [team, setTeam] = useState<Team>(null);
+  const [isSuperadmin, setIsSuperadmin] = useState(false);
 
   useEffect(() => {
     const wcaId = session?.user?.wcaId;
     if (!wcaId) {
       setTeam(null);
+      setIsSuperadmin(false);
       return;
     }
 
     let cancelled = false;
 
-    void getCurrentUserTeamAction(wcaId).then((result) => {
+    void Promise.all([
+      getCurrentUserTeamAction(wcaId),
+      isSuperadminAction(wcaId),
+    ]).then(([teamResult, superadmin]) => {
       if (!cancelled) {
-        setTeam(result);
+        setTeam(teamResult);
+        setIsSuperadmin(superadmin);
       }
     });
 
@@ -44,5 +50,7 @@ export function HeaderAuth() {
     return <UserAuthForm />;
   }
 
-  return <UserDropdown user={session.user} team={team} />;
+  return (
+    <UserDropdown user={session.user} team={team} isSuperadmin={isSuperadmin} />
+  );
 }

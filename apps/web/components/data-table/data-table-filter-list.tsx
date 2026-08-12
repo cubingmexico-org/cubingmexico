@@ -15,6 +15,7 @@ import * as React from "react";
 import { DataTableRangeFilter } from "@/components/data-table/data-table-range-filter";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Calendar } from "@workspace/ui/components/calendar";
 import {
   Command,
@@ -251,7 +252,7 @@ export function DataTableFilterList<TData>({
         <PopoverContent
           aria-describedby={descriptionId}
           aria-labelledby={labelId}
-          className="flex w-full max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) flex-col gap-3.5 p-4 sm:min-w-[380px]"
+          className="flex w-full max-w-(--radix-popover-content-available-width) origin-(--radix-popover-content-transform-origin) flex-col gap-3.5 p-4 sm:min-w-95"
           {...props}
         >
           <div className="flex flex-col gap-1">
@@ -272,7 +273,7 @@ export function DataTableFilterList<TData>({
           </div>
           {filters.length > 0 ? (
             <SortableContent asChild>
-              <ul className="flex max-h-[300px] flex-col gap-2 overflow-y-auto p-1">
+              <ul className="flex max-h-75 flex-col gap-2 overflow-y-auto p-1">
                 {filters.map((filter, index) => (
                   <DataTableFilterItem<TData>
                     key={filter.filterId}
@@ -313,12 +314,12 @@ export function DataTableFilterList<TData>({
       </Popover>
       <SortableOverlay>
         <div className="flex items-center gap-2">
-          <div className="h-8 min-w-[72px] rounded-sm bg-primary/10" />
-          <div className="h-8 w-32 rounded-sm bg-primary/10" />
-          <div className="h-8 w-32 rounded-sm bg-primary/10" />
-          <div className="h-8 min-w-36 flex-1 rounded-sm bg-primary/10" />
-          <div className="size-8 shrink-0 rounded-sm bg-primary/10" />
-          <div className="size-8 shrink-0 rounded-sm bg-primary/10" />
+          <Skeleton className="h-8 min-w-18 rounded-sm" />
+          <Skeleton className="h-8 w-32 rounded-sm" />
+          <Skeleton className="h-8 w-32 rounded-sm" />
+          <Skeleton className="h-8 min-w-36 flex-1 rounded-sm" />
+          <Skeleton className="size-8 shrink-0 rounded-sm" />
+          <Skeleton className="size-8 shrink-0 rounded-sm" />
         </div>
       </SortableOverlay>
     </Sortable>
@@ -400,7 +401,7 @@ function DataTableFilterItem<TData>({
         className="flex items-center gap-2"
         onKeyDown={onItemKeyDown}
       >
-        <div className="min-w-[72px] text-center">
+        <div className="min-w-18 text-center">
           {index === 0 ? (
             <span className="text-muted-foreground text-sm">Donde</span>
           ) : index === 1 ? (
@@ -711,7 +712,7 @@ function onFilterInputRender<TData>({
           </FacetedTrigger>
           <FacetedContent
             id={inputListboxId}
-            className="w-[200px] origin-(--radix-popover-content-transform-origin)"
+            className="w-50 origin-(--radix-popover-content-transform-origin)"
           >
             <FacetedInput
               aria-label={`Buscar opciones de ${columnMeta?.label}`}

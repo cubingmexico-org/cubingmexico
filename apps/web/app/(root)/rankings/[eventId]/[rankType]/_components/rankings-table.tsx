@@ -14,6 +14,7 @@ import type {
 } from "../_lib/queries";
 import { getColumns } from "./rankings-table-columns";
 import { parseAsArrayOf, parseAsString, useQueryStates } from "nuqs";
+import type { EventId } from "@/types/wca";
 
 const searchParams = {
   state: parseAsArrayOf(parseAsString).withDefault([]),
@@ -27,9 +28,10 @@ interface RankSinglesTableProps {
       Awaited<ReturnType<typeof getRankSinglesGenderCounts>>,
     ]
   >;
+  eventId: EventId;
 }
 
-export function RankSinglesTable({ promises }: RankSinglesTableProps) {
+export function RankSinglesTable({ promises, eventId }: RankSinglesTableProps) {
   const [{ data, pageCount }, stateCounts, genderCounts] = React.use(promises);
 
   const columns = React.useMemo(
@@ -37,8 +39,10 @@ export function RankSinglesTable({ promises }: RankSinglesTableProps) {
       getColumns({
         stateCounts,
         genderCounts,
+        eventId,
+        rankType: "single",
       }),
-    [stateCounts, genderCounts],
+    [stateCounts, genderCounts, eventId],
   );
 
   const [{ state }] = useQueryStates(searchParams);
@@ -82,9 +86,13 @@ interface RankAveragesTableProps {
       Awaited<ReturnType<typeof getRankAveragesGenderCounts>>,
     ]
   >;
+  eventId: EventId;
 }
 
-export function RankAveragesTable({ promises }: RankAveragesTableProps) {
+export function RankAveragesTable({
+  promises,
+  eventId,
+}: RankAveragesTableProps) {
   const [{ data, pageCount }, stateCounts, genderCounts] = React.use(promises);
 
   const columns = React.useMemo(
@@ -92,8 +100,10 @@ export function RankAveragesTable({ promises }: RankAveragesTableProps) {
       getColumns({
         stateCounts,
         genderCounts,
+        eventId,
+        rankType: "average",
       }),
-    [stateCounts, genderCounts],
+    [stateCounts, genderCounts, eventId],
   );
 
   const [{ state }] = useQueryStates(searchParams);

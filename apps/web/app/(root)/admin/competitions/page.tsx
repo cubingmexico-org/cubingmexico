@@ -14,18 +14,21 @@ import {
   CompetitionsTable,
 } from "./_components/competitions-admin";
 import { RefreshMxCompetitionsButton } from "./_components/refresh-mx-button";
+import { ImportMissingLogosButton } from "./_components/import-missing-logos-button";
 
 async function CompetitionsAdminContent({
   searchParams,
 }: {
   searchParams: Promise<{
     missing?: string;
+    missingLogo?: string;
     stateId?: string;
     q?: string;
   }>;
 }) {
   const params = await searchParams;
   const missingOnly = params.missing === "1";
+  const missingLogoOnly = params.missingLogo === "1";
   const stateId = missingOnly ? null : (params.stateId ?? null);
   const search = params.q ?? "";
 
@@ -33,6 +36,7 @@ async function CompetitionsAdminContent({
     getStates(),
     getMexicanCompetitions({
       missingStateOnly: missingOnly,
+      missingLogoOnly,
       stateId,
       search,
       limit: 100,
@@ -45,6 +49,7 @@ async function CompetitionsAdminContent({
         <CompetitionsFilters
           states={states}
           missingOnly={missingOnly}
+          missingLogoOnly={missingLogoOnly}
           stateId={stateId}
           search={search}
         />
@@ -59,6 +64,7 @@ export default function AdminCompetitionsPage({
 }: {
   searchParams: Promise<{
     missing?: string;
+    missingLogo?: string;
     stateId?: string;
     q?: string;
   }>;
@@ -70,10 +76,14 @@ export default function AdminCompetitionsPage({
           <div>
             <CardTitle className="text-base">Competencias mexicanas</CardTitle>
             <CardDescription>
-              Corrige el `stateId` de competencias en México
+              Asigna `stateId` y gestiona logos (importar URL WCA, subir o
+              borrar fondo)
             </CardDescription>
           </div>
-          <RefreshMxCompetitionsButton />
+          <div className="flex flex-wrap gap-2">
+            <ImportMissingLogosButton />
+            <RefreshMxCompetitionsButton />
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <Suspense

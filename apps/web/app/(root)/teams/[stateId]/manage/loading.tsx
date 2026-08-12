@@ -1,11 +1,5 @@
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
+import { Card, CardContent, CardHeader } from "@workspace/ui/components/card";
 import {
   Tabs,
   TabsContent,
@@ -15,15 +9,13 @@ import {
 
 export default function Loading() {
   return (
-    <main className="grow">
+    <>
       <div className="bg-muted/75 border-b">
         <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-3">
-              <Skeleton className="h-9 w-32" />
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-96" />
-            </div>
+          <div className="space-y-3">
+            <Skeleton className="h-9 w-32" />
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-96" />
           </div>
         </div>
       </div>
@@ -31,7 +23,7 @@ export default function Loading() {
       <div className="container mx-auto px-4 py-6">
         <Tabs className="w-full" defaultValue="general">
           <div className="overflow-x-auto pb-2">
-            <TabsList className="w-full md:w-auto justify-start mb-6">
+            <TabsList className="mb-6 w-full justify-start md:w-auto">
               <TabsTrigger value="general">General</TabsTrigger>
               <TabsTrigger value="members">Miembros</TabsTrigger>
               <TabsTrigger value="images">Imágenes</TabsTrigger>
@@ -43,7 +35,7 @@ export default function Loading() {
               <Card className="md:col-span-2">
                 <CardHeader>
                   <Skeleton className="h-6 w-48" />
-                  <Skeleton className="h-4 w-64 mt-2" />
+                  <Skeleton className="mt-2 h-4 w-64" />
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {[...Array(7)].map((_, i) => (
@@ -61,7 +53,7 @@ export default function Loading() {
               <Card>
                 <CardHeader>
                   <Skeleton className="h-6 w-40" />
-                  <Skeleton className="h-4 w-48 mt-2" />
+                  <Skeleton className="mt-2 h-4 w-48" />
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {[...Array(4)].map((_, i) => (
@@ -99,7 +91,7 @@ export default function Loading() {
               <Card>
                 <CardHeader>
                   <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-4 w-48 mt-2" />
+                  <Skeleton className="mt-2 h-4 w-48" />
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -116,16 +108,14 @@ export default function Loading() {
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>Logo del Team</CardTitle>
-                  <CardDescription>
-                    Sube la imagen del logo de tu team
-                  </CardDescription>
+                  <Skeleton className="h-6 w-36" />
+                  <Skeleton className="mt-2 h-4 w-56" />
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-center">
-                    <Skeleton className="w-40 h-40 rounded-full" />
+                    <Skeleton className="h-40 w-40 rounded-full" />
                   </div>
-                  <Skeleton className="h-4 w-full text-center mx-auto" />
+                  <Skeleton className="mx-auto h-4 w-full" />
                   <div className="flex justify-center pt-2">
                     <Skeleton className="h-9 w-32" />
                   </div>
@@ -134,14 +124,12 @@ export default function Loading() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Imagen de Portada</CardTitle>
-                  <CardDescription>
-                    Sube la imagen de portada de tu team
-                  </CardDescription>
+                  <Skeleton className="h-6 w-40" />
+                  <Skeleton className="mt-2 h-4 w-56" />
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Skeleton className="h-48 w-full rounded-md" />
-                  <Skeleton className="h-4 w-full text-center mx-auto" />
+                  <Skeleton className="mx-auto h-4 w-full" />
                   <div className="flex justify-center pt-2">
                     <Skeleton className="h-9 w-36" />
                   </div>
@@ -150,13 +138,11 @@ export default function Loading() {
 
               <Card className="md:col-span-2">
                 <CardHeader>
-                  <CardTitle>Guías de Imágenes</CardTitle>
-                  <CardDescription>
-                    Mejores prácticas para imágenes de team
-                  </CardDescription>
+                  <Skeleton className="h-6 w-44" />
+                  <Skeleton className="mt-2 h-4 w-64" />
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                     {[...Array(2)].map((_, cardIndex) => (
                       <div key={cardIndex} className="space-y-4">
                         <div className="space-y-2">
@@ -176,6 +162,6 @@ export default function Loading() {
           </TabsContent>
         </Tabs>
       </div>
-    </main>
+    </>
   );
 }

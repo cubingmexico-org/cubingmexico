@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Switch } from "@workspace/ui/components/switch";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
@@ -21,10 +22,10 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="flex items-center space-x-2 h-6 w-[99px]">
-        <div className="h-[1.2rem] w-[1.2rem] bg-muted rounded-full animate-pulse" />
-        <div className="h-6 w-11 bg-muted rounded-full animate-pulse" />
-        <div className="h-[1.2rem] w-[1.2rem] bg-muted rounded-full animate-pulse" />
+      <div className="flex h-6 w-24.75 items-center space-x-2">
+        <Skeleton className="h-[1.2rem] w-[1.2rem] rounded-full" />
+        <Skeleton className="h-6 w-11 rounded-full" />
+        <Skeleton className="h-[1.2rem] w-[1.2rem] rounded-full" />
       </div>
     );
   }

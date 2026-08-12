@@ -885,7 +885,7 @@ export async function computeYearMollerz(
   };
 }
 
-async function getAsOfPbs(asOf: Date): Promise<{
+export async function getAsOfPbs(asOf: Date): Promise<{
   personSingles: Map<string, Map<string, number>>;
   personAverages: Map<string, Map<string, number>>;
   nationalSingles: Map<string, number>;
@@ -1059,5 +1059,115 @@ export async function computeYearKinchSor(
     sorSingleAfter: computeSorForPerson(wcaId, after, "single"),
     sorAverageBefore: computeSorForPerson(wcaId, before, "average"),
     sorAverageAfter: computeSorForPerson(wcaId, after, "average"),
+  };
+}
+
+type AsOfPbs = Awaited<ReturnType<typeof getAsOfPbs>>;
+
+function kinchRatioForPb(
+  eventId: string,
+  pb: number,
+  nr: number | undefined,
+): number {
+  if (!nr || pb <= 0 || nr <= 0) return 0;
+  if (eventId === "333mbf") {
+    const pbScore = mbfScore(pb);
+    const nrScore = mbfScore(nr);
+    return nrScore === 0 ? 0 : (pbScore / nrScore) * 100;
+  }
+  return (nr / pb) * 100;
+}
+
+function computeKinchForTeam(memberIds: string[], data: AsOfPbs): number {
+  if (memberIds.length === 0 || data.eventIds.length === 0) return 0;
+
+  const memberSet = new Set(memberIds);
+  const singleEventSet = new Set(SINGLE_EVENTS);
+  const ratios: number[] = [];
+
+  for (const eventId of data.eventIds) {
+    const useSingle = singleEventSet.has(eventId);
+    const personMap = useSingle ? data.personSingles : data.personAverages;
+    const nr = useSingle
+      ? data.nationalSingles.get(eventId)
+      : data.nationalAverages.get(eventId);
+
+    let bestRatio = 0;
+    for (const memberId of memberSet) {
+      const pb = personMap.get(memberId)?.get(eventId);
+      if (pb === undefined) continue;
+      const ratio = kinchRatioForPb(eventId, pb, nr);
+      if (ratio > bestRatio) bestRatio = ratio;
+    }
+    ratios.push(bestRatio);
+  }
+
+  return ratios.reduce((a, b) => a + b, 0) / ratios.length;
+}
+
+function computeSorForTeam(
+  memberIds: string[],
+  data: AsOfPbs,
+  kind: "single" | "average",
+): number {
+  if (memberIds.length === 0) return 0;
+
+  const memberSet = new Set(memberIds);
+  const personMap =
+    kind === "single" ? data.personSingles : data.personAverages;
+
+  let overall = 0;
+
+  for (const eventId of data.eventIds) {
+    if (kind === "average" && SINGLE_EVENTS.includes(eventId)) {
+      continue;
+    }
+
+    const allValues: number[] = [];
+    for (const [, byEvent] of personMap) {
+      const value = byEvent.get(eventId);
+      if (value !== undefined) allValues.push(value);
+    }
+    allValues.sort((a, b) => a - b);
+    const worst = allValues.length + 1;
+
+    let bestRank = worst;
+    for (const memberId of memberSet) {
+      const pb = personMap.get(memberId)?.get(eventId);
+      if (pb === undefined) continue;
+      const rank = allValues.findIndex((v) => v === pb) + 1;
+      const resolved = rank > 0 ? rank : worst;
+      if (resolved < bestRank) bestRank = resolved;
+    }
+    overall += bestRank;
+  }
+
+  return overall;
+}
+
+/**
+ * Team Kinch / SoR before→after for a state roster.
+ * Uses best member per event (same model as live team Kinch and team SoR pages).
+ */
+export async function computeTeamYearKinchSor(
+  memberIds: string[],
+  yearStart: Date,
+  yearEnd: Date,
+): Promise<YearKinchSor> {
+  const beforeDate = dayBefore(yearStart);
+  const afterDate = dayBefore(yearEnd);
+
+  const [before, after] = await Promise.all([
+    getAsOfPbs(beforeDate),
+    getAsOfPbs(afterDate),
+  ]);
+
+  return {
+    kinchBefore: Number(computeKinchForTeam(memberIds, before).toFixed(2)),
+    kinchAfter: Number(computeKinchForTeam(memberIds, after).toFixed(2)),
+    sorSingleBefore: computeSorForTeam(memberIds, before, "single"),
+    sorSingleAfter: computeSorForTeam(memberIds, after, "single"),
+    sorAverageBefore: computeSorForTeam(memberIds, before, "average"),
+    sorAverageAfter: computeSorForTeam(memberIds, after, "average"),
   };
 }

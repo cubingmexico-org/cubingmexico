@@ -1,12 +1,13 @@
-export type ShareHighlightTone = "default" | "gold" | "silver" | "bronze";
+import {
+  formatInt,
+  MAX_HIGHLIGHTS,
+  type ShareHighlight,
+} from "../../../_lib/share-types";
 
-export type ShareHighlight = {
-  id: string;
-  label: string;
-  value: string;
-  detail?: string;
-  tone?: ShareHighlightTone;
-};
+export type {
+  ShareHighlight,
+  ShareHighlightTone,
+} from "../../../_lib/share-types";
 
 /** Minimal summary fields needed to build share-card highlights. */
 export type ShareHighlightSource = {
@@ -20,9 +21,12 @@ export type ShareHighlightSource = {
   };
   personalBests: {
     totalBreaks: number;
+    singleBreaks: number;
+    averageBreaks: number;
   };
   solves: {
     totalSolves: number;
+    totalAttempts: number;
   };
   records: {
     wr: number;
@@ -46,13 +50,6 @@ export type ShareHighlightSource = {
     delegated: unknown[];
   };
 };
-
-/** Portrait cards use a 2×4 grid. */
-const MAX_HIGHLIGHTS = 8;
-
-function formatInt(n: number): string {
-  return n.toLocaleString("es-MX");
-}
 
 /**
  * Pick up to 8 non-zero highlight stats in priority order for the share card.
@@ -91,6 +88,15 @@ export function getShareHighlights(
   }
 
   if (source.personalBests.totalBreaks > 0) {
+    const { singleBreaks, averageBreaks } = source.personalBests;
+    const prParts = [
+      singleBreaks > 0
+        ? `${formatInt(singleBreaks)} ${singleBreaks === 1 ? "single" : "singles"}`
+        : null,
+      averageBreaks > 0
+        ? `${formatInt(averageBreaks)} ${averageBreaks === 1 ? "average" : "averages"}`
+        : null,
+    ].filter(Boolean);
     push({
       id: "prs",
       label:
@@ -98,6 +104,7 @@ export function getShareHighlights(
           ? "Récord personal"
           : "Récords personales",
       value: formatInt(source.personalBests.totalBreaks),
+      detail: prParts.length > 0 ? prParts.join(" · ") : undefined,
     });
   }
 
@@ -106,6 +113,12 @@ export function getShareHighlights(
       id: "solves",
       label: source.solves.totalSolves === 1 ? "Resolución" : "Resoluciones",
       value: formatInt(source.solves.totalSolves),
+      detail:
+        source.solves.totalAttempts > 0
+          ? `${formatInt(source.solves.totalAttempts)} ${
+              source.solves.totalAttempts === 1 ? "intento" : "intentos"
+            }`
+          : undefined,
     });
   }
 
@@ -153,10 +166,12 @@ export function getShareHighlights(
   if (source.prStreak != null && source.prStreak.length >= 2) {
     push({
       id: "pr-streak",
-      label: "Racha de PRs",
+      label: "Mejor racha",
       value: formatInt(source.prStreak.length),
       detail:
-        source.prStreak.length === 1 ? "competencia" : "competencias seguidas",
+        source.prStreak.length === 1
+          ? "competencia con PR"
+          : "competencias con PR",
     });
   }
 
@@ -192,7 +207,7 @@ export function getShareHighlights(
     ].filter(Boolean);
     push({
       id: "staff",
-      label: "Staff",
+      label: "Organización",
       value: formatInt(staffTotal),
       detail: parts.join(" · "),
     });
