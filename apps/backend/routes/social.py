@@ -1,18 +1,28 @@
-"""Social media routes: temp IG media + admin RESULTADOS publish/download."""
+"""Social media routes: temp IG media + typed post publish/download."""
 
 from __future__ import annotations
 
-import psycopg2.extras
 from flask import Blueprint, Response, abort, jsonify, request
 
-from common import get_connection, log, require_cron_auth
+from common import log, require_cron_auth
 from social.media_store import get_media
 from social.poster import (
+    POST_TYPE_RECORD,
+    POST_TYPE_RESULTADOS,
+    POST_TYPE_UPCOMING,
     build_resultados_caption,
+    build_upcoming_caption,
     generate_competition_resultados_png,
+    generate_record_png_for_subject,
+    generate_upcoming_png_for_competition,
     get_competition_resultados_captions,
+    get_record_captions,
+    get_upcoming_captions,
     mark_competition_posted,
+    mark_typed_posted,
     post_competition_resultados,
+    post_record,
+    post_upcoming_competition,
 )
 
 social_bp = Blueprint("social", __name__)
@@ -32,9 +42,12 @@ def serve_temp_media(token: str):
         mimetype=content_type,
         headers={
             "Cache-Control": "no-store",
-            "Content-Disposition": f"inline; filename=resultados.{ext}",
+            "Content-Disposition": f"inline; filename=social.{ext}",
         },
     )
+
+
+# --- RESULTADOS (back-compat paths) --------------------------------------------
 
 
 @social_bp.route("/social/resultados/<competition_id>/caption", methods=["GET"])
@@ -61,11 +74,12 @@ def resultados_caption(competition_id: str):
     return jsonify(
         {
             "success": True,
-            # Back-compat: `caption` is the Facebook text (includes link).
             "caption": captions["facebook"],
             "facebook_caption": captions["facebook"],
             "instagram_caption": captions["instagram"],
             "competition_id": competition_id,
+            "post_type": POST_TYPE_RESULTADOS,
+            "subject_key": competition_id,
         }
     )
 
@@ -103,7 +117,6 @@ def resultados_image(competition_id: str):
         headers={
             "Cache-Control": "no-store",
             "Content-Disposition": f'attachment; filename="{filename}"',
-            # Latin-1 safe header for clients that want the matching post text.
             "X-Resultados-Caption": caption.replace("\n", "\\n"),
         },
     )
@@ -138,6 +151,204 @@ def mark_resultados_posted(competition_id: str):
         result = mark_competition_posted(competition_id, platforms)
     except Exception as e:
         log.exception("Mark RESULTADOS posted failed for %s: %s", competition_id, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "competition_not_found_or_not_mexico" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+
+    return jsonify({"success": True, **result})
+
+
+# --- RÉCORDS -------------------------------------------------------------------
+
+
+@social_bp.route("/social/records/<path:subject_key>/caption", methods=["GET"])
+@require_cron_auth
+def record_caption(subject_key: str):
+    try:
+        captions = get_record_captions(subject_key)
+    except Exception as e:
+        log.exception("Failed to build RECORD caption for %s: %s", subject_key, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if captions is None:
+        return jsonify({"success": False, "message": "Record not found"}), 404
+
+    return jsonify(
+        {
+            "success": True,
+            "caption": captions["facebook"],
+            "facebook_caption": captions["facebook"],
+            "instagram_caption": captions["instagram"],
+            "post_type": POST_TYPE_RECORD,
+            "subject_key": subject_key,
+        }
+    )
+
+
+@social_bp.route("/social/records/<path:subject_key>/image.png", methods=["GET"])
+@require_cron_auth
+def record_image(subject_key: str):
+    try:
+        generated = generate_record_png_for_subject(subject_key)
+    except Exception as e:
+        log.exception("Failed to generate RECORD image for %s: %s", subject_key, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if not generated:
+        return jsonify({"success": False, "message": "Record not found"}), 404
+
+    png, marker = generated
+    safe_name = subject_key.replace(":", "-").replace("/", "-")
+    filename = f"record-{safe_name}.png"
+    return Response(
+        png,
+        mimetype="image/png",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
+
+
+@social_bp.route("/social/records/<path:subject_key>/publish", methods=["POST"])
+@require_cron_auth
+def publish_record(subject_key: str):
+    try:
+        result = post_record(subject_key)
+    except Exception as e:
+        log.exception("Manual RECORD publish failed for %s: %s", subject_key, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "record_not_found" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+
+    success = not result.get("errors")
+    return jsonify({"success": success, **result}), (200 if success else 502)
+
+
+@social_bp.route("/social/records/<path:subject_key>/mark", methods=["POST"])
+@require_cron_auth
+def mark_record_posted(subject_key: str):
+    platforms = None
+    if request.is_json and isinstance(request.json, dict):
+        platforms = request.json.get("platforms")
+
+    try:
+        result = mark_typed_posted(POST_TYPE_RECORD, subject_key, platforms)
+    except Exception as e:
+        log.exception("Mark RECORD posted failed for %s: %s", subject_key, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "record_not_found" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+
+    return jsonify({"success": True, **result})
+
+
+# --- PRÓXIMAS ------------------------------------------------------------------
+
+
+@social_bp.route("/social/upcoming/<competition_id>/caption", methods=["GET"])
+@require_cron_auth
+def upcoming_caption(competition_id: str):
+    try:
+        captions = get_upcoming_captions(competition_id)
+    except Exception as e:
+        log.exception("Failed to build UPCOMING caption for %s: %s", competition_id, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if captions is None:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Competition not found or not in Mexico",
+                }
+            ),
+            404,
+        )
+
+    return jsonify(
+        {
+            "success": True,
+            "caption": captions["facebook"],
+            "facebook_caption": captions["facebook"],
+            "instagram_caption": captions["instagram"],
+            "competition_id": competition_id,
+            "post_type": POST_TYPE_UPCOMING,
+            "subject_key": competition_id,
+        }
+    )
+
+
+@social_bp.route("/social/upcoming/<competition_id>/image.png", methods=["GET"])
+@require_cron_auth
+def upcoming_image(competition_id: str):
+    try:
+        generated = generate_upcoming_png_for_competition(competition_id)
+    except Exception as e:
+        log.exception("Failed to generate UPCOMING image for %s: %s", competition_id, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if not generated:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Competition not found or not in Mexico",
+                }
+            ),
+            404,
+        )
+
+    png, comp = generated
+    caption = build_upcoming_caption(
+        competition_name=comp["name"],
+        competition_id=comp["id"],
+        start_date=comp.get("start_date"),
+        city_name=comp.get("city_name") or "",
+        state_name=comp.get("state_name"),
+    )
+    filename = f"proxima-{competition_id}.png"
+    return Response(
+        png,
+        mimetype="image/png",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Upcoming-Caption": caption.replace("\n", "\\n"),
+        },
+    )
+
+
+@social_bp.route("/social/upcoming/<competition_id>/publish", methods=["POST"])
+@require_cron_auth
+def publish_upcoming(competition_id: str):
+    try:
+        result = post_upcoming_competition(competition_id)
+    except Exception as e:
+        log.exception("Manual UPCOMING publish failed for %s: %s", competition_id, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "competition_not_found_or_not_mexico" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+
+    success = not result.get("errors")
+    return jsonify({"success": success, **result}), (200 if success else 502)
+
+
+@social_bp.route("/social/upcoming/<competition_id>/mark", methods=["POST"])
+@require_cron_auth
+def mark_upcoming_posted(competition_id: str):
+    platforms = None
+    if request.is_json and isinstance(request.json, dict):
+        platforms = request.json.get("platforms")
+
+    try:
+        result = mark_typed_posted(POST_TYPE_UPCOMING, competition_id, platforms)
+    except Exception as e:
+        log.exception("Mark UPCOMING posted failed for %s: %s", competition_id, e)
         return jsonify({"success": False, "message": str(e)}), 500
 
     if "competition_not_found_or_not_mexico" in result.get("errors", []):

@@ -1,1 +1,1 @@
-"""Social media helpers for Cubing México RESULTADOS posts."""
+"""Social media helpers for Cubing México typed posts."""

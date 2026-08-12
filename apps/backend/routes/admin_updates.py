@@ -32,6 +32,7 @@ def update_full_database():
         with zipfile.ZipFile(zip_bytes, "r") as z:
             results_updated = False
             mx_results_before = None
+            record_markers_before = None
             file_processing_order = [
                 "WCA_export_events.tsv",
                 "WCA_export_formats.tsv",
@@ -71,12 +72,14 @@ def update_full_database():
                             cur.execute("SELECT id FROM competitions")
                             existing = cur.fetchall()
                             existing_ids = {row.id for row in existing}
+                            newly_inserted_mx_ids: list[str] = []
 
                             for row in competitions:
                                 if row["id"] in existing_ids:
                                     continue
                                 state_id = None
                                 if row["country_id"] == "Mexico":
+                                    newly_inserted_mx_ids.append(row["id"])
                                     state_name = get_state_from_coordinates(
                                         row["latitude_microdegrees"] / 1000000,
                                         row["longitude_microdegrees"] / 1000000,
@@ -197,6 +200,17 @@ def update_full_database():
                                                     "delegate_id": delegate_email,
                                                 },
                                             )
+
+                    if newly_inserted_mx_ids:
+                        try:
+                            from social.poster import post_new_upcoming_competitions
+
+                            post_new_upcoming_competitions(newly_inserted_mx_ids)
+                        except Exception as e:
+                            log.error(
+                                "Social PRÓXIMAS posting failed (competitions import succeeded): %s",
+                                e,
+                            )
 
                 elif file_name == "WCA_export_championships.tsv":
                     log.info("Processing file: %s", file_name)
@@ -573,6 +587,7 @@ def update_full_database():
                     try:
                         from social.poster import (
                             fetch_mexican_competition_ids_with_results,
+                            fetch_record_markers,
                         )
 
                         with get_connection() as conn:
@@ -582,17 +597,21 @@ def update_full_database():
                                 mx_results_before = fetch_mexican_competition_ids_with_results(
                                     cur
                                 )
+                                record_markers_before = fetch_record_markers(cur)
                         log.info(
-                            "Snapshot: %s Mexican competitions currently have results.",
+                            "Snapshot: %s Mexican competitions currently have results; "
+                            "%s regional record markers.",
                             len(mx_results_before),
+                            len(record_markers_before),
                         )
                     except Exception as e:
                         log.error(
-                            "Failed to snapshot Mexican competitions with results before "
+                            "Failed to snapshot Mexican competitions/records before "
                             "import: %s. Social posts may be skipped.",
                             e,
                         )
                         mx_results_before = None
+                        record_markers_before = None
 
                     chunk_size = 10_000_000
                     total_chunks = -(-len(file_bytes) // chunk_size) if len(file_bytes) > 0 else 0
@@ -843,7 +862,9 @@ def update_full_database():
                             try:
                                 from social.poster import (
                                     fetch_mexican_competition_ids_with_results,
+                                    fetch_record_markers,
                                     post_new_mexican_results,
+                                    post_new_records,
                                 )
 
                                 with get_connection() as conn:
@@ -853,10 +874,13 @@ def update_full_database():
                                         mx_results_after = (
                                             fetch_mexican_competition_ids_with_results(cur)
                                         )
+                                        record_markers_after = fetch_record_markers(cur)
+                                post_new_records(record_markers_before, record_markers_after)
                                 post_new_mexican_results(mx_results_before, mx_results_after)
                             except Exception as e:
                                 log.error(
-                                    "Social RESULTADOS posting failed (database import succeeded): %s",
+                                    "Social RESULTADOS/RÉCORDS posting failed "
+                                    "(database import succeeded): %s",
                                     e,
                                 )
 
