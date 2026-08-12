@@ -4,14 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import {
-  CheckCheck,
-  ClipboardCopy,
-  Download,
-  Eye,
-  MoreHorizontal,
-  Send,
-} from "lucide-react";
+import { CheckCheck, ClipboardCopy, Download, Eye, Send } from "lucide-react";
 import { SiFacebook, SiInstagram } from "@icons-pack/react-simple-icons";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -28,13 +21,6 @@ import {
   StatLabel,
   StatValue,
 } from "@workspace/ui/components/stat";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@workspace/ui/components/dropdown-menu";
 import { Label } from "@workspace/ui/components/label";
 import {
   Select,
@@ -194,7 +180,8 @@ function apiBase(postType: SocialPostType) {
   if (postType === "record") return "/api/admin/social/records";
   if (postType === "summary_unlock") return "/api/admin/social/summary-unlock";
   if (postType === "weekly_digest") return "/api/admin/social/weekly-digest";
-  if (postType === "streaks_monthly") return "/api/admin/social/streaks-monthly";
+  if (postType === "streaks_monthly")
+    return "/api/admin/social/streaks-monthly";
   return "/api/admin/social/upcoming";
 }
 
@@ -329,63 +316,30 @@ type PreviewData = {
   instagramCaption: string;
 };
 
-function PendingActions({
+function PreviewButton({
   postType,
   subjectKey,
   name,
-  busy,
-  busyAction,
   disabled,
-  onConfirm,
   onPreview,
 }: {
   postType: SocialPostType;
   subjectKey: string;
   name: string;
-  busy: boolean;
-  busyAction: string | null;
   disabled: boolean;
-  onConfirm: (action: ConfirmAction) => void;
   onPreview: (target: PreviewTarget) => void;
 }) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          size="icon"
-          variant="ghost"
-          className="size-8"
-          disabled={disabled}
-          aria-label={`Acciones para ${name}`}
-        >
-          <MoreHorizontal className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          disabled={busy}
-          onClick={() => onPreview({ postType, subjectKey, name })}
-        >
-          <Eye />
-          Vista previa
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          disabled={busy}
-          onClick={() =>
-            onConfirm({
-              postType,
-              subjectKey,
-              name,
-              action: "mark",
-            })
-          }
-        >
-          <CheckCheck />
-          {busy && busyAction === "mark" ? "Registrando..." : "Marcar manual"}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      size="icon"
+      variant="ghost"
+      className="size-8"
+      disabled={disabled}
+      aria-label={`Vista previa de ${name}`}
+      onClick={() => onPreview({ postType, subjectKey, name })}
+    >
+      <Eye className="size-4" />
+    </Button>
   );
 }
 
@@ -644,12 +598,11 @@ export function SocialAdminPanel({
                   <TableRow>
                     <TableHead>Competencia</TableHead>
                     <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right">Vista previa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingResultados.map((row) => {
-                    const busy = busyKey === `resultados:${row.subjectKey}`;
                     return (
                       <TableRow key={row.subjectKey}>
                         <TableCell>
@@ -662,14 +615,11 @@ export function SocialAdminPanel({
                         </TableCell>
                         <TableCell>{missingPlatformBadges(row)}</TableCell>
                         <TableCell className="text-right">
-                          <PendingActions
+                          <PreviewButton
                             postType="resultados"
                             subjectKey={row.subjectKey}
                             name={row.name}
-                            busy={busy}
-                            busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onConfirm={setConfirmAction}
                             onPreview={setPreviewTarget}
                           />
                         </TableCell>
@@ -705,12 +655,11 @@ export function SocialAdminPanel({
                   <TableRow>
                     <TableHead>Récord</TableHead>
                     <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right">Vista previa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingRecords.map((row) => {
-                    const busy = busyKey === `record:${row.subjectKey}`;
                     return (
                       <TableRow key={row.subjectKey}>
                         <TableCell>
@@ -729,14 +678,11 @@ export function SocialAdminPanel({
                         </TableCell>
                         <TableCell>{missingPlatformBadges(row)}</TableCell>
                         <TableCell className="text-right">
-                          <PendingActions
+                          <PreviewButton
                             postType="record"
                             subjectKey={row.subjectKey}
                             name={`${row.level} ${row.personName}`}
-                            busy={busy}
-                            busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onConfirm={setConfirmAction}
                             onPreview={setPreviewTarget}
                           />
                         </TableCell>
@@ -769,12 +715,11 @@ export function SocialAdminPanel({
                   <TableRow>
                     <TableHead>Competencia</TableHead>
                     <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right">Vista previa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingUpcoming.map((row) => {
-                    const busy = busyKey === `upcoming:${row.subjectKey}`;
                     return (
                       <TableRow key={row.subjectKey}>
                         <TableCell>
@@ -791,14 +736,11 @@ export function SocialAdminPanel({
                         </TableCell>
                         <TableCell>{missingPlatformBadges(row)}</TableCell>
                         <TableCell className="text-right">
-                          <PendingActions
+                          <PreviewButton
                             postType="upcoming"
                             subjectKey={row.subjectKey}
                             name={row.name}
-                            busy={busy}
-                            busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onConfirm={setConfirmAction}
                             onPreview={setPreviewTarget}
                           />
                         </TableCell>
@@ -832,12 +774,11 @@ export function SocialAdminPanel({
                   <TableRow>
                     <TableHead>Año</TableHead>
                     <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right">Vista previa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingSummaryUnlock.map((row) => {
-                    const busy = busyKey === `summary_unlock:${row.subjectKey}`;
                     return (
                       <TableRow key={row.subjectKey}>
                         <TableCell>
@@ -852,14 +793,11 @@ export function SocialAdminPanel({
                         </TableCell>
                         <TableCell>{missingPlatformBadges(row)}</TableCell>
                         <TableCell className="text-right">
-                          <PendingActions
+                          <PreviewButton
                             postType="summary_unlock"
                             subjectKey={row.subjectKey}
                             name={`Resumen anual ${row.year}`}
-                            busy={busy}
-                            busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onConfirm={setConfirmAction}
                             onPreview={setPreviewTarget}
                           />
                         </TableCell>
@@ -877,8 +815,9 @@ export function SocialAdminPanel({
         <CardHeader>
           <CardTitle className="text-base">Pendientes · SEMANA</CardTitle>
           <CardDescription>
-            Digest semanal (lunes México). Recap de competencias W−2 + resultados
-            que llegaron en W−1; lookahead 14 días. SRs solo agregados.
+            Digest semanal (lunes México). Recap de competencias W−2 +
+            resultados que llegaron en W−1; lookahead 14 días. SRs solo
+            agregados.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -893,19 +832,16 @@ export function SocialAdminPanel({
                   <TableRow>
                     <TableHead>Semana</TableHead>
                     <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right">Vista previa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingWeeklyDigest.map((row) => {
-                    const busy = busyKey === `weekly_digest:${row.subjectKey}`;
                     return (
                       <TableRow key={row.subjectKey}>
                         <TableCell>
                           <div className="space-y-0.5">
-                            <p className="font-medium">
-                              Semana {row.weekKey}
-                            </p>
+                            <p className="font-medium">Semana {row.weekKey}</p>
                             <p className="text-muted-foreground text-xs">
                               Recap con lag W−2
                             </p>
@@ -913,14 +849,11 @@ export function SocialAdminPanel({
                         </TableCell>
                         <TableCell>{missingPlatformBadges(row)}</TableCell>
                         <TableCell className="text-right">
-                          <PendingActions
+                          <PreviewButton
                             postType="weekly_digest"
                             subjectKey={row.subjectKey}
                             name={`Semana ${row.weekKey}`}
-                            busy={busy}
-                            busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onConfirm={setConfirmAction}
                             onPreview={setPreviewTarget}
                           />
                         </TableCell>
@@ -953,13 +886,11 @@ export function SocialAdminPanel({
                   <TableRow>
                     <TableHead>Mes</TableHead>
                     <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right">Vista previa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {pendingStreaksMonthly.map((row) => {
-                    const busy =
-                      busyKey === `streaks_monthly:${row.subjectKey}`;
                     return (
                       <TableRow key={row.subjectKey}>
                         <TableCell>
@@ -972,14 +903,11 @@ export function SocialAdminPanel({
                         </TableCell>
                         <TableCell>{missingPlatformBadges(row)}</TableCell>
                         <TableCell className="text-right">
-                          <PendingActions
+                          <PreviewButton
                             postType="streaks_monthly"
                             subjectKey={row.subjectKey}
                             name={`Rachas ${row.monthKey}`}
-                            busy={busy}
-                            busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onConfirm={setConfirmAction}
                             onPreview={setPreviewTarget}
                           />
                         </TableCell>
@@ -1014,7 +942,7 @@ export function SocialAdminPanel({
                     <TableHead>Tipo</TableHead>
                     <TableHead>Plataforma</TableHead>
                     <TableHead>Publicado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="text-right">Vista previa</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1031,7 +959,6 @@ export function SocialAdminPanel({
                         ? post.postType
                         : "resultados"
                     ) as SocialPostType;
-                    const busy = busyKey === `${postType}:${post.subjectKey}`;
                     const title =
                       postType === "record"
                         ? post.subjectKey
@@ -1091,34 +1018,13 @@ export function SocialAdminPanel({
                             : "—"}
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="size-8"
-                                disabled={busyKey !== null}
-                                aria-label={`Acciones para ${title}`}
-                              >
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                disabled={busy}
-                                onClick={() =>
-                                  setPreviewTarget({
-                                    postType,
-                                    subjectKey: post.subjectKey,
-                                    name: title,
-                                  })
-                                }
-                              >
-                                <Eye />
-                                Vista previa
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <PreviewButton
+                            postType={postType}
+                            subjectKey={post.subjectKey}
+                            name={title}
+                            disabled={busyKey !== null}
+                            onPreview={setPreviewTarget}
+                          />
                         </TableCell>
                       </TableRow>
                     );
@@ -1140,7 +1046,9 @@ export function SocialAdminPanel({
           <DialogHeader>
             <DialogTitle>
               Vista previa
-              {previewTarget ? ` · ${postTypeLabel(previewTarget.postType)}` : ""}
+              {previewTarget
+                ? ` · ${postTypeLabel(previewTarget.postType)}`
+                : ""}
             </DialogTitle>
             <DialogDescription>
               {previewTarget?.name ?? "Cargando…"}
@@ -1148,7 +1056,9 @@ export function SocialAdminPanel({
           </DialogHeader>
 
           {previewLoading ? (
-            <p className="text-muted-foreground text-sm">Cargando imagen y texto…</p>
+            <p className="text-muted-foreground text-sm">
+              Cargando imagen y texto…
+            </p>
           ) : null}
 
           {previewError ? (
@@ -1157,11 +1067,36 @@ export function SocialAdminPanel({
 
           {previewData ? (
             <div className="mx-auto w-full min-w-0 max-w-sm space-y-4">
-              <img
-                src={previewData.imageUrl}
-                alt={`Vista previa ${previewTarget?.name ?? ""}`}
-                className="border-border aspect-square w-full rounded-md border object-cover"
-              />
+              <div className="relative">
+                <img
+                  src={previewData.imageUrl}
+                  alt={`Vista previa ${previewTarget?.name ?? ""}`}
+                  className="border-border aspect-square w-full rounded-md border object-cover"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  className="absolute top-2 right-2 size-8 shadow-md"
+                  disabled={
+                    !!previewTarget &&
+                    busyKey ===
+                      `${previewTarget.postType}:${previewTarget.subjectKey}`
+                  }
+                  aria-label="Descargar imagen"
+                  title="Descargar imagen"
+                  onClick={() => {
+                    if (!previewTarget) return;
+                    void runAction(
+                      previewTarget.postType,
+                      previewTarget.subjectKey,
+                      "download",
+                    );
+                  }}
+                >
+                  <Download className="size-4" />
+                </Button>
+              </div>
               <div className="min-w-0 space-y-2">
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -1187,68 +1122,53 @@ export function SocialAdminPanel({
                     Instagram
                   </Button>
                 </div>
-                <pre className="bg-muted max-h-64 overflow-x-hidden overflow-y-auto rounded-md p-3 text-sm wrap-anywhere whitespace-pre-wrap">
-                  {previewPlatform === "instagram"
-                    ? previewData.instagramCaption
-                    : previewData.facebookCaption}
-                </pre>
+                <div className="relative">
+                  <pre className="bg-muted max-h-64 overflow-x-hidden overflow-y-auto rounded-md p-3 pr-12 text-sm wrap-anywhere whitespace-pre-wrap">
+                    {previewPlatform === "instagram"
+                      ? previewData.instagramCaption
+                      : previewData.facebookCaption}
+                  </pre>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="secondary"
+                    className="absolute top-2 right-2 size-8 shadow-md"
+                    aria-label={
+                      previewPlatform === "instagram"
+                        ? "Copiar texto Instagram"
+                        : "Copiar texto Facebook"
+                    }
+                    title={
+                      previewPlatform === "instagram"
+                        ? "Copiar texto Instagram"
+                        : "Copiar texto Facebook"
+                    }
+                    onClick={async () => {
+                      const text =
+                        previewPlatform === "instagram"
+                          ? previewData.instagramCaption
+                          : previewData.facebookCaption;
+                      try {
+                        await navigator.clipboard.writeText(text);
+                        toast.success(
+                          previewPlatform === "instagram"
+                            ? "Texto de Instagram copiado"
+                            : "Texto de Facebook copiado",
+                        );
+                      } catch (error) {
+                        toast.error(
+                          error instanceof Error
+                            ? error.message
+                            : "No se pudo copiar el texto",
+                        );
+                      }
+                    }}
+                  >
+                    <ClipboardCopy className="size-4" />
+                  </Button>
+                </div>
               </div>
               <DialogFooter className="flex-col gap-2 sm:flex-col">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  disabled={
-                    !!previewTarget &&
-                    busyKey ===
-                      `${previewTarget.postType}:${previewTarget.subjectKey}`
-                  }
-                  onClick={() => {
-                    if (!previewTarget) return;
-                    void runAction(
-                      previewTarget.postType,
-                      previewTarget.subjectKey,
-                      "download",
-                    );
-                  }}
-                >
-                  <Download className="size-4" />
-                  {previewTarget &&
-                  busyKey ===
-                    `${previewTarget.postType}:${previewTarget.subjectKey}` &&
-                  busyAction === "download"
-                    ? "Descargando..."
-                    : "Descargar imagen"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={async () => {
-                    const text =
-                      previewPlatform === "instagram"
-                        ? previewData.instagramCaption
-                        : previewData.facebookCaption;
-                    try {
-                      await navigator.clipboard.writeText(text);
-                      toast.success(
-                        previewPlatform === "instagram"
-                          ? "Texto de Instagram copiado"
-                          : "Texto de Facebook copiado",
-                      );
-                    } catch (error) {
-                      toast.error(
-                        error instanceof Error
-                          ? error.message
-                          : "No se pudo copiar el texto",
-                      );
-                    }
-                  }}
-                >
-                  <ClipboardCopy className="size-4" />
-                  Copiar texto{" "}
-                  {previewPlatform === "instagram" ? "Instagram" : "Facebook"}
-                </Button>
                 {previewTarget ? (
                   <Button
                     type="button"
@@ -1269,6 +1189,29 @@ export function SocialAdminPanel({
                     busyAction === "publish"
                       ? "Publicando..."
                       : "Publicar"}
+                  </Button>
+                ) : null}
+                {previewTarget ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="w-full"
+                    disabled={busyKey !== null}
+                    onClick={() => {
+                      setConfirmAction({
+                        postType: previewTarget.postType,
+                        subjectKey: previewTarget.subjectKey,
+                        name: previewTarget.name,
+                        action: "mark",
+                      });
+                    }}
+                  >
+                    <CheckCheck className="size-4" />
+                    {busyKey ===
+                      `${previewTarget.postType}:${previewTarget.subjectKey}` &&
+                    busyAction === "mark"
+                      ? "Registrando..."
+                      : "Marcar manual"}
                   </Button>
                 ) : null}
               </DialogFooter>
