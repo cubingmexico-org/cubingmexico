@@ -40,6 +40,7 @@ export const competition = pgTable(
     stateId: varchar("state_id", { length: 3 }).references(() => state.id, {
       onDelete: "cascade",
     }),
+    logo: text("logo"),
   },
   (t) => [
     index("competitions_state_idx").on(t.stateId),

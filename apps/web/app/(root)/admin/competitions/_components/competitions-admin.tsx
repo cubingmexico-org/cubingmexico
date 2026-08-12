@@ -23,6 +23,7 @@ import {
 } from "@workspace/ui/components/table";
 import { updateCompetitionState } from "../../_lib/actions";
 import { StateFlag } from "@/components/state-flag";
+import { CompetitionLogoCell } from "./competition-logo-cell";
 
 type StateOption = { id: string; name: string };
 
@@ -33,16 +34,20 @@ type CompetitionRow = {
   startDate: Date;
   stateId: string | null;
   stateName: string | null;
+  logo: string | null;
+  hasExtractableLogo: boolean;
 };
 
 export function CompetitionsFilters({
   states,
   missingOnly,
+  missingLogoOnly,
   stateId,
   search,
 }: {
   states: StateOption[];
   missingOnly: boolean;
+  missingLogoOnly: boolean;
   stateId: string | null;
   search: string;
 }) {
@@ -55,6 +60,12 @@ export function CompetitionsFilters({
     mutate(params);
     router.push(`/admin/competitions?${params.toString()}`);
   }
+
+  const filterValue = missingOnly
+    ? "missing"
+    : missingLogoOnly
+      ? "missingLogo"
+      : "all";
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
@@ -96,6 +107,7 @@ export function CompetitionsFilters({
                 params.set("stateId", value);
               }
               params.delete("missing");
+              params.delete("missingLogo");
             });
           }}
         >
@@ -118,14 +130,16 @@ export function CompetitionsFilters({
       <div className="space-y-2">
         <Label>Filtro</Label>
         <Select
-          value={missingOnly ? "missing" : "all"}
+          value={filterValue}
           onValueChange={(value) => {
             updateParams((params) => {
+              params.delete("missing");
+              params.delete("missingLogo");
               if (value === "missing") {
                 params.set("missing", "1");
                 params.delete("stateId");
-              } else {
-                params.delete("missing");
+              } else if (value === "missingLogo") {
+                params.set("missingLogo", "1");
               }
             });
           }}
@@ -136,6 +150,7 @@ export function CompetitionsFilters({
           <SelectContent>
             <SelectItem value="all">Todas las MX</SelectItem>
             <SelectItem value="missing">Sin estado</SelectItem>
+            <SelectItem value="missingLogo">Sin logo</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -183,6 +198,7 @@ export function CompetitionsTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-14">Logo</TableHead>
             <TableHead>Competencia</TableHead>
             <TableHead>Ciudad</TableHead>
             <TableHead>Fecha</TableHead>
@@ -192,6 +208,14 @@ export function CompetitionsTable({
         <TableBody>
           {competitions.map((comp) => (
             <TableRow key={comp.id}>
+              <TableCell>
+                <CompetitionLogoCell
+                  competitionId={comp.id}
+                  competitionName={comp.name}
+                  logo={comp.logo}
+                  hasExtractableLogo={comp.hasExtractableLogo}
+                />
+              </TableCell>
               <TableCell>
                 <div>
                   <p className="font-medium">{comp.name}</p>

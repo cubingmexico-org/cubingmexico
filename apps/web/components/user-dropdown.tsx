@@ -8,6 +8,7 @@ import {
   LogOut,
   CalendarDays,
   CalendarRange,
+  Shield,
 } from "lucide-react";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
 import { useRouter } from "next/navigation";
@@ -24,6 +25,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@workspace/ui/components/dropdown-menu";
 
 type SessionUser = NonNullable<
@@ -33,12 +35,14 @@ type SessionUser = NonNullable<
 export function UserDropdown({
   user,
   team,
+  isSuperadmin = false,
 }: {
   user: SessionUser;
   team: {
     id: string;
     name: string;
   } | null;
+  isSuperadmin?: boolean;
 }) {
   const isMobile = useIsMobile();
   const router = useRouter();
@@ -96,6 +100,17 @@ export function UserDropdown({
               Resumen del Team
             </Link>
           </DropdownMenuItem>
+        ) : null}
+        {isSuperadmin ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Shield />
+              <Link href="/admin" className="w-full">
+                Superadmin
+              </Link>
+            </DropdownMenuItem>
+          </>
         ) : null}
         <DropdownMenuItem
           onClick={async () => {

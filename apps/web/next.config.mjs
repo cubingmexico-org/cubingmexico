@@ -2,6 +2,7 @@
 const nextConfig = {
   transpilePackages: ["@workspace/ui", "@workspace/db"],
   cacheComponents: true,
+  serverExternalPackages: ["@imgly/background-removal", "onnxruntime-web"],
 
   async redirects() {
     return [

@@ -121,11 +121,13 @@ export async function getTeamMembersWithRoles(stateId: string) {
 
 export async function getMexicanCompetitions({
   missingStateOnly,
+  missingLogoOnly,
   stateId,
   search,
   limit = 100,
 }: {
   missingStateOnly?: boolean;
+  missingLogoOnly?: boolean;
   stateId?: string | null;
   search?: string;
   limit?: number;
@@ -135,6 +137,10 @@ export async function getMexicanCompetitions({
 
     if (missingStateOnly) {
       filters.push(isNull(competition.stateId));
+    }
+
+    if (missingLogoOnly) {
+      filters.push(isNull(competition.logo));
     }
 
     if (stateId) {
@@ -152,7 +158,7 @@ export async function getMexicanCompetitions({
       );
     }
 
-    return await db
+    const rows = await db
       .select({
         id: competition.id,
         name: competition.name,
@@ -160,12 +166,29 @@ export async function getMexicanCompetitions({
         startDate: competition.startDate,
         stateId: competition.stateId,
         stateName: state.name,
+        logo: competition.logo,
+        information: competition.information,
       })
       .from(competition)
       .leftJoin(state, eq(competition.stateId, state.id))
       .where(and(...filters))
       .orderBy(desc(competition.startDate))
       .limit(limit);
+
+    const { informationHasExtractableLogo } = await import(
+      "@/lib/competition-logo"
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      name: row.name,
+      cityName: row.cityName,
+      startDate: row.startDate,
+      stateId: row.stateId,
+      stateName: row.stateName,
+      logo: row.logo,
+      hasExtractableLogo: informationHasExtractableLogo(row.information),
+    }));
   } catch (err) {
     console.error(err);
     return [];

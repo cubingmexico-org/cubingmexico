@@ -17,6 +17,7 @@ import {
   invalidateStateMemberTags,
 } from "@/lib/cache-tags";
 import { getSessionUserId, requireTeamPermission } from "@/lib/team-auth";
+import { isSuperadmin } from "@/lib/superadmin";
 import {
   clearPersonStateRanks,
   updateStateRanks,
@@ -39,6 +40,14 @@ import { z } from "zod";
 
 export async function getCurrentUserTeamAction(userId: string) {
   return getCurrentUserTeam({ userId });
+}
+
+export async function isSuperadminAction(wcaId: string) {
+  const sessionUserId = await getSessionUserId();
+  if (!sessionUserId || sessionUserId !== wcaId) {
+    return false;
+  }
+  return isSuperadmin(wcaId);
 }
 
 export async function profileFormAction(

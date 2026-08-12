@@ -64,6 +64,13 @@
       "when": 1786300000000,
       "tag": "0008_state_record_markers",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786496428751,
+      "tag": "0009_chemical_pepper_potts",
+      "breakpoints": true
     }
   ]
 }
