@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   CheckCheck,
@@ -28,6 +28,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu";
+import { Label } from "@workspace/ui/components/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 import {
   Table,
   TableBody,
@@ -47,7 +55,11 @@ import {
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog";
 
-export type SocialPostType = "resultados" | "record" | "upcoming";
+export type SocialPostType =
+  | "resultados"
+  | "record"
+  | "upcoming"
+  | "summary_unlock";
 
 export type PendingResultadosRow = {
   id: string;
@@ -86,6 +98,13 @@ export type PendingUpcomingRow = {
   instagramPosted: boolean;
 };
 
+export type PendingSummaryUnlockRow = {
+  subjectKey: string;
+  year: number;
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+};
+
 export type SocialPostRow = {
   id: string;
   postType: string;
@@ -106,6 +125,7 @@ export type SocialPostStats = {
   resultados: number;
   records: number;
   upcoming: number;
+  summaryUnlock: number;
 };
 
 function platformLabel(platform: string) {
@@ -130,12 +150,14 @@ function postTypeLabel(postType: string) {
   if (postType === "resultados") return "RESULTADOS";
   if (postType === "record") return "RÉCORD";
   if (postType === "upcoming") return "PRÓXIMA";
+  if (postType === "summary_unlock") return "RESUMEN";
   return postType;
 }
 
 function apiBase(postType: SocialPostType) {
   if (postType === "resultados") return "/api/admin/social/resultados";
   if (postType === "record") return "/api/admin/social/records";
+  if (postType === "summary_unlock") return "/api/admin/social/summary-unlock";
   return "/api/admin/social/upcoming";
 }
 
@@ -186,7 +208,9 @@ async function downloadImage(postType: SocialPostType, subjectKey: string) {
       ? "resultados"
       : postType === "record"
         ? "record"
-        : "proxima";
+        : postType === "summary_unlock"
+          ? "resumen"
+          : "proxima";
   a.download = `${prefix}-${subjectKey.replace(/[:/]/g, "-")}.png`;
   document.body.appendChild(a);
   a.click();
@@ -335,19 +359,24 @@ function PendingActions({
 }
 
 export function SocialAdminPanel({
+  includeOlder = false,
   pendingResultados,
   pendingRecords,
   pendingUpcoming,
+  pendingSummaryUnlock,
   posts,
   stats,
 }: {
+  includeOlder?: boolean;
   pendingResultados: PendingResultadosRow[];
   pendingRecords: PendingRecordRow[];
   pendingUpcoming: PendingUpcomingRow[];
+  pendingSummaryUnlock: PendingSummaryUnlockRow[];
   posts: SocialPostRow[];
   stats: SocialPostStats;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const [busyAction, setBusyAction] = React.useState<
     "download" | "publish" | "mark" | "caption" | null
@@ -432,7 +461,9 @@ export function SocialAdminPanel({
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Por tipo</CardTitle>
-            <CardDescription>RESULTADOS / RÉCORDS / PRÓXIMAS</CardDescription>
+            <CardDescription>
+              RESULTADOS / RÉCORDS / PRÓXIMAS / RESUMEN
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">
@@ -447,6 +478,11 @@ export function SocialAdminPanel({
                 /{" "}
               </span>
               {stats.upcoming}
+              <span className="text-muted-foreground text-xl font-normal">
+                {" "}
+                /{" "}
+              </span>
+              {stats.summaryUnlock}
             </p>
           </CardContent>
         </Card>
@@ -484,17 +520,53 @@ export function SocialAdminPanel({
         </Card>
       </div>
 
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium">Pendientes recientes</p>
+          <p className="text-muted-foreground text-sm">
+            RESULTADOS y RÉCORDS por defecto de la última semana.
+          </p>
+        </div>
+        <div className="w-full space-y-2 sm:w-56">
+          <Label htmlFor="social-age-filter">Antigüedad</Label>
+          <Select
+            value={includeOlder ? "all" : "week"}
+            onValueChange={(value) => {
+              const params = new URLSearchParams(searchParams.toString());
+              if (value === "all") {
+                params.set("older", "1");
+              } else {
+                params.delete("older");
+              }
+              const query = params.toString();
+              router.push(query ? `/admin/social?${query}` : "/admin/social");
+            }}
+          >
+            <SelectTrigger id="social-age-filter" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="week">Última semana</SelectItem>
+              <SelectItem value="all">Todos</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Pendientes · RESULTADOS</CardTitle>
           <CardDescription>
-            Competencias MX con resultados sin Facebook y/o Instagram.
+            Competencias MX con resultados sin Facebook y/o Instagram
+            {includeOlder ? "." : " (última semana)."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {pendingResultados.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              No hay RESULTADOS pendientes.
+              {includeOlder
+                ? "No hay RESULTADOS pendientes."
+                : "No hay RESULTADOS pendientes de la última semana."}
             </p>
           ) : (
             <div className="overflow-x-auto rounded-md border">
@@ -546,13 +618,16 @@ export function SocialAdminPanel({
         <CardHeader>
           <CardTitle className="text-base">Pendientes · RÉCORDS</CardTitle>
           <CardDescription>
-            NR / NAR / WR recientes sin publicar en alguna plataforma.
+            NR / NAR / WR sin publicar en alguna plataforma
+            {includeOlder ? "." : " (última semana)."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {pendingRecords.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              No hay RÉCORDS pendientes.
+              {includeOlder
+                ? "No hay RÉCORDS pendientes."
+                : "No hay RÉCORDS pendientes de la última semana."}
             </p>
           ) : (
             <div className="overflow-x-auto rounded-md border">
@@ -670,6 +745,67 @@ export function SocialAdminPanel({
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base">Pendientes · RESUMEN</CardTitle>
+          <CardDescription>
+            Anuncio de desbloqueo de resúmenes anuales personales y de team
+            (desde el 20 de diciembre UTC).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pendingSummaryUnlock.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No hay RESUMEN pendiente (aún no desbloqueado o ya publicado).
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Año</TableHead>
+                    <TableHead>Falta</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingSummaryUnlock.map((row) => {
+                    const busy = busyKey === `summary_unlock:${row.subjectKey}`;
+                    return (
+                      <TableRow key={row.subjectKey}>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <p className="font-medium">
+                              Resumen anual {row.year}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              Personal y team
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{missingPlatformBadges(row)}</TableCell>
+                        <TableCell className="text-right">
+                          <PendingActions
+                            postType="summary_unlock"
+                            subjectKey={row.subjectKey}
+                            name={`Resumen anual ${row.year}`}
+                            busy={busy}
+                            busyAction={busyAction}
+                            disabled={busyKey !== null}
+                            onAction={runAction}
+                            onConfirm={setConfirmAction}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Historial</CardTitle>
           <CardDescription>
             Posts automáticos o manuales (todos los tipos).
@@ -695,9 +831,12 @@ export function SocialAdminPanel({
                 <TableBody>
                   {posts.map((post) => {
                     const postType = (
-                      ["resultados", "record", "upcoming"].includes(
-                        post.postType,
-                      )
+                      [
+                        "resultados",
+                        "record",
+                        "upcoming",
+                        "summary_unlock",
+                      ].includes(post.postType)
                         ? post.postType
                         : "resultados"
                     ) as SocialPostType;
@@ -705,7 +844,9 @@ export function SocialAdminPanel({
                     const title =
                       postType === "record"
                         ? post.subjectKey
-                        : (post.competitionName ?? post.subjectKey);
+                        : postType === "summary_unlock"
+                          ? `Resumen anual ${post.subjectKey}`
+                          : (post.competitionName ?? post.subjectKey);
                     return (
                       <TableRow key={post.id}>
                         <TableCell>

@@ -1,6 +1,10 @@
 import "server-only";
 
-export type SocialPostType = "resultados" | "record" | "upcoming";
+export type SocialPostType =
+  | "resultados"
+  | "record"
+  | "upcoming"
+  | "summary_unlock";
 
 function backendConfig() {
   const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
@@ -14,6 +18,7 @@ function backendConfig() {
 function typePath(postType: SocialPostType): string {
   if (postType === "resultados") return "resultados";
   if (postType === "record") return "records";
+  if (postType === "summary_unlock") return "summary-unlock";
   return "upcoming";
 }
 
@@ -69,7 +74,9 @@ export async function fetchSocialImage(
       ? "resultados"
       : postType === "record"
         ? "record"
-        : "proxima";
+        : postType === "summary_unlock"
+          ? "resumen"
+          : "proxima";
   return {
     ok: true,
     bytes,

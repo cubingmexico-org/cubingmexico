@@ -3,34 +3,55 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
   getPendingRecordPosts,
   getPendingResultadosCompetitions,
+  getPendingSummaryUnlockPosts,
   getPendingUpcomingCompetitions,
   getSocialPostStats,
   getSocialPosts,
 } from "../_lib/queries";
 import { SocialAdminPanel } from "./_components/social-admin-panel";
 
-async function SocialPostsContent() {
-  const [posts, stats, pendingResultados, pendingRecords, pendingUpcoming] =
-    await Promise.all([
-      getSocialPosts(30),
-      getSocialPostStats(),
-      getPendingResultadosCompetitions(10),
-      getPendingRecordPosts(10),
-      getPendingUpcomingCompetitions(10),
-    ]);
+async function SocialPostsContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ older?: string }>;
+}) {
+  const params = await searchParams;
+  const includeOlder = params.older === "1";
+
+  const [
+    posts,
+    stats,
+    pendingResultados,
+    pendingRecords,
+    pendingUpcoming,
+    pendingSummaryUnlock,
+  ] = await Promise.all([
+    getSocialPosts(30),
+    getSocialPostStats(),
+    getPendingResultadosCompetitions(10, { includeOlder }),
+    getPendingRecordPosts(10, { includeOlder }),
+    getPendingUpcomingCompetitions(10),
+    getPendingSummaryUnlockPosts(),
+  ]);
 
   return (
     <SocialAdminPanel
+      includeOlder={includeOlder}
       pendingResultados={pendingResultados}
       pendingRecords={pendingRecords}
       pendingUpcoming={pendingUpcoming}
+      pendingSummaryUnlock={pendingSummaryUnlock}
       posts={posts}
       stats={stats}
     />
   );
 }
 
-export default function AdminSocialPage() {
+export default function AdminSocialPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ older?: string }>;
+}) {
   return (
     <Suspense
       fallback={
@@ -46,7 +67,7 @@ export default function AdminSocialPage() {
         </div>
       }
     >
-      <SocialPostsContent />
+      <SocialPostsContent searchParams={searchParams} />
     </Suspense>
   );
 }

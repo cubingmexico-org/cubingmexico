@@ -36,6 +36,12 @@ export const ADMIN_OPS_JOBS = [
     description: "Recalcula rachas de PRs.",
   },
   {
+    path: "/post-summary-unlock",
+    label: "Publicar resumen anual",
+    description:
+      "Si ya es 20 dic UTC o después, publica el anuncio de resúmenes personales y de team (idempotente).",
+  },
+  {
     path: "/update-all",
     label: "Actualizar todo",
     description: "Ejecuta el pipeline completo (puede tardar varios minutos).",

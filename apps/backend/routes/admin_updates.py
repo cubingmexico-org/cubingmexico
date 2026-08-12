@@ -1127,6 +1127,16 @@ def update_full_database():
 
                         log.info("Finished processing all chunks for %s.", file_name)
 
+        try:
+            from social.poster import post_summary_unlock_if_due
+
+            post_summary_unlock_if_due()
+        except Exception as e:
+            log.error(
+                "Social SUMMARY_UNLOCK posting failed (database import succeeded): %s",
+                e,
+            )
+
         log.info("Database updated successfully")
         return jsonify({"success": True, "message": "Database updated successfully"})
     except Exception as e:
@@ -1978,6 +1988,35 @@ def update_streak_ranks():
     except Exception as e:
         log.error("Error updating streak ranks: %s", e)
         return jsonify({"success": False, "message": "Error updating streak ranks"}), 500
+
+
+@admin_bp.route("/post-summary-unlock", methods=["POST"])
+@require_cron_auth
+def post_summary_unlock_route():
+    """Publish current-year summary unlock posts if Dec 20+ UTC and not yet posted."""
+    try:
+        from social.poster import post_summary_unlock_if_due
+
+        result = post_summary_unlock_if_due()
+        if result is None:
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Summary unlock not due or social posts disabled",
+                    "posted": False,
+                }
+            )
+        success = not result.get("errors")
+        return jsonify(
+            {
+                "success": success,
+                "posted": True,
+                **result,
+            }
+        ), (200 if success else 502)
+    except Exception as e:
+        log.exception("post-summary-unlock failed: %s", e)
+        return jsonify({"success": False, "message": str(e)}), 500
 
 
 @admin_bp.route("/update-all", methods=["POST"])

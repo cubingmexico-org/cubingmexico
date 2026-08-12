@@ -10,6 +10,7 @@ import {
   teamMember,
 } from "@workspace/db/schema";
 import { accentInsensitiveContains } from "@/lib/search";
+import { isSummaryYearPublished } from "@/app/(root)/summary/_lib/summary-year";
 import { and, asc, count, desc, eq, isNull, or, sql } from "drizzle-orm";
 
 export async function getExportMetadata() {
@@ -76,6 +77,7 @@ export async function getSocialPostStats() {
       resultados: sql<number>`count(*) filter (where ${socialPost.postType} = 'resultados')`,
       records: sql<number>`count(*) filter (where ${socialPost.postType} = 'record')`,
       upcoming: sql<number>`count(*) filter (where ${socialPost.postType} = 'upcoming')`,
+      summaryUnlock: sql<number>`count(*) filter (where ${socialPost.postType} = 'summary_unlock')`,
     })
     .from(socialPost);
 
@@ -87,10 +89,18 @@ export async function getSocialPostStats() {
     resultados: Number(totals?.resultados ?? 0),
     records: Number(totals?.records ?? 0),
     upcoming: Number(totals?.upcoming ?? 0),
+    summaryUnlock: Number(totals?.summaryUnlock ?? 0),
   };
 }
 
-export async function getPendingResultadosCompetitions(limit = 50) {
+export async function getPendingResultadosCompetitions(
+  limit = 50,
+  { includeOlder = false }: { includeOlder?: boolean } = {},
+) {
+  const ageFilter = includeOlder
+    ? sql``
+    : sql`AND c.end_date >= (CURRENT_DATE - INTERVAL '7 days')`;
+
   const rows = (await db.execute(sql`
     SELECT
       c.id,
@@ -128,6 +138,7 @@ export async function getPendingResultadosCompetitions(limit = 50) {
             AND sp.platform = 'instagram'
         )
       )
+      ${ageFilter}
     ORDER BY c.end_date DESC
     LIMIT ${limit}
   `)) as unknown as Array<{
@@ -150,7 +161,14 @@ export async function getPendingResultadosCompetitions(limit = 50) {
   }));
 }
 
-export async function getPendingRecordPosts(limit = 50) {
+export async function getPendingRecordPosts(
+  limit = 50,
+  { includeOlder = false }: { includeOlder?: boolean } = {},
+) {
+  const ageFilter = includeOlder
+    ? sql``
+    : sql`AND m."endDate" >= (CURRENT_DATE - INTERVAL '7 days')`;
+
   const rows = (await db.execute(sql`
     WITH markers AS (
       SELECT
@@ -220,7 +238,7 @@ export async function getPendingRecordPosts(limit = 50) {
           AND sp.platform = 'instagram'
       ) AS "instagramPosted"
     FROM markers m
-    WHERE
+    WHERE (
       NOT EXISTS (
         SELECT 1 FROM social_posts sp
         WHERE sp.post_type = 'record'
@@ -233,6 +251,8 @@ export async function getPendingRecordPosts(limit = 50) {
           AND sp.subject_key = m.subject_key
           AND sp.platform = 'instagram'
       )
+    )
+      ${ageFilter}
     ORDER BY m."endDate" DESC NULLS LAST, m.level DESC, m."personName"
     LIMIT ${limit}
   `)) as unknown as Array<{
@@ -329,6 +349,48 @@ export async function getPendingUpcomingCompetitions(limit = 50) {
     facebookPosted: Boolean(row.facebookPosted),
     instagramPosted: Boolean(row.instagramPosted),
   }));
+}
+
+export async function getPendingSummaryUnlockPosts(): Promise<
+  Array<{
+    subjectKey: string;
+    year: number;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const year = new Date().getUTCFullYear();
+  if (!isSummaryYearPublished(year)) {
+    return [];
+  }
+
+  const subjectKey = String(year);
+  const rows = await db
+    .select({
+      platform: socialPost.platform,
+    })
+    .from(socialPost)
+    .where(
+      and(
+        eq(socialPost.postType, "summary_unlock"),
+        eq(socialPost.subjectKey, subjectKey),
+      ),
+    );
+
+  const facebookPosted = rows.some((row) => row.platform === "facebook");
+  const instagramPosted = rows.some((row) => row.platform === "instagram");
+  if (facebookPosted && instagramPosted) {
+    return [];
+  }
+
+  return [
+    {
+      subjectKey,
+      year,
+      facebookPosted,
+      instagramPosted,
+    },
+  ];
 }
 
 export async function searchPersons(search: string, limit = 20) {
