@@ -47,8 +47,11 @@ import {
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog";
 
+export type SocialPostType = "resultados" | "record" | "upcoming";
+
 export type PendingResultadosRow = {
   id: string;
+  subjectKey: string;
   name: string;
   cityName: string;
   endDate: Date | string;
@@ -56,11 +59,40 @@ export type PendingResultadosRow = {
   instagramPosted: boolean;
 };
 
+export type PendingRecordRow = {
+  subjectKey: string;
+  personId: string;
+  personName: string;
+  stateName: string | null;
+  eventName: string;
+  eventId: string;
+  kind: string;
+  level: string;
+  value: number;
+  competitionId: string | null;
+  competitionName: string | null;
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+};
+
+export type PendingUpcomingRow = {
+  id: string;
+  subjectKey: string;
+  name: string;
+  cityName: string;
+  startDate: Date | string;
+  stateName: string | null;
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+};
+
 export type SocialPostRow = {
   id: string;
-  competitionId: string;
-  competitionName: string;
-  cityName: string;
+  postType: string;
+  subjectKey: string;
+  competitionId: string | null;
+  competitionName: string | null;
+  cityName: string | null;
   platform: string;
   externalId: string | null;
   postedAt: Date | string | null;
@@ -71,6 +103,9 @@ export type SocialPostStats = {
   competitions: number;
   facebook: number;
   instagram: number;
+  resultados: number;
+  records: number;
+  upcoming: number;
 };
 
 function platformLabel(platform: string) {
@@ -91,16 +126,44 @@ function PlatformIcon({
   return null;
 }
 
-function missingLabel(row: PendingResultadosRow) {
-  const missing: string[] = [];
-  if (!row.facebookPosted) missing.push("Facebook");
-  if (!row.instagramPosted) missing.push("Instagram");
-  return missing.join(" · ");
+function postTypeLabel(postType: string) {
+  if (postType === "resultados") return "RESULTADOS";
+  if (postType === "record") return "RÉCORD";
+  if (postType === "upcoming") return "PRÓXIMA";
+  return postType;
 }
 
-async function downloadImage(competitionId: string) {
+function apiBase(postType: SocialPostType) {
+  if (postType === "resultados") return "/api/admin/social/resultados";
+  if (postType === "record") return "/api/admin/social/records";
+  return "/api/admin/social/upcoming";
+}
+
+function missingPlatformBadges(row: {
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap gap-1">
+      {!row.facebookPosted ? (
+        <Badge variant="outline" className="gap-1">
+          <SiFacebook className="size-3" />
+          Facebook
+        </Badge>
+      ) : null}
+      {!row.instagramPosted ? (
+        <Badge variant="outline" className="gap-1">
+          <SiInstagram className="size-3" />
+          Instagram
+        </Badge>
+      ) : null}
+    </div>
+  );
+}
+
+async function downloadImage(postType: SocialPostType, subjectKey: string) {
   const response = await fetch(
-    `/api/admin/social/resultados/${encodeURIComponent(competitionId)}/image`,
+    `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/image`,
   );
   if (!response.ok) {
     let message = `Error HTTP ${response.status}`;
@@ -118,19 +181,33 @@ async function downloadImage(competitionId: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `resultados-${competitionId}.png`;
+  const prefix =
+    postType === "resultados"
+      ? "resultados"
+      : postType === "record"
+        ? "record"
+        : "proxima";
+  a.download = `${prefix}-${subjectKey.replace(/[:/]/g, "-")}.png`;
   document.body.appendChild(a);
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
 }
 
-async function fetchCaption(competitionId: string): Promise<string> {
+async function fetchCaption(
+  postType: SocialPostType,
+  subjectKey: string,
+  platform: "facebook" | "instagram" = "facebook",
+): Promise<string> {
   const response = await fetch(
-    `/api/admin/social/resultados/${encodeURIComponent(competitionId)}/caption`,
+    `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/caption`,
   );
   const data = await response.json();
-  if (!response.ok || !data.success || typeof data.caption !== "string") {
+  const caption =
+    platform === "instagram"
+      ? data?.instagramCaption
+      : (data?.facebookCaption ?? data?.caption);
+  if (!response.ok || !data.success || typeof caption !== "string") {
     const message =
       data?.message ||
       data?.data?.message ||
@@ -138,63 +215,172 @@ async function fetchCaption(competitionId: string): Promise<string> {
       `Error HTTP ${response.status}`;
     throw new Error(String(message));
   }
-  return data.caption;
+  return caption;
 }
 
-async function copyCaption(competitionId: string) {
-  const caption = await fetchCaption(competitionId);
+async function copyCaption(
+  postType: SocialPostType,
+  subjectKey: string,
+  platform: "facebook" | "instagram" = "facebook",
+) {
+  const caption = await fetchCaption(postType, subjectKey, platform);
   await navigator.clipboard.writeText(caption);
   return caption;
 }
 
+type ConfirmAction = {
+  postType: SocialPostType;
+  subjectKey: string;
+  name: string;
+  action: "publish" | "mark";
+};
+
+function PendingActions({
+  postType,
+  subjectKey,
+  name,
+  busy,
+  busyAction,
+  disabled,
+  onAction,
+  onConfirm,
+}: {
+  postType: SocialPostType;
+  subjectKey: string;
+  name: string;
+  busy: boolean;
+  busyAction: string | null;
+  disabled: boolean;
+  onAction: (
+    postType: SocialPostType,
+    subjectKey: string,
+    action: "download" | "publish" | "mark" | "caption",
+    platform?: "facebook" | "instagram",
+  ) => void;
+  onConfirm: (action: ConfirmAction) => void;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="size-8"
+          disabled={disabled}
+          aria-label={`Acciones para ${name}`}
+        >
+          <MoreHorizontal className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem
+          disabled={busy}
+          onClick={() => onAction(postType, subjectKey, "download")}
+        >
+          <Download />
+          {busy && busyAction === "download"
+            ? "Descargando..."
+            : "Descargar imagen"}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={busy}
+          onClick={() => onAction(postType, subjectKey, "caption", "facebook")}
+        >
+          <ClipboardCopy />
+          {busy && busyAction === "caption"
+            ? "Copiando..."
+            : "Copiar texto Facebook"}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={busy}
+          onClick={() => onAction(postType, subjectKey, "caption", "instagram")}
+        >
+          <ClipboardCopy />
+          {busy && busyAction === "caption"
+            ? "Copiando..."
+            : "Copiar texto Instagram"}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          disabled={busy}
+          onClick={() =>
+            onConfirm({
+              postType,
+              subjectKey,
+              name,
+              action: "publish",
+            })
+          }
+        >
+          <Send />
+          {busy && busyAction === "publish" ? "Publicando..." : "Publicar"}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          disabled={busy}
+          onClick={() =>
+            onConfirm({
+              postType,
+              subjectKey,
+              name,
+              action: "mark",
+            })
+          }
+        >
+          <CheckCheck />
+          {busy && busyAction === "mark" ? "Registrando..." : "Marcar manual"}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function SocialAdminPanel({
-  pending,
+  pendingResultados,
+  pendingRecords,
+  pendingUpcoming,
   posts,
   stats,
 }: {
-  pending: PendingResultadosRow[];
+  pendingResultados: PendingResultadosRow[];
+  pendingRecords: PendingRecordRow[];
+  pendingUpcoming: PendingUpcomingRow[];
   posts: SocialPostRow[];
   stats: SocialPostStats;
 }) {
   const router = useRouter();
-  const [busyId, setBusyId] = React.useState<string | null>(null);
+  const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const [busyAction, setBusyAction] = React.useState<
     "download" | "publish" | "mark" | "caption" | null
   >(null);
-  const [confirmAction, setConfirmAction] = React.useState<{
-    competitionId: string;
-    name: string;
-    action: "publish" | "mark";
-  } | null>(null);
+  const [confirmAction, setConfirmAction] =
+    React.useState<ConfirmAction | null>(null);
 
   async function runAction(
-    competitionId: string,
+    postType: SocialPostType,
+    subjectKey: string,
     action: "download" | "publish" | "mark" | "caption",
+    platform: "facebook" | "instagram" = "facebook",
   ) {
-    setBusyId(competitionId);
+    const key = `${postType}:${subjectKey}`;
+    setBusyKey(key);
     setBusyAction(action);
     try {
       if (action === "caption") {
-        await copyCaption(competitionId);
+        await copyCaption(postType, subjectKey, platform);
         toast.success("Texto del post copiado");
         return;
       }
 
       if (action === "download") {
-        await downloadImage(competitionId);
-        try {
-          await copyCaption(competitionId);
-          toast.success("Imagen descargada y texto copiado");
-        } catch {
-          toast.success("Imagen descargada (no se pudo copiar el texto)");
-        }
+        await downloadImage(postType, subjectKey);
+        toast.success("Imagen descargada");
         return;
       }
 
       const path =
         action === "publish"
-          ? `/api/admin/social/resultados/${encodeURIComponent(competitionId)}/publish`
-          : `/api/admin/social/resultados/${encodeURIComponent(competitionId)}/mark`;
+          ? `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/publish`
+          : `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/mark`;
 
       const response = await fetch(path, {
         method: "POST",
@@ -211,13 +397,12 @@ export function SocialAdminPanel({
           data?.data?.error ||
           `Error HTTP ${response.status}`;
         toast.error(String(message));
-        // Refresh anyway — a platform may have succeeded before the other failed.
         router.refresh();
         return;
       }
 
       if (action === "publish") {
-        toast.success("RESULTADOS publicados (imagen + texto)");
+        toast.success(`${postTypeLabel(postType)} publicados`);
       } else {
         toast.success("Registrado como publicado (manual)");
       }
@@ -227,14 +412,14 @@ export function SocialAdminPanel({
         error instanceof Error ? error.message : "Error al ejecutar la acción",
       );
     } finally {
-      setBusyId(null);
+      setBusyKey(null);
       setBusyAction(null);
     }
   }
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Publicaciones</CardTitle>
@@ -242,6 +427,27 @@ export function SocialAdminPanel({
           </CardHeader>
           <CardContent>
             <p className="text-3xl font-semibold tabular-nums">{stats.total}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Por tipo</CardTitle>
+            <CardDescription>RESULTADOS / RÉCORDS / PRÓXIMAS</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-semibold tabular-nums">
+              {stats.resultados}
+              <span className="text-muted-foreground text-xl font-normal">
+                {" "}
+                /{" "}
+              </span>
+              {stats.records}
+              <span className="text-muted-foreground text-xl font-normal">
+                {" "}
+                /{" "}
+              </span>
+              {stats.upcoming}
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -268,15 +474,11 @@ export function SocialAdminPanel({
           </CardHeader>
           <CardContent>
             <p className="flex items-center gap-2 text-3xl font-semibold tabular-nums">
-              <span className="inline-flex items-center gap-1.5">
-                {stats.facebook}
-              </span>
+              <span>{stats.facebook}</span>
               <span className="text-muted-foreground text-xl font-normal">
                 /
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                {stats.instagram}
-              </span>
+              <span>{stats.instagram}</span>
             </p>
           </CardContent>
         </Card>
@@ -284,17 +486,15 @@ export function SocialAdminPanel({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Pendientes</CardTitle>
+          <CardTitle className="text-base">Pendientes · RESULTADOS</CardTitle>
           <CardDescription>
-            Competencias MX con resultados sin Facebook y/o Instagram. Puedes
-            reintentar la publicación automática, descargar la imagen para
-            publicar a mano, o registrar un post manual.
+            Competencias MX con resultados sin Facebook y/o Instagram.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {pending.length === 0 ? (
+          {pendingResultados.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              No hay competencias pendientes.
+              No hay RESULTADOS pendientes.
             </p>
           ) : (
             <div className="overflow-x-auto rounded-md border">
@@ -307,10 +507,10 @@ export function SocialAdminPanel({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pending.map((row) => {
-                    const busy = busyId === row.id;
+                  {pendingResultados.map((row) => {
+                    const busy = busyKey === `resultados:${row.subjectKey}`;
                     return (
-                      <TableRow key={row.id}>
+                      <TableRow key={row.subjectKey}>
                         <TableCell>
                           <div className="space-y-0.5">
                             <p className="font-medium">{row.name}</p>
@@ -319,88 +519,18 @@ export function SocialAdminPanel({
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {!row.facebookPosted ? (
-                              <Badge variant="outline" className="gap-1">
-                                <SiFacebook className="size-3" />
-                                Facebook
-                              </Badge>
-                            ) : null}
-                            {!row.instagramPosted ? (
-                              <Badge variant="outline" className="gap-1">
-                                <SiInstagram className="size-3" />
-                                Instagram
-                              </Badge>
-                            ) : null}
-                            <span className="sr-only">{missingLabel(row)}</span>
-                          </div>
-                        </TableCell>
+                        <TableCell>{missingPlatformBadges(row)}</TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="size-8"
-                                disabled={busyId !== null}
-                                aria-label={`Acciones para ${row.name}`}
-                              >
-                                <MoreHorizontal className="size-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                disabled={busy}
-                                onClick={() => runAction(row.id, "download")}
-                              >
-                                <Download />
-                                {busy && busyAction === "download"
-                                  ? "Descargando..."
-                                  : "Descargar imagen"}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={busy}
-                                onClick={() => runAction(row.id, "caption")}
-                              >
-                                <ClipboardCopy />
-                                {busy && busyAction === "caption"
-                                  ? "Copiando..."
-                                  : "Copiar texto"}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                disabled={busy}
-                                onClick={() =>
-                                  setConfirmAction({
-                                    competitionId: row.id,
-                                    name: row.name,
-                                    action: "publish",
-                                  })
-                                }
-                              >
-                                <Send />
-                                {busy && busyAction === "publish"
-                                  ? "Publicando..."
-                                  : "Publicar"}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={busy}
-                                onClick={() =>
-                                  setConfirmAction({
-                                    competitionId: row.id,
-                                    name: row.name,
-                                    action: "mark",
-                                  })
-                                }
-                              >
-                                <CheckCheck />
-                                {busy && busyAction === "mark"
-                                  ? "Registrando..."
-                                  : "Marcar manual"}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <PendingActions
+                            postType="resultados"
+                            subjectKey={row.subjectKey}
+                            name={row.name}
+                            busy={busy}
+                            busyAction={busyAction}
+                            disabled={busyKey !== null}
+                            onAction={runAction}
+                            onConfirm={setConfirmAction}
+                          />
                         </TableCell>
                       </TableRow>
                     );
@@ -414,10 +544,135 @@ export function SocialAdminPanel({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">RESULTADOS publicados</CardTitle>
+          <CardTitle className="text-base">Pendientes · RÉCORDS</CardTitle>
           <CardDescription>
-            Historial de posts (automáticos o manuales). Puedes volver a
-            descargar la imagen o copiar el texto del post.
+            NR / NAR / WR recientes sin publicar en alguna plataforma.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pendingRecords.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No hay RÉCORDS pendientes.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Récord</TableHead>
+                    <TableHead>Falta</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingRecords.map((row) => {
+                    const busy = busyKey === `record:${row.subjectKey}`;
+                    return (
+                      <TableRow key={row.subjectKey}>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <p className="font-medium">
+                              {row.level} · {row.personName}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              {row.stateName ? `${row.stateName} · ` : null}
+                              {row.eventName} ({row.kind})
+                              {row.competitionName
+                                ? ` · ${row.competitionName}`
+                                : ""}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{missingPlatformBadges(row)}</TableCell>
+                        <TableCell className="text-right">
+                          <PendingActions
+                            postType="record"
+                            subjectKey={row.subjectKey}
+                            name={`${row.level} ${row.personName}`}
+                            busy={busy}
+                            busyAction={busyAction}
+                            disabled={busyKey !== null}
+                            onAction={runAction}
+                            onConfirm={setConfirmAction}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Pendientes · PRÓXIMAS</CardTitle>
+          <CardDescription>
+            Competencias MX futuras aún no anunciadas en redes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pendingUpcoming.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No hay PRÓXIMAS pendientes.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Competencia</TableHead>
+                    <TableHead>Falta</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingUpcoming.map((row) => {
+                    const busy = busyKey === `upcoming:${row.subjectKey}`;
+                    return (
+                      <TableRow key={row.subjectKey}>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <p className="font-medium">{row.name}</p>
+                            <p className="text-muted-foreground text-xs">
+                              {new Date(row.startDate).toLocaleDateString(
+                                "es-MX",
+                              )}{" "}
+                              · {row.cityName}
+                              {row.stateName ? ` · ${row.stateName}` : ""}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{missingPlatformBadges(row)}</TableCell>
+                        <TableCell className="text-right">
+                          <PendingActions
+                            postType="upcoming"
+                            subjectKey={row.subjectKey}
+                            name={row.name}
+                            busy={busy}
+                            busyAction={busyAction}
+                            disabled={busyKey !== null}
+                            onAction={runAction}
+                            onConfirm={setConfirmAction}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Historial</CardTitle>
+          <CardDescription>
+            Posts automáticos o manuales (todos los tipos).
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -430,101 +685,131 @@ export function SocialAdminPanel({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Competencia</TableHead>
+                    <TableHead>Post</TableHead>
+                    <TableHead>Tipo</TableHead>
                     <TableHead>Plataforma</TableHead>
-                    <TableHead>ID externo</TableHead>
                     <TableHead>Publicado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {posts.map((post) => (
-                    <TableRow key={post.id}>
-                      <TableCell>
-                        <div className="space-y-0.5">
-                          <p className="font-medium">{post.competitionName}</p>
-                          <p className="text-muted-foreground text-xs">
-                            {post.cityName} ·{" "}
-                            <Link
-                              href={`https://www.worldcubeassociation.org/competitions/${post.competitionId}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="underline-offset-2 hover:underline"
-                            >
-                              {post.competitionId}
-                            </Link>
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            post.platform === "instagram"
-                              ? "default"
-                              : "secondary"
-                          }
-                          className="gap-1"
-                        >
-                          <PlatformIcon
-                            platform={post.platform}
-                            className="size-3"
-                          />
-                          {platformLabel(post.platform)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-muted-foreground break-all text-xs">
-                          {post.externalId ?? "—"}
-                        </code>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                        {post.postedAt
-                          ? new Date(post.postedAt).toLocaleString("es-MX")
-                          : "—"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="size-8"
-                              disabled={busyId !== null}
-                              aria-label={`Acciones para ${post.competitionName}`}
-                            >
-                              <MoreHorizontal className="size-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              disabled={busyId === post.competitionId}
-                              onClick={() =>
-                                runAction(post.competitionId, "download")
-                              }
-                            >
-                              <Download />
-                              {busyId === post.competitionId &&
-                              busyAction === "download"
-                                ? "Descargando..."
-                                : "Descargar imagen"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              disabled={busyId === post.competitionId}
-                              onClick={() =>
-                                runAction(post.competitionId, "caption")
-                              }
-                            >
-                              <ClipboardCopy />
-                              {busyId === post.competitionId &&
-                              busyAction === "caption"
-                                ? "Copiando..."
-                                : "Copiar texto"}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {posts.map((post) => {
+                    const postType = (
+                      ["resultados", "record", "upcoming"].includes(
+                        post.postType,
+                      )
+                        ? post.postType
+                        : "resultados"
+                    ) as SocialPostType;
+                    const busy = busyKey === `${postType}:${post.subjectKey}`;
+                    const title =
+                      postType === "record"
+                        ? post.subjectKey
+                        : (post.competitionName ?? post.subjectKey);
+                    return (
+                      <TableRow key={post.id}>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <p className="font-medium">{title}</p>
+                            <p className="text-muted-foreground text-xs">
+                              {post.cityName ? `${post.cityName} · ` : null}
+                              {post.competitionId ? (
+                                <Link
+                                  href={`https://www.worldcubeassociation.org/competitions/${post.competitionId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline-offset-2 hover:underline"
+                                >
+                                  {post.competitionId}
+                                </Link>
+                              ) : (
+                                post.subjectKey
+                              )}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">
+                            {postTypeLabel(post.postType)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              post.platform === "instagram"
+                                ? "default"
+                                : "secondary"
+                            }
+                            className="gap-1"
+                          >
+                            <PlatformIcon
+                              platform={post.platform}
+                              className="size-3"
+                            />
+                            {platformLabel(post.platform)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                          {post.postedAt
+                            ? new Date(post.postedAt).toLocaleString("es-MX")
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="size-8"
+                                disabled={busyKey !== null}
+                                aria-label={`Acciones para ${title}`}
+                              >
+                                <MoreHorizontal className="size-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                disabled={busy}
+                                onClick={() =>
+                                  runAction(
+                                    postType,
+                                    post.subjectKey,
+                                    "download",
+                                    post.platform === "instagram"
+                                      ? "instagram"
+                                      : "facebook",
+                                  )
+                                }
+                              >
+                                <Download />
+                                {busy && busyAction === "download"
+                                  ? "Descargando..."
+                                  : "Descargar imagen"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                disabled={busy}
+                                onClick={() =>
+                                  runAction(
+                                    postType,
+                                    post.subjectKey,
+                                    "caption",
+                                    post.platform === "instagram"
+                                      ? "instagram"
+                                      : "facebook",
+                                  )
+                                }
+                              >
+                                <ClipboardCopy />
+                                {busy && busyAction === "caption"
+                                  ? "Copiando..."
+                                  : "Copiar texto"}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -542,7 +827,7 @@ export function SocialAdminPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>
               {confirmAction?.action === "publish"
-                ? "Publicar RESULTADOS"
+                ? `Publicar ${postTypeLabel(confirmAction.postType)}`
                 : "Registrar publicación manual"}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -566,9 +851,9 @@ export function SocialAdminPanel({
             <AlertDialogAction
               onClick={() => {
                 if (!confirmAction) return;
-                const { competitionId, action } = confirmAction;
+                const { postType, subjectKey, action } = confirmAction;
                 setConfirmAction(null);
-                void runAction(competitionId, action);
+                void runAction(postType, subjectKey, action);
               }}
             >
               {confirmAction?.action === "publish" ? "Publicar" : "Registrar"}

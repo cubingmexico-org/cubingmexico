@@ -1,13 +1,16 @@
 import { connection, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/team-auth";
 import { isSuperadmin } from "@/lib/superadmin";
-import { fetchResultadosCaption } from "@/app/(root)/admin/_lib/social";
+import {
+  publishSocialPost,
+  type SocialPostType,
+} from "@/app/(root)/admin/_lib/social";
 
-export const maxDuration = 30;
+export const maxDuration = 120;
 
 type Params = { params: Promise<{ competitionId: string }> };
 
-export async function GET(
+export async function POST(
   _request: Request,
   { params }: Params,
 ): Promise<NextResponse> {
@@ -22,42 +25,33 @@ export async function GET(
   }
 
   const { competitionId } = await params;
-  if (!competitionId?.trim()) {
+  const key = competitionId?.trim();
+  if (!key) {
     return NextResponse.json(
       { success: false, message: "competitionId required" },
       { status: 400 },
     );
   }
 
-  try {
-    const result = await fetchResultadosCaption(competitionId.trim());
-    if (!result.ok) {
-      return NextResponse.json(
-        {
-          success: false,
-          status: result.status,
-          data: result.body,
-        },
-        { status: result.status >= 400 ? result.status : 502 },
-      );
-    }
+  const postType: SocialPostType = "upcoming";
 
-    return NextResponse.json({
-      success: true,
-      caption: result.caption,
-      facebookCaption: result.facebookCaption,
-      instagramCaption: result.instagramCaption,
-      competitionId: competitionId.trim(),
-    });
+  try {
+    const result = await publishSocialPost(postType, key);
+    return NextResponse.json(
+      {
+        success: result.ok,
+        status: result.status,
+        data: result.body,
+      },
+      { status: result.ok ? 200 : result.status >= 400 ? result.status : 502 },
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
       {
         success: false,
         message:
-          error instanceof Error
-            ? error.message
-            : "Error fetching RESULTADOS caption",
+          error instanceof Error ? error.message : "Error publishing UPCOMING",
       },
       { status: 502 },
     );

@@ -21,7 +21,11 @@ import {
 } from "@workspace/ui/components/alert";
 import { teamFormAction } from "@/app/actions";
 import { useActionState } from "react";
-import { SiFacebook, SiInstagram, SiWhatsapp } from "@icons-pack/react-simple-icons";
+import {
+  SiFacebook,
+  SiInstagram,
+  SiWhatsapp,
+} from "@icons-pack/react-simple-icons";
 
 export function SaveTeamForm({
   stateId,

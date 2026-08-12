@@ -15,6 +15,117 @@ from utils import get_state_from_coordinates
 
 admin_bp = Blueprint("admin", __name__)
 
+WCA_STAFF_PATTERN = re.compile(r"\{([^}]+)\}\{mailto:([^}]+)\}")
+
+
+def parse_wca_staff(raw):
+    if raw is None or (isinstance(raw, float) and pd.isna(raw)):
+        return []
+    return [(match.group(1), match.group(2)) for match in WCA_STAFF_PATTERN.finditer(str(raw))]
+
+
+def sync_mexican_competition_staff(cur, competition_id, organizers_raw, delegates_raw, organizer_ids, delegate_ids):
+    """Upsert staff from the WCA export and drop competition links no longer listed."""
+    desired_organizer_ids = []
+    for organizer_name, organizer_email in parse_wca_staff(organizers_raw):
+        desired_organizer_ids.append(organizer_email)
+        if organizer_email not in organizer_ids:
+            cur.execute(
+                "SELECT wca_id FROM persons WHERE name = %s",
+                (organizer_name,),
+            )
+            person_res = cur.fetchone()
+            person_id = person_res.wca_id if person_res else None
+            cur.execute(
+                """
+                INSERT INTO organizers (id, person_id, status)
+                VALUES (%(id)s, %(person_id)s, 'active')
+                ON CONFLICT DO NOTHING
+                """,
+                {"id": organizer_email, "person_id": person_id},
+            )
+            organizer_ids.add(organizer_email)
+        cur.execute(
+            """
+            INSERT INTO competition_organizers (competition_id, organizer_id)
+            VALUES (%(competition_id)s, %(organizer_id)s)
+            ON CONFLICT DO NOTHING
+            """,
+            {
+                "competition_id": competition_id,
+                "organizer_id": organizer_email,
+            },
+        )
+
+    if desired_organizer_ids:
+        cur.execute(
+            """
+            DELETE FROM competition_organizers
+            WHERE competition_id = %(competition_id)s
+              AND organizer_id <> ALL(%(organizer_ids)s)
+            """,
+            {
+                "competition_id": competition_id,
+                "organizer_ids": desired_organizer_ids,
+            },
+        )
+    else:
+        cur.execute(
+            "DELETE FROM competition_organizers WHERE competition_id = %s",
+            (competition_id,),
+        )
+
+    desired_delegate_ids = []
+    for delegate_name, delegate_email in parse_wca_staff(delegates_raw):
+        desired_delegate_ids.append(delegate_email)
+        if delegate_email not in delegate_ids:
+            cur.execute(
+                "SELECT wca_id FROM persons WHERE name = %s",
+                (delegate_name,),
+            )
+            person_res = cur.fetchone()
+            person_id = person_res.wca_id if person_res else None
+            if person_id:
+                cur.execute(
+                    """
+                    INSERT INTO delegates (id, person_id, status)
+                    VALUES (%(id)s, %(person_id)s, 'active')
+                    ON CONFLICT DO NOTHING
+                    """,
+                    {"id": delegate_email, "person_id": person_id},
+                )
+                delegate_ids.add(delegate_email)
+        if delegate_email in delegate_ids:
+            cur.execute(
+                """
+                INSERT INTO competition_delegates (competition_id, delegate_id)
+                VALUES (%(competition_id)s, %(delegate_id)s)
+                ON CONFLICT DO NOTHING
+                """,
+                {
+                    "competition_id": competition_id,
+                    "delegate_id": delegate_email,
+                },
+            )
+
+    if desired_delegate_ids:
+        cur.execute(
+            """
+            DELETE FROM competition_delegates
+            WHERE competition_id = %(competition_id)s
+              AND delegate_id <> ALL(%(delegate_ids)s)
+            """,
+            {
+                "competition_id": competition_id,
+                "delegate_ids": desired_delegate_ids,
+            },
+        )
+    else:
+        cur.execute(
+            "DELETE FROM competition_delegates WHERE competition_id = %s",
+            (competition_id,),
+        )
+
 
 @admin_bp.route("/update-database", methods=["POST"])
 @require_cron_auth
@@ -32,6 +143,7 @@ def update_full_database():
         with zipfile.ZipFile(zip_bytes, "r") as z:
             results_updated = False
             mx_results_before = None
+            record_markers_before = None
             file_processing_order = [
                 "WCA_export_events.tsv",
                 "WCA_export_formats.tsv",
@@ -63,20 +175,22 @@ def update_full_database():
                             states = cur.fetchall()
 
                             cur.execute("SELECT id FROM delegates")
-                            delegates = cur.fetchall()
+                            delegate_ids = {row.id for row in cur.fetchall()}
 
                             cur.execute("SELECT id FROM organizers")
-                            organizers = cur.fetchall()
+                            organizer_ids = {row.id for row in cur.fetchall()}
 
                             cur.execute("SELECT id FROM competitions")
                             existing = cur.fetchall()
                             existing_ids = {row.id for row in existing}
+                            newly_inserted_mx_ids: list[str] = []
 
                             for row in competitions:
                                 if row["id"] in existing_ids:
                                     continue
                                 state_id = None
                                 if row["country_id"] == "Mexico":
+                                    newly_inserted_mx_ids.append(row["id"])
                                     state_name = get_state_from_coordinates(
                                         row["latitude_microdegrees"] / 1000000,
                                         row["longitude_microdegrees"] / 1000000,
@@ -133,70 +247,25 @@ def update_full_database():
                                             },
                                         )
 
-                                    organizer_pattern = re.compile(r"\{([^}]+)\}\{mailto:([^}]+)\}")
-                                    for match in organizer_pattern.finditer(str(row["organizers"])):
-                                        organizer_name = match.group(1)
-                                        organizer_email = match.group(2)
-                                        exists = any(o.id == organizer_email for o in organizers)
-                                        cur.execute(
-                                            "SELECT wca_id FROM persons WHERE name = %s",
-                                            (organizer_name,),
-                                        )
-                                        person_res = cur.fetchone()
-                                        person_id = person_res.wca_id if person_res else None
-                                        if not exists:
-                                            cur.execute(
-                                                """
-                                                INSERT INTO organizers (id, person_id, status)
-                                                VALUES (%(id)s, %(person_id)s, 'active')
-                                                ON CONFLICT DO NOTHING
-                                                """,
-                                                {"id": organizer_email, "person_id": person_id},
-                                            )
-                                        cur.execute(
-                                            """
-                                            INSERT INTO competition_organizers (competition_id, organizer_id)
-                                            VALUES (%(competition_id)s, %(organizer_id)s)
-                                            ON CONFLICT DO NOTHING
-                                            """,
-                                            {
-                                                "competition_id": row["id"],
-                                                "organizer_id": organizer_email,
-                                            },
-                                        )
+                                    sync_mexican_competition_staff(
+                                        cur,
+                                        row["id"],
+                                        row.get("organizers"),
+                                        row.get("delegates"),
+                                        organizer_ids,
+                                        delegate_ids,
+                                    )
 
-                                    delegate_pattern = re.compile(r"\{([^}]+)\}\{mailto:([^}]+)\}")
-                                    for match in delegate_pattern.finditer(str(row["delegates"])):
-                                        delegate_name = match.group(1)
-                                        delegate_email = match.group(2)
-                                        exists = any(d.id == delegate_email for d in delegates)
-                                        cur.execute(
-                                            "SELECT wca_id FROM persons WHERE name = %s",
-                                            (delegate_name,),
-                                        )
-                                        person_res = cur.fetchone()
-                                        person_id = person_res.wca_id if person_res else None
-                                        if not exists and person_id:
-                                            cur.execute(
-                                                """
-                                                INSERT INTO delegates (id, person_id, status)
-                                                VALUES (%(id)s, %(person_id)s, 'active')
-                                                ON CONFLICT DO NOTHING
-                                                """,
-                                                {"id": delegate_email, "person_id": person_id},
-                                            )
-                                        if exists or person_id:
-                                            cur.execute(
-                                                """
-                                                INSERT INTO competition_delegates (competition_id, delegate_id)
-                                                VALUES (%(competition_id)s, %(delegate_id)s)
-                                                ON CONFLICT DO NOTHING
-                                                """,
-                                                {
-                                                    "competition_id": row["id"],
-                                                    "delegate_id": delegate_email,
-                                                },
-                                            )
+                    if newly_inserted_mx_ids:
+                        try:
+                            from social.poster import post_new_upcoming_competitions
+
+                            post_new_upcoming_competitions(newly_inserted_mx_ids)
+                        except Exception as e:
+                            log.error(
+                                "Social PRÓXIMAS posting failed (competitions import succeeded): %s",
+                                e,
+                            )
 
                 elif file_name == "WCA_export_championships.tsv":
                     log.info("Processing file: %s", file_name)
@@ -573,6 +642,7 @@ def update_full_database():
                     try:
                         from social.poster import (
                             fetch_mexican_competition_ids_with_results,
+                            fetch_record_markers,
                         )
 
                         with get_connection() as conn:
@@ -582,17 +652,21 @@ def update_full_database():
                                 mx_results_before = fetch_mexican_competition_ids_with_results(
                                     cur
                                 )
+                                record_markers_before = fetch_record_markers(cur)
                         log.info(
-                            "Snapshot: %s Mexican competitions currently have results.",
+                            "Snapshot: %s Mexican competitions currently have results; "
+                            "%s regional record markers.",
                             len(mx_results_before),
+                            len(record_markers_before),
                         )
                     except Exception as e:
                         log.error(
-                            "Failed to snapshot Mexican competitions with results before "
+                            "Failed to snapshot Mexican competitions/records before "
                             "import: %s. Social posts may be skipped.",
                             e,
                         )
                         mx_results_before = None
+                        record_markers_before = None
 
                     chunk_size = 10_000_000
                     total_chunks = -(-len(file_bytes) // chunk_size) if len(file_bytes) > 0 else 0
@@ -843,7 +917,9 @@ def update_full_database():
                             try:
                                 from social.poster import (
                                     fetch_mexican_competition_ids_with_results,
+                                    fetch_record_markers,
                                     post_new_mexican_results,
+                                    post_new_records,
                                 )
 
                                 with get_connection() as conn:
@@ -853,10 +929,13 @@ def update_full_database():
                                         mx_results_after = (
                                             fetch_mexican_competition_ids_with_results(cur)
                                         )
+                                        record_markers_after = fetch_record_markers(cur)
+                                post_new_records(record_markers_before, record_markers_after)
                                 post_new_mexican_results(mx_results_before, mx_results_after)
                             except Exception as e:
                                 log.error(
-                                    "Social RESULTADOS posting failed (database import succeeded): %s",
+                                    "Social RESULTADOS/RÉCORDS posting failed "
+                                    "(database import succeeded): %s",
                                     e,
                                 )
 
@@ -1435,12 +1514,14 @@ def update_existing_mexican_competitions():
     try:
         with get_connection() as conn:
             with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                cur.execute("SELECT id, name FROM states")
-                states = cur.fetchall()
-                state_by_name = {s.name: s.id for s in states}
-
                 cur.execute("SELECT id FROM competitions WHERE country_id = 'Mexico'")
                 existing_mexican_competitions = {row.id for row in cur.fetchall()}
+
+                cur.execute("SELECT id FROM organizers")
+                organizer_ids = {row.id for row in cur.fetchall()}
+
+                cur.execute("SELECT id FROM delegates")
+                delegate_ids = {row.id for row in cur.fetchall()}
 
                 updated_count = 0
                 for row in competitions:
@@ -1450,12 +1531,6 @@ def update_existing_mexican_competitions():
 
                     latitude = normalize_value(row.get("latitude_microdegrees"))
                     longitude = normalize_value(row.get("longitude_microdegrees"))
-
-                    # state_id = None
-                    # if latitude is not None and longitude is not None:
-                    #     state_name = get_state_from_coordinates(latitude / 1000000, longitude / 1000000)
-                    #     if state_name:
-                    #         state_id = state_by_name.get(state_name)
 
                     start_date = datetime(
                         int(row["year"]),
@@ -1508,6 +1583,15 @@ def update_existing_mexican_competitions():
 
                     if cur.rowcount > 0:
                         updated_count += 1
+
+                    sync_mexican_competition_staff(
+                        cur,
+                        competition_id,
+                        row.get("organizers"),
+                        row.get("delegates"),
+                        organizer_ids,
+                        delegate_ids,
+                    )
 
         log.info("Updated %s existing Mexican competitions", updated_count)
         return (

@@ -426,19 +426,24 @@ export const socialPost = pgTable(
   "social_posts",
   {
     id: varchar("id", { length: 36 }).primaryKey(),
-    competitionId: varchar("competition_id", { length: 32 })
-      .references(() => competition.id, { onDelete: "cascade" })
-      .notNull(),
+    postType: varchar("post_type", { length: 20 }).notNull(),
+    subjectKey: varchar("subject_key", { length: 128 }).notNull(),
+    competitionId: varchar("competition_id", { length: 32 }).references(
+      () => competition.id,
+      { onDelete: "cascade" },
+    ),
     platform: varchar("platform", { length: 20 }).notNull(),
     externalId: varchar("external_id", { length: 64 }),
     postedAt: timestamp("posted_at").defaultNow().notNull(),
   },
   (t) => [
-    uniqueIndex("social_posts_comp_platform_idx").on(
-      t.competitionId,
+    uniqueIndex("social_posts_type_subject_platform_idx").on(
+      t.postType,
+      t.subjectKey,
       t.platform,
     ),
     index("social_posts_competition_idx").on(t.competitionId),
+    index("social_posts_post_type_idx").on(t.postType),
   ],
 );
 

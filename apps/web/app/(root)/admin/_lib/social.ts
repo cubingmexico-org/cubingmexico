@@ -1,5 +1,7 @@
 import "server-only";
 
+export type SocialPostType = "resultados" | "record" | "upcoming";
+
 function backendConfig() {
   const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
   const cronSecret = process.env.CRON_SECRET;
@@ -9,8 +11,24 @@ function backendConfig() {
   return { backendUrl, cronSecret };
 }
 
-export async function fetchResultadosImage(
-  competitionId: string,
+function typePath(postType: SocialPostType): string {
+  if (postType === "resultados") return "resultados";
+  if (postType === "record") return "records";
+  return "upcoming";
+}
+
+async function parseJsonBody(response: Response): Promise<unknown> {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : null;
+  } catch {
+    return { message: text };
+  }
+}
+
+export async function fetchSocialImage(
+  postType: SocialPostType,
+  subjectKey: string,
 ): Promise<
   | { ok: true; bytes: ArrayBuffer; filename: string }
   | { ok: false; status: number; body: unknown }
@@ -28,7 +46,7 @@ export async function fetchResultadosImage(
   }
 
   const response = await fetch(
-    `${config.backendUrl}/social/resultados/${encodeURIComponent(competitionId)}/image.png`,
+    `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/image.png`,
     {
       method: "GET",
       headers: {
@@ -38,26 +56,30 @@ export async function fetchResultadosImage(
   );
 
   if (!response.ok) {
-    let body: unknown;
-    const text = await response.text();
-    try {
-      body = text ? JSON.parse(text) : null;
-    } catch {
-      body = { message: text };
-    }
-    return { ok: false, status: response.status, body };
+    return {
+      ok: false,
+      status: response.status,
+      body: await parseJsonBody(response),
+    };
   }
 
   const bytes = await response.arrayBuffer();
+  const prefix =
+    postType === "resultados"
+      ? "resultados"
+      : postType === "record"
+        ? "record"
+        : "proxima";
   return {
     ok: true,
     bytes,
-    filename: `resultados-${competitionId}.png`,
+    filename: `${prefix}-${subjectKey.replace(/[:/]/g, "-")}.png`,
   };
 }
 
-export async function publishResultados(
-  competitionId: string,
+export async function publishSocialPost(
+  postType: SocialPostType,
+  subjectKey: string,
 ): Promise<{ ok: boolean; status: number; body: unknown }> {
   const config = backendConfig();
   if (!config) {
@@ -72,7 +94,7 @@ export async function publishResultados(
   }
 
   const response = await fetch(
-    `${config.backendUrl}/social/resultados/${encodeURIComponent(competitionId)}/publish`,
+    `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/publish`,
     {
       method: "POST",
       headers: {
@@ -82,19 +104,16 @@ export async function publishResultados(
     },
   );
 
-  let body: unknown;
-  const text = await response.text();
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = { message: text };
-  }
-
-  return { ok: response.ok, status: response.status, body };
+  return {
+    ok: response.ok,
+    status: response.status,
+    body: await parseJsonBody(response),
+  };
 }
 
-export async function markResultadosPosted(
-  competitionId: string,
+export async function markSocialPosted(
+  postType: SocialPostType,
+  subjectKey: string,
   platforms?: string[],
 ): Promise<{ ok: boolean; status: number; body: unknown }> {
   const config = backendConfig();
@@ -110,7 +129,7 @@ export async function markResultadosPosted(
   }
 
   const response = await fetch(
-    `${config.backendUrl}/social/resultados/${encodeURIComponent(competitionId)}/mark`,
+    `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/mark`,
     {
       method: "POST",
       headers: {
@@ -121,21 +140,24 @@ export async function markResultadosPosted(
     },
   );
 
-  let body: unknown;
-  const text = await response.text();
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = { message: text };
-  }
-
-  return { ok: response.ok, status: response.status, body };
+  return {
+    ok: response.ok,
+    status: response.status,
+    body: await parseJsonBody(response),
+  };
 }
 
-export async function fetchResultadosCaption(
-  competitionId: string,
+export async function fetchSocialCaption(
+  postType: SocialPostType,
+  subjectKey: string,
 ): Promise<
-  { ok: true; caption: string } | { ok: false; status: number; body: unknown }
+  | {
+      ok: true;
+      caption: string;
+      facebookCaption: string;
+      instagramCaption: string;
+    }
+  | { ok: false; status: number; body: unknown }
 > {
   const config = backendConfig();
   if (!config) {
@@ -150,7 +172,7 @@ export async function fetchResultadosCaption(
   }
 
   const response = await fetch(
-    `${config.backendUrl}/social/resultados/${encodeURIComponent(competitionId)}/caption`,
+    `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/caption`,
     {
       method: "GET",
       headers: {
@@ -159,27 +181,25 @@ export async function fetchResultadosCaption(
     },
   );
 
-  let body: unknown;
-  const text = await response.text();
-  try {
-    body = text ? JSON.parse(text) : null;
-  } catch {
-    body = { message: text };
-  }
-
+  const body = await parseJsonBody(response);
   if (!response.ok) {
     return { ok: false, status: response.status, body };
   }
 
-  const caption =
-    body &&
-    typeof body === "object" &&
-    "caption" in body &&
-    typeof (body as { caption: unknown }).caption === "string"
-      ? (body as { caption: string }).caption
-      : null;
+  const record =
+    body && typeof body === "object" ? (body as Record<string, unknown>) : null;
+  const facebookCaption =
+    typeof record?.facebook_caption === "string"
+      ? record.facebook_caption
+      : typeof record?.caption === "string"
+        ? record.caption
+        : null;
+  const instagramCaption =
+    typeof record?.instagram_caption === "string"
+      ? record.instagram_caption
+      : facebookCaption;
 
-  if (!caption) {
+  if (!facebookCaption || !instagramCaption) {
     return {
       ok: false,
       status: 502,
@@ -187,5 +207,33 @@ export async function fetchResultadosCaption(
     };
   }
 
-  return { ok: true, caption };
+  return {
+    ok: true,
+    caption: facebookCaption,
+    facebookCaption,
+    instagramCaption,
+  };
+}
+
+/** @deprecated Prefer fetchSocialImage("resultados", id) */
+export async function fetchResultadosImage(competitionId: string) {
+  return fetchSocialImage("resultados", competitionId);
+}
+
+/** @deprecated Prefer publishSocialPost("resultados", id) */
+export async function publishResultados(competitionId: string) {
+  return publishSocialPost("resultados", competitionId);
+}
+
+/** @deprecated Prefer markSocialPosted("resultados", id, platforms) */
+export async function markResultadosPosted(
+  competitionId: string,
+  platforms?: string[],
+) {
+  return markSocialPosted("resultados", competitionId, platforms);
+}
+
+/** @deprecated Prefer fetchSocialCaption("resultados", id) */
+export async function fetchResultadosCaption(competitionId: string) {
+  return fetchSocialCaption("resultados", competitionId);
 }

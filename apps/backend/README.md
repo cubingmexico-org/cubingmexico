@@ -24,7 +24,7 @@ Environment variables (see `.env.example`):
 - `CRON_SECRET` — Auth secret for admin update endpoints
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
-- `SOCIAL_POSTS_ENABLED` — `true` to auto-post RESULTADOS when new Mexican competition results are imported (default: off)
+- `SOCIAL_POSTS_ENABLED` — `true` to auto-post RESULTADOS, RÉCORDS, and PRÓXIMAS on WCA import (default: off)
 - `PUBLIC_BASE_URL` — Public HTTPS origin of this backend (required for Instagram `image_url`, e.g. `https://api.example.com`)
 - `META_PAGE_ACCESS_TOKEN` — Long-lived Facebook Page access token (or Secret Manager `meta-page-access-token`)
 - `FACEBOOK_PAGE_ID` — Facebook Page id (or Secret Manager `facebook-page-id`)
@@ -101,12 +101,12 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-streak-ranks` — Update personal-record streak ranks
   - `POST /update-all` — Run full database import plus all derived rank updates
 
-- **Social media (RESULTADOS)**
+- **Social media (typed posts)**
   - `GET /social/media/<token>.jpg` — Short-lived public JPEG URL used by Instagram Content Publishing (unguessable token, ~10 min TTL; stored in Postgres so any Cloud Run replica can serve it)
-  - `GET /social/resultados/<competition_id>/caption` — Caption text for the post (cron auth)
-  - `GET /social/resultados/<competition_id>/image.png` — Generate RESULTADOS PNG (cron auth; used by Superadmin download)
-  - `POST /social/resultados/<competition_id>/publish` — Manually publish missing platforms to Facebook/Instagram (cron auth)
-  - `POST /social/resultados/<competition_id>/mark` — Record a manual publish without calling Meta (cron auth)
+  - RESULTADOS: `GET|POST /social/resultados/<competition_id>/{caption,image.png,publish,mark}`
+  - RÉCORDS: `GET|POST /social/records/<subject_key>/{caption,image.png,publish,mark}` (`subject_key` = `{result_id}:single|average`)
+  - PRÓXIMAS: `GET|POST /social/upcoming/<competition_id>/{caption,image.png,publish,mark}`
+  - All caption/image/publish/mark routes require cron auth; Superadmin UI proxies them.
 
 ### Competitions API
 
@@ -155,21 +155,19 @@ Main tables used:
 - ranks_single, ranks_average
 - sum_of_ranks, kinch_ranks, streak_ranks
 - states, teams, events, export_metadata
-- social_posts (Facebook / Instagram RESULTADOS post ledger)
+- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming`)
 
-## Automatic RESULTADOS social posts
+## Automatic typed social posts
 
-When `/update-database` reloads results and one or more **Mexican** competitions appear in the results set for the first time, the backend can generate a 1080×1080 RESULTADOS graphic and publish it to the Cubing México Facebook Page and Instagram feed.
+When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish three graphic types to Facebook and Instagram:
 
-### Behavior
+| Type           | Trigger                                                                      | Dedup key                                         |
+| -------------- | ---------------------------------------------------------------------------- | ------------------------------------------------- |
+| **RESULTADOS** | Mexican competition newly appears in the results set                         | `(resultados, competition_id, platform)`          |
+| **RÉCORDS**    | New NR / NAR / WR marker on a Mexican person's result (incl. abroad)         | `(record, {result_id}:single\|average, platform)` |
+| **PRÓXIMAS**   | Newly inserted Mexican competition with `start_date > now` and not cancelled | `(upcoming, competition_id, platform)`            |
 
-1. Snapshot Mexican competition IDs that already have results.
-2. Replace the `results` table from the WCA export.
-3. Diff the new Mexican competition IDs; for each new id, generate the image and post.
-4. Record successes in `social_posts` so retries never double-post.
-5. Social failures are logged and **do not** fail the database import.
-
-Image text: `RESULTADOS` / `{competition.name}` (and `{year}` only if the name does not already end with it). Caption links to `https://cubingmexico.net/competitions/{id}/results/podiums`.
+Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
 
 ### Meta setup (before enabling)
 

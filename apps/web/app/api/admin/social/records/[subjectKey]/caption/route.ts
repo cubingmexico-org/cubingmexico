@@ -1,11 +1,14 @@
 import { connection, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/team-auth";
 import { isSuperadmin } from "@/lib/superadmin";
-import { fetchResultadosCaption } from "@/app/(root)/admin/_lib/social";
+import {
+  fetchSocialCaption,
+  type SocialPostType,
+} from "@/app/(root)/admin/_lib/social";
 
 export const maxDuration = 30;
 
-type Params = { params: Promise<{ competitionId: string }> };
+type Params = { params: Promise<{ subjectKey: string }> };
 
 export async function GET(
   _request: Request,
@@ -21,16 +24,19 @@ export async function GET(
     );
   }
 
-  const { competitionId } = await params;
-  if (!competitionId?.trim()) {
+  const { subjectKey } = await params;
+  const key = decodeURIComponent(subjectKey ?? "").trim();
+  if (!key) {
     return NextResponse.json(
-      { success: false, message: "competitionId required" },
+      { success: false, message: "subjectKey required" },
       { status: 400 },
     );
   }
 
+  const postType: SocialPostType = "record";
+
   try {
-    const result = await fetchResultadosCaption(competitionId.trim());
+    const result = await fetchSocialCaption(postType, key);
     if (!result.ok) {
       return NextResponse.json(
         {
@@ -47,7 +53,8 @@ export async function GET(
       caption: result.caption,
       facebookCaption: result.facebookCaption,
       instagramCaption: result.instagramCaption,
-      competitionId: competitionId.trim(),
+      subjectKey: key,
+      postType,
     });
   } catch (error) {
     console.error(error);
@@ -57,7 +64,7 @@ export async function GET(
         message:
           error instanceof Error
             ? error.message
-            : "Error fetching RESULTADOS caption",
+            : "Error fetching RECORD caption",
       },
       { status: 502 },
     );
