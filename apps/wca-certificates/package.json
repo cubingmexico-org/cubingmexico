@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@cubing/icons": "^1.1.2",
+    "@icons-pack/react-simple-icons": "^13.13.0",
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@react-pdf/renderer": "^3.4.4",

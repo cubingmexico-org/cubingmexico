@@ -21,7 +21,7 @@ import {
 } from "@workspace/ui/components/alert";
 import { teamFormAction } from "@/app/actions";
 import { useActionState } from "react";
-import { Facebook, Instagram, WhatsApp } from "@workspace/icons";
+import { SiFacebook, SiInstagram, SiWhatsapp } from "@icons-pack/react-simple-icons";
 
 export function SaveTeamForm({
   stateId,
@@ -230,7 +230,7 @@ export function SaveTeamForm({
                 htmlFor="whatsapp"
                 className="group-data-[invalid=true]/field:text-destructive"
               >
-                <WhatsApp className="h-4 w-4 inline-block mr-2" />
+                <SiWhatsapp className="h-4 w-4 inline-block mr-2" />
                 WhatsApp
               </Label>
               <Input
@@ -257,7 +257,7 @@ export function SaveTeamForm({
                 htmlFor="facebook"
                 className="group-data-[invalid=true]/field:text-destructive"
               >
-                <Facebook className="h-4 w-4 inline-block mr-2" />
+                <SiFacebook className="h-4 w-4 inline-block mr-2" />
                 Facebook
               </Label>
               <Input
@@ -284,7 +284,7 @@ export function SaveTeamForm({
                 htmlFor="instagram"
                 className="group-data-[invalid=true]/field:text-destructive"
               >
-                <Instagram className="h-4 w-4 inline-block mr-2" />
+                <SiInstagram className="h-4 w-4 inline-block mr-2" />
                 Instagram
               </Label>
               <Input

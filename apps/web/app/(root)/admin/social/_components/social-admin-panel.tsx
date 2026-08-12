@@ -11,7 +11,7 @@ import {
   MoreHorizontal,
   Send,
 } from "lucide-react";
-import { Facebook, Instagram } from "@workspace/icons";
+import { SiFacebook, SiInstagram } from "@icons-pack/react-simple-icons";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -86,8 +86,8 @@ function PlatformIcon({
   platform: string;
   className?: string;
 }) {
-  if (platform === "facebook") return <Facebook className={className} />;
-  if (platform === "instagram") return <Instagram className={className} />;
+  if (platform === "facebook") return <SiFacebook className={className} />;
+  if (platform === "instagram") return <SiInstagram className={className} />;
   return null;
 }
 
@@ -259,10 +259,10 @@ export function SocialAdminPanel({
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Por plataforma</CardTitle>
             <CardDescription className="flex items-center gap-1.5">
-              <Facebook className="size-3.5" />
+              <SiFacebook className="size-3.5" />
               Facebook
               <span className="text-muted-foreground">/</span>
-              <Instagram className="size-3.5" />
+              <SiInstagram className="size-3.5" />
               Instagram
             </CardDescription>
           </CardHeader>
@@ -323,13 +323,13 @@ export function SocialAdminPanel({
                           <div className="flex flex-wrap gap-1">
                             {!row.facebookPosted ? (
                               <Badge variant="outline" className="gap-1">
-                                <Facebook className="size-3" />
+                                <SiFacebook className="size-3" />
                                 Facebook
                               </Badge>
                             ) : null}
                             {!row.instagramPosted ? (
                               <Badge variant="outline" className="gap-1">
-                                <Instagram className="size-3" />
+                                <SiInstagram className="size-3" />
                                 Instagram
                               </Badge>
                             ) : null}

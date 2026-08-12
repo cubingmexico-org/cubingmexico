@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@cubing/icons": "^1.1.2",
+    "@icons-pack/react-simple-icons": "^13.13.0",
     "@imgly/background-removal": "^1.7.0",
     "@tanstack/react-table": "^8.21.3",
     "@uploadthing/react": "^7.3.3",
