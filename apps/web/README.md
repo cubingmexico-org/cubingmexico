@@ -130,6 +130,15 @@ apps/web/
 └── config/              # App configuration
 ```
 
+## Hosting notes (Vercel free tier)
+
+Some settings are intentional cost/crawl controls, not unfinished work:
+
+- `images.unoptimized: true` — avoids Vercel Image Optimization quota burn
+- Legacy URL **301** redirects + **410** responses for old crawled paths
+
+See [`docs/web-hosting-constraints.md`](../../docs/web-hosting-constraints.md).
+
 ## License
 
 Private — Cubing México

@@ -193,3 +193,5 @@ import { Button } from "@workspace/ui/components/ui/button";
 - [Next.js Documentation](https://nextjs.org/docs)
 - [Backend local setup](./apps/backend/README.md)
 - [Web app details](./apps/web/README.md)
+- [Web hosting constraints (Vercel free tier)](./docs/web-hosting-constraints.md)
+- [Registros estatales / WCA alignment](./docs/registros-estatales.md)
