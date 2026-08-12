@@ -22,6 +22,12 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import {
+  Stat,
+  StatDescription,
+  StatLabel,
+  StatValue,
+} from "@workspace/ui/components/stat";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -449,75 +455,55 @@ export function SocialAdminPanel({
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Publicaciones</CardTitle>
-            <CardDescription>Total en `social_posts`</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold tabular-nums">{stats.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Por tipo</CardTitle>
-            <CardDescription>
-              RESULTADOS / RÉCORDS / PRÓXIMAS / RESUMEN
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold tabular-nums">
-              {stats.resultados}
-              <span className="text-muted-foreground text-xl font-normal">
-                {" "}
-                /{" "}
-              </span>
-              {stats.records}
-              <span className="text-muted-foreground text-xl font-normal">
-                {" "}
-                /{" "}
-              </span>
-              {stats.upcoming}
-              <span className="text-muted-foreground text-xl font-normal">
-                {" "}
-                /{" "}
-              </span>
-              {stats.summaryUnlock}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Competencias</CardTitle>
-            <CardDescription>Con al menos un post</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-semibold tabular-nums">
-              {stats.competitions}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Por plataforma</CardTitle>
-            <CardDescription className="flex items-center gap-1.5">
-              <SiFacebook className="size-3.5" />
-              Facebook
-              <span className="text-muted-foreground">/</span>
-              <SiInstagram className="size-3.5" />
-              Instagram
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="flex items-center gap-2 text-3xl font-semibold tabular-nums">
-              <span>{stats.facebook}</span>
-              <span className="text-muted-foreground text-xl font-normal">
-                /
-              </span>
-              <span>{stats.instagram}</span>
-            </p>
-          </CardContent>
-        </Card>
+        <Stat>
+          <StatLabel>Publicaciones</StatLabel>
+          <StatValue className="tabular-nums">{stats.total}</StatValue>
+          <StatDescription>Total en `social_posts`</StatDescription>
+        </Stat>
+        <Stat>
+          <StatLabel>Por tipo</StatLabel>
+          <StatValue className="tabular-nums">
+            {stats.resultados}
+            <span className="text-muted-foreground text-xl font-normal">
+              {" "}
+              /{" "}
+            </span>
+            {stats.records}
+            <span className="text-muted-foreground text-xl font-normal">
+              {" "}
+              /{" "}
+            </span>
+            {stats.upcoming}
+            <span className="text-muted-foreground text-xl font-normal">
+              {" "}
+              /{" "}
+            </span>
+            {stats.summaryUnlock}
+          </StatValue>
+          <StatDescription>
+            RESULTADOS / RÉCORDS / PRÓXIMAS / RESUMEN
+          </StatDescription>
+        </Stat>
+        <Stat>
+          <StatLabel>Competencias</StatLabel>
+          <StatValue className="tabular-nums">{stats.competitions}</StatValue>
+          <StatDescription>Con al menos un post</StatDescription>
+        </Stat>
+        <Stat>
+          <StatLabel>Por plataforma</StatLabel>
+          <StatValue className="flex items-center gap-2 tabular-nums">
+            <span>{stats.facebook}</span>
+            <span className="text-muted-foreground text-xl font-normal">/</span>
+            <span>{stats.instagram}</span>
+          </StatValue>
+          <StatDescription className="flex items-center gap-1.5">
+            <SiFacebook className="size-3.5" />
+            Facebook
+            <span className="text-muted-foreground">/</span>
+            <SiInstagram className="size-3.5" />
+            Instagram
+          </StatDescription>
+        </Stat>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

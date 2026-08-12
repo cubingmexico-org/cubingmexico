@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -9,6 +10,13 @@ import {
 } from "@workspace/ui/components/card";
 import { buttonVariants } from "@workspace/ui/components/button";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import {
+  Stat,
+  StatDescription,
+  StatIndicator,
+  StatLabel,
+  StatValue,
+} from "@workspace/ui/components/stat";
 import { cn } from "@workspace/ui/lib/utils";
 import { getAdminOverviewCounts, getExportMetadata } from "./_lib/queries";
 
@@ -21,65 +29,48 @@ async function AdminOverviewContent() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Personas sin estado</CardTitle>
-            <CardDescription>
-              Competidores mexicanos sin afiliación estatal
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-end justify-between gap-4">
-            <p className="text-3xl font-semibold tabular-nums">
-              {counts.personsWithoutState}
-            </p>
-            <Link
-              href="/admin/people"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-            >
-              Gestionar
-            </Link>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">
-              Competencias MX sin estado
-            </CardTitle>
-            <CardDescription>
-              Competencias en México sin `stateId`
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-end justify-between gap-4">
-            <p className="text-3xl font-semibold tabular-nums">
-              {counts.compsMissingState}
-            </p>
-            <Link
-              href="/admin/competitions?missing=1"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-            >
-              Corregir
-            </Link>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Posts RESULTADOS</CardTitle>
-            <CardDescription>
-              Publicaciones en Facebook / Instagram
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex items-end justify-between gap-4">
-            <p className="text-3xl font-semibold tabular-nums">
-              {counts.socialPostsTotal}
-            </p>
-            <Link
-              href="/admin/social"
-              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
-            >
-              Ver
-            </Link>
-          </CardContent>
-        </Card>
+        <Stat>
+          <StatLabel>Personas sin estado</StatLabel>
+          <Link href="/admin/people" aria-label="Gestionar">
+            <StatIndicator variant="action">
+              <ArrowRight />
+            </StatIndicator>
+          </Link>
+          <StatValue className="tabular-nums">
+            {counts.personsWithoutState}
+          </StatValue>
+          <StatDescription>
+            Competidores mexicanos sin afiliación estatal
+          </StatDescription>
+        </Stat>
+        <Stat>
+          <StatLabel>Competencias MX sin estado</StatLabel>
+          <Link href="/admin/competitions?missing=1" aria-label="Corregir">
+            <StatIndicator variant="action">
+              <ArrowRight />
+            </StatIndicator>
+          </Link>
+          <StatValue className="tabular-nums">
+            {counts.compsMissingState}
+          </StatValue>
+          <StatDescription>
+            Competencias en México sin `stateId`
+          </StatDescription>
+        </Stat>
+        <Stat>
+          <StatLabel>Posts RESULTADOS</StatLabel>
+          <Link href="/admin/social" aria-label="Ver">
+            <StatIndicator variant="action">
+              <ArrowRight />
+            </StatIndicator>
+          </Link>
+          <StatValue className="tabular-nums">
+            {counts.socialPostsTotal}
+          </StatValue>
+          <StatDescription>
+            Publicaciones en Facebook / Instagram
+          </StatDescription>
+        </Stat>
       </div>
 
       <Card>
