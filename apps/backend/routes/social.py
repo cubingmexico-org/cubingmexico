@@ -19,10 +19,6 @@ from social.poster import (
     POST_TYPE_SUMMARY_UNLOCK,
     POST_TYPE_UPCOMING,
     POST_TYPE_WEEKLY_DIGEST,
-    build_resultados_caption,
-    build_streaks_monthly_caption,
-    build_summary_unlock_caption,
-    build_weekly_digest_caption,
     generate_competition_resultados_png,
     generate_record_png_for_subject,
     generate_streaks_monthly_png_for_month,
@@ -127,11 +123,7 @@ def resultados_image(competition_id: str):
             404,
         )
 
-    png, comp = generated
-    caption = build_resultados_caption(
-        competition_name=comp["name"],
-        competition_id=comp["id"],
-    )
+    png, _comp = generated
     filename = f"resultados-{competition_id}.png"
     return Response(
         png,
@@ -139,7 +131,6 @@ def resultados_image(competition_id: str):
         headers={
             "Cache-Control": "no-store",
             "Content-Disposition": f'attachment; filename="{filename}"',
-            "X-Resultados-Caption": caption.replace("\n", "\\n"),
         },
     )
 
@@ -325,8 +316,6 @@ def upcoming_image(competition_id: str):
         )
 
     png, _comp = generated
-    captions = get_upcoming_captions(competition_id) or {}
-    caption = captions.get("facebook") or ""
     filename = f"proxima-{competition_id}.png"
     return Response(
         png,
@@ -334,7 +323,6 @@ def upcoming_image(competition_id: str):
         headers={
             "Cache-Control": "no-store",
             "Content-Disposition": f'attachment; filename="{filename}"',
-            "X-Upcoming-Caption": caption.replace("\n", "\\n"),
         },
     )
 
@@ -431,7 +419,6 @@ def summary_unlock_image(year: str):
         log.exception("Failed to generate SUMMARY_UNLOCK image for %s: %s", year, e)
         return jsonify({"success": False, "message": str(e)}), 500
 
-    caption = build_summary_unlock_caption(year=parsed)
     filename = f"resumen-{parsed}.png"
     return Response(
         png,
@@ -439,7 +426,6 @@ def summary_unlock_image(year: str):
         headers={
             "Cache-Control": "no-store",
             "Content-Disposition": f'attachment; filename="{filename}"',
-            "X-Summary-Unlock-Caption": caption.replace("\n", "\\n"),
         },
     )
 
@@ -544,8 +530,7 @@ def weekly_digest_image(week: str):
     if generated is None:
         return jsonify({"success": False, "message": "Invalid week"}), 400
 
-    png, payload = generated
-    caption = build_weekly_digest_caption(payload)
+    png, _payload = generated
     filename = f"semana-{week}.png"
     return Response(
         png,
@@ -553,7 +538,6 @@ def weekly_digest_image(week: str):
         headers={
             "Cache-Control": "no-store",
             "Content-Disposition": f'attachment; filename="{filename}"',
-            "X-Weekly-Digest-Caption": caption.replace("\n", "\\n"),
         },
     )
 
@@ -658,8 +642,7 @@ def streaks_monthly_image(month: str):
     if generated is None:
         return jsonify({"success": False, "message": "Invalid month"}), 400
 
-    png, payload = generated
-    caption = build_streaks_monthly_caption(payload)
+    png, _payload = generated
     filename = f"rachas-{month}.png"
     return Response(
         png,
@@ -667,7 +650,6 @@ def streaks_monthly_image(month: str):
         headers={
             "Cache-Control": "no-store",
             "Content-Disposition": f'attachment; filename="{filename}"',
-            "X-Streaks-Monthly-Caption": caption.replace("\n", "\\n"),
         },
     )
 

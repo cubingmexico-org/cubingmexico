@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import io
+from datetime import date, datetime
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
+from social.calendar_mx import format_date_range_short, format_day_month_short
 from social.image_common import (
     BLACK,
     CREAM,
@@ -14,16 +16,21 @@ from social.image_common import (
     SIZE,
     WHITE,
     center_text,
+    format_place_line,
     load_font,
     paste_logo,
     text_height,
+    text_width,
 )
 
-PANEL_TOP = 210
+PANEL_TOP_MIN = 210
 PANEL_BOTTOM = 980
 PANEL_LEFT = 56
 PANEL_RIGHT = SIZE - 56
 CONTENT_LEFT = PANEL_LEFT + 36
+CONTENT_RIGHT = PANEL_RIGHT - 36
+CONTENT_WIDTH = CONTENT_RIGHT - CONTENT_LEFT
+HEADER_TO_PANEL_GAP = 18
 
 
 def _truncate(text: str, max_len: int) -> str:
@@ -31,6 +38,48 @@ def _truncate(text: str, max_len: int) -> str:
     if len(text) <= max_len:
         return text
     return text[: max_len - 1].rstrip() + "…"
+
+
+def _fit_ellipsis(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
+    text = (text or "").strip()
+    if not text or text_width(text, font) <= max_width:
+        return text
+    ell = "…"
+    lo, hi = 0, len(text)
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        candidate = text[:mid].rstrip() + ell
+        if text_width(candidate, font) <= max_width:
+            lo = mid
+        else:
+            hi = mid - 1
+    return text[:lo].rstrip() + ell if lo else ell
+
+
+def _as_date(value: date | datetime | None) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    return value
+
+
+def _comp_date_line(comp: dict) -> str:
+    start = _as_date(comp.get("start_date"))
+    end = _as_date(comp.get("end_date"))
+    if start is None:
+        return ""
+    if end is None or end == start:
+        return format_day_month_short(start)
+    return format_date_range_short(start, end)
+
+
+def _upcoming_window_label(payload: dict) -> str:
+    publish = _as_date(payload.get("publish_monday"))
+    if publish is None:
+        return "próximas 14 días"
+    end = date.fromordinal(publish.toordinal() + 13)
+    return format_date_range_short(publish, end)
 
 
 def generate_weekly_digest_png(*, payload: dict) -> bytes:
@@ -44,17 +93,24 @@ def generate_weekly_digest_png(*, payload: dict) -> bytes:
     logo_bottom = paste_logo(canvas, max_size=(110, 110), y=44)
     title_font = load_font(44)
     range_font = load_font(26)
-    center_text(draw, "SEMANA", title_font, logo_bottom + 8, WHITE)
-    center_text(
-        draw,
-        payload.get("competition_week_label") or payload.get("week_key", ""),
-        range_font,
-        logo_bottom + 8 + text_height("Ay", title_font) + 6,
-        CREAM,
+    title_y = logo_bottom + 8
+    center_text(draw, "SEMANA", title_font, title_y, WHITE)
+
+    is_thin = bool(payload.get("is_thin"))
+    subtitle = (
+        _upcoming_window_label(payload)
+        if is_thin
+        else (payload.get("competition_week_label") or payload.get("week_key", ""))
+    )
+    subtitle_y = title_y + text_height("Ay", title_font) + 6
+    center_text(draw, subtitle, range_font, subtitle_y, WHITE)
+    panel_top = max(
+        PANEL_TOP_MIN,
+        subtitle_y + text_height("Ay", range_font) + HEADER_TO_PANEL_GAP,
     )
 
     draw.rounded_rectangle(
-        [PANEL_LEFT, PANEL_TOP, PANEL_RIGHT, PANEL_BOTTOM],
+        [PANEL_LEFT, panel_top, PANEL_RIGHT, PANEL_BOTTOM],
         radius=28,
         fill=CREAM,
     )
@@ -63,7 +119,7 @@ def generate_weekly_digest_png(*, payload: dict) -> bytes:
     body_font = load_font(24)
     small_font = load_font(22)
 
-    y = PANEL_TOP + 28
+    y = panel_top + 28
 
     def section(label: str) -> None:
         nonlocal y
@@ -87,12 +143,8 @@ def generate_weekly_digest_png(*, payload: dict) -> bytes:
     podium_count = int(payload.get("podium_count") or 0)
     debut_count = int(payload.get("debut_count") or 0)
 
-    if payload.get("is_thin"):
-        section("PRÓXIMAS")
-        for comp in upcoming[:6]:
-            line(comp["name"], font=small_font)
-        if not upcoming:
-            line("Sin competencias próximas", fill=RED)
+    if is_thin:
+        _draw_thin_upcoming(draw, upcoming, panel_top=panel_top)
     else:
         if primary or late:
             section("COMPETENCIAS")
@@ -147,3 +199,97 @@ def generate_weekly_digest_png(*, payload: dict) -> bytes:
     buf = io.BytesIO()
     canvas.convert("RGB").save(buf, format="PNG", optimize=True)
     return buf.getvalue()
+
+
+def _draw_thin_upcoming(
+    draw: ImageDraw.ImageDraw,
+    upcoming: list[dict],
+    *,
+    panel_top: int,
+) -> None:
+    """Fill the cream panel with a roomy upcoming list (quiet results week)."""
+    rows = list(upcoming[:6])
+    # Fewer comps → larger type so the panel doesn't look empty.
+    if len(rows) <= 1:
+        section_font = load_font(40)
+        name_font = load_font(38)
+        meta_font = load_font(28)
+        note_font = load_font(26)
+        row_gap_min = 36
+    elif len(rows) <= 3:
+        section_font = load_font(36)
+        name_font = load_font(34)
+        meta_font = load_font(26)
+        note_font = load_font(24)
+        row_gap_min = 28
+    else:
+        section_font = load_font(32)
+        name_font = load_font(30)
+        meta_font = load_font(24)
+        note_font = load_font(22)
+        row_gap_min = 20
+
+    empty_font = load_font(28)
+    note = "Sin competencias con resultados esta semana"
+    header_h = (
+        text_height("Ay", section_font)
+        + 10
+        + text_height("Ay", note_font)
+        + 28
+    )
+    name_h = text_height("Ay", name_font)
+    meta_h = text_height("Ay", meta_font)
+    row_h = name_h + 8 + meta_h
+
+    if not rows:
+        y = panel_top + (PANEL_BOTTOM - panel_top - header_h - 40) // 2
+        draw.text((CONTENT_LEFT, y), "PRÓXIMAS", font=section_font, fill=GREEN)
+        y += text_height("Ay", section_font) + 10
+        draw.text((CONTENT_LEFT, y), note, font=note_font, fill=RED)
+        y += text_height("Ay", note_font) + 28
+        draw.text(
+            (CONTENT_LEFT, y),
+            "Sin competencias próximas",
+            font=empty_font,
+            fill=RED,
+        )
+        return
+
+    # Estimate total block height, then vertically center in the cream panel.
+    list_bottom = PANEL_BOTTOM - 48
+    available = list_bottom - (panel_top + 36) - header_h
+    if len(rows) > 1:
+        row_gap = max(
+            row_gap_min,
+            (available - len(rows) * row_h) // (len(rows) - 1),
+        )
+    else:
+        row_gap = 0
+    block_h = header_h + len(rows) * row_h + max(0, len(rows) - 1) * row_gap
+    panel_h = PANEL_BOTTOM - panel_top
+    y = panel_top + max(36, (panel_h - block_h) // 2)
+
+    draw.text((CONTENT_LEFT, y), "PRÓXIMAS", font=section_font, fill=GREEN)
+    y += text_height("Ay", section_font) + 10
+    draw.text((CONTENT_LEFT, y), note, font=note_font, fill=RED)
+    y += text_height("Ay", note_font) + 28
+
+    for i, comp in enumerate(rows):
+        name = _fit_ellipsis(comp.get("name") or "", name_font, CONTENT_WIDTH)
+        draw.text((CONTENT_LEFT, y), name, font=name_font, fill=BLACK)
+        y += name_h + 8
+
+        date_bit = _comp_date_line(comp)
+        place = format_place_line(comp.get("city_name"), comp.get("state_name"))
+        meta = " · ".join(p for p in (date_bit, place) if p)
+        if meta:
+            draw.text(
+                (CONTENT_LEFT, y),
+                _fit_ellipsis(meta, meta_font, CONTENT_WIDTH),
+                font=meta_font,
+                fill=GREEN,
+            )
+        y += meta_h
+
+        if i < len(rows) - 1:
+            y += row_gap

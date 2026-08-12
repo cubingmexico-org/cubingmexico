@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 from social.image_common import (
     BLACK,
@@ -16,17 +16,28 @@ from social.image_common import (
     load_font,
     paste_logo,
     text_height,
+    text_width,
 )
 
 RIGHT_RAIL = 56
 BOTTOM_BAR = 110
+SCORE_GUTTER = 120
 
 
-def _truncate(text: str, max_len: int) -> str:
+def _fit_ellipsis(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
     text = (text or "").strip()
-    if len(text) <= max_len:
+    if not text or text_width(text, font) <= max_width:
         return text
-    return text[: max_len - 1].rstrip() + "…"
+    ell = "…"
+    lo, hi = 0, len(text)
+    while lo < hi:
+        mid = (lo + hi + 1) // 2
+        candidate = text[:mid].rstrip() + ell
+        if text_width(candidate, font) <= max_width:
+            lo = mid
+        else:
+            hi = mid - 1
+    return text[:lo].rstrip() + ell if lo else ell
 
 
 def generate_streaks_monthly_png(*, payload: dict) -> bytes:
@@ -42,17 +53,18 @@ def generate_streaks_monthly_png(*, payload: dict) -> bytes:
     draw.rectangle([SIZE - RIGHT_RAIL, 0, SIZE, SIZE], fill=RED)
     draw.rectangle([0, SIZE - BOTTOM_BAR, SIZE - RIGHT_RAIL, SIZE], fill=GREEN)
 
-    logo_bottom = paste_logo(canvas, max_size=(140, 140), y=90)
+    logo_bottom = paste_logo(canvas, max_size=(120, 120), y=88)
 
-    title_font = load_font(52)
-    month_font = load_font(32)
-    row_font = load_font(28)
-    meta_font = load_font(24)
-    callout_font = load_font(26)
+    title_font = load_font(56)
+    month_font = load_font(36)
+    section_font = load_font(30)
+    row_font = load_font(38)
+    score_font = load_font(48)
+    state_font = load_font(26)
 
-    y = logo_bottom + 20
+    y = logo_bottom + 16
     center_text(draw, "RACHAS", title_font, y, RED)
-    y += text_height("Ay", title_font) + 8
+    y += text_height("Ay", title_font) + 10
     center_text(
         draw,
         payload.get("month_label") or payload.get("month_key", ""),
@@ -60,52 +72,53 @@ def generate_streaks_monthly_png(*, payload: dict) -> bytes:
         y,
         BLACK,
     )
-    y += text_height("Ay", month_font) + 24
+    y += text_height("Ay", month_font) + 28
 
-    center_text(draw, "Top rachas actuales", meta_font, y, GREEN)
-    y += text_height("Ay", meta_font) + 16
+    center_text(draw, "Top rachas actuales", section_font, y, GREEN)
+    y += text_height("Ay", section_font) + 8
 
+    rows = list(payload.get("top_current") or [])
     left = 64
     right = SIZE - RIGHT_RAIL - 48
-    for i, row in enumerate(payload.get("top_current") or [], start=1):
-        name = _truncate(row.get("person_name") or "", 26)
+    name_max_w = right - left - SCORE_GUTTER
+
+    # Spread rows through the remaining cream area so the board isn't top-heavy.
+    list_top = y + 20
+    list_bottom = SIZE - BOTTOM_BAR - 36
+    row_gap = 28
+    if rows:
+        sample_h = text_height("Ay", row_font) + 6 + text_height("Ay", state_font)
+        content_h = len(rows) * sample_h
+        free = list_bottom - list_top - content_h
+        if free > 0 and len(rows) > 1:
+            row_gap = max(28, free // (len(rows) - 1))
+
+    y = list_top
+    for i, row in enumerate(rows, start=1):
+        prefix = f"{i}. "
+        prefix_w = text_width(prefix, row_font)
+        name = _fit_ellipsis(
+            row.get("person_name") or "", row_font, name_max_w - prefix_w
+        )
         state = (row.get("state_name") or "").strip()
         streak = int(row.get("current_streak") or 0)
-        draw.text((left, y), f"{i}. {name}", font=row_font, fill=BLACK)
-        draw.text((right, y), f"{streak}", font=row_font, fill=RED, anchor="ra")
-        y += text_height("Ay", row_font) + 2
+        name_h = text_height("Ay", row_font)
+        mid_y = y + name_h // 2
+        draw.text((left, mid_y), f"{prefix}{name}", font=row_font, fill=BLACK, anchor="lm")
+        draw.text((right, mid_y), f"{streak}", font=score_font, fill=RED, anchor="rm")
+        y += name_h + 6
         if state:
-            draw.text((left + 28, y), state, font=meta_font, fill=GREEN)
-            y += text_height("Ay", meta_font) + 10
-        else:
-            y += 10
+            draw.text(
+                (left + prefix_w, y),
+                _fit_ellipsis(state, state_font, name_max_w - prefix_w),
+                font=state_font,
+                fill=GREEN,
+            )
+            y += text_height("Ay", state_font)
+        if i < len(rows):
+            y += row_gap
 
-    callout = payload.get("longest_callout")
-    if callout:
-        y += 8
-        rule_w = 260
-        draw.rectangle(
-            [(SIZE - RIGHT_RAIL - rule_w) // 2, y, (SIZE - RIGHT_RAIL + rule_w) // 2, y + 4],
-            fill=RED,
-        )
-        y += 18
-        center_text(
-            draw,
-            f"Récord histórico: {_truncate(callout.get('person_name') or '', 24)}",
-            callout_font,
-            y,
-            BLACK,
-        )
-        y += text_height("Ay", callout_font) + 6
-        center_text(
-            draw,
-            f"{int(callout.get('longest_streak') or 0)} competencias",
-            meta_font,
-            y,
-            GREEN,
-        )
-
-    footer_font = load_font(28)
+    footer_font = load_font(30)
     footer_ink = text_height("Ay", footer_font)
     footer_y = SIZE - BOTTOM_BAR + (BOTTOM_BAR - footer_ink) // 2
     # Offset center slightly left of the red rail.

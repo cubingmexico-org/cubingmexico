@@ -247,6 +247,18 @@ def _publish_image_to_platforms(
     skip_ig: bool,
     result: dict,
 ) -> dict:
+    # Central kill switch for Meta publishes (auto + manual admin). Leave false
+    # in development/staging so image download / mark-as-posted still work.
+    if not SOCIAL_POSTS_ENABLED:
+        log.info(
+            "Social posts disabled (SOCIAL_POSTS_ENABLED is not true). "
+            "Skipping Meta publish for %s/%s.",
+            post_type,
+            subject_key,
+        )
+        result["errors"].append("social_posts_disabled")
+        return result
+
     media_token = None
     facebook_page_id = get_facebook_page_id()
     meta_token = get_meta_page_access_token()
@@ -1346,21 +1358,12 @@ def build_streaks_monthly_caption(
     parts: list[str] = [
         f"Rachas de récords personales — {month_label}.",
         "",
-        "Top rachas actuales (competencias consecutivas con al menos un PB):",
+        "Top rachas actuales (competencias consecutivas con al menos un PR):",
     ]
     for i, row in enumerate(payload.get("top_current") or [], start=1):
         state = (row.get("state_name") or "").strip()
         who = f"{row['person_name']}" + (f" ({state})" if state else "")
         parts.append(f"{i}. {who} — {row['current_streak']}")
-
-    callout = payload.get("longest_callout")
-    if callout:
-        parts.append("")
-        state = (callout.get("state_name") or "").strip()
-        who = f"{callout['person_name']}" + (f" ({state})" if state else "")
-        parts.append(
-            f"Récord histórico de racha: {who} con {callout['longest_streak']}."
-        )
 
     if include_link:
         parts.append("")

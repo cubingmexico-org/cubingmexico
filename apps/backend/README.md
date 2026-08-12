@@ -24,7 +24,7 @@ Environment variables (see `.env.example`):
 - `CRON_SECRET` — Auth secret for admin update endpoints
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
-- `SOCIAL_POSTS_ENABLED` — `true` to auto-post RESULTADOS, RÉCORDS, PRÓXIMAS, and RESUMEN (Dec 20+ unlock) on WCA import / due-check (default: off)
+- `SOCIAL_POSTS_ENABLED` — `true` to allow Meta publishes (auto + manual admin). Keep `false` in development/staging (default: off)
 - `PUBLIC_BASE_URL` — Public HTTPS origin of this backend (required for Instagram `image_url`, e.g. `https://api.example.com`)
 - `META_PAGE_ACCESS_TOKEN` — Long-lived Facebook Page access token (or Secret Manager `meta-page-access-token`)
 - `FACEBOOK_PAGE_ID` — Facebook Page id (or Secret Manager `facebook-page-id`)
@@ -186,9 +186,9 @@ When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish four graphic ty
    - `FACEBOOK_PAGE_ID` / `facebook-page-id`
    - `INSTAGRAM_BUSINESS_ACCOUNT_ID` / `instagram-business-account-id`
 5. Set `PUBLIC_BASE_URL` to the publicly reachable HTTPS origin of this backend (Meta must be able to `GET` `/social/media/<token>.jpg`). Instagram requires JPEG for `image_url`.
-6. Set `SOCIAL_POSTS_ENABLED=true` on the backend service.
+6. Set `SOCIAL_POSTS_ENABLED=true` on the **production** backend service only.
 
-Keep `SOCIAL_POSTS_ENABLED=false` until secrets and `PUBLIC_BASE_URL` are verified.
+Keep `SOCIAL_POSTS_ENABLED=false` in development/staging (and until secrets and `PUBLIC_BASE_URL` are verified in production). Image download and “mark as posted” still work when the flag is off; only Meta API calls are skipped.
 
 ## Notes
 
