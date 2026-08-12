@@ -11,6 +11,7 @@ import * as React from "react";
 
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
   Command,
   CommandEmpty,
@@ -252,10 +253,10 @@ export function DataTableSortList<TData>({
       </Popover>
       <SortableOverlay>
         <div className="flex items-center gap-2">
-          <div className="h-8 w-[180px] rounded-sm bg-primary/10" />
-          <div className="h-8 w-24 rounded-sm bg-primary/10" />
-          <div className="size-8 shrink-0 rounded-sm bg-primary/10" />
-          <div className="size-8 shrink-0 rounded-sm bg-primary/10" />
+          <Skeleton className="h-8 w-[180px] rounded-sm" />
+          <Skeleton className="h-8 w-24 rounded-sm" />
+          <Skeleton className="size-8 shrink-0 rounded-sm" />
+          <Skeleton className="size-8 shrink-0 rounded-sm" />
         </div>
       </SortableOverlay>
     </Sortable>

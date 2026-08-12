@@ -15,6 +15,7 @@ import * as React from "react";
 import { DataTableRangeFilter } from "@/components/data-table/data-table-range-filter";
 import { Badge } from "@workspace/ui/components/badge";
 import { Button } from "@workspace/ui/components/button";
+import { Skeleton } from "@workspace/ui/components/skeleton";
 import { Calendar } from "@workspace/ui/components/calendar";
 import {
   Command,
@@ -313,12 +314,12 @@ export function DataTableFilterList<TData>({
       </Popover>
       <SortableOverlay>
         <div className="flex items-center gap-2">
-          <div className="h-8 min-w-[72px] rounded-sm bg-primary/10" />
-          <div className="h-8 w-32 rounded-sm bg-primary/10" />
-          <div className="h-8 w-32 rounded-sm bg-primary/10" />
-          <div className="h-8 min-w-36 flex-1 rounded-sm bg-primary/10" />
-          <div className="size-8 shrink-0 rounded-sm bg-primary/10" />
-          <div className="size-8 shrink-0 rounded-sm bg-primary/10" />
+          <Skeleton className="h-8 min-w-[72px] rounded-sm" />
+          <Skeleton className="h-8 w-32 rounded-sm" />
+          <Skeleton className="h-8 w-32 rounded-sm" />
+          <Skeleton className="h-8 min-w-36 flex-1 rounded-sm" />
+          <Skeleton className="size-8 shrink-0 rounded-sm" />
+          <Skeleton className="size-8 shrink-0 rounded-sm" />
         </div>
       </SortableOverlay>
     </Sortable>
