@@ -64,8 +64,9 @@ export function RefreshMxCompetitionsButton() {
           </AlertDialogTitle>
           <AlertDialogDescription>
             Ejecuta `/update-existing-mexican-competitions` en el backend. Esto
-            actualiza metadatos desde el export; la asignación manual de estado
-            sigue siendo la fuente confiable para `stateId`.
+            actualiza metadatos y sincroniza organizadores/delegados desde el
+            export (incluye bajas). La asignación manual de estado sigue siendo
+            la fuente confiable para `stateId`.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

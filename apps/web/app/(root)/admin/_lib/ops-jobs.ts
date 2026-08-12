@@ -18,7 +18,7 @@ export const ADMIN_OPS_JOBS = [
     path: "/update-existing-mexican-competitions",
     label: "Actualizar competencias MX",
     description:
-      "Sincroniza metadatos de competencias mexicanas desde el export.",
+      "Sincroniza metadatos y organizadores/delegados de competencias mexicanas desde el export.",
   },
   {
     path: "/update-sum-of-ranks",
