@@ -8,6 +8,7 @@ import {
   CheckCheck,
   ClipboardCopy,
   Download,
+  Eye,
   MoreHorizontal,
   Send,
 } from "lucide-react";
@@ -51,6 +52,14 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -65,7 +74,9 @@ export type SocialPostType =
   | "resultados"
   | "record"
   | "upcoming"
-  | "summary_unlock";
+  | "summary_unlock"
+  | "weekly_digest"
+  | "streaks_monthly";
 
 export type PendingResultadosRow = {
   id: string;
@@ -111,6 +122,20 @@ export type PendingSummaryUnlockRow = {
   instagramPosted: boolean;
 };
 
+export type PendingWeeklyDigestRow = {
+  subjectKey: string;
+  weekKey: string;
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+};
+
+export type PendingStreaksMonthlyRow = {
+  subjectKey: string;
+  monthKey: string;
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+};
+
 export type SocialPostRow = {
   id: string;
   postType: string;
@@ -132,6 +157,8 @@ export type SocialPostStats = {
   records: number;
   upcoming: number;
   summaryUnlock: number;
+  weeklyDigest: number;
+  streaksMonthly: number;
 };
 
 function platformLabel(platform: string) {
@@ -157,6 +184,8 @@ function postTypeLabel(postType: string) {
   if (postType === "record") return "RÉCORD";
   if (postType === "upcoming") return "PRÓXIMA";
   if (postType === "summary_unlock") return "RESUMEN";
+  if (postType === "weekly_digest") return "SEMANA";
+  if (postType === "streaks_monthly") return "RACHAS";
   return postType;
 }
 
@@ -164,6 +193,8 @@ function apiBase(postType: SocialPostType) {
   if (postType === "resultados") return "/api/admin/social/resultados";
   if (postType === "record") return "/api/admin/social/records";
   if (postType === "summary_unlock") return "/api/admin/social/summary-unlock";
+  if (postType === "weekly_digest") return "/api/admin/social/weekly-digest";
+  if (postType === "streaks_monthly") return "/api/admin/social/streaks-monthly";
   return "/api/admin/social/upcoming";
 }
 
@@ -216,7 +247,11 @@ async function downloadImage(postType: SocialPostType, subjectKey: string) {
         ? "record"
         : postType === "summary_unlock"
           ? "resumen"
-          : "proxima";
+          : postType === "weekly_digest"
+            ? "semana"
+            : postType === "streaks_monthly"
+              ? "rachas"
+              : "proxima";
   a.download = `${prefix}-${subjectKey.replace(/[:/]/g, "-")}.png`;
   document.body.appendChild(a);
   a.click();
@@ -224,20 +259,25 @@ async function downloadImage(postType: SocialPostType, subjectKey: string) {
   URL.revokeObjectURL(url);
 }
 
-async function fetchCaption(
+async function fetchCaptions(
   postType: SocialPostType,
   subjectKey: string,
-  platform: "facebook" | "instagram" = "facebook",
-): Promise<string> {
+): Promise<{ facebookCaption: string; instagramCaption: string }> {
   const response = await fetch(
     `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/caption`,
   );
   const data = await response.json();
-  const caption =
-    platform === "instagram"
-      ? data?.instagramCaption
-      : (data?.facebookCaption ?? data?.caption);
-  if (!response.ok || !data.success || typeof caption !== "string") {
+  const facebookCaption =
+    typeof data?.facebookCaption === "string"
+      ? data.facebookCaption
+      : typeof data?.caption === "string"
+        ? data.caption
+        : null;
+  const instagramCaption =
+    typeof data?.instagramCaption === "string"
+      ? data.instagramCaption
+      : facebookCaption;
+  if (!response.ok || !data.success || !facebookCaption || !instagramCaption) {
     const message =
       data?.message ||
       data?.data?.message ||
@@ -245,17 +285,29 @@ async function fetchCaption(
       `Error HTTP ${response.status}`;
     throw new Error(String(message));
   }
-  return caption;
+  return { facebookCaption, instagramCaption };
 }
 
-async function copyCaption(
+async function fetchImageObjectUrl(
   postType: SocialPostType,
   subjectKey: string,
-  platform: "facebook" | "instagram" = "facebook",
-) {
-  const caption = await fetchCaption(postType, subjectKey, platform);
-  await navigator.clipboard.writeText(caption);
-  return caption;
+): Promise<string> {
+  const response = await fetch(
+    `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/image`,
+  );
+  if (!response.ok) {
+    let message = `Error HTTP ${response.status}`;
+    try {
+      const data = await response.json();
+      message =
+        data?.message || data?.data?.message || data?.data?.error || message;
+    } catch {
+      // ignore
+    }
+    throw new Error(String(message));
+  }
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
 }
 
 type ConfirmAction = {
@@ -265,6 +317,18 @@ type ConfirmAction = {
   action: "publish" | "mark";
 };
 
+type PreviewTarget = {
+  postType: SocialPostType;
+  subjectKey: string;
+  name: string;
+};
+
+type PreviewData = {
+  imageUrl: string;
+  facebookCaption: string;
+  instagramCaption: string;
+};
+
 function PendingActions({
   postType,
   subjectKey,
@@ -272,8 +336,8 @@ function PendingActions({
   busy,
   busyAction,
   disabled,
-  onAction,
   onConfirm,
+  onPreview,
 }: {
   postType: SocialPostType;
   subjectKey: string;
@@ -281,13 +345,8 @@ function PendingActions({
   busy: boolean;
   busyAction: string | null;
   disabled: boolean;
-  onAction: (
-    postType: SocialPostType,
-    subjectKey: string,
-    action: "download" | "publish" | "mark" | "caption",
-    platform?: "facebook" | "instagram",
-  ) => void;
   onConfirm: (action: ConfirmAction) => void;
+  onPreview: (target: PreviewTarget) => void;
 }) {
   return (
     <DropdownMenu>
@@ -305,46 +364,12 @@ function PendingActions({
       <DropdownMenuContent align="end">
         <DropdownMenuItem
           disabled={busy}
-          onClick={() => onAction(postType, subjectKey, "download")}
+          onClick={() => onPreview({ postType, subjectKey, name })}
         >
-          <Download />
-          {busy && busyAction === "download"
-            ? "Descargando..."
-            : "Descargar imagen"}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={busy}
-          onClick={() => onAction(postType, subjectKey, "caption", "facebook")}
-        >
-          <ClipboardCopy />
-          {busy && busyAction === "caption"
-            ? "Copiando..."
-            : "Copiar texto Facebook"}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={busy}
-          onClick={() => onAction(postType, subjectKey, "caption", "instagram")}
-        >
-          <ClipboardCopy />
-          {busy && busyAction === "caption"
-            ? "Copiando..."
-            : "Copiar texto Instagram"}
+          <Eye />
+          Vista previa
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          disabled={busy}
-          onClick={() =>
-            onConfirm({
-              postType,
-              subjectKey,
-              name,
-              action: "publish",
-            })
-          }
-        >
-          <Send />
-          {busy && busyAction === "publish" ? "Publicando..." : "Publicar"}
-        </DropdownMenuItem>
         <DropdownMenuItem
           disabled={busy}
           onClick={() =>
@@ -370,6 +395,8 @@ export function SocialAdminPanel({
   pendingRecords,
   pendingUpcoming,
   pendingSummaryUnlock,
+  pendingWeeklyDigest,
+  pendingStreaksMonthly,
   posts,
   stats,
 }: {
@@ -378,6 +405,8 @@ export function SocialAdminPanel({
   pendingRecords: PendingRecordRow[];
   pendingUpcoming: PendingUpcomingRow[];
   pendingSummaryUnlock: PendingSummaryUnlockRow[];
+  pendingWeeklyDigest: PendingWeeklyDigestRow[];
+  pendingStreaksMonthly: PendingStreaksMonthlyRow[];
   posts: SocialPostRow[];
   stats: SocialPostStats;
 }) {
@@ -385,27 +414,91 @@ export function SocialAdminPanel({
   const searchParams = useSearchParams();
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const [busyAction, setBusyAction] = React.useState<
-    "download" | "publish" | "mark" | "caption" | null
+    "download" | "publish" | "mark" | null
   >(null);
   const [confirmAction, setConfirmAction] =
     React.useState<ConfirmAction | null>(null);
+  const [previewTarget, setPreviewTarget] =
+    React.useState<PreviewTarget | null>(null);
+  const [previewData, setPreviewData] = React.useState<PreviewData | null>(
+    null,
+  );
+  const [previewLoading, setPreviewLoading] = React.useState(false);
+  const [previewError, setPreviewError] = React.useState<string | null>(null);
+  const [previewPlatform, setPreviewPlatform] = React.useState<
+    "facebook" | "instagram"
+  >("facebook");
+
+  React.useEffect(() => {
+    if (!previewTarget) {
+      return;
+    }
+
+    const target = previewTarget;
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    async function loadPreview() {
+      setPreviewLoading(true);
+      setPreviewError(null);
+      setPreviewData(null);
+      setPreviewPlatform("facebook");
+      try {
+        const [imageUrl, captions] = await Promise.all([
+          fetchImageObjectUrl(target.postType, target.subjectKey),
+          fetchCaptions(target.postType, target.subjectKey),
+        ]);
+        if (cancelled) {
+          URL.revokeObjectURL(imageUrl);
+          return;
+        }
+        objectUrl = imageUrl;
+        setPreviewData({
+          imageUrl,
+          facebookCaption: captions.facebookCaption,
+          instagramCaption: captions.instagramCaption,
+        });
+      } catch (error) {
+        if (!cancelled) {
+          setPreviewError(
+            error instanceof Error
+              ? error.message
+              : "No se pudo cargar la vista previa",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setPreviewLoading(false);
+        }
+      }
+    }
+
+    void loadPreview();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [previewTarget]);
+
+  function closePreview() {
+    setPreviewTarget(null);
+    setPreviewData(null);
+    setPreviewError(null);
+    setPreviewLoading(false);
+  }
 
   async function runAction(
     postType: SocialPostType,
     subjectKey: string,
-    action: "download" | "publish" | "mark" | "caption",
-    platform: "facebook" | "instagram" = "facebook",
+    action: "download" | "publish" | "mark",
   ) {
     const key = `${postType}:${subjectKey}`;
     setBusyKey(key);
     setBusyAction(action);
     try {
-      if (action === "caption") {
-        await copyCaption(postType, subjectKey, platform);
-        toast.success("Texto del post copiado");
-        return;
-      }
-
       if (action === "download") {
         await downloadImage(postType, subjectKey);
         toast.success("Imagen descargada");
@@ -438,6 +531,7 @@ export function SocialAdminPanel({
 
       if (action === "publish") {
         toast.success(`${postTypeLabel(postType)} publicados`);
+        closePreview();
       } else {
         toast.success("Registrado como publicado (manual)");
       }
@@ -452,6 +546,14 @@ export function SocialAdminPanel({
     }
   }
 
+  const pendingCount =
+    pendingResultados.length +
+    pendingRecords.length +
+    pendingUpcoming.length +
+    pendingSummaryUnlock.length +
+    pendingWeeklyDigest.length +
+    pendingStreaksMonthly.length;
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -461,28 +563,9 @@ export function SocialAdminPanel({
           <StatDescription>Total en `social_posts`</StatDescription>
         </Stat>
         <Stat>
-          <StatLabel>Por tipo</StatLabel>
-          <StatValue className="tabular-nums">
-            {stats.resultados}
-            <span className="text-muted-foreground text-xl font-normal">
-              {" "}
-              /{" "}
-            </span>
-            {stats.records}
-            <span className="text-muted-foreground text-xl font-normal">
-              {" "}
-              /{" "}
-            </span>
-            {stats.upcoming}
-            <span className="text-muted-foreground text-xl font-normal">
-              {" "}
-              /{" "}
-            </span>
-            {stats.summaryUnlock}
-          </StatValue>
-          <StatDescription>
-            RESULTADOS / RÉCORDS / PRÓXIMAS / RESUMEN
-          </StatDescription>
+          <StatLabel>Pendientes</StatLabel>
+          <StatValue className="tabular-nums">{pendingCount}</StatValue>
+          <StatDescription>Faltan Facebook y/o Instagram</StatDescription>
         </Stat>
         <Stat>
           <StatLabel>Competencias</StatLabel>
@@ -586,8 +669,8 @@ export function SocialAdminPanel({
                             busy={busy}
                             busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onAction={runAction}
                             onConfirm={setConfirmAction}
+                            onPreview={setPreviewTarget}
                           />
                         </TableCell>
                       </TableRow>
@@ -653,8 +736,8 @@ export function SocialAdminPanel({
                             busy={busy}
                             busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onAction={runAction}
                             onConfirm={setConfirmAction}
+                            onPreview={setPreviewTarget}
                           />
                         </TableCell>
                       </TableRow>
@@ -715,8 +798,8 @@ export function SocialAdminPanel({
                             busy={busy}
                             busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onAction={runAction}
                             onConfirm={setConfirmAction}
+                            onPreview={setPreviewTarget}
                           />
                         </TableCell>
                       </TableRow>
@@ -776,8 +859,128 @@ export function SocialAdminPanel({
                             busy={busy}
                             busyAction={busyAction}
                             disabled={busyKey !== null}
-                            onAction={runAction}
                             onConfirm={setConfirmAction}
+                            onPreview={setPreviewTarget}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Pendientes · SEMANA</CardTitle>
+          <CardDescription>
+            Digest semanal (lunes México). Recap de competencias W−2 + resultados
+            que llegaron en W−1; lookahead 14 días. SRs solo agregados.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pendingWeeklyDigest.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No hay SEMANA pendiente (ya publicada en ambas plataformas).
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Semana</TableHead>
+                    <TableHead>Falta</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingWeeklyDigest.map((row) => {
+                    const busy = busyKey === `weekly_digest:${row.subjectKey}`;
+                    return (
+                      <TableRow key={row.subjectKey}>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <p className="font-medium">
+                              Semana {row.weekKey}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              Recap con lag W−2
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{missingPlatformBadges(row)}</TableCell>
+                        <TableCell className="text-right">
+                          <PendingActions
+                            postType="weekly_digest"
+                            subjectKey={row.subjectKey}
+                            name={`Semana ${row.weekKey}`}
+                            busy={busy}
+                            busyAction={busyAction}
+                            disabled={busyKey !== null}
+                            onConfirm={setConfirmAction}
+                            onPreview={setPreviewTarget}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Pendientes · RACHAS</CardTitle>
+          <CardDescription>
+            Spotlight mensual de rachas de PRs (desde el día 1 del mes, México).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pendingStreaksMonthly.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No hay RACHAS pendiente (ya publicada en ambas plataformas).
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mes</TableHead>
+                    <TableHead>Falta</TableHead>
+                    <TableHead className="text-right">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingStreaksMonthly.map((row) => {
+                    const busy =
+                      busyKey === `streaks_monthly:${row.subjectKey}`;
+                    return (
+                      <TableRow key={row.subjectKey}>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <p className="font-medium">Rachas {row.monthKey}</p>
+                            <p className="text-muted-foreground text-xs">
+                              Top rachas actuales
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{missingPlatformBadges(row)}</TableCell>
+                        <TableCell className="text-right">
+                          <PendingActions
+                            postType="streaks_monthly"
+                            subjectKey={row.subjectKey}
+                            name={`Rachas ${row.monthKey}`}
+                            busy={busy}
+                            busyAction={busyAction}
+                            disabled={busyKey !== null}
+                            onConfirm={setConfirmAction}
+                            onPreview={setPreviewTarget}
                           />
                         </TableCell>
                       </TableRow>
@@ -822,6 +1025,8 @@ export function SocialAdminPanel({
                         "record",
                         "upcoming",
                         "summary_unlock",
+                        "weekly_digest",
+                        "streaks_monthly",
                       ].includes(post.postType)
                         ? post.postType
                         : "resultados"
@@ -832,7 +1037,11 @@ export function SocialAdminPanel({
                         ? post.subjectKey
                         : postType === "summary_unlock"
                           ? `Resumen anual ${post.subjectKey}`
-                          : (post.competitionName ?? post.subjectKey);
+                          : postType === "weekly_digest"
+                            ? `Semana ${post.subjectKey}`
+                            : postType === "streaks_monthly"
+                              ? `Rachas ${post.subjectKey}`
+                              : (post.competitionName ?? post.subjectKey);
                     return (
                       <TableRow key={post.id}>
                         <TableCell>
@@ -898,38 +1107,15 @@ export function SocialAdminPanel({
                               <DropdownMenuItem
                                 disabled={busy}
                                 onClick={() =>
-                                  runAction(
+                                  setPreviewTarget({
                                     postType,
-                                    post.subjectKey,
-                                    "download",
-                                    post.platform === "instagram"
-                                      ? "instagram"
-                                      : "facebook",
-                                  )
+                                    subjectKey: post.subjectKey,
+                                    name: title,
+                                  })
                                 }
                               >
-                                <Download />
-                                {busy && busyAction === "download"
-                                  ? "Descargando..."
-                                  : "Descargar imagen"}
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                disabled={busy}
-                                onClick={() =>
-                                  runAction(
-                                    postType,
-                                    post.subjectKey,
-                                    "caption",
-                                    post.platform === "instagram"
-                                      ? "instagram"
-                                      : "facebook",
-                                  )
-                                }
-                              >
-                                <ClipboardCopy />
-                                {busy && busyAction === "caption"
-                                  ? "Copiando..."
-                                  : "Copiar texto"}
+                                <Eye />
+                                Vista previa
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -943,6 +1129,153 @@ export function SocialAdminPanel({
           )}
         </CardContent>
       </Card>
+
+      <Dialog
+        open={previewTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) closePreview();
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Vista previa
+              {previewTarget ? ` · ${postTypeLabel(previewTarget.postType)}` : ""}
+            </DialogTitle>
+            <DialogDescription>
+              {previewTarget?.name ?? "Cargando…"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {previewLoading ? (
+            <p className="text-muted-foreground text-sm">Cargando imagen y texto…</p>
+          ) : null}
+
+          {previewError ? (
+            <p className="text-destructive text-sm">{previewError}</p>
+          ) : null}
+
+          {previewData ? (
+            <div className="mx-auto w-full min-w-0 max-w-sm space-y-4">
+              <img
+                src={previewData.imageUrl}
+                alt={`Vista previa ${previewTarget?.name ?? ""}`}
+                className="border-border aspect-square w-full rounded-md border object-cover"
+              />
+              <div className="min-w-0 space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={
+                      previewPlatform === "facebook" ? "default" : "outline"
+                    }
+                    onClick={() => setPreviewPlatform("facebook")}
+                  >
+                    <SiFacebook className="size-3.5" />
+                    Facebook
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={
+                      previewPlatform === "instagram" ? "default" : "outline"
+                    }
+                    onClick={() => setPreviewPlatform("instagram")}
+                  >
+                    <SiInstagram className="size-3.5" />
+                    Instagram
+                  </Button>
+                </div>
+                <pre className="bg-muted max-h-64 overflow-x-hidden overflow-y-auto rounded-md p-3 text-sm wrap-anywhere whitespace-pre-wrap">
+                  {previewPlatform === "instagram"
+                    ? previewData.instagramCaption
+                    : previewData.facebookCaption}
+                </pre>
+              </div>
+              <DialogFooter className="flex-col gap-2 sm:flex-col">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={
+                    !!previewTarget &&
+                    busyKey ===
+                      `${previewTarget.postType}:${previewTarget.subjectKey}`
+                  }
+                  onClick={() => {
+                    if (!previewTarget) return;
+                    void runAction(
+                      previewTarget.postType,
+                      previewTarget.subjectKey,
+                      "download",
+                    );
+                  }}
+                >
+                  <Download className="size-4" />
+                  {previewTarget &&
+                  busyKey ===
+                    `${previewTarget.postType}:${previewTarget.subjectKey}` &&
+                  busyAction === "download"
+                    ? "Descargando..."
+                    : "Descargar imagen"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => {
+                    const text =
+                      previewPlatform === "instagram"
+                        ? previewData.instagramCaption
+                        : previewData.facebookCaption;
+                    try {
+                      await navigator.clipboard.writeText(text);
+                      toast.success(
+                        previewPlatform === "instagram"
+                          ? "Texto de Instagram copiado"
+                          : "Texto de Facebook copiado",
+                      );
+                    } catch (error) {
+                      toast.error(
+                        error instanceof Error
+                          ? error.message
+                          : "No se pudo copiar el texto",
+                      );
+                    }
+                  }}
+                >
+                  <ClipboardCopy className="size-4" />
+                  Copiar texto{" "}
+                  {previewPlatform === "instagram" ? "Instagram" : "Facebook"}
+                </Button>
+                {previewTarget ? (
+                  <Button
+                    type="button"
+                    className="w-full"
+                    disabled={busyKey !== null}
+                    onClick={() => {
+                      setConfirmAction({
+                        postType: previewTarget.postType,
+                        subjectKey: previewTarget.subjectKey,
+                        name: previewTarget.name,
+                        action: "publish",
+                      });
+                    }}
+                  >
+                    <Send className="size-4" />
+                    {busyKey ===
+                      `${previewTarget.postType}:${previewTarget.subjectKey}` &&
+                    busyAction === "publish"
+                      ? "Publicando..."
+                      : "Publicar"}
+                  </Button>
+                ) : null}
+              </DialogFooter>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={confirmAction !== null}

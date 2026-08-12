@@ -4,7 +4,9 @@ export type SocialPostType =
   | "resultados"
   | "record"
   | "upcoming"
-  | "summary_unlock";
+  | "summary_unlock"
+  | "weekly_digest"
+  | "streaks_monthly";
 
 function backendConfig() {
   const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
@@ -19,6 +21,8 @@ function typePath(postType: SocialPostType): string {
   if (postType === "resultados") return "resultados";
   if (postType === "record") return "records";
   if (postType === "summary_unlock") return "summary-unlock";
+  if (postType === "weekly_digest") return "weekly-digest";
+  if (postType === "streaks_monthly") return "streaks-monthly";
   return "upcoming";
 }
 
@@ -76,7 +80,11 @@ export async function fetchSocialImage(
         ? "record"
         : postType === "summary_unlock"
           ? "resumen"
-          : "proxima";
+          : postType === "weekly_digest"
+            ? "semana"
+            : postType === "streaks_monthly"
+              ? "rachas"
+              : "proxima";
   return {
     ok: true,
     bytes,

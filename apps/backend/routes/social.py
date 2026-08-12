@@ -5,30 +5,46 @@ from __future__ import annotations
 from flask import Blueprint, Response, abort, jsonify, request
 
 from common import log, require_cron_auth
+from social.calendar_mx import (
+    is_streaks_monthly_due,
+    is_weekly_digest_due,
+    parse_iso_week_key,
+    parse_month_key,
+)
 from social.media_store import get_media
 from social.poster import (
     POST_TYPE_RECORD,
     POST_TYPE_RESULTADOS,
+    POST_TYPE_STREAKS_MONTHLY,
     POST_TYPE_SUMMARY_UNLOCK,
     POST_TYPE_UPCOMING,
+    POST_TYPE_WEEKLY_DIGEST,
     build_resultados_caption,
+    build_streaks_monthly_caption,
     build_summary_unlock_caption,
+    build_weekly_digest_caption,
     generate_competition_resultados_png,
     generate_record_png_for_subject,
+    generate_streaks_monthly_png_for_month,
     generate_summary_unlock_png_for_year,
     generate_upcoming_png_for_competition,
+    generate_weekly_digest_png_for_week,
     get_competition_resultados_captions,
     get_record_captions,
+    get_streaks_monthly_captions,
     get_summary_unlock_captions,
     get_upcoming_captions,
+    get_weekly_digest_captions,
     is_summary_year_published,
     mark_competition_posted,
     mark_typed_posted,
     parse_summary_unlock_year,
     post_competition_resultados,
     post_record,
+    post_streaks_monthly,
     post_summary_unlock,
     post_upcoming_competition,
+    post_weekly_digest,
 )
 
 social_bp = Blueprint("social", __name__)
@@ -472,6 +488,232 @@ def mark_summary_unlock_posted(year: str):
     if "summary_year_not_unlocked" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
     if "invalid_year" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 400
+
+    return jsonify({"success": True, **result})
+
+
+# --- SEMANA (weekly digest) -----------------------------------------------------
+
+
+@social_bp.route("/social/weekly-digest/<week>/caption", methods=["GET"])
+@require_cron_auth
+def weekly_digest_caption(week: str):
+    if parse_iso_week_key(week) is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+    if not is_weekly_digest_due(week):
+        return (
+            jsonify({"success": False, "message": "Weekly digest not due yet"}),
+            404,
+        )
+
+    captions = get_weekly_digest_captions(week)
+    if captions is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+
+    return jsonify(
+        {
+            "success": True,
+            "caption": captions["facebook"],
+            "facebook_caption": captions["facebook"],
+            "instagram_caption": captions["instagram"],
+            "post_type": POST_TYPE_WEEKLY_DIGEST,
+            "subject_key": week,
+            "week": week,
+        }
+    )
+
+
+@social_bp.route("/social/weekly-digest/<week>/image.png", methods=["GET"])
+@require_cron_auth
+def weekly_digest_image(week: str):
+    if parse_iso_week_key(week) is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+    if not is_weekly_digest_due(week):
+        return (
+            jsonify({"success": False, "message": "Weekly digest not due yet"}),
+            404,
+        )
+
+    try:
+        generated = generate_weekly_digest_png_for_week(week)
+    except Exception as e:
+        log.exception("Failed to generate WEEKLY_DIGEST image for %s: %s", week, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if generated is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+
+    png, payload = generated
+    caption = build_weekly_digest_caption(payload)
+    filename = f"semana-{week}.png"
+    return Response(
+        png,
+        mimetype="image/png",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Weekly-Digest-Caption": caption.replace("\n", "\\n"),
+        },
+    )
+
+
+@social_bp.route("/social/weekly-digest/<week>/publish", methods=["POST"])
+@require_cron_auth
+def publish_weekly_digest(week: str):
+    if parse_iso_week_key(week) is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+
+    try:
+        result = post_weekly_digest(week)
+    except Exception as e:
+        log.exception("Manual WEEKLY_DIGEST publish failed for %s: %s", week, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "weekly_digest_not_due" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+    if "invalid_week" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 400
+    if "weekly_digest_empty" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+
+    success = not result.get("errors")
+    return jsonify({"success": success, **result}), (200 if success else 502)
+
+
+@social_bp.route("/social/weekly-digest/<week>/mark", methods=["POST"])
+@require_cron_auth
+def mark_weekly_digest_posted(week: str):
+    if parse_iso_week_key(week) is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+
+    platforms = None
+    if request.is_json and isinstance(request.json, dict):
+        platforms = request.json.get("platforms")
+
+    try:
+        result = mark_typed_posted(POST_TYPE_WEEKLY_DIGEST, week, platforms)
+    except Exception as e:
+        log.exception("Mark WEEKLY_DIGEST posted failed for %s: %s", week, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "weekly_digest_not_due" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+    if "invalid_week" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 400
+
+    return jsonify({"success": True, **result})
+
+
+# --- RACHAS (monthly streaks) ---------------------------------------------------
+
+
+@social_bp.route("/social/streaks-monthly/<month>/caption", methods=["GET"])
+@require_cron_auth
+def streaks_monthly_caption(month: str):
+    if parse_month_key(month) is None:
+        return jsonify({"success": False, "message": "Invalid month"}), 400
+    if not is_streaks_monthly_due(month):
+        return (
+            jsonify({"success": False, "message": "Monthly streaks not due yet"}),
+            404,
+        )
+
+    captions = get_streaks_monthly_captions(month)
+    if captions is None:
+        return jsonify({"success": False, "message": "Invalid month"}), 400
+
+    return jsonify(
+        {
+            "success": True,
+            "caption": captions["facebook"],
+            "facebook_caption": captions["facebook"],
+            "instagram_caption": captions["instagram"],
+            "post_type": POST_TYPE_STREAKS_MONTHLY,
+            "subject_key": month,
+            "month": month,
+        }
+    )
+
+
+@social_bp.route("/social/streaks-monthly/<month>/image.png", methods=["GET"])
+@require_cron_auth
+def streaks_monthly_image(month: str):
+    if parse_month_key(month) is None:
+        return jsonify({"success": False, "message": "Invalid month"}), 400
+    if not is_streaks_monthly_due(month):
+        return (
+            jsonify({"success": False, "message": "Monthly streaks not due yet"}),
+            404,
+        )
+
+    try:
+        generated = generate_streaks_monthly_png_for_month(month)
+    except Exception as e:
+        log.exception(
+            "Failed to generate STREAKS_MONTHLY image for %s: %s", month, e
+        )
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if generated is None:
+        return jsonify({"success": False, "message": "Invalid month"}), 400
+
+    png, payload = generated
+    caption = build_streaks_monthly_caption(payload)
+    filename = f"rachas-{month}.png"
+    return Response(
+        png,
+        mimetype="image/png",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Streaks-Monthly-Caption": caption.replace("\n", "\\n"),
+        },
+    )
+
+
+@social_bp.route("/social/streaks-monthly/<month>/publish", methods=["POST"])
+@require_cron_auth
+def publish_streaks_monthly(month: str):
+    if parse_month_key(month) is None:
+        return jsonify({"success": False, "message": "Invalid month"}), 400
+
+    try:
+        result = post_streaks_monthly(month)
+    except Exception as e:
+        log.exception("Manual STREAKS_MONTHLY publish failed for %s: %s", month, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "streaks_monthly_not_due" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+    if "invalid_month" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 400
+    if "streaks_monthly_empty" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+
+    success = not result.get("errors")
+    return jsonify({"success": success, **result}), (200 if success else 502)
+
+
+@social_bp.route("/social/streaks-monthly/<month>/mark", methods=["POST"])
+@require_cron_auth
+def mark_streaks_monthly_posted(month: str):
+    if parse_month_key(month) is None:
+        return jsonify({"success": False, "message": "Invalid month"}), 400
+
+    platforms = None
+    if request.is_json and isinstance(request.json, dict):
+        platforms = request.json.get("platforms")
+
+    try:
+        result = mark_typed_posted(POST_TYPE_STREAKS_MONTHLY, month, platforms)
+    except Exception as e:
+        log.exception("Mark STREAKS_MONTHLY posted failed for %s: %s", month, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "streaks_monthly_not_due" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+    if "invalid_month" in result.get("errors", []):
         return jsonify({"success": False, **result}), 400
 
     return jsonify({"success": True, **result})

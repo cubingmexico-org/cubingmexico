@@ -3,8 +3,10 @@ import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
   getPendingRecordPosts,
   getPendingResultadosCompetitions,
+  getPendingStreaksMonthlyPosts,
   getPendingSummaryUnlockPosts,
   getPendingUpcomingCompetitions,
+  getPendingWeeklyDigestPosts,
   getSocialPostStats,
   getSocialPosts,
 } from "../_lib/queries";
@@ -25,6 +27,8 @@ async function SocialPostsContent({
     pendingRecords,
     pendingUpcoming,
     pendingSummaryUnlock,
+    pendingWeeklyDigest,
+    pendingStreaksMonthly,
   ] = await Promise.all([
     getSocialPosts(30),
     getSocialPostStats(),
@@ -32,6 +36,8 @@ async function SocialPostsContent({
     getPendingRecordPosts(10, { includeOlder }),
     getPendingUpcomingCompetitions(10),
     getPendingSummaryUnlockPosts(),
+    getPendingWeeklyDigestPosts(),
+    getPendingStreaksMonthlyPosts(),
   ]);
 
   return (
@@ -41,6 +47,8 @@ async function SocialPostsContent({
       pendingRecords={pendingRecords}
       pendingUpcoming={pendingUpcoming}
       pendingSummaryUnlock={pendingSummaryUnlock}
+      pendingWeeklyDigest={pendingWeeklyDigest}
+      pendingStreaksMonthly={pendingStreaksMonthly}
       posts={posts}
       stats={stats}
     />

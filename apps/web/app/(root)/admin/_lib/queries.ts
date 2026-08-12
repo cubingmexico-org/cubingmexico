@@ -78,6 +78,8 @@ export async function getSocialPostStats() {
       records: sql<number>`count(*) filter (where ${socialPost.postType} = 'record')`,
       upcoming: sql<number>`count(*) filter (where ${socialPost.postType} = 'upcoming')`,
       summaryUnlock: sql<number>`count(*) filter (where ${socialPost.postType} = 'summary_unlock')`,
+      weeklyDigest: sql<number>`count(*) filter (where ${socialPost.postType} = 'weekly_digest')`,
+      streaksMonthly: sql<number>`count(*) filter (where ${socialPost.postType} = 'streaks_monthly')`,
     })
     .from(socialPost);
 
@@ -90,6 +92,8 @@ export async function getSocialPostStats() {
     records: Number(totals?.records ?? 0),
     upcoming: Number(totals?.upcoming ?? 0),
     summaryUnlock: Number(totals?.summaryUnlock ?? 0),
+    weeklyDigest: Number(totals?.weeklyDigest ?? 0),
+    streaksMonthly: Number(totals?.streaksMonthly ?? 0),
   };
 }
 
@@ -387,6 +391,102 @@ export async function getPendingSummaryUnlockPosts(): Promise<
     {
       subjectKey,
       year,
+      facebookPosted,
+      instagramPosted,
+    },
+  ];
+}
+
+function mexicoCityYmd(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+function isoWeekKeyFromYmd(ymd: string): string {
+  const [year, month, day] = ymd.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const isoYear = date.getUTCFullYear();
+  const yearStart = new Date(Date.UTC(isoYear, 0, 1));
+  const weekNo = Math.ceil(
+    ((date.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7,
+  );
+  return `${isoYear}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+export async function getPendingWeeklyDigestPosts(): Promise<
+  Array<{
+    subjectKey: string;
+    weekKey: string;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const subjectKey = isoWeekKeyFromYmd(mexicoCityYmd());
+  const rows = await db
+    .select({
+      platform: socialPost.platform,
+    })
+    .from(socialPost)
+    .where(
+      and(
+        eq(socialPost.postType, "weekly_digest"),
+        eq(socialPost.subjectKey, subjectKey),
+      ),
+    );
+
+  const facebookPosted = rows.some((row) => row.platform === "facebook");
+  const instagramPosted = rows.some((row) => row.platform === "instagram");
+  if (facebookPosted && instagramPosted) {
+    return [];
+  }
+
+  return [
+    {
+      subjectKey,
+      weekKey: subjectKey,
+      facebookPosted,
+      instagramPosted,
+    },
+  ];
+}
+
+export async function getPendingStreaksMonthlyPosts(): Promise<
+  Array<{
+    subjectKey: string;
+    monthKey: string;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const subjectKey = mexicoCityYmd().slice(0, 7);
+  const rows = await db
+    .select({
+      platform: socialPost.platform,
+    })
+    .from(socialPost)
+    .where(
+      and(
+        eq(socialPost.postType, "streaks_monthly"),
+        eq(socialPost.subjectKey, subjectKey),
+      ),
+    );
+
+  const facebookPosted = rows.some((row) => row.platform === "facebook");
+  const instagramPosted = rows.some((row) => row.platform === "instagram");
+  if (facebookPosted && instagramPosted) {
+    return [];
+  }
+
+  return [
+    {
+      subjectKey,
+      monthKey: subjectKey,
       facebookPosted,
       instagramPosted,
     },
