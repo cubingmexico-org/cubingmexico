@@ -18,7 +18,7 @@ export default function CustomUnauthorized(): React.JSX.Element {
   return (
     <main className="grow flex items-center justify-center">
       <div className="container max-w-3xl px-4 py-16">
-        <Card className="border-red-200 dark:border-red-600">
+        <Card className="border-destructive/30">
           <CardHeader className="text-center pb-2">
             <div className="flex justify-center mb-6">
               <div className="relative w-32 h-32">
@@ -29,10 +29,10 @@ export default function CustomUnauthorized(): React.JSX.Element {
                         key={i}
                         className={`w-8 h-8 rounded-md ${
                           [0, 2, 6, 8].includes(i)
-                            ? "bg-red-400 dark:bg-red-600"
+                            ? "bg-destructive/80"
                             : [1, 3, 5, 7].includes(i)
-                              ? "bg-red-300 dark:bg-red-500"
-                              : "bg-white border-2 border-gray-300 dark:border-gray-600"
+                              ? "bg-destructive/50"
+                              : "bg-background border-2 border-border"
                         }`}
                       />
                     ))}
@@ -43,7 +43,7 @@ export default function CustomUnauthorized(): React.JSX.Element {
             <div className="flex justify-center mb-4">
               <Lock className="h-12 w-12 text-destructive" />
             </div>
-            <CardTitle className="text-2xl md:text-3xl font-bold text-red-700 dark:text-red-400">
+            <CardTitle className="text-2xl md:text-3xl font-bold text-destructive">
               Acceso Denegado
             </CardTitle>
             <CardDescription className="text-lg mt-2">
@@ -56,11 +56,11 @@ export default function CustomUnauthorized(): React.JSX.Element {
               una cuenta autorizada.
             </p>
 
-            <div className="bg-amber-50 border border-amber-200 dark:border-amber-600 dark:bg-amber-900 rounded-lg p-4 mt-6 text-left">
-              <h3 className="font-semibold text-amber-800 dark:text-white mb-2">
+            <div className="bg-muted/40 border border-border rounded-lg p-4 mt-6 text-left">
+              <h3 className="font-semibold text-foreground mb-2">
                 ¿Por qué estoy viendo esto?
               </h3>
-              <ul className="list-disc list-inside text-sm text-amber-700 dark:text-white space-y-1">
+              <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
                 <li>No has iniciado sesión en tu cuenta</li>
                 <li>Tu cuenta no tiene los permisos necesarios</li>
                 <li>Estás intentando acceder a contenido restringido</li>
@@ -87,14 +87,10 @@ export default function CustomUnauthorized(): React.JSX.Element {
         </Card>
 
         <div className="mt-8 text-center">
-          <p className="text-gray-600 dark:text-gray-400 mb-2">
+          <p className="text-muted-foreground mb-2">
             ¿Crees que deberías tener acceso a esta página?
           </p>
-          <Button
-            asChild
-            variant="link"
-            className="text-blue-600 dark:text-blue-400"
-          >
+          <Button asChild variant="link">
             <Link
               href="https://www.facebook.com/cubingmexico"
               target="_blank"

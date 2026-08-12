@@ -1,6 +1,6 @@
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
-export default function Loading() {
+export function AdminPageSkeleton() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2">
@@ -10,4 +10,8 @@ export default function Loading() {
       <Skeleton className="h-64 w-full rounded-xl" />
     </div>
   );
+}
+
+export default function Loading() {
+  return <AdminPageSkeleton />;
 }

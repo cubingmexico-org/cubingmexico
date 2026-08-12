@@ -1,12 +1,13 @@
-export type ShareHighlightTone = "default" | "gold" | "silver" | "bronze";
+import {
+  formatInt,
+  MAX_HIGHLIGHTS,
+  type ShareHighlight,
+} from "../../../_lib/share-types";
 
-export type ShareHighlight = {
-  id: string;
-  label: string;
-  value: string;
-  detail?: string;
-  tone?: ShareHighlightTone;
-};
+export type {
+  ShareHighlight,
+  ShareHighlightTone,
+} from "../../../_lib/share-types";
 
 /** Minimal summary fields needed to build share-card highlights. */
 export type ShareHighlightSource = {
@@ -49,13 +50,6 @@ export type ShareHighlightSource = {
     delegated: unknown[];
   };
 };
-
-/** Portrait cards use a 2×4 grid. */
-const MAX_HIGHLIGHTS = 8;
-
-function formatInt(n: number): string {
-  return n.toLocaleString("es-MX");
-}
 
 /**
  * Pick up to 8 non-zero highlight stats in priority order for the share card.

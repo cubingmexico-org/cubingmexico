@@ -57,7 +57,7 @@ export function StateSelector({
           role="combobox"
           size={buttonSize}
           className={cn(
-            "gap-2 focus:outline-none focus:ring-1 focus:ring-ring focus-visible:ring-0",
+            "gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             buttonClassName,
           )}
         >

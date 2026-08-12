@@ -1,9 +1,9 @@
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
-export default function Loading() {
+export function TeamPageSkeleton() {
   return (
-    <main className="grow">
-      <div className="relative h-100 bg-gray-200">
+    <>
+      <div className="relative h-100 bg-muted">
         <Skeleton className="h-full w-full rounded-none" />
         <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/60 to-transparent p-6">
           <div className="container mx-auto flex flex-col items-end gap-6 sm:flex-row">
@@ -51,6 +51,14 @@ export default function Loading() {
           <Skeleton className="h-56 w-full rounded-lg" />
         </div>
       </div>
+    </>
+  );
+}
+
+export default function Loading() {
+  return (
+    <main className="grow">
+      <TeamPageSkeleton />
     </main>
   );
 }
