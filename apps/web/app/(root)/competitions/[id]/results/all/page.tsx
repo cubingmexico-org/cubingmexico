@@ -1,15 +1,9 @@
 import { notFound } from "next/navigation";
-import { getCompetitions } from "@/db/queries";
 import { getWcaCompetitionData } from "../../_lib/queries";
 import { getCompetitionResultsForEvent } from "./_lib/queries";
 import { ResultsHeader } from "../_components/results-header";
 import { ResultsAllView } from "../_components/results-views";
 import { cacheLife, cacheTag } from "next/cache";
-
-export async function generateStaticParams() {
-  const competitions = await getCompetitions();
-  return competitions.map((competition) => ({ id: competition.id }));
-}
 
 async function ResultsAllCached({
   competitionId,

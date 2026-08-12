@@ -22,15 +22,39 @@ export interface CompetitionResultRow {
   solves: number[];
 }
 
+async function fetchWcaCompetition(competitionId: string): Promise<Response> {
+  const url = `https://www.worldcubeassociation.org/api/v0/competitions/${competitionId}`;
+  const maxAttempts = 4;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const response = await fetch(url);
+
+    if (response.ok || response.status === 404) {
+      return response;
+    }
+
+    const retryable = response.status === 429 || response.status >= 500;
+    if (!retryable || attempt === maxAttempts) {
+      return response;
+    }
+
+    const retryAfter = Number(response.headers.get("retry-after"));
+    const delayMs = Number.isFinite(retryAfter)
+      ? retryAfter * 1000
+      : 500 * 2 ** (attempt - 1);
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  return fetch(url);
+}
+
 export async function getWcaCompetitionData(
   competitionId: string,
 ): Promise<Competition | null> {
   // v2: avoid reusing nulls cached from transient WCA failures.
   cacheTag(`wca-competition-data-v2-${competitionId}`);
 
-  const response = await fetch(
-    `https://www.worldcubeassociation.org/api/v0/competitions/${competitionId}`,
-  );
+  const response = await fetchWcaCompetition(competitionId);
 
   // Only real 404s are "not found". Other failures must not be cached as null.
   if (response.status === 404) {
