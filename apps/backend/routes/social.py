@@ -10,7 +10,7 @@ from social.media_store import get_media
 from social.poster import (
     build_resultados_caption,
     generate_competition_resultados_png,
-    get_competition_resultados_caption,
+    get_competition_resultados_captions,
     mark_competition_posted,
     post_competition_resultados,
 )
@@ -40,14 +40,14 @@ def serve_temp_media(token: str):
 @social_bp.route("/social/resultados/<competition_id>/caption", methods=["GET"])
 @require_cron_auth
 def resultados_caption(competition_id: str):
-    """Return the caption text used when publishing RESULTADOS."""
+    """Return Facebook/Instagram caption text for RESULTADOS posts."""
     try:
-        caption = get_competition_resultados_caption(competition_id)
+        captions = get_competition_resultados_captions(competition_id)
     except Exception as e:
         log.exception("Failed to build RESULTADOS caption for %s: %s", competition_id, e)
         return jsonify({"success": False, "message": str(e)}), 500
 
-    if caption is None:
+    if captions is None:
         return (
             jsonify(
                 {
@@ -61,7 +61,10 @@ def resultados_caption(competition_id: str):
     return jsonify(
         {
             "success": True,
-            "caption": caption,
+            # Back-compat: `caption` is the Facebook text (includes link).
+            "caption": captions["facebook"],
+            "facebook_caption": captions["facebook"],
+            "instagram_caption": captions["instagram"],
             "competition_id": competition_id,
         }
     )

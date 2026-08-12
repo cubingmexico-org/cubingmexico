@@ -135,7 +135,13 @@ export async function markResultadosPosted(
 export async function fetchResultadosCaption(
   competitionId: string,
 ): Promise<
-  { ok: true; caption: string } | { ok: false; status: number; body: unknown }
+  | {
+      ok: true;
+      caption: string;
+      facebookCaption: string;
+      instagramCaption: string;
+    }
+  | { ok: false; status: number; body: unknown }
 > {
   const config = backendConfig();
   if (!config) {
@@ -171,15 +177,20 @@ export async function fetchResultadosCaption(
     return { ok: false, status: response.status, body };
   }
 
-  const caption =
-    body &&
-    typeof body === "object" &&
-    "caption" in body &&
-    typeof (body as { caption: unknown }).caption === "string"
-      ? (body as { caption: string }).caption
-      : null;
+  const record =
+    body && typeof body === "object" ? (body as Record<string, unknown>) : null;
+  const facebookCaption =
+    typeof record?.facebook_caption === "string"
+      ? record.facebook_caption
+      : typeof record?.caption === "string"
+        ? record.caption
+        : null;
+  const instagramCaption =
+    typeof record?.instagram_caption === "string"
+      ? record.instagram_caption
+      : facebookCaption;
 
-  if (!caption) {
+  if (!facebookCaption || !instagramCaption) {
     return {
       ok: false,
       status: 502,
@@ -187,5 +198,10 @@ export async function fetchResultadosCaption(
     };
   }
 
-  return { ok: true, caption };
+  return {
+    ok: true,
+    caption: facebookCaption,
+    facebookCaption,
+    instagramCaption,
+  };
 }

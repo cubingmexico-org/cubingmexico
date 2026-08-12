@@ -45,6 +45,8 @@ export async function GET(
     return NextResponse.json({
       success: true,
       caption: result.caption,
+      facebookCaption: result.facebookCaption,
+      instagramCaption: result.instagramCaption,
       competitionId: competitionId.trim(),
     });
   } catch (error) {

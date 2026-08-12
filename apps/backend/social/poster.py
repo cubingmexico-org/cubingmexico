@@ -103,33 +103,56 @@ def _display_name_and_year(comp: dict) -> tuple[str, str]:
     return name, year
 
 
-def build_resultados_caption(*, competition_name: str, competition_id: str) -> str:
-    """Caption used for Facebook / Instagram RESULTADOS posts."""
+def build_resultados_caption(
+    *,
+    competition_name: str,
+    competition_id: str,
+    include_link: bool = True,
+) -> str:
+    """Caption for RESULTADOS posts. Instagram captions omit the URL (not clickable)."""
     name = (competition_name or "").strip() or competition_id
-    return (
-        f"Resultados de {name} ya disponibles en Cubing México.\n"
-        f"\n"
-        f"https://cubingmexico.net/competitions/{competition_id}/results/podiums\n"
-        f"\n"
-        f"#CubingMéxico #WCA #Speedcubing"
-    )
+    parts = [f"Resultados de {name} ya disponibles en Cubing México."]
+    if include_link:
+        parts.append("")
+        parts.append(
+            f"https://cubingmexico.net/competitions/{competition_id}/results/podiums"
+        )
+    parts.append("")
+    parts.append("#CubingMéxico #WCA #Speedcubing")
+    return "\n".join(parts)
 
 
-def _caption(comp: dict) -> str:
+def _caption(comp: dict, *, include_link: bool = True) -> str:
     return build_resultados_caption(
         competition_name=comp.get("name") or "",
         competition_id=comp["id"],
+        include_link=include_link,
     )
 
 
-def get_competition_resultados_caption(competition_id: str) -> str | None:
-    """Return caption text for a Mexican competition, or None if not found."""
+def get_competition_resultados_captions(competition_id: str) -> dict[str, str] | None:
+    """Return facebook/instagram captions for a Mexican competition, or None."""
     with get_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
             comp = _competition_details(cur, competition_id)
     if not comp:
         return None
-    return _caption(comp)
+    return {
+        "facebook": _caption(comp, include_link=True),
+        "instagram": _caption(comp, include_link=False),
+    }
+
+
+def get_competition_resultados_caption(
+    competition_id: str,
+    *,
+    include_link: bool = True,
+) -> str | None:
+    """Return caption text for a Mexican competition, or None if not found."""
+    captions = get_competition_resultados_captions(competition_id)
+    if not captions:
+        return None
+    return captions["facebook"] if include_link else captions["instagram"]
 
 
 def _public_media_url(token: str) -> str:
@@ -186,7 +209,8 @@ def post_competition_resultados(competition_id: str) -> dict:
         competition_name=name,
         year=year,
     )
-    caption = _caption(comp)
+    facebook_caption = _caption(comp, include_link=True)
+    instagram_caption = _caption(comp, include_link=False)
     media_token = None
     facebook_page_id = get_facebook_page_id()
     meta_token = get_meta_page_access_token()
@@ -202,7 +226,7 @@ def post_competition_resultados(competition_id: str) -> dict:
                         page_id=facebook_page_id,
                         access_token=meta_token,
                         image_bytes=png,
-                        caption=caption,
+                        caption=facebook_caption,
                     )
                     with get_connection() as conn:
                         with conn.cursor() as cur:
@@ -229,7 +253,7 @@ def post_competition_resultados(competition_id: str) -> dict:
                         ig_user_id=ig_user_id,
                         access_token=meta_token,
                         image_url=image_url,
-                        caption=caption,
+                        caption=instagram_caption,
                     )
                     with get_connection() as conn:
                         with conn.cursor() as cur:

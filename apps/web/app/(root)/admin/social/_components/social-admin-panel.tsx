@@ -125,12 +125,19 @@ async function downloadImage(competitionId: string) {
   URL.revokeObjectURL(url);
 }
 
-async function fetchCaption(competitionId: string): Promise<string> {
+async function fetchCaption(
+  competitionId: string,
+  platform: "facebook" | "instagram" = "facebook",
+): Promise<string> {
   const response = await fetch(
     `/api/admin/social/resultados/${encodeURIComponent(competitionId)}/caption`,
   );
   const data = await response.json();
-  if (!response.ok || !data.success || typeof data.caption !== "string") {
+  const caption =
+    platform === "instagram"
+      ? data?.instagramCaption
+      : (data?.facebookCaption ?? data?.caption);
+  if (!response.ok || !data.success || typeof caption !== "string") {
     const message =
       data?.message ||
       data?.data?.message ||
@@ -138,11 +145,14 @@ async function fetchCaption(competitionId: string): Promise<string> {
       `Error HTTP ${response.status}`;
     throw new Error(String(message));
   }
-  return data.caption;
+  return caption;
 }
 
-async function copyCaption(competitionId: string) {
-  const caption = await fetchCaption(competitionId);
+async function copyCaption(
+  competitionId: string,
+  platform: "facebook" | "instagram" = "facebook",
+) {
+  const caption = await fetchCaption(competitionId, platform);
   await navigator.clipboard.writeText(caption);
   return caption;
 }
@@ -170,12 +180,13 @@ export function SocialAdminPanel({
   async function runAction(
     competitionId: string,
     action: "download" | "publish" | "mark" | "caption",
+    platform: "facebook" | "instagram" = "facebook",
   ) {
     setBusyId(competitionId);
     setBusyAction(action);
     try {
       if (action === "caption") {
-        await copyCaption(competitionId);
+        await copyCaption(competitionId, platform);
         toast.success("Texto del post copiado");
         return;
       }
@@ -183,7 +194,7 @@ export function SocialAdminPanel({
       if (action === "download") {
         await downloadImage(competitionId);
         try {
-          await copyCaption(competitionId);
+          await copyCaption(competitionId, platform);
           toast.success("Imagen descargada y texto copiado");
         } catch {
           toast.success("Imagen descargada (no se pudo copiar el texto)");
@@ -361,12 +372,25 @@ export function SocialAdminPanel({
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 disabled={busy}
-                                onClick={() => runAction(row.id, "caption")}
+                                onClick={() =>
+                                  runAction(row.id, "caption", "facebook")
+                                }
                               >
                                 <ClipboardCopy />
                                 {busy && busyAction === "caption"
                                   ? "Copiando..."
-                                  : "Copiar texto"}
+                                  : "Copiar texto Facebook"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                disabled={busy}
+                                onClick={() =>
+                                  runAction(row.id, "caption", "instagram")
+                                }
+                              >
+                                <ClipboardCopy />
+                                {busy && busyAction === "caption"
+                                  ? "Copiando..."
+                                  : "Copiar texto Instagram"}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
@@ -499,7 +523,13 @@ export function SocialAdminPanel({
                             <DropdownMenuItem
                               disabled={busyId === post.competitionId}
                               onClick={() =>
-                                runAction(post.competitionId, "download")
+                                runAction(
+                                  post.competitionId,
+                                  "download",
+                                  post.platform === "instagram"
+                                    ? "instagram"
+                                    : "facebook",
+                                )
                               }
                             >
                               <Download />
@@ -511,7 +541,13 @@ export function SocialAdminPanel({
                             <DropdownMenuItem
                               disabled={busyId === post.competitionId}
                               onClick={() =>
-                                runAction(post.competitionId, "caption")
+                                runAction(
+                                  post.competitionId,
+                                  "caption",
+                                  post.platform === "instagram"
+                                    ? "instagram"
+                                    : "facebook",
+                                )
                               }
                             >
                               <ClipboardCopy />
