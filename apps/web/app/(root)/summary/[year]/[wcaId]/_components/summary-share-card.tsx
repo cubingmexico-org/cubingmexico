@@ -118,7 +118,7 @@ export const SummaryShareCard = forwardRef<HTMLDivElement, Props>(
               >
                 <p
                   className={cn(
-                    "text-[96px] font-bold leading-none tabular-nums",
+                    "text-8xl font-bold leading-none tabular-nums",
                     valueToneClass(h.tone),
                   )}
                 >
@@ -128,11 +128,11 @@ export const SummaryShareCard = forwardRef<HTMLDivElement, Props>(
                   {h.label}
                 </p>
                 {h.detail ? (
-                  <p className="text-[30px] leading-snug text-neutral-500">
+                  <p className="text-3xl leading-snug text-neutral-500">
                     {h.detail}
                   </p>
                 ) : (
-                  <p className="text-[30px] leading-snug text-transparent select-none">
+                  <p className="text-3xl leading-snug text-transparent select-none">
                     —
                   </p>
                 )}

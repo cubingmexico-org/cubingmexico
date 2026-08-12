@@ -87,7 +87,7 @@ export function AddMemberForm({
                 Añadir Miembro
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
+            <DialogContent className="sm:max-w-131.25">
               <form action={formAction}>
                 <input
                   type="hidden"

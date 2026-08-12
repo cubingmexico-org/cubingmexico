@@ -186,7 +186,7 @@ export function CompetitionsTable({
             <TableHead>Competencia</TableHead>
             <TableHead>Ciudad</TableHead>
             <TableHead>Fecha</TableHead>
-            <TableHead className="w-[200px]">Estado</TableHead>
+            <TableHead className="w-50">Estado</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

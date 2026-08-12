@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import {
+  Brush,
   CartesianGrid,
   Line,
   LineChart,
@@ -450,10 +451,15 @@ export function PersonResultsChartTab({
           </p>
         ) : (
           <>
-            <ChartContainer config={chartConfig} className="h-[420px] w-full">
+            <ChartContainer config={chartConfig} className="h-115 w-full">
               <LineChart
                 data={points}
-                margin={{ top: 8, right: 16, bottom: 8, left: 8 }}
+                margin={{
+                  top: 8,
+                  right: 16,
+                  bottom: points.length > 20 ? 24 : 8,
+                  left: 8,
+                }}
               >
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
@@ -692,6 +698,16 @@ export function PersonResultsChartTab({
                   connectNulls
                   isAnimationActive={false}
                 />
+                {points.length > 20 && (
+                  <Brush
+                    key={selectedEventId}
+                    dataKey="solveNumber"
+                    height={28}
+                    stroke="#a1a1aa"
+                    travellerWidth={10}
+                    tickFormatter={(value: number) => String(value)}
+                  />
+                )}
               </LineChart>
             </ChartContainer>
 
@@ -720,7 +736,7 @@ export function PersonResultsChartTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[180px]">Σ</TableHead>
+                      <TableHead className="w-45">Σ</TableHead>
                       <TableHead className="text-right">Global</TableHead>
                       <TableHead className="text-right">Último</TableHead>
                     </TableRow>

@@ -72,7 +72,7 @@ export function TeamRolesTable({
           <TableRow>
             <TableHead>Persona</TableHead>
             <TableHead>WCA ID</TableHead>
-            <TableHead className="w-[160px]">Rol</TableHead>
+            <TableHead className="w-40">Rol</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

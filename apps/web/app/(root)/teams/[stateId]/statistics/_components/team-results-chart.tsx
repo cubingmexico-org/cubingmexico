@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { parseAsString, useQueryState } from "nuqs";
 import {
+  Brush,
   CartesianGrid,
   Line,
   LineChart,
@@ -340,7 +341,7 @@ function TeamResultsChartView({
       <CardContent>
         {isLoading ? (
           <div className="space-y-4">
-            <Skeleton className="h-[420px] w-full" />
+            <Skeleton className="h-105 w-full" />
             <Skeleton className="h-40 w-full" />
           </div>
         ) : !selectedResults ? (
@@ -353,10 +354,15 @@ function TeamResultsChartView({
           </p>
         ) : (
           <>
-            <ChartContainer config={chartConfig} className="h-[420px] w-full">
+            <ChartContainer config={chartConfig} className="h-115 w-full">
               <LineChart
                 data={points}
-                margin={{ top: 8, right: 16, bottom: 8, left: 8 }}
+                margin={{
+                  top: 8,
+                  right: 16,
+                  bottom: points.length > 20 ? 24 : 8,
+                  left: 8,
+                }}
               >
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
@@ -508,6 +514,16 @@ function TeamResultsChartView({
                   connectNulls
                   isAnimationActive={false}
                 />
+                {points.length > 20 && (
+                  <Brush
+                    key={selectedEventId}
+                    dataKey="solveNumber"
+                    height={28}
+                    stroke="#a1a1aa"
+                    travellerWidth={10}
+                    tickFormatter={(value: number) => String(value)}
+                  />
+                )}
               </LineChart>
             </ChartContainer>
 
@@ -527,7 +543,7 @@ function TeamResultsChartView({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[200px]">Σ</TableHead>
+                      <TableHead className="w-50">Σ</TableHead>
                       <TableHead className="text-right">Team</TableHead>
                     </TableRow>
                   </TableHeader>

@@ -25,7 +25,7 @@ export function ZoomControls() {
         variant="ghost"
         size="sm"
         onClick={resetZoom}
-        className="min-w-[60px]"
+        className="min-w-15"
       >
         {Math.round(zoom * 100)}%
       </Button>

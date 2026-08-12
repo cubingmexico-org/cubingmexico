@@ -179,7 +179,7 @@ export function TeamsStateMap({
 
           if (team) {
             const popupContainer = document.createElement("div");
-            popupContainer.className = "min-w-[320px]";
+            popupContainer.className = "min-w-80";
 
             layer.bindPopup(popupContainer, {
               maxWidth: 420,

@@ -247,7 +247,7 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                 Contenido del texto
               </Label>
               <MentionTagsInput
-                className="max-w-[400px]"
+                className="max-w-100"
                 id="content"
                 content={selectedElement.content || ""}
                 onContentChange={(content) => {

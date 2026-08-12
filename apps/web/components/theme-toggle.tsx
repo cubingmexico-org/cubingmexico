@@ -22,7 +22,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="flex h-6 w-[99px] items-center space-x-2">
+      <div className="flex h-6 w-24.75 items-center space-x-2">
         <Skeleton className="h-[1.2rem] w-[1.2rem] rounded-full" />
         <Skeleton className="h-6 w-11 rounded-full" />
         <Skeleton className="h-[1.2rem] w-[1.2rem] rounded-full" />
