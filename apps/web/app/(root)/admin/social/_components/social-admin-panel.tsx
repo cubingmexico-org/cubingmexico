@@ -269,14 +269,12 @@ export function SocialAdminPanel({
           <CardContent>
             <p className="flex items-center gap-2 text-3xl font-semibold tabular-nums">
               <span className="inline-flex items-center gap-1.5">
-                <Facebook className="text-muted-foreground size-5" />
                 {stats.facebook}
               </span>
               <span className="text-muted-foreground text-xl font-normal">
                 /
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Instagram className="text-muted-foreground size-5" />
                 {stats.instagram}
               </span>
             </p>
@@ -385,14 +383,6 @@ export function SocialAdminPanel({
                                 {busy && busyAction === "publish"
                                   ? "Publicando..."
                                   : "Publicar"}
-                                <span className="ml-auto flex items-center gap-1">
-                                  {!row.facebookPosted ? (
-                                    <Facebook className="size-3.5" />
-                                  ) : null}
-                                  {!row.instagramPosted ? (
-                                    <Instagram className="size-3.5" />
-                                  ) : null}
-                                </span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 disabled={busy}
@@ -408,14 +398,6 @@ export function SocialAdminPanel({
                                 {busy && busyAction === "mark"
                                   ? "Registrando..."
                                   : "Marcar manual"}
-                                <span className="ml-auto flex items-center gap-1">
-                                  {!row.facebookPosted ? (
-                                    <Facebook className="size-3.5" />
-                                  ) : null}
-                                  {!row.instagramPosted ? (
-                                    <Instagram className="size-3.5" />
-                                  ) : null}
-                                </span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
