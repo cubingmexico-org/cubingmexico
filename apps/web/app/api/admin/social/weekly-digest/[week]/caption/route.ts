@@ -1,10 +1,7 @@
 import { connection, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/team-auth";
 import { isSuperadmin } from "@/lib/superadmin";
-import {
-  fetchSocialCaption,
-  type SocialPostType,
-} from "@/app/(root)/admin/_lib/social";
+import { fetchWeeklyDigestCaption } from "@/app/(root)/admin/_lib/social";
 
 export const maxDuration = 30;
 
@@ -33,10 +30,8 @@ export async function GET(
     );
   }
 
-  const postType: SocialPostType = "weekly_digest";
-
   try {
-    const result = await fetchSocialCaption(postType, key);
+    const result = await fetchWeeklyDigestCaption(key);
     if (!result.ok) {
       return NextResponse.json(
         {
@@ -54,7 +49,7 @@ export async function GET(
       facebookCaption: result.facebookCaption,
       instagramCaption: result.instagramCaption,
       week: key,
-      postType,
+      postType: "weekly_digest",
     });
   } catch (error) {
     console.error(error);

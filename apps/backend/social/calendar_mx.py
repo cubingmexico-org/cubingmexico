@@ -115,18 +115,53 @@ def month_key(d: date) -> str:
     return f"{d.year}-{d.month:02d}"
 
 
-def streaks_monthly_key_if_due(now: datetime | None = None) -> str | None:
-    """Return YYYY-MM for the current Mexico City month (due from day 1)."""
-    return month_key(mexico_city_today(now))
+STREAKS_MONTHLY_GRACE_DAYS = 3
 
 
-def is_streaks_monthly_due(month: str, now: datetime | None = None) -> bool:
+def last_day_of_month(year: int, month: int) -> date:
+    if month == 12:
+        return date(year + 1, 1, 1) - timedelta(days=1)
+    return date(year, month + 1, 1) - timedelta(days=1)
+
+
+def streaks_monthly_publish_window(month: str, now: datetime | None = None) -> bool:
+    """True when RACHAS for ``month`` (YYYY-MM) may be published (México)."""
     parsed = parse_month_key(month)
     if parsed is None:
         return False
     year, mon = parsed
     today = mexico_city_today(now)
-    return (today.year, today.month) >= (year, mon)
+    if today.year == year and today.month == mon and today == last_day_of_month(
+        year, mon
+    ):
+        return True
+    if mon == 12:
+        next_year, next_mon = year + 1, 1
+    else:
+        next_year, next_mon = year, mon + 1
+    return (
+        today.year == next_year
+        and today.month == next_mon
+        and today.day <= STREAKS_MONTHLY_GRACE_DAYS
+    )
+
+
+def streaks_monthly_key_if_due(now: datetime | None = None) -> str | None:
+    """Return YYYY-MM on the month's last day (México), with a short grace window."""
+    today = mexico_city_today(now)
+    if today == last_day_of_month(today.year, today.month):
+        return month_key(today)
+    if today.day <= STREAKS_MONTHLY_GRACE_DAYS:
+        prev_mon = today.month - 1 if today.month > 1 else 12
+        prev_year = today.year if today.month > 1 else today.year - 1
+        prev_key = f"{prev_year}-{prev_mon:02d}"
+        if streaks_monthly_publish_window(prev_key, now):
+            return prev_key
+    return None
+
+
+def is_streaks_monthly_due(month: str, now: datetime | None = None) -> bool:
+    return streaks_monthly_publish_window(month, now)
 
 
 def format_day_month_short(d: date) -> str:

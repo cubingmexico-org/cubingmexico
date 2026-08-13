@@ -51,7 +51,7 @@ export const ADMIN_OPS_JOBS = [
     path: "/post-streaks-monthly",
     label: "Publicar rachas del mes",
     description:
-      "Publica el spotlight mensual de rachas de PRs para el mes actual (México; idempotente).",
+      "Publica el spotlight mensual de rachas de PRs el último día del mes (México; idempotente; reintento hasta 3 días después).",
   },
   {
     path: "/update-all",
