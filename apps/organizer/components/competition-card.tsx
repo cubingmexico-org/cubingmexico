@@ -2,7 +2,14 @@
 
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MapPin, Calendar, Award, ClipboardList, IdCard } from "lucide-react";
+import {
+  MapPin,
+  Calendar,
+  Award,
+  ClipboardList,
+  IdCard,
+  Users,
+} from "lucide-react";
 import {
   Card,
   CardContent,
@@ -143,6 +150,18 @@ export function CompetitionCard({
         >
           <ClipboardList />
           Mesa
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          size="sm"
+          disabled={isNotAvailable}
+          onClick={() => {
+            router.push(`/groups/${competition.id}`);
+          }}
+        >
+          <Users />
+          Grupos
         </Button>
       </CardFooter>
     </Card>

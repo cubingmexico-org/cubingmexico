@@ -10,7 +10,7 @@ This is a product backlog, not a committed schedule. Adjust phase boundaries aft
 | --------------------- | -------------------------------------------------------------------------- |
 | **Product name (ES)** | Organización                                                               |
 | **Package / folder**  | `apps/organizer`                                                           |
-| **Feature routes**    | Keep specific paths: `/certificates`, `/badges`, `/desk`, later `/groups` |
+| **Feature routes**    | Keep specific paths: `/certificates`, `/badges`, `/desk`, `/groups` |
 | **WCIF**              | **Read-only** (public GET) until Phase 3b write gate                       |
 
 Umbrella brand describes the job (competition ops). Modules stay named after features.
@@ -30,11 +30,12 @@ Umbrella brand describes the job (competition ops). Modules stay named after fea
 - Cloud design save/load (Neon `designs`) + Cubing México certificate templates + co-organizer ACL
 - **Mesa**: staff roles roster + registration overview (CSV export)
 - Tent / table-card canvas presets inside Gafetes
+- **Grupos (3a)**: local WCIF draft, round workspace, group creation, assignment engine, stations, CSV/JSON export (no WCA write yet)
 
 Known gaps (later phases):
 
 - Editors: desktop-only
-- Groups module not started
+- Grupos 3b/3c: WCIF write, troubleshooting views, scorecards / task cards
 
 Relevant code:
 
@@ -61,7 +62,8 @@ Sources: [Groupifier](https://github.com/jonatanklosko/groupifier) ([grouping go
 
 - **Mesa** covers DD-style staff roster + registration overview (read-only).
 - **Gafetes** covers nametags / tent cards (partial Groupifier printing).
-- **Still needed in Grupos:** group creation, assignment engine, conflict checks, WCIF write, scorecards/task docs, assignment troubleshooting, Round-1 CSV import.
+- **Grupos 3a** covers group creation, assignment engine, conflict checks, stations, local CSV/JSON export.
+- **Still needed:** WCIF write, scorecards/task docs, assignment troubleshooting views, Round-1 CSV import.
 
 ### Non-goals (Grupos v1–v2)
 
@@ -119,12 +121,12 @@ Mesa lives at `/desk/[competitionId]` with tabs **Staff** | **Inscripciones**. T
 
 | Feature                          | Module | Status  | Why                                              | Implementation                                                                                                                         | Depends                  |
 | -------------------------------- | ------ | ------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| Groups route + nav               | Grupos | planned | Suite needs a groups entry point                  | `/groups/[competitionId]`; add to `CompetitionModuleNav`                                                                               | home-hub, competition-nav |
-| Local WCIF draft                 | Grupos | planned | Edit safely before any PATCH                      | Public GET → in-memory draft; unsaved-changes affordance                                                                               | wcif-types               |
-| Round workspace + group creation | Grupos | planned | DD round UX is the mental model organizers know   | Round selector; group count; create child activities; multi-stage spread / per-room; time-split                                        | local-draft              |
-| Assignment generation engine     | Grupos | planned | Core organizer pain; MX workflows                 | Pipeline inspired by DD order (staff → delegates → field → judges) + Groupifier goals (no double-booking; seed by results; key staff) | round-workspace          |
-| Manual edit + conflicts          | Grupos | planned | Auto-assign is a start, not the finish            | Drag/edit assignments; surface overlaps / overfull groups; reset group or assignment scopes                                            | groups-engine            |
-| Stations + export                | Grupos | planned | Day-of needs stations; write comes later          | Station numbers once assignments exist; JSON/CSV export                                                                                | groups-engine            |
+| Groups route + nav               | Grupos | done    | Suite needs a groups entry point                  | `/groups/[competitionId]`; add to `CompetitionModuleNav`                                                                               | home-hub, competition-nav |
+| Local WCIF draft                 | Grupos | done    | Edit safely before any PATCH                      | Public GET → in-memory draft; unsaved-changes affordance                                                                               | wcif-types               |
+| Round workspace + group creation | Grupos | done    | DD round UX is the mental model organizers know   | Round selector; group count; create child activities; multi-stage spread / per-room; time-split                                        | local-draft              |
+| Assignment generation engine     | Grupos | done    | Core organizer pain; MX workflows                 | Pipeline inspired by DD order (staff → delegates → field → judges) + Groupifier goals (no double-booking; seed by results; key staff) | round-workspace          |
+| Manual edit + conflicts          | Grupos | done    | Auto-assign is a start, not the finish            | Drag/edit assignments; surface overlaps / overfull groups; reset group or assignment scopes                                            | groups-engine            |
+| Stations + export                | Grupos | done    | Day-of needs stations; write comes later          | Station numbers once assignments exist; JSON/CSV export                                                                                | groups-engine            |
 
 #### Phase 3b — Day-of staffing views + WCIF write gate
 
@@ -179,7 +181,7 @@ WCA applies stricter WCIF schema checks on save (no unknown keys, correct types)
 1. ~~**Phase 0** — rename + enable age/newcomer + hub nav~~
 2. ~~**Phase 1** — DB-backed design save + shared templates~~
 3. ~~**Phase 2** — staff roster + tent cards + desk overview~~
-4. **Phase 3a** — groups route + local draft + round workspace + assignment engine + CSV/JSON export
+4. ~~**Phase 3a** — groups route + local draft + round workspace + assignment engine + CSV/JSON export~~
 5. **Phase 3b** — troubleshooting views + Round-1 CSV import + WCIF check/PATCH
 6. **Phase 3c** — scorecards / task cards + Gafetes wiring + TNoodle handoff
 7. **Phase 4** — guided tour (can land in parallel with 3a), mobile desk, RBAC, MX packs, tools page polish

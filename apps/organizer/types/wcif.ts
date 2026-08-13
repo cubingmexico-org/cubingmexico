@@ -1,18 +1,20 @@
 /**
- * WCIF types used by Organización (read path).
+ * WCIF types used by Organización.
  *
  * Source of truth: https://github.com/thewca/wcif (stable = 1.1)
  * Fetch: GET /api/v0/competitions/:id/wcif/public
  *
  * Consumed today:
  * - persons: name, wcaId, registrantId, countryIso2, gender, roles,
- *   registration.eventIds / isCompeting, avatar.url
+ *   registration.eventIds / isCompeting, avatar.url, assignments,
+ *   personalBests
  * - events → rounds → results: personId, ranking, best, average
+ * - schedule → venues → rooms → activities / childActivities (Grupos draft)
  *
  * Typed for future modules but not consumed yet:
- * - schedule, assignments, personalBests, competitorLimit, extensions
+ * - competitorLimit, extensions (write path in Phase 3b)
  *
- * This app does not PATCH WCIF yet. When it does (Grupos), payloads must
+ * This app does not PATCH WCIF yet. When it does (Grupos 3b), payloads must
  * pass PUT /api/v0/competitions/wcif/check and surface response.error.
  */
 
@@ -76,14 +78,14 @@ interface Registration {
   isCompeting: boolean;
 }
 
-interface Assignment {
+export interface Assignment {
   activityId: number;
   stationNumber: number | null;
   /** WCIF uses "competitor" plus staff-* / custom staff codes */
   assignmentCode: string;
 }
 
-interface PersonalBest {
+export interface PersonalBest {
   eventId: EventId;
   best: number;
   worldRanking: number | null;
@@ -130,13 +132,13 @@ export interface WCIF {
   extensions?: unknown[];
 }
 
-interface Schedule {
+export interface Schedule {
   startDate: string;
   numberOfDays: number;
   venues: Venue[];
 }
 
-interface Venue {
+export interface Venue {
   id: number;
   name: string;
   latitudeMicrodegrees: number;
@@ -146,7 +148,7 @@ interface Venue {
   rooms: Room[];
 }
 
-interface Room {
+export interface Room {
   id: number;
   name: string;
   color: string;
@@ -154,7 +156,7 @@ interface Room {
   extensions?: unknown[];
 }
 
-interface Activity {
+export interface Activity {
   id: number;
   name: string;
   activityCode: string;
