@@ -12,10 +12,11 @@
  * - schedule → venues → rooms → activities / childActivities (Grupos draft)
  *
  * Typed for future modules but not consumed yet:
- * - competitorLimit, extensions (write path in Phase 3b)
+ * - competitorLimit
  *
- * This app does not PATCH WCIF yet. When it does (Grupos 3b), payloads must
- * pass PUT /api/v0/competitions/wcif/check and surface response.error.
+ * Grupos 3b: optional PATCH via PUT …/wcif/check then PATCH …/wcif;
+ * surface response.error on failure. Extensions are read for Groupifier/DD
+ * interop; Organización does not write its own extension in 3b.
  */
 
 export type EventId =
@@ -55,6 +56,12 @@ export type Role =
   | "staff-announcer"
   | "staff-other";
 
+export interface WcifExtension {
+  id: string;
+  specUrl?: string;
+  data: unknown;
+}
+
 export interface Person {
   name: string;
   wcaUserId: number;
@@ -68,7 +75,7 @@ export interface Person {
   roles: Role[];
   assignments: Assignment[];
   personalBests: PersonalBest[];
-  extensions: unknown[];
+  extensions: WcifExtension[];
 }
 
 interface Registration {
@@ -110,13 +117,13 @@ export interface Round {
   advancementCondition: unknown;
   scrambleSetCount: number;
   results: Result[];
-  extensions: unknown[];
+  extensions: WcifExtension[];
 }
 
 export interface Event {
   id: EventId;
   rounds: Round[];
-  extensions: unknown[];
+  extensions: WcifExtension[];
   qualification: unknown;
 }
 
@@ -129,7 +136,7 @@ export interface WCIF {
   competitorLimit: number | null;
   events: Event[];
   persons: Person[];
-  extensions?: unknown[];
+  extensions?: WcifExtension[];
 }
 
 export interface Schedule {
@@ -153,7 +160,7 @@ export interface Room {
   name: string;
   color: string;
   activities: Activity[];
-  extensions?: unknown[];
+  extensions?: WcifExtension[];
 }
 
 export interface Activity {
@@ -164,7 +171,7 @@ export interface Activity {
   endTime: string;
   childActivities: Activity[];
   scrambleSetId?: number | null;
-  extensions?: unknown[];
+  extensions?: WcifExtension[];
 }
 
 export interface ParticipantData {

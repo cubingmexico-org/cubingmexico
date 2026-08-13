@@ -13,6 +13,7 @@ interface GroupsStore {
   load: (wcif: WCIF) => void;
   replaceDraft: (wcif: WCIF) => void;
   resetAll: () => void;
+  markClean: () => void;
   setSelectedRoundId: (roundId: string | null) => void;
   setSelectedActivityId: (activityId: number | null) => void;
 }
@@ -30,12 +31,18 @@ export const useGroupsStore = create<GroupsStore>((set, get) => ({
   isDirty: false,
 
   load: (wcif) => {
+    const { selectedRoundId, originalWcif } = get();
+    const sameCompetition = originalWcif?.id === wcif.id;
     const clone = deepCloneWcif(wcif);
+    const roundStillExists = wcif.events.some((e) =>
+      e.rounds.some((r) => r.id === selectedRoundId),
+    );
     const firstRound = wcif.events[0]?.rounds[0]?.id ?? null;
     set({
       originalWcif: deepCloneWcif(wcif),
       draftWcif: clone,
-      selectedRoundId: firstRound,
+      selectedRoundId:
+        sameCompetition && roundStillExists ? selectedRoundId : firstRound,
       selectedActivityId: null,
       isDirty: false,
     });
@@ -56,6 +63,15 @@ export const useGroupsStore = create<GroupsStore>((set, get) => ({
       draftWcif: deepCloneWcif(originalWcif),
       isDirty: false,
       selectedActivityId: null,
+    });
+  },
+
+  markClean: () => {
+    const { draftWcif } = get();
+    if (!draftWcif) return;
+    set({
+      originalWcif: deepCloneWcif(draftWcif),
+      isDirty: false,
     });
   },
 

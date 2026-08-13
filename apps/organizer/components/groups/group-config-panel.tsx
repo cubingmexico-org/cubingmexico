@@ -11,6 +11,10 @@ import {
   findRoundActivities,
   getGroupActivitiesForRound,
 } from "@/lib/groups/wcif-schedule";
+import {
+  extensionSourceLabel,
+  suggestGroupCountsFromExtensions,
+} from "@/lib/groups/extensions";
 
 function formatTime(iso: string): string {
   try {
@@ -48,16 +52,51 @@ export function GroupConfigPanel({
   );
   const [timeSplit, setTimeSplit] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [extensionHint, setExtensionHint] = useState<string | null>(null);
 
   useEffect(() => {
     setError(null);
-    setGroupCount(Math.max(1, existingGroups.length || 2));
+    const suggestion = suggestGroupCountsFromExtensions(wcif, roundActivityCode);
+
+    if (existingGroups.length > 0) {
+      setGroupCount(Math.max(1, existingGroups.length));
+      const initial: Record<number, number> = {};
+      for (const parent of parents) {
+        initial[parent.roomId] = parent.activity.childActivities?.length || 0;
+      }
+      setPerRoomCounts(initial);
+      setExtensionHint(null);
+      return;
+    }
+
+    if (suggestion) {
+      setSpreadAcrossStages(suggestion.spreadAcrossStages);
+      if (suggestion.groupCount != null) {
+        setGroupCount(Math.max(1, suggestion.groupCount));
+      }
+      if (suggestion.perRoomCounts) {
+        setPerRoomCounts({ ...suggestion.perRoomCounts });
+      } else {
+        const initial: Record<number, number> = {};
+        for (const parent of parents) {
+          initial[parent.roomId] = suggestion.groupCount ?? 2;
+        }
+        setPerRoomCounts(initial);
+      }
+      setExtensionHint(
+        `Detectado desde ${extensionSourceLabel(suggestion.source)}`,
+      );
+      return;
+    }
+
+    setGroupCount(2);
     const initial: Record<number, number> = {};
     for (const parent of parents) {
-      initial[parent.roomId] = parent.activity.childActivities?.length || 2;
+      initial[parent.roomId] = 2;
     }
     setPerRoomCounts(initial);
-  }, [roundActivityCode, parents, existingGroups.length]);
+    setExtensionHint(null);
+  }, [roundActivityCode, parents, existingGroups.length, wcif]);
 
   if (parents.length === 0) {
     return (
@@ -95,6 +134,11 @@ export function GroupConfigPanel({
           {existingGroups.length === 1 ? "" : "s"} actual
           {existingGroups.length === 1 ? "" : "es"}
         </p>
+        {extensionHint && (
+          <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+            {extensionHint}
+          </p>
+        )}
       </div>
 
       <div className="flex items-center justify-between gap-4">

@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import { AlertTriangle } from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import {
   Tabs,
@@ -10,13 +11,28 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@workspace/ui/components/alert-dialog";
 import type { Competition } from "@/types/wca";
 import type { WCIF } from "@/types/wcif";
 import { useGroupsStore } from "@/lib/groups/groups-store";
 import { roundIdToActivityCode } from "@/lib/groups/wcif-schedule";
+import { isCompetitionToolsUnavailable } from "@/lib/competition-availability";
+import { pushGroupsWcif } from "@/app/actions";
 import { RoundSelector } from "@/components/groups/round-selector";
 import { GroupConfigPanel } from "@/components/groups/group-config-panel";
 import { AssignmentsPanel } from "@/components/groups/assignments-panel";
+import { DayOfPanel } from "@/components/groups/day-of-panel";
+import { ImportCsvPanel } from "@/components/groups/import-csv-panel";
 
 export function GroupsManager({
   competition,
@@ -25,6 +41,11 @@ export function GroupsManager({
   competition: Competition;
   wcif: WCIF;
 }) {
+  const router = useRouter();
+  const [pushError, setPushError] = useState<string | null>(null);
+  const [pushSuccess, setPushSuccess] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
   const {
     draftWcif,
     isDirty,
@@ -32,6 +53,7 @@ export function GroupsManager({
     load,
     replaceDraft,
     resetAll,
+    markClean,
     setSelectedRoundId,
   } = useGroupsStore();
 
@@ -57,6 +79,26 @@ export function GroupsManager({
     ? roundIdToActivityCode(selectedRoundId)
     : null;
 
+  const canPush =
+    isDirty &&
+    !isCompetitionToolsUnavailable(competition) &&
+    !competition.results_posted_at;
+
+  const handlePush = () => {
+    setPushError(null);
+    setPushSuccess(false);
+    startTransition(async () => {
+      const result = await pushGroupsWcif(competition.id, draftWcif);
+      if (!result.ok) {
+        setPushError(result.error);
+        return;
+      }
+      markClean();
+      setPushSuccess(true);
+      router.refresh();
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -65,14 +107,40 @@ export function GroupsManager({
             {competition.name}
           </h1>
           <p className="text-muted-foreground">
-            Grupos — borrador local (sin escritura a WCA)
+            Grupos — borrador local; publica en WCA cuando esté listo
           </p>
         </div>
-        {isDirty && (
-          <Button type="button" variant="outline" onClick={resetAll}>
-            Descartar cambios
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {isDirty && (
+            <Button type="button" variant="outline" onClick={resetAll}>
+              Descartar cambios
+            </Button>
+          )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button type="button" disabled={!canPush || isPending}>
+                <Upload className="size-4" />
+                {isPending ? "Publicando…" : "Publicar en WCA"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Publicar grupos en WCA?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Se validará el WCIF (check) y luego se enviará un PATCH con
+                  asignaciones y grupos (child activities). Esta acción modifica
+                  la competencia en el sitio de la WCA.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handlePush}>
+                  Publicar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {isDirty && (
@@ -80,8 +148,36 @@ export function GroupsManager({
           <AlertTriangle className="size-4" />
           <AlertTitle>Cambios locales — no guardados en WCA</AlertTitle>
           <AlertDescription>
-            Las asignaciones viven solo en este navegador hasta la fase de
-            escritura WCIF. Exporta CSV/JSON si necesitas conservar el trabajo.
+            Las asignaciones viven en este navegador hasta que publiques.
+            Exporta CSV/JSON si necesitas un respaldo.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {competition.results_posted_at && (
+        <Alert>
+          <AlertTitle>Publicación deshabilitada</AlertTitle>
+          <AlertDescription>
+            Los resultados ya fueron publicados; WCA no permite editar el WCIF
+            a organizadores.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {pushError && (
+        <Alert variant="destructive">
+          <AlertTitle>Error al publicar</AlertTitle>
+          <AlertDescription className="whitespace-pre-wrap font-mono text-xs">
+            {pushError}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {pushSuccess && !isDirty && (
+        <Alert>
+          <AlertTitle>Publicado en WCA</AlertTitle>
+          <AlertDescription>
+            Los grupos y asignaciones se enviaron correctamente.
           </AlertDescription>
         </Alert>
       )}
@@ -92,11 +188,13 @@ export function GroupsManager({
         onSelect={setSelectedRoundId}
       />
 
-      {roundActivityCode && (
+      {roundActivityCode ? (
         <Tabs defaultValue="groups">
           <TabsList>
             <TabsTrigger value="groups">Grupos</TabsTrigger>
             <TabsTrigger value="assignments">Asignaciones</TabsTrigger>
+            <TabsTrigger value="day-of">Día de</TabsTrigger>
+            <TabsTrigger value="import">Importar</TabsTrigger>
           </TabsList>
           <TabsContent value="groups" className="mt-4">
             <GroupConfigPanel
@@ -113,7 +211,20 @@ export function GroupsManager({
               onApply={replaceDraft}
             />
           </TabsContent>
+          <TabsContent value="day-of" className="mt-4">
+            <DayOfPanel
+              wcif={draftWcif}
+              roundActivityCode={roundActivityCode}
+            />
+          </TabsContent>
+          <TabsContent value="import" className="mt-4">
+            <ImportCsvPanel wcif={draftWcif} onApply={replaceDraft} />
+          </TabsContent>
         </Tabs>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Selecciona una ronda para configurar grupos y asignaciones.
+        </p>
       )}
     </div>
   );

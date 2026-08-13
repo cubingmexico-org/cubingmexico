@@ -30,12 +30,12 @@ Umbrella brand describes the job (competition ops). Modules stay named after fea
 - Cloud design save/load (Neon `designs`) + Cubing México certificate templates + co-organizer ACL
 - **Mesa**: staff roles roster + registration overview (CSV export)
 - Tent / table-card canvas presets inside Gafetes
-- **Grupos (3a)**: local WCIF draft, round workspace, group creation, assignment engine, stations, CSV/JSON export (no WCA write yet)
+- **Grupos (3a/3b)**: local WCIF draft, round workspace, assignment engine, stations, CSV/JSON export, day-of views, Round-1 CSV import, optional WCA push (check + PATCH)
 
 Known gaps (later phases):
 
 - Editors: desktop-only
-- Grupos 3b/3c: WCIF write, troubleshooting views, scorecards / task cards
+- Grupos 3c: scorecards / task cards, Gafetes wiring, TNoodle handoff
 
 Relevant code:
 
@@ -63,7 +63,8 @@ Sources: [Groupifier](https://github.com/jonatanklosko/groupifier) ([grouping go
 - **Mesa** covers DD-style staff roster + registration overview (read-only).
 - **Gafetes** covers nametags / tent cards (partial Groupifier printing).
 - **Grupos 3a** covers group creation, assignment engine, conflict checks, stations, local CSV/JSON export.
-- **Still needed:** WCIF write, scorecards/task docs, assignment troubleshooting views, Round-1 CSV import.
+- **Grupos 3b** covers day-of troubleshooting, Round-1 CSV import, extension read, optional WCIF push.
+- **Still needed:** scorecards/task docs (3c), Gafetes group/station wiring, TNoodle handoff.
 
 ### Non-goals (Grupos v1–v2)
 
@@ -134,11 +135,11 @@ Mesa lives at `/desk/[competitionId]` with tabs **Staff** | **Inscripciones**. T
 
 | Feature                              | Module | Status  | Why                                         | Implementation                                                                                                                   | Depends                    |
 | ------------------------------------ | ------ | ------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
-| Person timeline + troubleshooting    | Grupos | planned | Find orphan / unknown assignments fast      | Person assignment timeline by start time; assignments list by stage/group; flag unmatched activity IDs                           | groups-engine              |
-| Scrambler schedule view              | Grupos | planned | DD scrambler-by-room is useful day-of       | Group scrambler assignments by room and day; link to person detail                                                               | groups-engine              |
-| Round-1 CSV import                   | Grupos | planned | Many comps pre-plan R1 in spreadsheets      | Validate CSV → generate missing groups → import assignments (R1 only)                                                            | round-workspace            |
-| Optional WCIF PATCH                  | Data   | planned | Push groups/assignments back to WCA         | Subset PATCH: `persons[].assignments` + child activities; preflight `PUT …/wcif/check`; surface JSON `error`                     | groups-engine, 3a-export   |
-| Extension compatibility              | Data   | planned | Interop with comps already in Groupifier/DD | Read `groupifier.ActivityConfig` / `delegateDashboard.groups` when present; write Organización-owned extension only if required | wcif-write                 |
+| Person timeline + troubleshooting    | Grupos | done    | Find orphan / unknown assignments fast      | Person assignment timeline by start time; assignments list by stage/group; flag unmatched activity IDs                           | groups-engine              |
+| Scrambler schedule view              | Grupos | done    | DD scrambler-by-room is useful day-of       | Group scrambler assignments by room and day; link to person detail                                                               | groups-engine              |
+| Round-1 CSV import                   | Grupos | done    | Many comps pre-plan R1 in spreadsheets      | Validate CSV → generate missing groups → import assignments (R1 only)                                                            | round-workspace            |
+| Optional WCIF PATCH                  | Data   | done    | Push groups/assignments back to WCA         | Subset PATCH: `persons[].assignments` + child activities; preflight `PUT …/wcif/check`; surface JSON `error`                     | groups-engine, 3a-export   |
+| Extension compatibility              | Data   | done    | Interop with comps already in Groupifier/DD | Read `groupifier.ActivityConfig` / `delegateDashboard.groups` when present; write Organización-owned extension only if required | wcif-write                 |
 
 #### Phase 3c — Printables & handoff
 
@@ -182,7 +183,7 @@ WCA applies stricter WCIF schema checks on save (no unknown keys, correct types)
 2. ~~**Phase 1** — DB-backed design save + shared templates~~
 3. ~~**Phase 2** — staff roster + tent cards + desk overview~~
 4. ~~**Phase 3a** — groups route + local draft + round workspace + assignment engine + CSV/JSON export~~
-5. **Phase 3b** — troubleshooting views + Round-1 CSV import + WCIF check/PATCH
+5. ~~**Phase 3b** — troubleshooting views + Round-1 CSV import + WCIF check/PATCH~~
 6. **Phase 3c** — scorecards / task cards + Gafetes wiring + TNoodle handoff
 7. **Phase 4** — guided tour (can land in parallel with 3a), mobile desk, RBAC, MX packs, tools page polish
 
@@ -201,11 +202,11 @@ Organización (shell)
 │                 overlaps DD Staff without write)
 ├── Grupos (/groups)
 │   ├── 3a  Round workspace, child activities, assignment engine, stations, export
-│   ├── 3b  Person/scrambler views, R1 CSV import, WCIF check/PATCH
+│   ├── 3b  Person/scrambler views, R1 CSV import, WCIF check/PATCH (shipped)
 │   └── 3c  Scorecards, task cards, TNoodle handoff
 └── Data
     ├── WCA public WCIF GET (today)
-    ├── WCA WCIF check + subset PATCH (Phase 3b)
+    ├── WCA WCIF check + subset PATCH (Phase 3b — shipped)
     ├── Cubing México API (states / competitor-states)
     └── @workspace/db designs table (Phase 1 — shipped)
 ```
