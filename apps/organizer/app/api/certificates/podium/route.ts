@@ -93,9 +93,11 @@ export async function GET(request: Request): Promise<Response> {
     return true;
   });
 
-  const personIdToName: Record<string, string> = {};
+  const personIdToName: Record<number, string> = {};
   personsWithRegistrantId.forEach((person: Person) => {
-    personIdToName[person.registrantId] = person.name;
+    if (person.registrantId !== null) {
+      personIdToName[person.registrantId] = person.name;
+    }
   });
 
   function getEventData(event: Event) {

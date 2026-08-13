@@ -1,5 +1,4 @@
-import { faker } from "@faker-js/faker";
-import type { Event, Person, Result, EventId, Round, Role } from "@/types/wcif";
+import type { EventId } from "@/types/wcif";
 
 interface ApplicationError extends Error {
   info: string;
@@ -22,52 +21,6 @@ export const fetcher = async (url: string) => {
 
   return res.json();
 };
-
-export function processPersons(persons: Person[]) {
-  const getRole = (role: Role) => (person: Person) =>
-    person.roles.includes(role);
-  const getName = (person: Person) => person.name;
-
-  const delegates = persons.filter(getRole("delegate")).map(getName);
-  const organizers = persons.filter(getRole("organizer")).map(getName);
-
-  const personIdToName: Record<string, string> = {};
-  persons.forEach((person: Person) => {
-    personIdToName[person.registrantId] = person.name;
-  });
-
-  function getEventData(event: Event) {
-    const rounds = event.rounds;
-    const results = rounds[rounds.length - 1]?.results
-      .filter(
-        (result: Result) =>
-          result.ranking !== null &&
-          result.best !== -1 &&
-          result.best !== -2 &&
-          result.ranking >= 1 &&
-          result.ranking <= 3,
-      )
-      .sort((a, b) => a.ranking! - b.ranking!)
-      .map((person) => ({
-        personName: personIdToName[person.personId],
-        result:
-          event.id === "333bf" ||
-          event.id === "444bf" ||
-          event.id === "555bf" ||
-          event.id === "333mbf"
-            ? person.best
-            : person.average,
-      }));
-
-    return results;
-  }
-
-  return {
-    delegates,
-    organizers,
-    getEventData,
-  };
-}
 
 export function transformString(
   s: string,
@@ -316,33 +269,6 @@ export function formatBytes(
       ? (accurateSizes[i] ?? "Bytest")
       : (sizes[i] ?? "Bytes")
   }`;
-}
-
-export function generateFakeResult(ranking: number): Result {
-  return {
-    personId: faker.number.int({ min: 1, max: 3 }),
-    ranking,
-    attempts: Array.from({ length: 5 }, () =>
-      faker.number.int({ min: 500, max: 10000 }),
-    ),
-    best: faker.number.int({ min: 500, max: 1000 }),
-    average: faker.number.int({ min: 500, max: 10000 }),
-  };
-}
-
-export function generateFakeResultsForRound(round: Round): Round {
-  const rankings = [1, 2, 3];
-  const results = rankings.map((ranking) => generateFakeResult(ranking));
-  return { ...round, results };
-}
-
-export function generateFakeResultsForEvent(event: Event): Event {
-  const rounds = event.rounds.map(generateFakeResultsForRound);
-  return { ...event, rounds };
-}
-
-export function generateFakeResultsForAllEvents(events: Event[]): Event[] {
-  return events.map(generateFakeResultsForEvent);
 }
 
 export async function loadGoogleFont(fontFamily: string) {

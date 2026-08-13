@@ -34,7 +34,7 @@ export function Header({ user }: { user: User }) {
         >
           <CubingMexico className="size-12 md:size-14" />
           <div className="flex flex-col">
-            <span className="text-xl font-bold md:text-2xl">Certificados</span>
+            <span className="text-xl font-bold md:text-2xl">Organización</span>
             <span className="hidden text-xs font-normal opacity-90 sm:block">
               Cubing México
             </span>

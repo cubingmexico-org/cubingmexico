@@ -1,3 +1,21 @@
+/**
+ * WCIF types used by Organización (read path).
+ *
+ * Source of truth: https://github.com/thewca/wcif (stable = 1.1)
+ * Fetch: GET /api/v0/competitions/:id/wcif/public
+ *
+ * Consumed today:
+ * - persons: name, wcaId, registrantId, countryIso2, gender, roles,
+ *   registration.eventIds / isCompeting, avatar.url
+ * - events → rounds → results: personId, ranking, best, average
+ *
+ * Typed for future modules but not consumed yet:
+ * - schedule, assignments, personalBests, competitorLimit, extensions
+ *
+ * This app does not PATCH WCIF yet. When it does (Grupos), payloads must
+ * pass PUT /api/v0/competitions/wcif/check and surface response.error.
+ */
+
 export type EventId =
   | "333"
   | "222"
@@ -23,23 +41,27 @@ export interface Avatar {
   thumbUrl: string;
 }
 
+/** WCIF role strings commonly returned on persons.roles */
 export type Role =
-  | "staff-other"
-  | "staff-judge"
-  | "staff-scrambler"
-  | "staff-judge"
   | "delegate"
   | "trainee-delegate"
-  | "organizer";
+  | "organizer"
+  | "staff-judge"
+  | "staff-scrambler"
+  | "staff-runner"
+  | "staff-dataentry"
+  | "staff-announcer"
+  | "staff-other";
 
 export interface Person {
   name: string;
   wcaUserId: number;
   wcaId: string | null;
-  registrantId: number;
+  /** null when the person is not a registered competitor */
+  registrantId: number | null;
   countryIso2: string;
   gender: "m" | "f" | "o" | null;
-  registration: Registration;
+  registration: Registration | null;
   avatar: Avatar | null;
   roles: Role[];
   assignments: Assignment[];
@@ -50,14 +72,15 @@ export interface Person {
 interface Registration {
   wcaRegistrationId: number;
   eventIds: EventId[];
-  status: string; // "accepted"
+  status: string;
   isCompeting: boolean;
 }
 
 interface Assignment {
   activityId: number;
-  stationNumber: number;
-  assignmentCode: "competidor" | Role;
+  stationNumber: number | null;
+  /** WCIF uses "competitor" plus staff-* / custom staff codes */
+  assignmentCode: string;
 }
 
 interface PersonalBest {
@@ -96,12 +119,15 @@ export interface Event {
 }
 
 export interface WCIF {
+  formatVersion?: string;
   id: string;
   name: string;
+  shortName?: string;
   schedule: Schedule;
-  competitorLimit: number;
+  competitorLimit: number | null;
   events: Event[];
   persons: Person[];
+  extensions?: unknown[];
 }
 
 interface Schedule {
@@ -111,8 +137,32 @@ interface Schedule {
 }
 
 interface Venue {
+  id: number;
+  name: string;
   latitudeMicrodegrees: number;
   longitudeMicrodegrees: number;
+  countryIso2: string;
+  timezone: string;
+  rooms: Room[];
+}
+
+interface Room {
+  id: number;
+  name: string;
+  color: string;
+  activities: Activity[];
+  extensions?: unknown[];
+}
+
+interface Activity {
+  id: number;
+  name: string;
+  activityCode: string;
+  startTime: string;
+  endTime: string;
+  childActivities: Activity[];
+  scrambleSetId?: number | null;
+  extensions?: unknown[];
 }
 
 export interface ParticipantData {
@@ -136,3 +186,6 @@ export interface PodiumData {
 export interface ExtendedPerson extends Person {
   stateId: string | null;
 }
+
+/** Person with a non-null registrantId (registered competitor). */
+export type RegisteredPerson = Person & { registrantId: number };

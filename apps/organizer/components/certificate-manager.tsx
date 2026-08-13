@@ -60,7 +60,7 @@ import {
   joinPersons,
   transformString,
 } from "@/lib/utils";
-import type { ParticipantData, Person, PodiumData } from "@/types/wcif";
+import type { ParticipantData, RegisteredPerson, PodiumData } from "@/types/wcif";
 import Tiptap from "./editor/tiptap";
 import { participation, podium } from "@/data/certificates";
 import { JSONContent } from "@tiptap/react";
@@ -95,7 +95,7 @@ export function CertificateManager({
   persons,
 }: {
   competition: Competition;
-  persons: Person[];
+  persons: RegisteredPerson[];
 }) {
   const [activeTab, setActiveTab] = useState<"podium" | "participation">(
     "podium",
@@ -1167,12 +1167,10 @@ export function CertificateManager({
                           <SelectContent>
                             <SelectItem value="general">General</SelectItem>
                             <SelectItem value="female">Femeniles</SelectItem>
-                            <SelectItem value="newcomer" disabled>
+                            <SelectItem value="newcomer">
                               Primera vez
                             </SelectItem>
-                            <SelectItem value="age" disabled>
-                              Edad
-                            </SelectItem>
+                            <SelectItem value="age">Edad</SelectItem>
                           </SelectContent>
                         </Select>
                         {selectedTemplate === "newcomer" && (
@@ -1202,8 +1200,15 @@ export function CertificateManager({
                                 }}
                               />
                               <p className="text-xs text-muted-foreground">
-                                Sube un archivo CSV con columnas 'Registrant Id'
-                                y 'Birth Date' (formato: YYYY-MM-DD)
+                                CSV con columnas{" "}
+                                <span className="font-medium">
+                                  Registrant Id
+                                </span>{" "}
+                                y{" "}
+                                <span className="font-medium">Birth Date</span>{" "}
+                                (YYYY-MM-DD). La edad se calcula al último día
+                                de la competencia. Sube el archivo antes de
+                                generar.
                               </p>
                               {csvError && (
                                 <p className="text-xs text-destructive">

@@ -14,8 +14,9 @@ interface RootLayoutProps {
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Certificados - Cubing México",
-    description: "Certificados - Cubing México",
+    title: "Organización - Cubing México",
+    description:
+      "Herramientas de organización de competencias WCA: certificados, gafetes y más.",
   };
 }
 

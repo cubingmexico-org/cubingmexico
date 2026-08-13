@@ -1,6 +1,6 @@
 "use client";
 
-import { format, subMonths, isBefore } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { MapPin, Calendar, Award, IdCard } from "lucide-react";
 import {
@@ -15,6 +15,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { Competition } from "@/types/wca";
 import { cn } from "@workspace/ui/lib/utils";
 import { useRouter } from "next/navigation";
+import { isCompetitionToolsUnavailable } from "@/lib/competition-availability";
 
 const statusConfig = {
   upcoming: {
@@ -49,14 +50,7 @@ export function CompetitionCard({
   const remainingEvents = competition.event_ids.length - maxVisibleEvents;
   const router = useRouter();
 
-  const resultsPostedAt = competition.results_posted_at
-    ? new Date(competition.results_posted_at)
-    : null;
-  const isResultsOlderThanAMonth = resultsPostedAt
-    ? isBefore(resultsPostedAt, subMonths(new Date(), 1))
-    : false;
-  const isNotAvailable =
-    competition.announced_at === null || isResultsOlderThanAMonth;
+  const isNotAvailable = isCompetitionToolsUnavailable(competition);
 
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:border-primary/50">

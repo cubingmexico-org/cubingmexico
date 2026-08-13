@@ -1,8 +1,9 @@
 import { CertificateManager } from "@/components/certificate-manager";
+import { CompetitionModuleNav } from "@/components/competition-module-nav";
 import { getCompetitionById, getWCIFByCompetitionId } from "@/db/queries";
+import { isCompetitionToolsUnavailable } from "@/lib/competition-availability";
 import { AlertCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { subMonths, isBefore } from "date-fns";
 import { notFound } from "next/navigation";
 
 type Params = Promise<{ competitionId: string }>;
@@ -22,16 +23,12 @@ export default async function Page({
     notFound();
   }
 
-  const resultsPostedAt = new Date(competition.end_date);
-  const isResultsOlderThanAMonth = resultsPostedAt
-    ? isBefore(resultsPostedAt, subMonths(new Date(), 1))
-    : false;
-
-  if (isResultsOlderThanAMonth) {
+  if (isCompetitionToolsUnavailable(competition)) {
     return (
       <div className="relative border-2 border-amber-200 dark:border-amber-900/50 rounded-xl p-8 sm:p-10 shadow-lg bg-linear-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 backdrop-blur-sm">
         <div className="absolute inset-0 bg-grid-amber-900/[0.02] dark:bg-grid-amber-100/[0.02] rounded-xl" />
         <div className="relative space-y-6">
+          <CompetitionModuleNav competitionId={competitionId} />
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="rounded-full bg-amber-100 dark:bg-amber-900/30 p-3 ring-8 ring-amber-50 dark:ring-amber-900/20">
               <AlertCircle className="h-8 w-8 text-amber-600 dark:text-amber-500" />
@@ -44,8 +41,9 @@ export default async function Page({
           <div className="space-y-5 text-base">
             <div className="rounded-lg bg-white/60 dark:bg-gray-900/40 p-5 border border-amber-100 dark:border-amber-900/30">
               <p className="leading-relaxed text-gray-700 dark:text-gray-300">
-                Los resultados de esta competencia tienen más de 1 mes, por lo
-                que no están disponibles para generar certificados.
+                Los resultados de esta competencia se publicaron hace más de 1
+                mes, por lo que ya no están disponibles para generar
+                certificados.
               </p>
             </div>
           </div>
@@ -63,6 +61,7 @@ export default async function Page({
       <div className="relative border-2 border-amber-200 dark:border-amber-900/50 rounded-xl p-8 sm:p-10 shadow-lg bg-linear-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 backdrop-blur-sm">
         <div className="absolute inset-0 bg-grid-amber-900/[0.02] dark:bg-grid-amber-100/[0.02] rounded-xl" />
         <div className="relative space-y-6">
+          <CompetitionModuleNav competitionId={competitionId} />
           <div className="flex flex-col items-center gap-4 text-center">
             <div className="rounded-full bg-amber-100 dark:bg-amber-900/30 p-3 ring-8 ring-amber-50 dark:ring-amber-900/20">
               <AlertCircle className="h-8 w-8 text-amber-600 dark:text-amber-500" />
@@ -102,7 +101,15 @@ export default async function Page({
     );
   }
 
-  const persons = wcif.persons.filter((person) => person.registrantId !== null);
+  const persons = wcif.persons.filter(
+    (person): person is import("@/types/wcif").RegisteredPerson =>
+      person.registrantId !== null,
+  );
 
-  return <CertificateManager competition={competition} persons={persons} />;
+  return (
+    <>
+      <CompetitionModuleNav competitionId={competitionId} />
+      <CertificateManager competition={competition} persons={persons} />
+    </>
+  );
 }

@@ -6,7 +6,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "dev:web": "turbo dev --filter=web",
-    "dev:wca-certificates": "turbo dev --filter=wca-certificates",
+    "dev:organizer": "turbo dev --filter=organizer",
     "lint": "turbo lint",
     "check-types": "turbo check-types",
     "test": "turbo test",
