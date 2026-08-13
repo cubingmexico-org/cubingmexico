@@ -1,10 +1,9 @@
-import { BadgeManager } from "@/components/badge-manager";
 import { CompetitionModuleNav } from "@/components/competition-module-nav";
+import { DeskManager } from "@/components/desk/desk-manager";
 import {
   getCompetitionById,
   getCompetitorStates,
   getStates,
-  getTeams,
   getWCIFByCompetitionId,
 } from "@/db/queries";
 import { isCompetitionToolsUnavailable } from "@/lib/competition-availability";
@@ -49,7 +48,7 @@ export default async function Page({
             <div className="rounded-lg bg-white/60 dark:bg-gray-900/40 p-5 border border-amber-100 dark:border-amber-900/30">
               <p className="leading-relaxed text-gray-700 dark:text-gray-300">
                 Los resultados de esta competencia se publicaron hace más de 1
-                mes, por lo que ya no están disponibles para generar gafetes.
+                mes, por lo que ya no están disponibles en Mesa.
               </p>
             </div>
           </div>
@@ -81,8 +80,7 @@ export default async function Page({
             <div className="rounded-lg bg-white/60 dark:bg-gray-900/40 p-5 border border-amber-100 dark:border-amber-900/30">
               <p className="leading-relaxed text-gray-700 dark:text-gray-300">
                 No se pudo encontrar el WCIF para esta competencia. Por favor,
-                asegúrate de que el WCIF esté disponible antes de intentar
-                generar gafetes.
+                asegúrate de que el WCIF esté disponible antes de usar Mesa.
               </p>
             </div>
 
@@ -108,7 +106,6 @@ export default async function Page({
   }
 
   const states = await getStates();
-  const teams = await getTeams();
   const competitorStates = await getCompetitorStates(competitionId);
   const extendedPersons = enrichPersonsWithStates(
     wcif.persons,
@@ -118,11 +115,10 @@ export default async function Page({
   return (
     <>
       <CompetitionModuleNav competitionId={competitionId} />
-      <BadgeManager
+      <DeskManager
         competition={competition}
         persons={extendedPersons}
         states={states}
-        teams={teams}
       />
     </>
   );

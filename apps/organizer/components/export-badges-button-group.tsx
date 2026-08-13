@@ -13,6 +13,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu";
 import { useState } from "react";
 import { useCanvasStore } from "@/lib/canvas-store";
+import { getPrimaryRoleLabel } from "@/lib/person-roles";
 import { toast } from "sonner";
 import type { ExtendedPerson } from "@/types/wcif";
 import JSZip from "jszip";
@@ -179,21 +180,7 @@ export function ExportBadgesButtonGroup({
               currentPerson.wcaId || "Nuevo",
             );
 
-            const rol = currentPerson.roles.includes("delegate")
-              ? currentPerson.gender === "f"
-                ? "Delegada"
-                : "Delegado"
-              : currentPerson.roles.includes("organizer")
-                ? currentPerson.gender === "f"
-                  ? "Organizadora"
-                  : "Organizador"
-                : currentPerson.roles.find((r) => r.startsWith("staff-"))
-                  ? currentPerson.gender === "f"
-                    ? "Voluntaria"
-                    : "Voluntario"
-                  : currentPerson.gender === "f"
-                    ? "Competidora"
-                    : "Competidor";
+            const rol = getPrimaryRoleLabel(currentPerson);
 
             content = content.replace(/@rol/gi, rol);
 

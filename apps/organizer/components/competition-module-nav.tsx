@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, IdCard } from "lucide-react";
+import { Award, ClipboardList, IdCard } from "lucide-react";
 import { cn } from "@workspace/ui/lib/utils";
 
 const modules = [
@@ -19,6 +19,13 @@ const modules = [
     href: (competitionId: string) => `/badges/${competitionId}`,
     icon: IdCard,
     match: "/badges/",
+  },
+  {
+    id: "desk",
+    label: "Mesa",
+    href: (competitionId: string) => `/desk/${competitionId}`,
+    icon: ClipboardList,
+    match: "/desk/",
   },
 ] as const;
 

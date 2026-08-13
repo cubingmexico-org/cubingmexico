@@ -2,7 +2,7 @@
 
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MapPin, Calendar, Award, IdCard } from "lucide-react";
+import { MapPin, Calendar, Award, ClipboardList, IdCard } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -131,6 +131,18 @@ export function CompetitionCard({
         >
           <IdCard />
           Gafetes
+        </Button>
+        <Button
+          variant="outline"
+          className="w-full"
+          size="sm"
+          disabled={isNotAvailable}
+          onClick={() => {
+            router.push(`/desk/${competition.id}`);
+          }}
+        >
+          <ClipboardList />
+          Mesa
         </Button>
       </CardFooter>
     </Card>

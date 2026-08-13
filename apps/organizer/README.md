@@ -1,6 +1,6 @@
 # Organización
 
-Cubing México organizer suite: design and export **certificates** and **badges** for WCA competitions, with more desk/ops modules planned.
+Cubing México organizer suite: design and export **certificates** and **badges** for WCA competitions, plus a read-only **Mesa** desk (staff + registrations). More ops modules planned.
 
 Product roadmap: [`docs/organizacion-roadmap.md`](../../docs/organizacion-roadmap.md)
 
@@ -8,11 +8,13 @@ Product roadmap: [`docs/organizacion-roadmap.md`](../../docs/organizacion-roadma
 
 - Rich text certificates (TipTap + pdfmake) for podium and participation
 - Badge canvas designer with ZIP / PDF export
+- Tent / table-card canvas presets (inside Gafetes)
 - Age and newcomer podium filters
 - Cloud save/load for designs (shared with co-organizers) + template library
 - Local JSON download/upload as backup
+- Mesa: staff roles roster + registration overview (CSV)
 - WCA OAuth (`manage_competitions`) via Better Auth
-- Public WCIF integration + Mexico state enrichment on badges
+- Public WCIF integration + Mexico state enrichment on badges and desk
 
 ## Getting Started
 
@@ -75,6 +77,7 @@ apps/organizer/
 │   ├── (root)/
 │   │   ├── certificates/[competitionId]/
 │   │   ├── badges/[competitionId]/
+│   │   ├── desk/[competitionId]/
 │   │   └── page.tsx
 │   └── api/
 │       └── designs/
