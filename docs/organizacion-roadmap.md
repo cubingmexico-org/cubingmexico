@@ -30,12 +30,12 @@ Umbrella brand describes the job (competition ops). Modules stay named after fea
 - Cloud design save/load (Neon `designs`) + Cubing México certificate templates + co-organizer ACL
 - **Mesa**: staff roles roster + registration overview (CSV export)
 - Tent / table-card canvas presets inside Gafetes
-- **Grupos (3a/3b)**: local WCIF draft, round workspace, assignment engine, stations, CSV/JSON export, day-of views, Round-1 CSV import, optional WCA push (check + PATCH)
+- **Grupos (3a–3c)**: local WCIF draft, assignment engine, day-of views, Round-1 CSV import, optional WCA push, scorecards/task cards, TNoodle handoff; Gafetes `@grupo`/`@estación` from published WCIF
 
 Known gaps (later phases):
 
 - Editors: desktop-only
-- Grupos 3c: scorecards / task cards, Gafetes wiring, TNoodle handoff
+- Phase 4: guided tour, mobile desk, fine-grained roles, MX packs polish
 
 Relevant code:
 
@@ -64,7 +64,8 @@ Sources: [Groupifier](https://github.com/jonatanklosko/groupifier) ([grouping go
 - **Gafetes** covers nametags / tent cards (partial Groupifier printing).
 - **Grupos 3a** covers group creation, assignment engine, conflict checks, stations, local CSV/JSON export.
 - **Grupos 3b** covers day-of troubleshooting, Round-1 CSV import, extension read, optional WCIF push.
-- **Still needed:** scorecards/task docs (3c), Gafetes group/station wiring, TNoodle handoff.
+- **Grupos 3c** covers scorecards, task cards, Gafetes `@grupo`/`@estación`, TNoodle handoff, tools demotion.
+- **Still needed (Phase 4):** guided tour, mobile desk, RBAC, MX packs polish.
 
 ### Non-goals (Grupos v1–v2)
 
@@ -147,11 +148,11 @@ Mesa lives at `/desk/[competitionId]` with tabs **Staff** | **Inscripciones**. T
 
 | Feature                         | Module  | Status  | Why                                      | Implementation                                                                                          | Depends           |
 | ------------------------------- | ------- | ------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------- | ----------------- |
-| Scorecards PDF                  | Grupos  | planned | Groupifier’s main remaining reason to use | pdfmake (patterns from Certificados); per-round / blank later-round flows                               | groups-engine     |
-| Competitor task cards / sheets  | Grupos  | planned | Staff + compete assignments on paper     | Group sheets and per-person task cards                                                                  | groups-engine     |
-| Gafetes group/station wiring    | Gafetes | planned | Nametags already ship; need group data   | Feed group + station into badge export (existing competition-groups QR hooks)                           | groups-engine     |
-| Scramble set / TNoodle handoff  | Grupos  | planned | Light integration, not a scrambler       | Export metadata aligned with `rounds.scrambleSetCount`; deep-link TNoodle                               | groups-engine     |
-| External tool demotion          | Web     | planned | Tools page still lists only Groupifier   | Keep Groupifier/DD links until print parity; then mark Organización Grupos as in-house (Phase 4 tools) | scorecards, 3b    |
+| Scorecards PDF                  | Grupos  | done    | Groupifier’s main remaining reason to use | pdfmake (patterns from Certificados); per-round / blank later-round flows                               | groups-engine     |
+| Competitor task cards / sheets  | Grupos  | done    | Staff + compete assignments on paper     | Group sheets and per-person task cards                                                                  | groups-engine     |
+| Gafetes group/station wiring    | Gafetes | done    | Nametags already ship; need group data   | Feed group + station into badge export (existing competition-groups QR hooks)                           | groups-engine     |
+| Scramble set / TNoodle handoff  | Grupos  | done    | Light integration, not a scrambler       | Export metadata aligned with `rounds.scrambleSetCount`; deep-link TNoodle                               | groups-engine     |
+| External tool demotion          | Web     | done    | Tools page still lists only Groupifier   | Keep Groupifier/DD links until print parity; then mark Organización Grupos as in-house (Phase 4 tools) | scorecards, 3b    |
 
 #### WCIF write gate
 
@@ -184,7 +185,7 @@ WCA applies stricter WCIF schema checks on save (no unknown keys, correct types)
 3. ~~**Phase 2** — staff roster + tent cards + desk overview~~
 4. ~~**Phase 3a** — groups route + local draft + round workspace + assignment engine + CSV/JSON export~~
 5. ~~**Phase 3b** — troubleshooting views + Round-1 CSV import + WCIF check/PATCH~~
-6. **Phase 3c** — scorecards / task cards + Gafetes wiring + TNoodle handoff
+6. ~~**Phase 3c** — scorecards / task cards + Gafetes wiring + TNoodle handoff~~
 7. **Phase 4** — guided tour (can land in parallel with 3a), mobile desk, RBAC, MX packs, tools page polish
 
 ## Architecture sketch
@@ -203,7 +204,7 @@ Organización (shell)
 ├── Grupos (/groups)
 │   ├── 3a  Round workspace, child activities, assignment engine, stations, export
 │   ├── 3b  Person/scrambler views, R1 CSV import, WCIF check/PATCH (shipped)
-│   └── 3c  Scorecards, task cards, TNoodle handoff
+│   └── 3c  Scorecards, task cards, TNoodle handoff (shipped)
 └── Data
     ├── WCA public WCIF GET (today)
     ├── WCA WCIF check + subset PATCH (Phase 3b — shipped)

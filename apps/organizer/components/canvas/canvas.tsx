@@ -32,21 +32,26 @@ import {
   DialogFooter,
 } from "@workspace/ui/components/dialog";
 import { useState } from "react";
-import type { EventId, ExtendedPerson } from "@/types/wcif";
+import type { EventId, ExtendedPerson, WCIF } from "@/types/wcif";
 import { State, Team } from "@/db/queries";
 import { authClient } from "@/lib/auth-client";
 import { DesignLibraryDialog } from "@/components/design-library-dialog";
+import { getBadgeGroupStationFields } from "@/lib/groups/badge-fields";
 
 interface CanvasProps {
   states: State[];
   teams: Team[];
   eventIds: EventId[];
+  persons?: ExtendedPerson[];
+  wcif?: WCIF;
 }
 
 export function Canvas({
   states,
   teams,
   eventIds,
+  persons = [],
+  wcif,
 }: CanvasProps): React.JSX.Element {
   const {
     elements,
@@ -77,21 +82,37 @@ export function Canvas({
 
   const currentYear = new Date().getFullYear();
 
+  const sessionWcaId =
+    session.data?.user?.wcaId || session.data?.user?.id || null;
+  const matchedPerson = persons.find(
+    (p) =>
+      (sessionWcaId && p.wcaId === sessionWcaId) ||
+      (sessionWcaId && String(p.wcaUserId) === sessionWcaId),
+  );
+
   const currentPerson = {
-    name: session.data?.user?.name || "Leonardo Del Toro",
-    wcaId:
-      session.data?.user?.wcaId ||
-      session.data?.user?.id ||
-      `${currentYear}ABCD01`,
+    name: session.data?.user?.name || matchedPerson?.name || "Leonardo Del Toro",
+    wcaId: sessionWcaId || matchedPerson?.wcaId || `${currentYear}ABCD01`,
     avatar: {
-      url: session.data?.user?.image || "/avatar.png",
-      thumbUrl: session.data?.user?.image || "/avatar.png",
+      url:
+        session.data?.user?.image ||
+        matchedPerson?.avatar?.url ||
+        "/avatar.png",
+      thumbUrl:
+        session.data?.user?.image ||
+        matchedPerson?.avatar?.thumbUrl ||
+        "/avatar.png",
     },
-    registration: { eventIds },
-    roles: [] as string[],
-    registrantId: 1,
-    countryIso2: "MX",
-    stateId: "NAY",
+    registration: matchedPerson?.registration ?? { eventIds },
+    roles: matchedPerson?.roles ?? [],
+    registrantId: matchedPerson?.registrantId ?? 1,
+    countryIso2: matchedPerson?.countryIso2 ?? "MX",
+    stateId: matchedPerson?.stateId ?? "NAY",
+    assignments: matchedPerson?.assignments ?? [],
+    wcaUserId: matchedPerson?.wcaUserId ?? 0,
+    personalBests: matchedPerson?.personalBests ?? [],
+    extensions: matchedPerson?.extensions ?? [],
+    gender: matchedPerson?.gender ?? null,
   } as ExtendedPerson;
 
   const previewCanvas = async () => {
@@ -266,6 +287,13 @@ export function Canvas({
           )?.name;
 
           content = content.replace(/@team/gi, teamName || "Desconocido");
+
+          const { grupo, estacion } = getBadgeGroupStationFields(
+            currentPerson,
+            wcif,
+          );
+          content = content.replace(/@grupo/gi, grupo || "—");
+          content = content.replace(/@estación/gi, estacion || "—");
 
           // Calculate optimal font size and split into lines
           const { fontSize: optimalFontSize, lines } =

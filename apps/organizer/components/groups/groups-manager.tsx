@@ -33,6 +33,7 @@ import { GroupConfigPanel } from "@/components/groups/group-config-panel";
 import { AssignmentsPanel } from "@/components/groups/assignments-panel";
 import { DayOfPanel } from "@/components/groups/day-of-panel";
 import { ImportCsvPanel } from "@/components/groups/import-csv-panel";
+import { PrintablesPanel } from "@/components/groups/printables-panel";
 
 export function GroupsManager({
   competition,
@@ -195,6 +196,7 @@ export function GroupsManager({
             <TabsTrigger value="assignments">Asignaciones</TabsTrigger>
             <TabsTrigger value="day-of">Día de</TabsTrigger>
             <TabsTrigger value="import">Importar</TabsTrigger>
+            <TabsTrigger value="printables">Imprimibles</TabsTrigger>
           </TabsList>
           <TabsContent value="groups" className="mt-4">
             <GroupConfigPanel
@@ -219,6 +221,12 @@ export function GroupsManager({
           </TabsContent>
           <TabsContent value="import" className="mt-4">
             <ImportCsvPanel wcif={draftWcif} onApply={replaceDraft} />
+          </TabsContent>
+          <TabsContent value="printables" className="mt-4">
+            <PrintablesPanel
+              wcif={draftWcif}
+              roundActivityCode={roundActivityCode}
+            />
           </TabsContent>
         </Tabs>
       ) : (

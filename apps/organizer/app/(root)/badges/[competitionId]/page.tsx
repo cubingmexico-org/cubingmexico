@@ -123,6 +123,7 @@ export default async function Page({
         persons={extendedPersons}
         states={states}
         teams={teams}
+        wcif={wcif}
       />
     </>
   );

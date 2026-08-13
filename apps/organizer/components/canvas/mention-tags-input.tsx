@@ -17,6 +17,8 @@ export const ALLOWED_MENTIONS = [
   "país",
   "estado",
   "team",
+  "grupo",
+  "estación",
 ] as const;
 
 function escapeRegExp(value: string) {
