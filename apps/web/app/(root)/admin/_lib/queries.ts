@@ -84,6 +84,20 @@ export async function getSocialPosts({
   };
 }
 
+export async function deleteSocialPost(id: string) {
+  const [deleted] = await db
+    .delete(socialPost)
+    .where(eq(socialPost.id, id))
+    .returning({
+      id: socialPost.id,
+      postType: socialPost.postType,
+      subjectKey: socialPost.subjectKey,
+      platform: socialPost.platform,
+    });
+
+  return deleted ?? null;
+}
+
 export async function getSocialPostStats() {
   const [totals] = await db
     .select({
