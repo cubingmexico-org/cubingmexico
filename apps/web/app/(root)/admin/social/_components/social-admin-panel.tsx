@@ -2,11 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CheckCheck, ClipboardCopy, Download, Eye, Send } from "lucide-react";
 import { SiFacebook, SiInstagram } from "@icons-pack/react-simple-icons";
-import { Button } from "@workspace/ui/components/button";
+import { Button, buttonVariants } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import {
   Card,
@@ -55,6 +55,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog";
+import { cn } from "@workspace/ui/lib/utils";
 
 export type SocialPostType =
   | "resultados"
@@ -344,6 +345,7 @@ function PreviewButton({
 }
 
 export function SocialAdminPanel({
+  tab = "pendientes",
   includeOlder = false,
   pendingResultados,
   pendingRecords,
@@ -352,8 +354,12 @@ export function SocialAdminPanel({
   pendingWeeklyDigest,
   pendingStreaksMonthly,
   posts,
+  postsTotal = 0,
+  page = 1,
+  pageSize = 30,
   stats,
 }: {
+  tab?: "pendientes" | "historial";
   includeOlder?: boolean;
   pendingResultados: PendingResultadosRow[];
   pendingRecords: PendingRecordRow[];
@@ -362,10 +368,12 @@ export function SocialAdminPanel({
   pendingWeeklyDigest: PendingWeeklyDigestRow[];
   pendingStreaksMonthly: PendingStreaksMonthlyRow[];
   posts: SocialPostRow[];
+  postsTotal?: number;
+  page?: number;
+  pageSize?: number;
   stats: SocialPostStats;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const [busyAction, setBusyAction] = React.useState<
     "download" | "publish" | "mark" | null
@@ -508,6 +516,9 @@ export function SocialAdminPanel({
     pendingWeeklyDigest.length +
     pendingStreaksMonthly.length;
 
+  const totalPages = Math.max(1, Math.ceil(postsTotal / pageSize));
+  const currentPage = Math.min(page, totalPages);
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -518,7 +529,9 @@ export function SocialAdminPanel({
         </Stat>
         <Stat>
           <StatLabel>Pendientes</StatLabel>
-          <StatValue className="tabular-nums">{pendingCount}</StatValue>
+          <StatValue className="tabular-nums">
+            {tab === "pendientes" ? pendingCount : "—"}
+          </StatValue>
           <StatDescription>Faltan Facebook y/o Instagram</StatDescription>
         </Stat>
         <Stat>
@@ -543,499 +556,591 @@ export function SocialAdminPanel({
         </Stat>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-medium">Pendientes recientes</p>
-          <p className="text-muted-foreground text-sm">
-            RESULTADOS y RÉCORDS por defecto de la última semana.
-          </p>
-        </div>
-        <div className="w-full space-y-2 sm:w-56">
-          <Label htmlFor="social-age-filter">Antigüedad</Label>
-          <Select
-            value={includeOlder ? "all" : "week"}
-            onValueChange={(value) => {
-              const params = new URLSearchParams(searchParams.toString());
-              if (value === "all") {
-                params.set("older", "1");
-              } else {
-                params.delete("older");
-              }
-              const query = params.toString();
-              router.push(query ? `/admin/social?${query}` : "/admin/social");
-            }}
-          >
-            <SelectTrigger id="social-age-filter" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="week">Última semana</SelectItem>
-              <SelectItem value="all">Todos</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pendientes · RESULTADOS</CardTitle>
-          <CardDescription>
-            Competencias MX con resultados sin Facebook y/o Instagram
-            {includeOlder ? "." : " (última semana)."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingResultados.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              {includeOlder
-                ? "No hay RESULTADOS pendientes."
-                : "No hay RESULTADOS pendientes de la última semana."}
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Competencia</TableHead>
-                    <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Vista previa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingResultados.map((row) => {
-                    return (
-                      <TableRow key={row.subjectKey}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">{row.name}</p>
-                            <p className="text-muted-foreground text-xs">
-                              {row.cityName} · {row.id}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{missingPlatformBadges(row)}</TableCell>
-                        <TableCell className="text-right">
-                          <PreviewButton
-                            postType="resultados"
-                            subjectKey={row.subjectKey}
-                            name={row.name}
-                            disabled={busyKey !== null}
-                            onPreview={setPreviewTarget}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+      <nav className="flex flex-wrap gap-2">
+        <Link
+          href={includeOlder ? "/admin/social?older=1" : "/admin/social"}
+          className={cn(
+            buttonVariants({
+              variant: tab === "pendientes" ? "default" : "outline",
+              size: "sm",
+            }),
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pendientes · RÉCORDS</CardTitle>
-          <CardDescription>
-            NR / NAR / WR sin publicar en alguna plataforma
-            {includeOlder ? "." : " (última semana)."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingRecords.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              {includeOlder
-                ? "No hay RÉCORDS pendientes."
-                : "No hay RÉCORDS pendientes de la última semana."}
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Récord</TableHead>
-                    <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Vista previa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingRecords.map((row) => {
-                    return (
-                      <TableRow key={row.subjectKey}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">
-                              {row.level} · {row.personName}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              {row.stateName ? `${row.stateName} · ` : null}
-                              {row.eventName} ({row.kind})
-                              {row.competitionName
-                                ? ` · ${row.competitionName}`
-                                : ""}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{missingPlatformBadges(row)}</TableCell>
-                        <TableCell className="text-right">
-                          <PreviewButton
-                            postType="record"
-                            subjectKey={row.subjectKey}
-                            name={`${row.level} ${row.personName}`}
-                            disabled={busyKey !== null}
-                            onPreview={setPreviewTarget}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+        >
+          Pendientes
+        </Link>
+        <Link
+          href="/admin/social?tab=historial"
+          className={cn(
+            buttonVariants({
+              variant: tab === "historial" ? "default" : "outline",
+              size: "sm",
+            }),
           )}
-        </CardContent>
-      </Card>
+        >
+          Historial
+        </Link>
+      </nav>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pendientes · PRÓXIMAS</CardTitle>
-          <CardDescription>
-            Competencias MX futuras aún no anunciadas en redes.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingUpcoming.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No hay PRÓXIMAS pendientes.
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Competencia</TableHead>
-                    <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Vista previa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingUpcoming.map((row) => {
-                    return (
-                      <TableRow key={row.subjectKey}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">{row.name}</p>
-                            <p className="text-muted-foreground text-xs">
-                              {new Date(row.startDate).toLocaleDateString(
-                                "es-MX",
-                              )}{" "}
-                              · {row.cityName}
-                              {row.stateName ? ` · ${row.stateName}` : ""}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{missingPlatformBadges(row)}</TableCell>
-                        <TableCell className="text-right">
-                          <PreviewButton
-                            postType="upcoming"
-                            subjectKey={row.subjectKey}
-                            name={row.name}
-                            disabled={busyKey !== null}
-                            onPreview={setPreviewTarget}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+      {tab === "pendientes" ? (
+        <>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-medium">Pendientes recientes</p>
+              <p className="text-muted-foreground text-sm">
+                RESULTADOS y RÉCORDS por defecto de la última semana.
+              </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pendientes · SEMANA</CardTitle>
-          <CardDescription>
-            Digest semanal (lunes México). Recap de competencias W−2 +
-            resultados que llegaron en W−1; lookahead 14 días. SRs solo
-            agregados.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingWeeklyDigest.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No hay SEMANA pendiente (ya publicada en ambas plataformas).
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Semana</TableHead>
-                    <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Vista previa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingWeeklyDigest.map((row) => {
-                    return (
-                      <TableRow key={row.subjectKey}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">Semana {row.weekKey}</p>
-                            <p className="text-muted-foreground text-xs">
-                              Recap con lag W−2
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{missingPlatformBadges(row)}</TableCell>
-                        <TableCell className="text-right">
-                          <PreviewButton
-                            postType="weekly_digest"
-                            subjectKey={row.subjectKey}
-                            name={`Semana ${row.weekKey}`}
-                            disabled={busyKey !== null}
-                            onPreview={setPreviewTarget}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+            <div className="w-full space-y-2 sm:w-56">
+              <Label htmlFor="social-age-filter">Antigüedad</Label>
+              <Select
+                value={includeOlder ? "all" : "week"}
+                onValueChange={(value) => {
+                  const params = new URLSearchParams();
+                  if (value === "all") {
+                    params.set("older", "1");
+                  }
+                  const query = params.toString();
+                  router.push(
+                    query ? `/admin/social?${query}` : "/admin/social",
+                  );
+                }}
+              >
+                <SelectTrigger id="social-age-filter" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="week">Última semana</SelectItem>
+                  <SelectItem value="all">Todos</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pendientes · RACHAS</CardTitle>
-          <CardDescription>
-            Spotlight mensual de rachas de PRs (desde el día 1 del mes, México).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingStreaksMonthly.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No hay RACHAS pendiente (ya publicada en ambas plataformas).
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mes</TableHead>
-                    <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Vista previa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingStreaksMonthly.map((row) => {
-                    return (
-                      <TableRow key={row.subjectKey}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">Rachas {row.monthKey}</p>
-                            <p className="text-muted-foreground text-xs">
-                              Top rachas actuales
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{missingPlatformBadges(row)}</TableCell>
-                        <TableCell className="text-right">
-                          <PreviewButton
-                            postType="streaks_monthly"
-                            subjectKey={row.subjectKey}
-                            name={`Rachas ${row.monthKey}`}
-                            disabled={busyKey !== null}
-                            onPreview={setPreviewTarget}
-                          />
-                        </TableCell>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">
+                Pendientes · RESULTADOS
+              </CardTitle>
+              <CardDescription>
+                Competencias MX con resultados sin Facebook y/o Instagram
+                {includeOlder ? "." : " (última semana)."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingResultados.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  {includeOlder
+                    ? "No hay RESULTADOS pendientes."
+                    : "No hay RESULTADOS pendientes de la última semana."}
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Competencia</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingResultados.map((row) => {
+                        return (
+                          <TableRow key={row.subjectKey}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">{row.name}</p>
+                                <p className="text-muted-foreground text-xs">
+                                  {row.cityName} · {row.id}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{missingPlatformBadges(row)}</TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType="resultados"
+                                subjectKey={row.subjectKey}
+                                name={row.name}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Pendientes · RESUMEN</CardTitle>
-          <CardDescription>
-            Anuncio de desbloqueo de resúmenes anuales personales y de team
-            (desde el 20 de diciembre UTC).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingSummaryUnlock.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No hay RESUMEN pendiente (aún no desbloqueado o ya publicado).
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Año</TableHead>
-                    <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Vista previa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingSummaryUnlock.map((row) => {
-                    return (
-                      <TableRow key={row.subjectKey}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">
-                              Resumen anual {row.year}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              Personal y team
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{missingPlatformBadges(row)}</TableCell>
-                        <TableCell className="text-right">
-                          <PreviewButton
-                            postType="summary_unlock"
-                            subjectKey={row.subjectKey}
-                            name={`Resumen anual ${row.year}`}
-                            disabled={busyKey !== null}
-                            onPreview={setPreviewTarget}
-                          />
-                        </TableCell>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pendientes · RÉCORDS</CardTitle>
+              <CardDescription>
+                NR / NAR / WR sin publicar en alguna plataforma
+                {includeOlder ? "." : " (última semana)."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingRecords.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  {includeOlder
+                    ? "No hay RÉCORDS pendientes."
+                    : "No hay RÉCORDS pendientes de la última semana."}
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Récord</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingRecords.map((row) => {
+                        return (
+                          <TableRow key={row.subjectKey}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">
+                                  {row.level} · {row.personName}
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                  {row.stateName ? `${row.stateName} · ` : null}
+                                  {row.eventName} ({row.kind})
+                                  {row.competitionName
+                                    ? ` · ${row.competitionName}`
+                                    : ""}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{missingPlatformBadges(row)}</TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType="record"
+                                subjectKey={row.subjectKey}
+                                name={`${row.level} ${row.personName}`}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Historial</CardTitle>
-          <CardDescription>
-            Posts automáticos o manuales (todos los tipos).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {posts.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              Aún no hay publicaciones registradas.
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Post</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Plataforma</TableHead>
-                    <TableHead>Publicado</TableHead>
-                    <TableHead className="text-right">Vista previa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {posts.map((post) => {
-                    const postType = (
-                      [
-                        "resultados",
-                        "record",
-                        "upcoming",
-                        "summary_unlock",
-                        "weekly_digest",
-                        "streaks_monthly",
-                      ].includes(post.postType)
-                        ? post.postType
-                        : "resultados"
-                    ) as SocialPostType;
-                    const title =
-                      postType === "record"
-                        ? post.subjectKey
-                        : postType === "summary_unlock"
-                          ? `Resumen anual ${post.subjectKey}`
-                          : postType === "weekly_digest"
-                            ? `Semana ${post.subjectKey}`
-                            : postType === "streaks_monthly"
-                              ? `Rachas ${post.subjectKey}`
-                              : (post.competitionName ?? post.subjectKey);
-                    return (
-                      <TableRow key={post.id}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">{title}</p>
-                            <p className="text-muted-foreground text-xs">
-                              {post.cityName ? `${post.cityName} · ` : null}
-                              {post.competitionId ? (
-                                <Link
-                                  href={`https://www.worldcubeassociation.org/competitions/${post.competitionId}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="underline-offset-2 hover:underline"
-                                >
-                                  {post.competitionId}
-                                </Link>
-                              ) : (
-                                post.subjectKey
-                              )}
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {postTypeLabel(post.postType)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              post.platform === "instagram"
-                                ? "default"
-                                : "secondary"
-                            }
-                            className="gap-1"
-                          >
-                            <PlatformIcon
-                              platform={post.platform}
-                              className="size-3"
-                            />
-                            {platformLabel(post.platform)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                          {post.postedAt
-                            ? new Date(post.postedAt).toLocaleString("es-MX")
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <PreviewButton
-                            postType={postType}
-                            subjectKey={post.subjectKey}
-                            name={title}
-                            disabled={busyKey !== null}
-                            onPreview={setPreviewTarget}
-                          />
-                        </TableCell>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pendientes · PRÓXIMAS</CardTitle>
+              <CardDescription>
+                Competencias MX futuras aún no anunciadas en redes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingUpcoming.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No hay PRÓXIMAS pendientes.
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Competencia</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingUpcoming.map((row) => {
+                        return (
+                          <TableRow key={row.subjectKey}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">{row.name}</p>
+                                <p className="text-muted-foreground text-xs">
+                                  {new Date(row.startDate).toLocaleDateString(
+                                    "es-MX",
+                                  )}{" "}
+                                  · {row.cityName}
+                                  {row.stateName ? ` · ${row.stateName}` : ""}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{missingPlatformBadges(row)}</TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType="upcoming"
+                                subjectKey={row.subjectKey}
+                                name={row.name}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pendientes · SEMANA</CardTitle>
+              <CardDescription>
+                Digest semanal (lunes México). Recap de competencias W−2 +
+                resultados que llegaron en W−1; lookahead 14 días. SRs solo
+                agregados.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingWeeklyDigest.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No hay SEMANA pendiente (ya publicada en ambas plataformas).
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Semana</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingWeeklyDigest.map((row) => {
+                        return (
+                          <TableRow key={row.subjectKey}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">
+                                  Semana {row.weekKey}
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                  Recap con lag W−2
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{missingPlatformBadges(row)}</TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType="weekly_digest"
+                                subjectKey={row.subjectKey}
+                                name={`Semana ${row.weekKey}`}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pendientes · RACHAS</CardTitle>
+              <CardDescription>
+                Spotlight mensual de rachas de PRs (desde el día 1 del mes,
+                México).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingStreaksMonthly.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No hay RACHAS pendiente (ya publicada en ambas plataformas).
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Mes</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingStreaksMonthly.map((row) => {
+                        return (
+                          <TableRow key={row.subjectKey}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">
+                                  Rachas {row.monthKey}
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                  Top rachas actuales
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{missingPlatformBadges(row)}</TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType="streaks_monthly"
+                                subjectKey={row.subjectKey}
+                                name={`Rachas ${row.monthKey}`}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pendientes · RESUMEN</CardTitle>
+              <CardDescription>
+                Anuncio de desbloqueo de resúmenes anuales personales y de team
+                (desde el 20 de diciembre UTC).
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingSummaryUnlock.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No hay RESUMEN pendiente (aún no desbloqueado o ya publicado).
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Año</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingSummaryUnlock.map((row) => {
+                        return (
+                          <TableRow key={row.subjectKey}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">
+                                  Resumen anual {row.year}
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                  Personal y team
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{missingPlatformBadges(row)}</TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType="summary_unlock"
+                                subjectKey={row.subjectKey}
+                                name={`Resumen anual ${row.year}`}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Historial</CardTitle>
+            <CardDescription>
+              Posts automáticos o manuales (todos los tipos).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {posts.length === 0 ? (
+              <p className="text-muted-foreground text-sm">
+                Aún no hay publicaciones registradas.
+              </p>
+            ) : (
+              <>
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Post</TableHead>
+                        <TableHead>Tipo</TableHead>
+                        <TableHead>Plataforma</TableHead>
+                        <TableHead>Publicado</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {posts.map((post) => {
+                        const postType = (
+                          [
+                            "resultados",
+                            "record",
+                            "upcoming",
+                            "summary_unlock",
+                            "weekly_digest",
+                            "streaks_monthly",
+                          ].includes(post.postType)
+                            ? post.postType
+                            : "resultados"
+                        ) as SocialPostType;
+                        const title =
+                          postType === "record"
+                            ? post.subjectKey
+                            : postType === "summary_unlock"
+                              ? `Resumen anual ${post.subjectKey}`
+                              : postType === "weekly_digest"
+                                ? `Semana ${post.subjectKey}`
+                                : postType === "streaks_monthly"
+                                  ? `Rachas ${post.subjectKey}`
+                                  : (post.competitionName ?? post.subjectKey);
+                        return (
+                          <TableRow key={post.id}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">{title}</p>
+                                <p className="text-muted-foreground text-xs">
+                                  {post.cityName ? `${post.cityName} · ` : null}
+                                  {post.competitionId ? (
+                                    <Link
+                                      href={`https://www.worldcubeassociation.org/competitions/${post.competitionId}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="underline-offset-2 hover:underline"
+                                    >
+                                      {post.competitionId}
+                                    </Link>
+                                  ) : (
+                                    post.subjectKey
+                                  )}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {postTypeLabel(post.postType)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  post.platform === "instagram"
+                                    ? "default"
+                                    : "secondary"
+                                }
+                                className="gap-1"
+                              >
+                                <PlatformIcon
+                                  platform={post.platform}
+                                  className="size-3"
+                                />
+                                {platformLabel(post.platform)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
+                              {post.postedAt
+                                ? new Date(post.postedAt).toLocaleString(
+                                    "es-MX",
+                                  )
+                                : "—"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType={postType}
+                                subjectKey={post.subjectKey}
+                                name={title}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {postsTotal > pageSize ? (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-muted-foreground text-sm tabular-nums">
+                      Página {currentPage} de {totalPages} · {postsTotal}{" "}
+                      publicaciones
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage <= 1}
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          params.set("tab", "historial");
+                          if (currentPage > 2) {
+                            params.set("page", String(currentPage - 1));
+                          }
+                          router.push(`/admin/social?${params.toString()}`);
+                        }}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => {
+                          const params = new URLSearchParams();
+                          params.set("tab", "historial");
+                          params.set("page", String(currentPage + 1));
+                          router.push(`/admin/social?${params.toString()}`);
+                        }}
+                      >
+                        Siguiente
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Dialog
         open={previewTarget !== null}

@@ -12,17 +12,45 @@ import {
 } from "../_lib/queries";
 import { SocialAdminPanel } from "./_components/social-admin-panel";
 
+const PAGE_SIZE = 30;
+
 async function SocialPostsContent({
   searchParams,
 }: {
-  searchParams: Promise<{ older?: string }>;
+  searchParams: Promise<{ older?: string; tab?: string; page?: string }>;
 }) {
   const params = await searchParams;
+  const tab = params.tab === "historial" ? "historial" : "pendientes";
   const includeOlder = params.older === "1";
+  const page = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+
+  const stats = await getSocialPostStats();
+
+  if (tab === "historial") {
+    const { rows: posts, total: postsTotal } = await getSocialPosts({
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+    });
+
+    return (
+      <SocialAdminPanel
+        tab="historial"
+        page={page}
+        pageSize={PAGE_SIZE}
+        posts={posts}
+        postsTotal={postsTotal}
+        stats={stats}
+        pendingResultados={[]}
+        pendingRecords={[]}
+        pendingUpcoming={[]}
+        pendingSummaryUnlock={[]}
+        pendingWeeklyDigest={[]}
+        pendingStreaksMonthly={[]}
+      />
+    );
+  }
 
   const [
-    posts,
-    stats,
     pendingResultados,
     pendingRecords,
     pendingUpcoming,
@@ -30,8 +58,6 @@ async function SocialPostsContent({
     pendingWeeklyDigest,
     pendingStreaksMonthly,
   ] = await Promise.all([
-    getSocialPosts(30),
-    getSocialPostStats(),
     getPendingResultadosCompetitions(10, { includeOlder }),
     getPendingRecordPosts(10, { includeOlder }),
     getPendingUpcomingCompetitions(10),
@@ -42,6 +68,7 @@ async function SocialPostsContent({
 
   return (
     <SocialAdminPanel
+      tab="pendientes"
       includeOlder={includeOlder}
       pendingResultados={pendingResultados}
       pendingRecords={pendingRecords}
@@ -49,7 +76,10 @@ async function SocialPostsContent({
       pendingSummaryUnlock={pendingSummaryUnlock}
       pendingWeeklyDigest={pendingWeeklyDigest}
       pendingStreaksMonthly={pendingStreaksMonthly}
-      posts={posts}
+      posts={[]}
+      postsTotal={0}
+      page={1}
+      pageSize={PAGE_SIZE}
       stats={stats}
     />
   );
@@ -58,7 +88,7 @@ async function SocialPostsContent({
 export default function AdminSocialPage({
   searchParams,
 }: {
-  searchParams: Promise<{ older?: string }>;
+  searchParams: Promise<{ older?: string; tab?: string; page?: string }>;
 }) {
   return (
     <Suspense

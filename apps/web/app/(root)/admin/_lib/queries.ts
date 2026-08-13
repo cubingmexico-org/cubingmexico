@@ -48,23 +48,38 @@ export async function getAdminOverviewCounts() {
   };
 }
 
-export async function getSocialPosts(limit = 100) {
-  return await db
-    .select({
-      id: socialPost.id,
-      postType: socialPost.postType,
-      subjectKey: socialPost.subjectKey,
-      competitionId: socialPost.competitionId,
-      competitionName: competition.name,
-      cityName: competition.cityName,
-      platform: socialPost.platform,
-      externalId: socialPost.externalId,
-      postedAt: socialPost.postedAt,
-    })
-    .from(socialPost)
-    .leftJoin(competition, eq(socialPost.competitionId, competition.id))
-    .orderBy(desc(socialPost.postedAt))
-    .limit(limit);
+export async function getSocialPosts({
+  limit = 30,
+  offset = 0,
+}: {
+  limit?: number;
+  offset?: number;
+} = {}) {
+  const [rows, [totalRow]] = await Promise.all([
+    db
+      .select({
+        id: socialPost.id,
+        postType: socialPost.postType,
+        subjectKey: socialPost.subjectKey,
+        competitionId: socialPost.competitionId,
+        competitionName: competition.name,
+        cityName: competition.cityName,
+        platform: socialPost.platform,
+        externalId: socialPost.externalId,
+        postedAt: socialPost.postedAt,
+      })
+      .from(socialPost)
+      .leftJoin(competition, eq(socialPost.competitionId, competition.id))
+      .orderBy(desc(socialPost.postedAt))
+      .limit(limit)
+      .offset(offset),
+    db.select({ value: count() }).from(socialPost),
+  ]);
+
+  return {
+    rows,
+    total: totalRow?.value ?? 0,
+  };
 }
 
 export async function getSocialPostStats() {

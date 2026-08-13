@@ -227,8 +227,8 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             """
             SELECT
                 SUM(
-                    (r.state_single_record = 'SR')::int
-                    + (r.state_average_record = 'SR')::int
+                    (COALESCE(r.state_single_record, '') = 'SR')::int
+                    + (COALESCE(r.state_average_record, '') = 'SR')::int
                 )::int AS sr_total
             FROM results r
             WHERE r.competition_id = ANY(%s)
@@ -244,8 +244,8 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             SELECT
                 COALESCE(s.name, 'Sin estado') AS state_name,
                 SUM(
-                    (r.state_single_record = 'SR')::int
-                    + (r.state_average_record = 'SR')::int
+                    (COALESCE(r.state_single_record, '') = 'SR')::int
+                    + (COALESCE(r.state_average_record, '') = 'SR')::int
                 )::int AS sr_count
             FROM results r
             JOIN persons p ON p.wca_id = r.person_id
@@ -259,7 +259,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             (union_ids,),
         )
         sr_by_state = [
-            {"state_name": r.state_name, "count": int(r.sr_count)}
+            {"state_name": r.state_name, "count": int(r.sr_count or 0)}
             for r in cur.fetchall()
         ]
 
@@ -269,8 +269,8 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
                 p.name AS person_name,
                 COALESCE(s.name, 'Sin estado') AS state_name,
                 SUM(
-                    (r.state_single_record = 'SR')::int
-                    + (r.state_average_record = 'SR')::int
+                    (COALESCE(r.state_single_record, '') = 'SR')::int
+                    + (COALESCE(r.state_average_record, '') = 'SR')::int
                 )::int AS sr_count
             FROM results r
             JOIN persons p ON p.wca_id = r.person_id
@@ -287,7 +287,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             {
                 "person_name": r.person_name,
                 "state_name": r.state_name,
-                "count": int(r.sr_count),
+                "count": int(r.sr_count or 0),
             }
             for r in cur.fetchall()
         ]
