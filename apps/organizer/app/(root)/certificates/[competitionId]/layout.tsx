@@ -6,8 +6,8 @@ interface LayoutProps {
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: "Gafetes - Cubing México",
-    description: "Gafetes - Cubing México",
+    title: "Certificados | Organización - Cubing México",
+    description: "Certificados de podio y participación - Cubing México",
   };
 }
 

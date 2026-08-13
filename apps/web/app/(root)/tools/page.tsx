@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Herramientas | Cubing México",
   description:
-    "Encuentra herramientas útiles para speedcubers y organizadores de competencias. Explora generadores de certificados, visualizadores de mezclas y más.",
+    "Encuentra herramientas útiles para speedcubers y organizadores de competencias. Explora Organización (certificados y gafetes), visualizadores de mezclas y más.",
 };
 
 function ToolLinks({
@@ -71,13 +71,14 @@ export default function Page(): React.JSX.Element {
 
       <div className="border rounded-md mb-8">
         <div className="p-6 border-b last:border-b-0">
-          <h3 className="text-xl font-semibold">Generador de Certificados</h3>
+          <h3 className="text-xl font-semibold">Organización</h3>
           <p className="my-2">
-            Genera certificados personalizados para competencias WCA en México.
+            Suite de herramientas para organizadores: certificados de podio y
+            participación, gafetes, y más módulos en camino.
           </p>
           <ToolLinks
             siteHref="https://certificados.cubingmexico.net"
-            sourceHref="https://github.com/cubingmexico-org/web-frontend"
+            sourceHref="https://github.com/cubingmexico-org/cubingmexico/tree/development/apps/organizer"
           />
         </div>
       </div>

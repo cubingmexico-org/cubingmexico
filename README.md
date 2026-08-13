@@ -10,7 +10,7 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 
 - **[web](./apps/web)** - Main web application with competition management features (Next.js 16)
 - **[backend](./apps/backend)** - Python Flask service for WCA TSV processing, state ranks, and computation endpoints
-- **[wca-certificates](./apps/wca-certificates)** - Design and print participation and podium certificates for WCA competitions
+- **[organizer](./apps/organizer)** - Organización suite (certificates + badges today); roadmap — [`docs/organizacion-roadmap.md`](./docs/organizacion-roadmap.md)
 
 ### Packages
 
@@ -121,7 +121,7 @@ Open [http://localhost:3000](http://localhost:3000).
 Other apps:
 
 ```bash
-pnpm dev:wca-certificates
+pnpm dev:organizer
 # or all apps:
 pnpm dev
 ```
@@ -146,7 +146,7 @@ pnpm services:up
 | `pnpm db:up`                   | Start Postgres only                              |
 | `pnpm db:down`                 | Stop Compose services                            |
 | `pnpm dev:web`                 | Next.js web app (Turbo)                          |
-| `pnpm dev:wca-certificates`    | Certificates app (Turbo)                         |
+| `pnpm dev:organizer`           | Organización app (Turbo)                         |
 | `pnpm dev`                     | All apps in development mode                     |
 | `pnpm build`                   | Build all apps and packages                      |
 | `pnpm lint`                    | Lint all apps and packages                       |
@@ -165,7 +165,7 @@ pnpm services:up
 - **Styling:** Tailwind CSS
 - **Database:** PostgreSQL + Drizzle ORM (`@workspace/db`)
 - **Backend:** Flask (WCA import and rankings)
-- **Authentication:** Better Auth (wca-certificates), NextAuth (web)
+- **Authentication:** Better Auth (organizer), NextAuth (web)
 
 ## Working with UI Components
 
