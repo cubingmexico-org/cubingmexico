@@ -78,6 +78,16 @@ export const SITE_PAGES: SitePage[] = [
     href: "/faq",
     keywords: ["faq", "ayuda"],
   },
+  {
+    title: "Aviso de privacidad",
+    href: "/aviso-de-privacidad",
+    keywords: ["privacidad", "aviso", "legal", "arco", "datos"],
+  },
+  {
+    title: "Términos de uso",
+    href: "/terminos",
+    keywords: ["términos", "terminos", "legal", "condiciones"],
+  },
   { title: "Logotipo", href: "/logo", keywords: ["logo", "brand"] },
   {
     title: "Herramientas",

@@ -188,6 +188,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.3,
     },
     {
+      url: "https://www.cubingmexico.net/aviso-de-privacidad",
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
+      url: "https://www.cubingmexico.net/terminos",
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
       url: "https://www.cubingmexico.net/logo",
       changeFrequency: "monthly",
       priority: 0.4,
