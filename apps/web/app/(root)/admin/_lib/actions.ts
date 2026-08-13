@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { competition, person, teamMember } from "@workspace/db/schema";
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { competition, person, state, teamMember } from "@workspace/db/schema";
+import { and, desc, eq, inArray, isNull } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 import { getErrorMessage } from "@/lib/handle-error";
@@ -38,6 +38,18 @@ const updateCompetitionStateSchema = z.object({
   stateId: z.string().min(1).nullable(),
 });
 
+const applyPersonStateGuessesSchema = z.object({
+  assignments: z
+    .array(
+      z.object({
+        personId: z.string().min(1),
+        stateId: z.string().min(1),
+      }),
+    )
+    .min(1)
+    .max(100),
+});
+
 async function recomputeStateSideEffects(
   personId: string,
   previousStateId: string | null,
@@ -64,6 +76,23 @@ async function recomputeStateSideEffects(
 
   updateTag(`profile-person-${personId}`);
   updateTag(`person-page-${personId}`);
+  updateTag("persons-without-state");
+}
+
+function invalidateAfterBulkStateAssign(
+  personIds: string[],
+  stateIds: string[],
+) {
+  for (const stateId of stateIds) {
+    invalidateAfterStateRanksChange(stateId);
+    invalidateStateMemberTags(stateId);
+  }
+
+  for (const personId of personIds) {
+    updateTag(`profile-person-${personId}`);
+    updateTag(`person-page-${personId}`);
+  }
+
   updateTag("persons-without-state");
 }
 
@@ -113,6 +142,97 @@ export async function assignPersonState(input: {
     );
 
     return { data: null, error: null };
+  } catch (err) {
+    return { data: null, error: getErrorMessage(err) };
+  }
+}
+
+export async function applyPersonStateGuesses(input: {
+  assignments: { personId: string; stateId: string }[];
+}) {
+  try {
+    await requireSuperadmin();
+    const data = applyPersonStateGuessesSchema.parse(input);
+
+    const byPerson = new Map<string, string>();
+    for (const assignment of data.assignments) {
+      byPerson.set(assignment.personId, assignment.stateId);
+    }
+
+    const personIds = [...byPerson.keys()];
+    const requestedStateIds = [...new Set(byPerson.values())];
+
+    const validStates = await db
+      .select({ id: state.id })
+      .from(state)
+      .where(inArray(state.id, requestedStateIds));
+    const validStateIds = new Set(validStates.map((row) => row.id));
+
+    for (const stateId of requestedStateIds) {
+      if (!validStateIds.has(stateId)) {
+        return { data: null, error: `Estado inválido: ${stateId}` };
+      }
+    }
+
+    const eligible = await db
+      .select({ wcaId: person.wcaId })
+      .from(person)
+      .where(and(inArray(person.wcaId, personIds), isNull(person.stateId)));
+
+    const eligibleIds = eligible.map((row) => row.wcaId);
+    if (eligibleIds.length === 0) {
+      return {
+        data: {
+          applied: 0,
+          skipped: personIds.length,
+          stateIds: [] as string[],
+        },
+        error: null,
+      };
+    }
+
+    const appliedByState = new Map<string, string[]>();
+    for (const personId of eligibleIds) {
+      const stateId = byPerson.get(personId);
+      if (!stateId) continue;
+      const list = appliedByState.get(stateId) ?? [];
+      list.push(personId);
+      appliedByState.set(stateId, list);
+    }
+
+    for (const [stateId, ids] of appliedByState) {
+      await db
+        .update(person)
+        .set({ stateId })
+        .where(and(inArray(person.wcaId, ids), isNull(person.stateId)));
+    }
+
+    const appliedPersonIds = [...appliedByState.values()].flat();
+    const affectedStateIds = [...appliedByState.keys()];
+
+    await clearPersonStateRanks(appliedPersonIds);
+    await clearPersonStateRecords(appliedPersonIds);
+
+    const recordPersonIds = new Set<string>(appliedPersonIds);
+    for (const stateId of affectedStateIds) {
+      await updateStateRanks(stateId);
+      const records = await updateStateRecords(stateId);
+      for (const id of records.personIds) {
+        recordPersonIds.add(id);
+      }
+    }
+
+    invalidateAfterBulkStateAssign(appliedPersonIds, affectedStateIds);
+    invalidateAfterStateRecordsChange([...recordPersonIds]);
+
+    return {
+      data: {
+        applied: appliedPersonIds.length,
+        skipped: personIds.length - appliedPersonIds.length,
+        stateIds: affectedStateIds,
+      },
+      error: null,
+    };
   } catch (err) {
     return { data: null, error: getErrorMessage(err) };
   }
