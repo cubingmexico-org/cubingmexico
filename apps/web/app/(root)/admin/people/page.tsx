@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Suspense } from "react";
 import {
   Card,
@@ -10,17 +9,31 @@ import {
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { getStates } from "@/db/queries";
 import {
-  getPersonsWithoutStateList,
+  getPersonStateGuesses,
   getTeamMembersWithRoles,
 } from "../_lib/queries";
 import { AssignPersonForm } from "./_components/assign-person-form";
+import {
+  ConfidenceFilter,
+  type ConfidenceFilterValue,
+} from "./_components/confidence-filter";
 import { StateFilter } from "./_components/state-filter";
+import { StateGuessTable } from "./_components/state-guess-table";
 import { TeamRolesTable } from "./_components/team-roles-table";
+
+function parseConfidence(
+  value: string | undefined,
+): ConfidenceFilterValue {
+  if (value === "all" || value === "medium" || value === "none") {
+    return value;
+  }
+  return "high";
+}
 
 async function PeopleAdminContent({
   searchParams,
 }: {
-  searchParams: Promise<{ stateId?: string }>;
+  searchParams: Promise<{ stateId?: string; confidence?: string }>;
 }) {
   const params = await searchParams;
   const states = await getStates();
@@ -28,13 +41,30 @@ async function PeopleAdminContent({
     params.stateId && states.some((s) => s.id === params.stateId)
       ? params.stateId
       : (states[0]?.id ?? null);
+  const confidence = parseConfidence(params.confidence);
 
-  const [personsWithoutState, members] = await Promise.all([
-    getPersonsWithoutStateList(40),
+  const [personStateGuesses, members] = await Promise.all([
+    getPersonStateGuesses({
+      limit: 10,
+      confidence,
+    }),
     selectedStateId
       ? getTeamMembersWithRoles(selectedStateId)
       : Promise.resolve([]),
   ]);
+
+  const highCount = personStateGuesses.filter(
+    (guess) => guess.confidence === "high",
+  ).length;
+
+  const confidenceLabel =
+    confidence === "all"
+      ? "todas las confianzas"
+      : confidence === "high"
+        ? "confianza alta"
+        : confidence === "medium"
+          ? "confianza media"
+          : "confianza baja";
 
   return (
     <div className="space-y-6">
@@ -59,40 +89,25 @@ async function PeopleAdminContent({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Personas sin estado</CardTitle>
+          <CardTitle className="text-base">Sugerir estado</CardTitle>
           <CardDescription>
-            Primeras 40 personas sin afiliación (usa el formulario de arriba
-            para asignar)
+            Top 10 personas sin afiliación ({confidenceLabel}), ordenadas por
+            NR 333 / comps. Sugerencia según competencias MX (excluye
+            Nacionales).{" "}
+            {highCount > 0
+              ? `${highCount} con confianza alta preseleccionadas.`
+              : null}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {personsWithoutState.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No hay personas sin estado.
-            </p>
-          ) : (
-            <ul className="divide-y rounded-md border">
-              {personsWithoutState.map((person) => (
-                <li
-                  key={person.wcaId}
-                  className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
-                >
-                  <div>
-                    <p className="font-medium">{person.name}</p>
-                    <p className="text-muted-foreground font-mono text-xs">
-                      {person.wcaId}
-                    </p>
-                  </div>
-                  <Link
-                    href={`/persons/${person.wcaId}`}
-                    className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
-                  >
-                    Ver
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+        <CardContent className="space-y-4">
+          <Suspense fallback={null}>
+            <ConfidenceFilter selected={confidence} />
+          </Suspense>
+          <StateGuessTable
+            key={`${confidence}:${personStateGuesses.map((guess) => guess.wcaId).join(",")}`}
+            guesses={personStateGuesses}
+            states={states}
+          />
         </CardContent>
       </Card>
     </div>
@@ -102,7 +117,7 @@ async function PeopleAdminContent({
 export default function AdminPeoplePage({
   searchParams,
 }: {
-  searchParams: Promise<{ stateId?: string }>;
+  searchParams: Promise<{ stateId?: string; confidence?: string }>;
 }) {
   return (
     <Suspense

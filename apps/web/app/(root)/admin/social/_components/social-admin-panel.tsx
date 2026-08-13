@@ -11,7 +11,9 @@ import {
   ClipboardCopy,
   Download,
   Eye,
+  MoreHorizontal,
   Send,
+  Trash2,
 } from "lucide-react";
 import { SiFacebook, SiInstagram } from "@icons-pack/react-simple-icons";
 import { Button, buttonVariants } from "@workspace/ui/components/button";
@@ -63,6 +65,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
 import { cn } from "@workspace/ui/lib/utils";
 
 export type SocialPostType =
@@ -380,7 +388,9 @@ type ConfirmAction = {
   postType: SocialPostType;
   subjectKey: string;
   name: string;
-  action: "publish" | "mark";
+  action: "publish" | "mark" | "delete";
+  postId?: string;
+  platform?: string;
 };
 
 type PreviewTarget = {
@@ -462,7 +472,7 @@ export function SocialAdminPanel({
   const router = useRouter();
   const [busyKey, setBusyKey] = React.useState<string | null>(null);
   const [busyAction, setBusyAction] = React.useState<
-    "download" | "publish" | "mark" | null
+    "download" | "publish" | "mark" | "delete" | null
   >(null);
   const [confirmAction, setConfirmAction] =
     React.useState<ConfirmAction | null>(null);
@@ -583,7 +593,8 @@ export function SocialAdminPanel({
   async function runAction(
     postType: SocialPostType,
     subjectKey: string,
-    action: "download" | "publish" | "mark",
+    action: "download" | "publish" | "mark" | "delete",
+    postId?: string,
   ) {
     const key = `${postType}:${subjectKey}`;
     setBusyKey(key);
@@ -602,6 +613,29 @@ export function SocialAdminPanel({
           await downloadImage(postType, subjectKey);
         }
         toast.success("Imagen descargada");
+        return;
+      }
+
+      if (action === "delete") {
+        if (!postId) {
+          toast.error("No se pudo identificar la publicación");
+          return;
+        }
+        const response = await fetch(
+          `/api/admin/social/posts/${encodeURIComponent(postId)}`,
+          { method: "DELETE" },
+        );
+        const data = await response.json();
+        if (!response.ok || !data.success) {
+          toast.error(
+            String(data?.message || `Error HTTP ${response.status}`),
+          );
+          router.refresh();
+          return;
+        }
+        toast.success("Publicación eliminada del historial");
+        closePreview();
+        router.refresh();
         return;
       }
 
@@ -1141,9 +1175,7 @@ export function SocialAdminPanel({
                         <TableHead>Tipo</TableHead>
                         <TableHead>Plataforma</TableHead>
                         <TableHead>Publicado</TableHead>
-                        <TableHead className="text-right">
-                          Vista previa
-                        </TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1221,13 +1253,49 @@ export function SocialAdminPanel({
                                 : "—"}
                             </TableCell>
                             <TableCell className="text-right">
-                              <PreviewButton
-                                postType={postType}
-                                subjectKey={post.subjectKey}
-                                name={title}
-                                disabled={busyKey !== null}
-                                onPreview={setPreviewTarget}
-                              />
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-8"
+                                    disabled={busyKey !== null}
+                                    aria-label={`Acciones de ${title}`}
+                                  >
+                                    <MoreHorizontal className="size-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onSelect={() =>
+                                      setPreviewTarget({
+                                        postType,
+                                        subjectKey: post.subjectKey,
+                                        name: title,
+                                      })
+                                    }
+                                  >
+                                    <Eye className="size-4" />
+                                    Vista previa
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onSelect={() =>
+                                      setConfirmAction({
+                                        postType,
+                                        subjectKey: post.subjectKey,
+                                        name: title,
+                                        action: "delete",
+                                        postId: post.id,
+                                        platform: post.platform,
+                                      })
+                                    }
+                                  >
+                                    <Trash2 className="size-4" />
+                                    Eliminar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                           </TableRow>
                         );
@@ -1478,53 +1546,55 @@ export function SocialAdminPanel({
                   </Button>
                 </div>
               </div>
-              <DialogFooter className="flex-col gap-2 sm:flex-col">
-                {previewTarget ? (
-                  <Button
-                    type="button"
-                    className="w-full"
-                    disabled={busyKey !== null}
-                    onClick={() => {
-                      setConfirmAction({
-                        postType: previewTarget.postType,
-                        subjectKey: previewTarget.subjectKey,
-                        name: previewTarget.name,
-                        action: "publish",
-                      });
-                    }}
-                  >
-                    <Send className="size-4" />
-                    {busyKey ===
-                      `${previewTarget.postType}:${previewTarget.subjectKey}` &&
-                    busyAction === "publish"
-                      ? "Publicando..."
-                      : "Publicar"}
-                  </Button>
-                ) : null}
-                {previewTarget ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    className="w-full"
-                    disabled={busyKey !== null}
-                    onClick={() => {
-                      setConfirmAction({
-                        postType: previewTarget.postType,
-                        subjectKey: previewTarget.subjectKey,
-                        name: previewTarget.name,
-                        action: "mark",
-                      });
-                    }}
-                  >
-                    <CheckCheck className="size-4" />
-                    {busyKey ===
-                      `${previewTarget.postType}:${previewTarget.subjectKey}` &&
-                    busyAction === "mark"
-                      ? "Registrando..."
-                      : "Marcar manual"}
-                  </Button>
-                ) : null}
-              </DialogFooter>
+              {tab !== "historial" ? (
+                <DialogFooter className="flex-col gap-2 sm:flex-col">
+                  {previewTarget ? (
+                    <Button
+                      type="button"
+                      className="w-full"
+                      disabled={busyKey !== null}
+                      onClick={() => {
+                        setConfirmAction({
+                          postType: previewTarget.postType,
+                          subjectKey: previewTarget.subjectKey,
+                          name: previewTarget.name,
+                          action: "publish",
+                        });
+                      }}
+                    >
+                      <Send className="size-4" />
+                      {busyKey ===
+                        `${previewTarget.postType}:${previewTarget.subjectKey}` &&
+                      busyAction === "publish"
+                        ? "Publicando..."
+                        : "Publicar"}
+                    </Button>
+                  ) : null}
+                  {previewTarget ? (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full"
+                      disabled={busyKey !== null}
+                      onClick={() => {
+                        setConfirmAction({
+                          postType: previewTarget.postType,
+                          subjectKey: previewTarget.subjectKey,
+                          name: previewTarget.name,
+                          action: "mark",
+                        });
+                      }}
+                    >
+                      <CheckCheck className="size-4" />
+                      {busyKey ===
+                        `${previewTarget.postType}:${previewTarget.subjectKey}` &&
+                      busyAction === "mark"
+                        ? "Registrando..."
+                        : "Marcar manual"}
+                    </Button>
+                  ) : null}
+                </DialogFooter>
+              ) : null}
             </div>
           ) : null}
         </DialogContent>
@@ -1541,7 +1611,9 @@ export function SocialAdminPanel({
             <AlertDialogTitle>
               {confirmAction?.action === "publish"
                 ? `Publicar ${postTypeLabel(confirmAction.postType)}`
-                : "Registrar publicación manual"}
+                : confirmAction?.action === "delete"
+                  ? "Eliminar del historial"
+                  : "Registrar publicación manual"}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {confirmAction?.action === "publish" ? (
@@ -1549,6 +1621,15 @@ export function SocialAdminPanel({
                   Se publicará la imagen con texto del post en las plataformas
                   faltantes para <strong>{confirmAction.name}</strong> vía Meta
                   Graph API.
+                </>
+              ) : confirmAction?.action === "delete" ? (
+                <>
+                  Se eliminará el registro
+                  {confirmAction.platform
+                    ? ` de ${platformLabel(confirmAction.platform)}`
+                    : ""}{" "}
+                  para <strong>{confirmAction.name}</strong>. Volverá a aparecer
+                  en pendientes.
                 </>
               ) : (
                 <>
@@ -1562,14 +1643,23 @@ export function SocialAdminPanel({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
+              className={
+                confirmAction?.action === "delete"
+                  ? buttonVariants({ variant: "destructive" })
+                  : undefined
+              }
               onClick={() => {
                 if (!confirmAction) return;
-                const { postType, subjectKey, action } = confirmAction;
+                const { postType, subjectKey, action, postId } = confirmAction;
                 setConfirmAction(null);
-                void runAction(postType, subjectKey, action);
+                void runAction(postType, subjectKey, action, postId);
               }}
             >
-              {confirmAction?.action === "publish" ? "Publicar" : "Registrar"}
+              {confirmAction?.action === "publish"
+                ? "Publicar"
+                : confirmAction?.action === "delete"
+                  ? "Eliminar"
+                  : "Registrar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
