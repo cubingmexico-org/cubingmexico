@@ -13,39 +13,26 @@ export default function Loading() {
         <Skeleton className="h-10 w-full md:w-72" />
       </div>
 
-      <div className="relative h-152 overflow-hidden rounded-2xl border bg-card">
-        <Skeleton className="h-full w-full rounded-none" />
+      <Skeleton className="mb-6 h-10 w-48" />
 
-        <div className="absolute inset-0 p-6">
-          <div className="flex h-full flex-col justify-between gap-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-32" />
-                <Skeleton className="h-4 w-52" />
-              </div>
-              <div className="hidden gap-2 md:flex">
-                <Skeleton className="h-9 w-9 rounded-full" />
-                <Skeleton className="h-9 w-9 rounded-full" />
-              </div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {[...Array(6)].map((_, index) => (
+          <div
+            key={index}
+            className="overflow-hidden rounded-xl border bg-card"
+          >
+            <Skeleton className="h-32 w-full rounded-none" />
+            <div className="space-y-3 p-4 pt-8">
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-1/3" />
             </div>
-
-            <div className="grid flex-1 grid-cols-2 gap-4 opacity-80 md:grid-cols-3 lg:grid-cols-4">
-              <Skeleton className="h-24 rounded-2xl" />
-              <Skeleton className="h-32 rounded-2xl" />
-              <Skeleton className="h-20 rounded-2xl" />
-              <Skeleton className="hidden h-28 rounded-2xl lg:block" />
-              <Skeleton className="h-16 rounded-2xl" />
-              <Skeleton className="h-24 rounded-2xl" />
-              <Skeleton className="h-20 rounded-2xl" />
-              <Skeleton className="hidden h-32 rounded-2xl lg:block" />
-            </div>
-
-            <div className="flex items-center justify-between gap-4">
-              <Skeleton className="h-8 w-36 rounded-full" />
-              <Skeleton className="h-8 w-24 rounded-full" />
+            <div className="flex justify-end border-t bg-muted/50 p-2">
+              <Skeleton className="h-5 w-16 rounded-full" />
             </div>
           </div>
-        </div>
+        ))}
       </div>
     </>
   );
