@@ -485,10 +485,10 @@ export function SocialAdminPanel({
 
       if (action === "publish") {
         toast.success(`${postTypeLabel(postType)} publicados`);
-        closePreview();
       } else {
         toast.success("Registrado como publicado (manual)");
       }
+      closePreview();
       router.refresh();
     } catch (error) {
       toast.error(
@@ -756,63 +756,6 @@ export function SocialAdminPanel({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Pendientes · RESUMEN</CardTitle>
-          <CardDescription>
-            Anuncio de desbloqueo de resúmenes anuales personales y de team
-            (desde el 20 de diciembre UTC).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {pendingSummaryUnlock.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              No hay RESUMEN pendiente (aún no desbloqueado o ya publicado).
-            </p>
-          ) : (
-            <div className="overflow-x-auto rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Año</TableHead>
-                    <TableHead>Falta</TableHead>
-                    <TableHead className="text-right">Vista previa</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingSummaryUnlock.map((row) => {
-                    return (
-                      <TableRow key={row.subjectKey}>
-                        <TableCell>
-                          <div className="space-y-0.5">
-                            <p className="font-medium">
-                              Resumen anual {row.year}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              Personal y team
-                            </p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{missingPlatformBadges(row)}</TableCell>
-                        <TableCell className="text-right">
-                          <PreviewButton
-                            postType="summary_unlock"
-                            subjectKey={row.subjectKey}
-                            name={`Resumen anual ${row.year}`}
-                            disabled={busyKey !== null}
-                            onPreview={setPreviewTarget}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle className="text-base">Pendientes · SEMANA</CardTitle>
           <CardDescription>
             Digest semanal (lunes México). Recap de competencias W−2 +
@@ -907,6 +850,64 @@ export function SocialAdminPanel({
                             postType="streaks_monthly"
                             subjectKey={row.subjectKey}
                             name={`Rachas ${row.monthKey}`}
+                            disabled={busyKey !== null}
+                            onPreview={setPreviewTarget}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Pendientes · RESUMEN</CardTitle>
+          <CardDescription>
+            Anuncio de desbloqueo de resúmenes anuales personales y de team
+            (desde el 20 de diciembre UTC).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {pendingSummaryUnlock.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No hay RESUMEN pendiente (aún no desbloqueado o ya publicado).
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Año</TableHead>
+                    <TableHead>Falta</TableHead>
+                    <TableHead className="text-right">Vista previa</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingSummaryUnlock.map((row) => {
+                    return (
+                      <TableRow key={row.subjectKey}>
+                        <TableCell>
+                          <div className="space-y-0.5">
+                            <p className="font-medium">
+                              Resumen anual {row.year}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              Personal y team
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{missingPlatformBadges(row)}</TableCell>
+                        <TableCell className="text-right">
+                          <PreviewButton
+                            postType="summary_unlock"
+                            subjectKey={row.subjectKey}
+                            name={`Resumen anual ${row.year}`}
                             disabled={busyKey !== null}
                             onPreview={setPreviewTarget}
                           />
