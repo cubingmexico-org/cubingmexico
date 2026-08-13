@@ -36,6 +36,24 @@ export const ADMIN_OPS_JOBS = [
     description: "Recalcula rachas de PRs.",
   },
   {
+    path: "/post-summary-unlock",
+    label: "Publicar resumen anual",
+    description:
+      "Si ya es 20 dic UTC o después, publica el anuncio de resúmenes personales y de team (idempotente).",
+  },
+  {
+    path: "/post-weekly-digest",
+    label: "Publicar resumen semanal",
+    description:
+      "Publica el digest SEMANA de la semana ISO actual (México), con recap W−2 + llegadas tardías (idempotente).",
+  },
+  {
+    path: "/post-streaks-monthly",
+    label: "Publicar rachas del mes",
+    description:
+      "Publica el spotlight mensual de rachas de PRs para el mes actual (México; idempotente).",
+  },
+  {
     path: "/update-all",
     label: "Actualizar todo",
     description: "Ejecuta el pipeline completo (puede tardar varios minutos).",

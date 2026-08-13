@@ -10,6 +10,7 @@ import {
   teamMember,
 } from "@workspace/db/schema";
 import { accentInsensitiveContains } from "@/lib/search";
+import { isSummaryYearPublished } from "@/app/(root)/summary/_lib/summary-year";
 import { and, asc, count, desc, eq, isNull, or, sql } from "drizzle-orm";
 
 export async function getExportMetadata() {
@@ -47,23 +48,38 @@ export async function getAdminOverviewCounts() {
   };
 }
 
-export async function getSocialPosts(limit = 100) {
-  return await db
-    .select({
-      id: socialPost.id,
-      postType: socialPost.postType,
-      subjectKey: socialPost.subjectKey,
-      competitionId: socialPost.competitionId,
-      competitionName: competition.name,
-      cityName: competition.cityName,
-      platform: socialPost.platform,
-      externalId: socialPost.externalId,
-      postedAt: socialPost.postedAt,
-    })
-    .from(socialPost)
-    .leftJoin(competition, eq(socialPost.competitionId, competition.id))
-    .orderBy(desc(socialPost.postedAt))
-    .limit(limit);
+export async function getSocialPosts({
+  limit = 30,
+  offset = 0,
+}: {
+  limit?: number;
+  offset?: number;
+} = {}) {
+  const [rows, [totalRow]] = await Promise.all([
+    db
+      .select({
+        id: socialPost.id,
+        postType: socialPost.postType,
+        subjectKey: socialPost.subjectKey,
+        competitionId: socialPost.competitionId,
+        competitionName: competition.name,
+        cityName: competition.cityName,
+        platform: socialPost.platform,
+        externalId: socialPost.externalId,
+        postedAt: socialPost.postedAt,
+      })
+      .from(socialPost)
+      .leftJoin(competition, eq(socialPost.competitionId, competition.id))
+      .orderBy(desc(socialPost.postedAt))
+      .limit(limit)
+      .offset(offset),
+    db.select({ value: count() }).from(socialPost),
+  ]);
+
+  return {
+    rows,
+    total: totalRow?.value ?? 0,
+  };
 }
 
 export async function getSocialPostStats() {
@@ -76,6 +92,9 @@ export async function getSocialPostStats() {
       resultados: sql<number>`count(*) filter (where ${socialPost.postType} = 'resultados')`,
       records: sql<number>`count(*) filter (where ${socialPost.postType} = 'record')`,
       upcoming: sql<number>`count(*) filter (where ${socialPost.postType} = 'upcoming')`,
+      summaryUnlock: sql<number>`count(*) filter (where ${socialPost.postType} = 'summary_unlock')`,
+      weeklyDigest: sql<number>`count(*) filter (where ${socialPost.postType} = 'weekly_digest')`,
+      streaksMonthly: sql<number>`count(*) filter (where ${socialPost.postType} = 'streaks_monthly')`,
     })
     .from(socialPost);
 
@@ -87,10 +106,20 @@ export async function getSocialPostStats() {
     resultados: Number(totals?.resultados ?? 0),
     records: Number(totals?.records ?? 0),
     upcoming: Number(totals?.upcoming ?? 0),
+    summaryUnlock: Number(totals?.summaryUnlock ?? 0),
+    weeklyDigest: Number(totals?.weeklyDigest ?? 0),
+    streaksMonthly: Number(totals?.streaksMonthly ?? 0),
   };
 }
 
-export async function getPendingResultadosCompetitions(limit = 50) {
+export async function getPendingResultadosCompetitions(
+  limit = 50,
+  { includeOlder = false }: { includeOlder?: boolean } = {},
+) {
+  const ageFilter = includeOlder
+    ? sql``
+    : sql`AND c.end_date >= (CURRENT_DATE - INTERVAL '7 days')`;
+
   const rows = (await db.execute(sql`
     SELECT
       c.id,
@@ -128,6 +157,7 @@ export async function getPendingResultadosCompetitions(limit = 50) {
             AND sp.platform = 'instagram'
         )
       )
+      ${ageFilter}
     ORDER BY c.end_date DESC
     LIMIT ${limit}
   `)) as unknown as Array<{
@@ -150,7 +180,14 @@ export async function getPendingResultadosCompetitions(limit = 50) {
   }));
 }
 
-export async function getPendingRecordPosts(limit = 50) {
+export async function getPendingRecordPosts(
+  limit = 50,
+  { includeOlder = false }: { includeOlder?: boolean } = {},
+) {
+  const ageFilter = includeOlder
+    ? sql``
+    : sql`AND m."endDate" >= (CURRENT_DATE - INTERVAL '7 days')`;
+
   const rows = (await db.execute(sql`
     WITH markers AS (
       SELECT
@@ -220,7 +257,7 @@ export async function getPendingRecordPosts(limit = 50) {
           AND sp.platform = 'instagram'
       ) AS "instagramPosted"
     FROM markers m
-    WHERE
+    WHERE (
       NOT EXISTS (
         SELECT 1 FROM social_posts sp
         WHERE sp.post_type = 'record'
@@ -233,6 +270,8 @@ export async function getPendingRecordPosts(limit = 50) {
           AND sp.subject_key = m.subject_key
           AND sp.platform = 'instagram'
       )
+    )
+      ${ageFilter}
     ORDER BY m."endDate" DESC NULLS LAST, m.level DESC, m."personName"
     LIMIT ${limit}
   `)) as unknown as Array<{
@@ -329,6 +368,144 @@ export async function getPendingUpcomingCompetitions(limit = 50) {
     facebookPosted: Boolean(row.facebookPosted),
     instagramPosted: Boolean(row.instagramPosted),
   }));
+}
+
+export async function getPendingSummaryUnlockPosts(): Promise<
+  Array<{
+    subjectKey: string;
+    year: number;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const year = new Date().getUTCFullYear();
+  if (!isSummaryYearPublished(year)) {
+    return [];
+  }
+
+  const subjectKey = String(year);
+  const rows = await db
+    .select({
+      platform: socialPost.platform,
+    })
+    .from(socialPost)
+    .where(
+      and(
+        eq(socialPost.postType, "summary_unlock"),
+        eq(socialPost.subjectKey, subjectKey),
+      ),
+    );
+
+  const facebookPosted = rows.some((row) => row.platform === "facebook");
+  const instagramPosted = rows.some((row) => row.platform === "instagram");
+  if (facebookPosted && instagramPosted) {
+    return [];
+  }
+
+  return [
+    {
+      subjectKey,
+      year,
+      facebookPosted,
+      instagramPosted,
+    },
+  ];
+}
+
+function mexicoCityYmd(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Mexico_City",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(now);
+}
+
+function isoWeekKeyFromYmd(ymd: string): string {
+  const [year = 0, month = 0, day = 0] = ymd.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, 12));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const isoYear = date.getUTCFullYear();
+  const yearStart = new Date(Date.UTC(isoYear, 0, 1));
+  const weekNo = Math.ceil(
+    ((date.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7,
+  );
+  return `${isoYear}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+export async function getPendingWeeklyDigestPosts(): Promise<
+  Array<{
+    subjectKey: string;
+    weekKey: string;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const subjectKey = isoWeekKeyFromYmd(mexicoCityYmd());
+  const rows = await db
+    .select({
+      platform: socialPost.platform,
+    })
+    .from(socialPost)
+    .where(
+      and(
+        eq(socialPost.postType, "weekly_digest"),
+        eq(socialPost.subjectKey, subjectKey),
+      ),
+    );
+
+  const facebookPosted = rows.some((row) => row.platform === "facebook");
+  const instagramPosted = rows.some((row) => row.platform === "instagram");
+  if (facebookPosted && instagramPosted) {
+    return [];
+  }
+
+  return [
+    {
+      subjectKey,
+      weekKey: subjectKey,
+      facebookPosted,
+      instagramPosted,
+    },
+  ];
+}
+
+export async function getPendingStreaksMonthlyPosts(): Promise<
+  Array<{
+    subjectKey: string;
+    monthKey: string;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const subjectKey = mexicoCityYmd().slice(0, 7);
+  const rows = await db
+    .select({
+      platform: socialPost.platform,
+    })
+    .from(socialPost)
+    .where(
+      and(
+        eq(socialPost.postType, "streaks_monthly"),
+        eq(socialPost.subjectKey, subjectKey),
+      ),
+    );
+
+  const facebookPosted = rows.some((row) => row.platform === "facebook");
+  const instagramPosted = rows.some((row) => row.platform === "instagram");
+  if (facebookPosted && instagramPosted) {
+    return [];
+  }
+
+  return [
+    {
+      subjectKey,
+      monthKey: subjectKey,
+      facebookPosted,
+      instagramPosted,
+    },
+  ];
 }
 
 export async function searchPersons(search: string, limit = 20) {

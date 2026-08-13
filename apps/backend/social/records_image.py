@@ -7,6 +7,8 @@ import io
 from PIL import Image, ImageDraw
 
 from social.image_common import (
+    BLACK,
+    CREAM,
     GREEN,
     RED,
     SIZE,
@@ -20,7 +22,7 @@ from social.image_common import (
     text_height,
 )
 
-TRIANGLE = 320
+HEADER_H = 300
 
 RECORD_LABELS = {
     "NR": "RÉCORD NACIONAL",
@@ -45,79 +47,92 @@ def generate_record_png(
     state_name: str | None = None,
     competition_name: str | None = None,
 ) -> bytes:
-    """Red-dominant RÉCORD graphic with green corner accents."""
-    canvas = Image.new("RGBA", (SIZE, SIZE), RED)
+    """Cream poster with a bold red header slab — hero treatment for records."""
+    canvas = Image.new("RGBA", (SIZE, SIZE), CREAM)
     draw = ImageDraw.Draw(canvas)
 
-    draw.polygon([(0, 0), (TRIANGLE, 0), (0, TRIANGLE)], fill=GREEN)
-    draw.polygon(
-        [(SIZE, SIZE), (SIZE - TRIANGLE, SIZE), (SIZE, SIZE - TRIANGLE)],
-        fill=GREEN,
-    )
+    draw.rectangle([0, 0, SIZE, HEADER_H], fill=RED)
+    # Green underline under the header.
+    draw.rectangle([0, HEADER_H, SIZE, HEADER_H + 14], fill=GREEN)
 
-    paste_logo(canvas, max_size=(220, 220), y=80)
+    paste_logo(canvas, max_size=(150, 150), y=36)
 
     level_key = (level or "NR").upper()
     badge = level_key if level_key in RECORD_LABELS else "NR"
     headline = RECORD_LABELS.get(badge, "RÉCORD NACIONAL")
 
-    badge_font = load_font(88)
-    badge_cy = 360
-    _x0, _y0, _x1, badge_bottom = draw_centered_badge(
+    badge_font = load_font(72)
+    badge_cy = 210
+    draw_centered_badge(
         draw,
         badge,
         badge_font,
         cy=badge_cy,
-        fill=WHITE,
+        fill=CREAM,
         text_fill=RED,
-        pad_x=36,
-        pad_y=18,
-        radius=16,
+        pad_x=40,
+        pad_y=16,
+        radius=18,
     )
 
-    title_font = load_font(34)
-    center_text(draw, headline, title_font, badge_bottom + 22, WHITE)
+    title_font = load_font(30)
+    center_text(draw, headline, title_font, HEADER_H + 40, RED)
 
     person = (person_name or "").strip() or "Competidor"
     person_font, person_lines = layout_wrapped_name(
-        person, max_size=52, min_size=26, min_single_line=40
+        person,
+        max_width=SIZE - 120,
+        max_size=56,
+        min_size=28,
+        min_single_line=42,
     )
     line_gap = max(6, int(text_height("Ay", person_font) * 0.2))
     line_height = text_height("Ay", person_font) + line_gap
-    person_top = 490
+    person_top = HEADER_H + 90
     for i, line in enumerate(person_lines):
-        center_text(draw, line, person_font, person_top + i * line_height, WHITE)
+        center_text(draw, line, person_font, person_top + i * line_height, BLACK)
 
-    below_person = person_top + line_height * len(person_lines) + 12
+    below = person_top + line_height * len(person_lines) + 10
     state = (state_name or "").strip()
     if state:
-        state_font = load_font(26)
-        center_text(draw, state, state_font, below_person, WHITE)
-        below_person += text_height("Ay", state_font) + 16
+        state_font = load_font(28)
+        center_text(draw, state, state_font, below, GREEN)
+        below += text_height("Ay", state_font) + 18
     else:
-        below_person += 6
+        below += 8
 
     event = (event_name or event_id or "").strip() or event_id
     kind_label = KIND_LABELS.get(kind, kind)
     meta = f"{event} · {kind_label}"
     meta_font = load_font(30)
-    center_text(draw, meta, meta_font, below_person, WHITE)
+    center_text(draw, meta, meta_font, below, BLACK)
 
     time_text = format_result_time(event_id, value, kind=kind)
-    time_font = load_font(88)
-    time_y = below_person + 44
-    center_text(draw, time_text, time_font, time_y, WHITE)
+    time_font = load_font(96)
+    time_y = below + 48
+    center_text(draw, time_text, time_font, time_y, RED)
+
+    rule_y = time_y + text_height("Ay", time_font) + 24
+    rule_w = 200
+    draw.rectangle(
+        [(SIZE - rule_w) // 2, rule_y, (SIZE + rule_w) // 2, rule_y + 5],
+        fill=GREEN,
+    )
 
     comp = (competition_name or "").strip()
     if comp:
         comp_font, comp_lines = layout_wrapped_name(
-            comp, max_size=28, min_size=20, min_single_line=24
+            comp,
+            max_width=SIZE - 140,
+            max_size=28,
+            min_size=20,
+            min_single_line=24,
         )
         comp_gap = max(4, int(text_height("Ay", comp_font) * 0.2))
         comp_line_h = text_height("Ay", comp_font) + comp_gap
-        comp_top = time_y + text_height("Ay", time_font) + 20
+        comp_top = rule_y + 28
         for i, line in enumerate(comp_lines):
-            center_text(draw, line, comp_font, comp_top + i * comp_line_h, WHITE)
+            center_text(draw, line, comp_font, comp_top + i * comp_line_h, BLACK)
 
     buf = io.BytesIO()
     canvas.convert("RGB").save(buf, format="PNG", optimize=True)

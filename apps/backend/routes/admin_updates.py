@@ -1127,6 +1127,21 @@ def update_full_database():
 
                         log.info("Finished processing all chunks for %s.", file_name)
 
+        try:
+            from social.poster import (
+                post_summary_unlock_if_due,
+                post_weekly_digest_if_due,
+            )
+
+            post_summary_unlock_if_due()
+            post_weekly_digest_if_due()
+        except Exception as e:
+            log.error(
+                "Social SUMMARY_UNLOCK/WEEKLY_DIGEST posting failed "
+                "(database import succeeded): %s",
+                e,
+            )
+
         log.info("Database updated successfully")
         return jsonify({"success": True, "message": "Database updated successfully"})
     except Exception as e:
@@ -1980,6 +1995,111 @@ def update_streak_ranks():
         return jsonify({"success": False, "message": "Error updating streak ranks"}), 500
 
 
+@admin_bp.route("/post-summary-unlock", methods=["POST"])
+@require_cron_auth
+def post_summary_unlock_route():
+    """Publish current-year summary unlock posts if Dec 20+ UTC and not yet posted."""
+    try:
+        from social.poster import post_summary_unlock_if_due
+
+        result = post_summary_unlock_if_due()
+        if result is None:
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Summary unlock not due or social posts disabled",
+                    "posted": False,
+                }
+            )
+        success = not result.get("errors")
+        return jsonify(
+            {
+                "success": success,
+                "posted": True,
+                **result,
+            }
+        ), (200 if success else 502)
+    except Exception as e:
+        log.exception("post-summary-unlock failed: %s", e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@admin_bp.route("/post-weekly-digest", methods=["POST"])
+@require_cron_auth
+def post_weekly_digest_route():
+    """Publish weekly digest for the current Mexico City ISO week if due."""
+    try:
+        from social.poster import post_weekly_digest_if_due
+
+        result = post_weekly_digest_if_due()
+        if result is None:
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Weekly digest not due or social posts disabled",
+                    "posted": False,
+                }
+            )
+        if "weekly_digest_empty" in result.get("errors", []):
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Weekly digest empty — skipped",
+                    "posted": False,
+                    **result,
+                }
+            )
+        success = not result.get("errors")
+        return jsonify(
+            {
+                "success": success,
+                "posted": True,
+                **result,
+            }
+        ), (200 if success else 502)
+    except Exception as e:
+        log.exception("post-weekly-digest failed: %s", e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@admin_bp.route("/post-streaks-monthly", methods=["POST"])
+@require_cron_auth
+def post_streaks_monthly_route():
+    """Publish monthly rachas spotlight for the current Mexico City month if due."""
+    try:
+        from social.poster import post_streaks_monthly_if_due
+
+        result = post_streaks_monthly_if_due()
+        if result is None:
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Monthly streaks not due or social posts disabled",
+                    "posted": False,
+                }
+            )
+        if "streaks_monthly_empty" in result.get("errors", []):
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Monthly streaks empty — skipped",
+                    "posted": False,
+                    **result,
+                }
+            )
+        success = not result.get("errors")
+        return jsonify(
+            {
+                "success": success,
+                "posted": True,
+                **result,
+            }
+        ), (200 if success else 502)
+    except Exception as e:
+        log.exception("post-streaks-monthly failed: %s", e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 @admin_bp.route("/update-all", methods=["POST"])
 @require_cron_auth
 def update_all():
@@ -2017,6 +2137,16 @@ def update_all():
                     ),
                     status_code,
                 )
+
+        try:
+            from social.poster import post_streaks_monthly_if_due
+
+            post_streaks_monthly_if_due()
+        except Exception as e:
+            log.error(
+                "Social STREAKS_MONTHLY posting failed (update-all succeeded): %s",
+                e,
+            )
 
         log.info("All updates executed successfully")
         return jsonify(

@@ -24,7 +24,7 @@ Environment variables (see `.env.example`):
 - `CRON_SECRET` — Auth secret for admin update endpoints
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
-- `SOCIAL_POSTS_ENABLED` — `true` to auto-post RESULTADOS, RÉCORDS, and PRÓXIMAS on WCA import (default: off)
+- `SOCIAL_POSTS_ENABLED` — `true` to allow Meta publishes (auto + manual admin). Keep `false` in development/staging (default: off)
 - `PUBLIC_BASE_URL` — Public HTTPS origin of this backend (required for Instagram `image_url`, e.g. `https://api.example.com`)
 - `META_PAGE_ACCESS_TOKEN` — Long-lived Facebook Page access token (or Secret Manager `meta-page-access-token`)
 - `FACEBOOK_PAGE_ID` — Facebook Page id (or Secret Manager `facebook-page-id`)
@@ -100,12 +100,14 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-kinch-ranks` — Update Kinch ranks
   - `POST /update-streak-ranks` — Update personal-record streak ranks
   - `POST /update-all` — Run full database import plus all derived rank updates
+  - `POST /post-summary-unlock` — If Dec 20+ UTC, publish the annual summary unlock graphic (idempotent; respects `SOCIAL_POSTS_ENABLED`)
 
 - **Social media (typed posts)**
   - `GET /social/media/<token>.jpg` — Short-lived public JPEG URL used by Instagram Content Publishing (unguessable token, ~10 min TTL; stored in Postgres so any Cloud Run replica can serve it)
   - RESULTADOS: `GET|POST /social/resultados/<competition_id>/{caption,image.png,publish,mark}`
   - RÉCORDS: `GET|POST /social/records/<subject_key>/{caption,image.png,publish,mark}` (`subject_key` = `{result_id}:single|average`)
   - PRÓXIMAS: `GET|POST /social/upcoming/<competition_id>/{caption,image.png,publish,mark}`
+  - RESUMEN: `GET|POST /social/summary-unlock/<year>/{caption,image.png,publish,mark}`
   - All caption/image/publish/mark routes require cron auth; Superadmin UI proxies them.
 
 ### Competitions API
@@ -155,19 +157,20 @@ Main tables used:
 - ranks_single, ranks_average
 - sum_of_ranks, kinch_ranks, streak_ranks
 - states, teams, events, export_metadata
-- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming`)
+- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock`)
 
 ## Automatic typed social posts
 
-When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish three graphic types to Facebook and Instagram:
+When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish four graphic types to Facebook and Instagram:
 
 | Type           | Trigger                                                                      | Dedup key                                         |
 | -------------- | ---------------------------------------------------------------------------- | ------------------------------------------------- |
 | **RESULTADOS** | Mexican competition newly appears in the results set                         | `(resultados, competition_id, platform)`          |
 | **RÉCORDS**    | New NR / NAR / WR marker on a Mexican person's result (incl. abroad)         | `(record, {result_id}:single\|average, platform)` |
 | **PRÓXIMAS**   | Newly inserted Mexican competition with `start_date > now` and not cancelled | `(upcoming, competition_id, platform)`            |
+| **RESUMEN**    | Current calendar year summaries unlocked (Dec 20 UTC onward)                 | `(summary_unlock, {year}, platform)`              |
 
-Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
+`POST /post-summary-unlock` runs the same Dec 20 due-check without a WCA import (useful for Cloud Scheduler on Dec 20). Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
 
 ### Meta setup (before enabling)
 
@@ -183,9 +186,9 @@ Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Capt
    - `FACEBOOK_PAGE_ID` / `facebook-page-id`
    - `INSTAGRAM_BUSINESS_ACCOUNT_ID` / `instagram-business-account-id`
 5. Set `PUBLIC_BASE_URL` to the publicly reachable HTTPS origin of this backend (Meta must be able to `GET` `/social/media/<token>.jpg`). Instagram requires JPEG for `image_url`.
-6. Set `SOCIAL_POSTS_ENABLED=true` on the backend service.
+6. Set `SOCIAL_POSTS_ENABLED=true` on the **production** backend service only.
 
-Keep `SOCIAL_POSTS_ENABLED=false` until secrets and `PUBLIC_BASE_URL` are verified.
+Keep `SOCIAL_POSTS_ENABLED=false` in development/staging (and until secrets and `PUBLIC_BASE_URL` are verified in production). Image download and “mark as posted” still work when the flag is off; only Meta API calls are skipped.
 
 ## Notes
 
