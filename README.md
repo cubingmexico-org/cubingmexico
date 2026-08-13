@@ -41,17 +41,19 @@ Create `apps/web/.env.local` for the Next.js app (see `apps/web/.env.example`). 
 ```env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/cubing_mexico
 BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=local-dev-better-auth-secret-change-me
+AUTH_TRUSTED_ORIGINS=http://localhost:3000,http://localhost:3001
 ```
 
 For WCA login and uploads, also set:
 
 ```env
-BETTER_AUTH_SECRET=...
 WCA_CLIENT_ID=...
 WCA_CLIENT_SECRET=...
 UPLOADTHING_TOKEN=...
 ```
 
+Use the **same** `BETTER_AUTH_SECRET` (and WCA client) in `apps/organizer/.env.local` with `BETTER_AUTH_URL=http://localhost:3001`. Cookies on `localhost` are shared across ports 3000/3001.
 Optional backend env: `apps/backend/.env` (see `apps/backend/.env.example`). Compose already injects `DB_URL`, `CRON_SECRET`, and related defaults.
 
 ### 3. Start Postgres, migrate, and backend
@@ -121,7 +123,7 @@ Open [http://localhost:3000](http://localhost:3000).
 Other apps:
 
 ```bash
-pnpm dev:organizer
+pnpm dev:organizer   # http://localhost:3001
 # or all apps:
 pnpm dev
 ```

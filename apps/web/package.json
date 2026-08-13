@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0",
@@ -23,6 +23,7 @@
     "@uploadthing/react": "^7.3.3",
     "@vercel/analytics": "^1.3.2",
     "@vercel/speed-insights": "^1.2.0",
+    "@workspace/auth": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/icons": "workspace:*",
     "@workspace/ui": "workspace:*",

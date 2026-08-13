@@ -34,6 +34,7 @@ DATABASE_URL="postgresql://..."
 # Better Auth
 BETTER_AUTH_SECRET="your-secret-key"
 BETTER_AUTH_URL="http://localhost:3000"
+AUTH_TRUSTED_ORIGINS="http://localhost:3000,http://localhost:3001"
 
 # WCA OAuth
 WCA_CLIENT_ID="..."

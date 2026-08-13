@@ -69,7 +69,10 @@ export function Canvas({
 
   const currentPerson = {
     name: session.data?.user?.name || "Leonardo Del Toro",
-    wcaId: `${currentYear}ABCD01`,
+    wcaId:
+      session.data?.user?.wcaId ||
+      session.data?.user?.id ||
+      `${currentYear}ABCD01`,
     avatar: {
       url: session.data?.user?.image || "/avatar.png",
       thumbUrl: session.data?.user?.image || "/avatar.png",

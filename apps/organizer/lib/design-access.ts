@@ -16,6 +16,7 @@ export function isDesignModule(value: string): value is DesignModule {
 
 export type SessionUser = {
   id: string;
+  wcaId?: string | null;
   name?: string | null;
   email?: string | null;
   image?: string | null;
@@ -30,7 +31,13 @@ export async function requireSessionUser(): Promise<SessionUser | null> {
     return null;
   }
 
-  return session.user;
+  const wcaId = session.user.wcaId ?? session.user.id;
+
+  return {
+    ...session.user,
+    id: wcaId,
+    wcaId,
+  };
 }
 
 function personMatchesUser(
