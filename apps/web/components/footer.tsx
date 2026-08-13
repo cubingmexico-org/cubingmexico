@@ -66,6 +66,20 @@ async function FooterContent() {
             </Link>
           </span>
         </div>
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <Link
+            href="/aviso-de-privacidad"
+            className="hover:underline hover:text-primary"
+          >
+            Aviso de privacidad
+          </Link>
+          <span className="text-muted-foreground/50" aria-hidden>
+            ·
+          </span>
+          <Link href="/terminos" className="hover:underline hover:text-primary">
+            Términos de uso
+          </Link>
+        </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
           <div className="inline-flex justify-center sm:justify-start flex-col sm:flex-row sm:items-center gap-2 text-sm">
             <span className="text-muted-foreground flex items-center">
