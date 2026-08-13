@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { GeoJSONProps } from "react-leaflet";
 import dynamic from "next/dynamic";
 import { Input } from "@workspace/ui/components/input";
-import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@workspace/ui/components/tabs";
 import { Search } from "lucide-react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { normalizeSearchText } from "@/lib/search";
+import { TeamCard } from "./team-card";
 
 const TeamsStateMap = dynamic(
   () => import("./teams-state-map").then((mod) => mod.TeamsStateMap),
@@ -35,7 +41,7 @@ export function Teams({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-  const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  const [view, setView] = useState<"cards" | "map">("cards");
 
   const normalizedSearch = normalizeSearchText(searchQuery);
 
@@ -50,14 +56,19 @@ export function Teams({
     return matchesSearch && matchesTab;
   });
 
-  const selectedTeam =
-    filteredTeams.find((team) => team.id === selectedTeamId) ?? null;
-
-  useEffect(() => {
-    if (selectedTeamId && !selectedTeam) {
-      setSelectedTeamId(null);
-    }
-  }, [selectedTeam, selectedTeamId]);
+  const emptyState = (
+    <div className="col-span-full text-center">
+      <p className="text-muted-foreground">
+        No se encontraron resultados para tu búsqueda.
+      </p>
+      <p className="text-muted-foreground py-4">
+        Intenta ajustar tu búsqueda o verifica la ortografía.
+      </p>
+      <p className="text-muted-foreground">
+        Si no encuentras lo que buscas, considera crear un nuevo Team.
+      </p>
+    </div>
+  );
 
   return (
     <>
@@ -79,7 +90,7 @@ export function Teams({
           />
         </div>
         <Tabs
-          defaultValue="all"
+          value={activeTab}
           className="w-full md:w-auto"
           onValueChange={setActiveTab}
         >
@@ -91,30 +102,49 @@ export function Teams({
         </Tabs>
       </div>
 
-      <div>
-        <div className="h-152 overflow-hidden rounded-2xl">
-          <TeamsStateMap
-            teams={filteredTeams}
-            statesData={statesData}
-            selectedState={selectedTeam?.state ?? null}
-            onTeamSelect={setSelectedTeamId}
-          />
-        </div>
+      <Tabs
+        value={view}
+        onValueChange={(value) => setView(value as "cards" | "map")}
+      >
+        <TabsList className="mb-6">
+          <TabsTrigger value="cards">Tarjetas</TabsTrigger>
+          <TabsTrigger value="map">Mapa</TabsTrigger>
+        </TabsList>
 
-        {filteredTeams.length === 0 && (
-          <div className="mt-4 text-center">
-            <p className="text-muted-foreground">
-              No se encontraron resultados para tu búsqueda.
-            </p>
-            <p className="text-muted-foreground py-2">
-              Intenta ajustar tu búsqueda o verifica la ortografía.
-            </p>
-            <p className="text-muted-foreground">
-              Si no encuentras lo que buscas, considera crear un nuevo Team.
-            </p>
+        <TabsContent value="cards">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredTeams.map((team) => (
+              <TeamCard
+                key={team.id}
+                id={team.id}
+                name={team.name}
+                description={team.description}
+                image={team.image}
+                coverImage={team.coverImage}
+                state={team.state}
+                founded={team.founded}
+                isActive={team.isActive}
+                members={team.members}
+              />
+            ))}
+            {filteredTeams.length === 0 && emptyState}
           </div>
-        )}
-      </div>
+        </TabsContent>
+
+        <TabsContent value="map">
+          <div className="h-152 overflow-hidden rounded-2xl">
+            <TeamsStateMap
+              teams={filteredTeams}
+              statesData={statesData}
+              selectedState={null}
+              onTeamSelect={() => {}}
+            />
+          </div>
+          {filteredTeams.length === 0 && (
+            <div className="mt-4 text-center">{emptyState}</div>
+          )}
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

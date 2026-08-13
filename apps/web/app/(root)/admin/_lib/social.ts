@@ -202,9 +202,7 @@ export async function fetchWeeklyDigestSlideImage(
   };
 }
 
-export async function fetchWeeklyDigestCaption(
-  week: string,
-): Promise<
+export async function fetchWeeklyDigestCaption(week: string): Promise<
   | {
       ok: true;
       caption: string;

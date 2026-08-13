@@ -13,8 +13,20 @@ import {
   team,
   teamMember,
 } from "@workspace/db/schema";
-import { and, count, gt, eq, inArray, asc, desc, sql, or } from "drizzle-orm";
+import {
+  and,
+  count,
+  gt,
+  eq,
+  inArray,
+  notInArray,
+  asc,
+  desc,
+  sql,
+  or,
+} from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
+import { EXCLUDED_EVENTS } from "@/lib/constants";
 import { type GetMembersSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -263,7 +275,13 @@ export async function getSingleNationalRecords(stateId: string) {
     })
     .from(rankSingle)
     .innerJoin(person, eq(rankSingle.personId, person.wcaId))
-    .where(and(eq(person.stateId, stateId), eq(rankSingle.countryRank, 1)))
+    .where(
+      and(
+        eq(person.stateId, stateId),
+        eq(rankSingle.countryRank, 1),
+        notInArray(rankSingle.eventId, EXCLUDED_EVENTS),
+      ),
+    )
     .orderBy(asc(rankSingle.eventId), asc(person.name));
 }
 
@@ -280,7 +298,13 @@ export async function getAverageNationalRecords(stateId: string) {
     })
     .from(rankAverage)
     .innerJoin(person, eq(rankAverage.personId, person.wcaId))
-    .where(and(eq(person.stateId, stateId), eq(rankAverage.countryRank, 1)))
+    .where(
+      and(
+        eq(person.stateId, stateId),
+        eq(rankAverage.countryRank, 1),
+        notInArray(rankAverage.eventId, EXCLUDED_EVENTS),
+      ),
+    )
     .orderBy(asc(rankAverage.eventId), asc(person.name));
 }
 

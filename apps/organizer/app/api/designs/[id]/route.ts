@@ -14,7 +14,11 @@ type RouteContext = {
 };
 
 async function loadDesignAccess(userId: string, id: string) {
-  const [row] = await db.select().from(design).where(eq(design.id, id)).limit(1);
+  const [row] = await db
+    .select()
+    .from(design)
+    .where(eq(design.id, id))
+    .limit(1);
 
   if (!row) {
     return { kind: "missing" as const };
@@ -116,9 +120,7 @@ export async function PUT(
 
   // Competition designs stay private; only library user templates toggle isPublic
   const nextIsPublic =
-    row.competitionId === null
-      ? (parsed.data.isPublic ?? row.isPublic)
-      : false;
+    row.competitionId === null ? (parsed.data.isPublic ?? row.isPublic) : false;
 
   const [updated] = await db
     .update(design)

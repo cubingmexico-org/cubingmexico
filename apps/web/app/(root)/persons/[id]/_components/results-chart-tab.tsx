@@ -29,7 +29,13 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { formatAttemptValue, roundRank, roundTypeLabel } from "@/lib/utils";
+import {
+  decodeMultiBlind,
+  formatAttemptValue,
+  formatTime333mbf,
+  roundRank,
+  roundTypeLabel,
+} from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
 import type {
   PersonResultsByEventGroup,
@@ -57,12 +63,8 @@ type SessionPoint = {
   bestAo100: number | null;
 };
 
-// Formats a duration in seconds to m:ss format for Y-axis labels.
-function formatSecondsToMMSS(seconds: number): string {
-  if (seconds < 0 || Number.isNaN(seconds)) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+function isHigherBetter(eventId: string): boolean {
+  return eventId === "333mbf";
 }
 
 // Converts a raw attempt value into a numeric value suitable for the Y axis.
@@ -77,10 +79,7 @@ function attemptToChartValue(eventId: string, value: number): number | null {
   }
 
   if (eventId === "333mbf") {
-    // Decode the seconds portion (TTTTT) of the multi-blind value.
-    const valueStr = value.toString();
-    const seconds = parseInt(valueStr.slice(2, 7), 10);
-    return Number.isNaN(seconds) || seconds === 99999 ? null : seconds;
+    return decodeMultiBlind(value)?.points ?? null;
   }
 
   return value / 100; // centiseconds -> seconds
@@ -137,20 +136,30 @@ function formatDisplayValue(eventId: string, val: number | null): string {
     return val.toFixed(2).replace(/\.00$/, "");
   }
   if (eventId === "333mbf") {
-    return formatSecondsToMMSS(val);
+    return Number.isInteger(val) ? `${val}` : val.toFixed(2);
   }
   return (
     formatAttemptValue(eventId, Math.round(val * 100)) ?? `${val.toFixed(2)}`
   );
 }
 
-// Helper to format total accumulated time / moves across all solves
+function formatSolveTooltipValue(eventId: string, rawSolve: number): string {
+  if (eventId === "333mbf" && rawSolve > 0) {
+    return formatTime333mbf(rawSolve);
+  }
+  return formatDisplayValue(eventId, attemptToChartValue(eventId, rawSolve));
+}
+
+// Helper to format total accumulated time / moves / points across all solves
 function formatTotalTime(eventId: string, val: number | null): string {
   if (val === null || Number.isNaN(val) || !Number.isFinite(val)) {
     return "—";
   }
   if (eventId === "333fm") {
     return `${Math.round(val).toLocaleString("es-MX")} movs`;
+  }
+  if (eventId === "333mbf") {
+    return `${Math.round(val).toLocaleString("es-MX")} pts`;
   }
 
   if (val < 60) {
@@ -224,8 +233,11 @@ export function PersonResultsChartTab({
       }
     }
 
+    const eventId = selectedResults.eventId;
+    const higherBetter = isHigherBetter(eventId);
     const allValues = rawSolvesList.map((s) => s.value);
-    let runningBest: number | null = null;
+    // WCA ordering: lower encoded multi value is better; for other events use chart value.
+    let runningBestRaw: number | null = null;
     const resultPoints: SessionPoint[] = [];
 
     for (let i = 0; i < rawSolvesList.length; i++) {
@@ -234,9 +246,17 @@ export function PersonResultsChartTab({
 
       let bestVal: number | null = null;
 
-      if (item.value !== null) {
-        if (runningBest === null || item.value < runningBest) {
-          runningBest = item.value;
+      if (item.value !== null && item.rawSolve > 0) {
+        const isNewPb =
+          runningBestRaw === null ||
+          (eventId === "333mbf"
+            ? item.rawSolve < runningBestRaw
+            : higherBetter
+              ? item.value > runningBestRaw
+              : item.value < runningBestRaw);
+
+        if (isNewPb) {
+          runningBestRaw = eventId === "333mbf" ? item.rawSolve : item.value;
           bestVal = item.value;
         }
       }
@@ -265,34 +285,42 @@ export function PersonResultsChartTab({
       });
     }
 
-    let minAo50: number | null = null;
-    let minAo50Idx = -1;
-    let minAo100: number | null = null;
-    let minAo100Idx = -1;
+    let bestAo50: number | null = null;
+    let bestAo50Idx = -1;
+    let bestAo100: number | null = null;
+    let bestAo100Idx = -1;
 
     for (let i = 0; i < resultPoints.length; i++) {
       const pt = resultPoints[i];
       if (!pt) continue;
-      if (pt.ao50 !== null && (minAo50 === null || pt.ao50 < minAo50)) {
-        minAo50 = pt.ao50;
-        minAo50Idx = i;
+      if (
+        pt.ao50 !== null &&
+        (bestAo50 === null ||
+          (higherBetter ? pt.ao50 > bestAo50 : pt.ao50 < bestAo50))
+      ) {
+        bestAo50 = pt.ao50;
+        bestAo50Idx = i;
       }
-      if (pt.ao100 !== null && (minAo100 === null || pt.ao100 < minAo100)) {
-        minAo100 = pt.ao100;
-        minAo100Idx = i;
+      if (
+        pt.ao100 !== null &&
+        (bestAo100 === null ||
+          (higherBetter ? pt.ao100 > bestAo100 : pt.ao100 < bestAo100))
+      ) {
+        bestAo100 = pt.ao100;
+        bestAo100Idx = i;
       }
     }
 
-    if (minAo50Idx !== -1) {
-      const targetAo50 = resultPoints[minAo50Idx];
+    if (bestAo50Idx !== -1) {
+      const targetAo50 = resultPoints[bestAo50Idx];
       if (targetAo50) {
-        targetAo50.bestAo50 = minAo50;
+        targetAo50.bestAo50 = bestAo50;
       }
     }
-    if (minAo100Idx !== -1) {
-      const targetAo100 = resultPoints[minAo100Idx];
+    if (bestAo100Idx !== -1) {
+      const targetAo100 = resultPoints[bestAo100Idx];
       if (targetAo100) {
-        targetAo100.bestAo100 = minAo100;
+        targetAo100.bestAo100 = bestAo100;
       }
     }
 
@@ -302,40 +330,47 @@ export function PersonResultsChartTab({
   const stats = useMemo(() => {
     if (!selectedResults || points.length === 0) return null;
 
+    const higherBetter = isHigherBetter(selectedResults.eventId);
     const allSolves = points.map((p) => p.value);
     const validAllSolves = allSolves.filter((v): v is number => v !== null);
 
     const globalDev = calculateDeviation(validAllSolves);
 
+    const pickBestAo = (values: number[]) =>
+      values.length > 0
+        ? higherBetter
+          ? Math.max(...values)
+          : Math.min(...values)
+        : null;
+
     // Global best averages achieved across entire timeline
     const validAo12s = points
       .map((p) => p.ao12)
       .filter((v): v is number => v !== null);
-    const globalAo12 =
-      validAo12s.length > 0
-        ? Math.min(...validAo12s)
-        : calculateAoN(allSolves, 12);
+    const globalAo12 = pickBestAo(validAo12s) ?? calculateAoN(allSolves, 12);
 
     const validAo50s = points
       .map((p) => p.ao50)
       .filter((v): v is number => v !== null);
-    const globalAo50 =
-      validAo50s.length > 0
-        ? Math.min(...validAo50s)
-        : calculateAoN(allSolves, 50);
+    const globalAo50 = pickBestAo(validAo50s) ?? calculateAoN(allSolves, 50);
 
     const validAo100s = points
       .map((p) => p.ao100)
       .filter((v): v is number => v !== null);
-    const globalAo100 =
-      validAo100s.length > 0
-        ? Math.min(...validAo100s)
-        : calculateAoN(allSolves, 100);
+    const globalAo100 = pickBestAo(validAo100s) ?? calculateAoN(allSolves, 100);
 
     const globalBest =
-      validAllSolves.length > 0 ? Math.min(...validAllSolves) : null;
+      validAllSolves.length > 0
+        ? higherBetter
+          ? Math.max(...validAllSolves)
+          : Math.min(...validAllSolves)
+        : null;
     const globalWorst =
-      validAllSolves.length > 0 ? Math.max(...validAllSolves) : null;
+      validAllSolves.length > 0
+        ? higherBetter
+          ? Math.min(...validAllSolves)
+          : Math.max(...validAllSolves)
+        : null;
     const globalMean =
       validAllSolves.length > 0
         ? validAllSolves.reduce((acc, v) => acc + v, 0) / validAllSolves.length
@@ -375,13 +410,21 @@ export function PersonResultsChartTab({
     .map((point) => point.value)
     .filter((value): value is number => value !== null);
 
-  const bestValue = validValues.length > 0 ? Math.min(...validValues) : null;
+  const higherBetter = selectedResults
+    ? isHigherBetter(selectedResults.eventId)
+    : false;
+  const bestValue =
+    validValues.length > 0
+      ? higherBetter
+        ? Math.max(...validValues)
+        : Math.min(...validValues)
+      : null;
 
   const unit =
     selectedResults?.eventId === "333fm"
       ? "movs"
       : selectedResults?.eventId === "333mbf"
-        ? "s"
+        ? "pts"
         : "s";
 
   const chartConfig = {
@@ -484,7 +527,7 @@ export function PersonResultsChartTab({
                       return `${value}`;
                     }
                     if (selectedResults.eventId === "333mbf") {
-                      return formatSecondsToMMSS(value);
+                      return `${Math.round(value)}`;
                     }
                     return (
                       formatAttemptValue(
@@ -523,6 +566,8 @@ export function PersonResultsChartTab({
                     const showUnit =
                       selectedResults.eventId !== "333fm" &&
                       selectedResults.eventId !== "333mbf";
+                    const ptsSuffix =
+                      selectedResults.eventId === "333mbf" ? ` ${unit}` : "";
 
                     const rows: {
                       label: string;
@@ -535,7 +580,10 @@ export function PersonResultsChartTab({
                         label: "Resolución",
                         color: "#ffffff",
                         value:
-                          fmtVal(point.value) + (showUnit ? ` ${unit}` : ""),
+                          formatSolveTooltipValue(
+                            selectedResults.eventId,
+                            point.rawSolve,
+                          ) + (showUnit ? ` ${unit}` : ""),
                       });
                     }
                     if (point.ao50 !== null) {
@@ -546,7 +594,8 @@ export function PersonResultsChartTab({
                             : "Ao50",
                         color: "#ef4444",
                         value:
-                          fmtVal(point.ao50) + (showUnit ? ` ${unit}` : ""),
+                          fmtVal(point.ao50) +
+                          (showUnit ? ` ${unit}` : ptsSuffix),
                       });
                     }
                     if (point.ao100 !== null) {
@@ -557,7 +606,8 @@ export function PersonResultsChartTab({
                             : "Ao100",
                         color: "#22c55e",
                         value:
-                          fmtVal(point.ao100) + (showUnit ? ` ${unit}` : ""),
+                          fmtVal(point.ao100) +
+                          (showUnit ? ` ${unit}` : ptsSuffix),
                       });
                     }
                     if (point.best !== null) {
@@ -565,7 +615,10 @@ export function PersonResultsChartTab({
                         label: "¡Nuevo récord!",
                         color: "#facc15",
                         value:
-                          fmtVal(point.best) + (showUnit ? ` ${unit}` : ""),
+                          formatSolveTooltipValue(
+                            selectedResults.eventId,
+                            point.rawSolve,
+                          ) + (showUnit ? ` ${unit}` : ""),
                       });
                     }
 
@@ -831,7 +884,9 @@ export function PersonResultsChartTab({
                       <TableCell className="font-medium">
                         {selectedResults.eventId === "333fm"
                           ? "Movimientos totales"
-                          : "Tiempo total"}
+                          : selectedResults.eventId === "333mbf"
+                            ? "Puntos totales"
+                            : "Tiempo total"}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {formatTotalTime(

@@ -314,9 +314,7 @@ export function DesignLibraryDialog({
                           <Button
                             size="sm"
                             disabled={busyId === item.id}
-                            onClick={() =>
-                              void handleClone(item.id, item.name)
-                            }
+                            onClick={() => void handleClone(item.id, item.name)}
                           >
                             {busyId === item.id ? (
                               <Loader2 className="size-4 animate-spin" />

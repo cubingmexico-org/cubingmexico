@@ -627,9 +627,7 @@ export function SocialAdminPanel({
         );
         const data = await response.json();
         if (!response.ok || !data.success) {
-          toast.error(
-            String(data?.message || `Error HTTP ${response.status}`),
-          );
+          toast.error(String(data?.message || `Error HTTP ${response.status}`));
           router.refresh();
           return;
         }
