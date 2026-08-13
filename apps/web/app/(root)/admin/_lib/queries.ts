@@ -422,7 +422,7 @@ function mexicoCityYmd(now = new Date()): string {
 }
 
 function isoWeekKeyFromYmd(ymd: string): string {
-  const [year, month, day] = ymd.split("-").map(Number);
+  const [year = 0, month = 0, day = 0] = ymd.split("-").map(Number);
   const date = new Date(Date.UTC(year, month - 1, day, 12));
   const dayNum = date.getUTCDay() || 7;
   date.setUTCDate(date.getUTCDate() + 4 - dayNum);
