@@ -4,7 +4,15 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CheckCheck, ClipboardCopy, Download, Eye, Send } from "lucide-react";
+import {
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCopy,
+  Download,
+  Eye,
+  Send,
+} from "lucide-react";
 import { SiFacebook, SiInstagram } from "@icons-pack/react-simple-icons";
 import { Button, buttonVariants } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
@@ -298,6 +306,76 @@ async function fetchImageObjectUrl(
   return URL.createObjectURL(blob);
 }
 
+async function fetchWeeklyDigestSlidesManifest(
+  week: string,
+): Promise<Array<{ index: number; id: string; title: string }>> {
+  const response = await fetch(
+    `/api/admin/social/weekly-digest/${encodeURIComponent(week)}/slides`,
+  );
+  const data = await response.json();
+  if (!response.ok || !data.success || !Array.isArray(data.slides)) {
+    const message =
+      data?.message ||
+      data?.data?.message ||
+      data?.data?.error ||
+      `Error HTTP ${response.status}`;
+    throw new Error(String(message));
+  }
+  return data.slides as Array<{ index: number; id: string; title: string }>;
+}
+
+async function fetchWeeklyDigestSlideObjectUrl(
+  week: string,
+  index: number,
+): Promise<string> {
+  const response = await fetch(
+    `/api/admin/social/weekly-digest/${encodeURIComponent(week)}/slides/${index}/image`,
+  );
+  if (!response.ok) {
+    let message = `Error HTTP ${response.status}`;
+    try {
+      const data = await response.json();
+      message =
+        data?.message || data?.data?.message || data?.data?.error || message;
+    } catch {
+      // ignore
+    }
+    throw new Error(String(message));
+  }
+  const blob = await response.blob();
+  return URL.createObjectURL(blob);
+}
+
+async function downloadWeeklyDigestSlide(
+  week: string,
+  index: number,
+  slideId: string,
+) {
+  const response = await fetch(
+    `/api/admin/social/weekly-digest/${encodeURIComponent(week)}/slides/${index}/image`,
+  );
+  if (!response.ok) {
+    let message = `Error HTTP ${response.status}`;
+    try {
+      const data = await response.json();
+      message =
+        data?.message || data?.data?.message || data?.data?.error || message;
+    } catch {
+      // ignore
+    }
+    throw new Error(String(message));
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `semana-${week.replace(/[:/]/g, "-")}-${slideId}.png`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 type ConfirmAction = {
   postType: SocialPostType;
   subjectKey: string;
@@ -311,10 +389,18 @@ type PreviewTarget = {
   name: string;
 };
 
+type PreviewSlide = {
+  index: number;
+  id: string;
+  title: string;
+  imageUrl: string;
+};
+
 type PreviewData = {
   imageUrl: string;
   facebookCaption: string;
   instagramCaption: string;
+  slides?: PreviewSlide[];
 };
 
 function PreviewButton({
@@ -390,6 +476,7 @@ export function SocialAdminPanel({
   const [previewPlatform, setPreviewPlatform] = React.useState<
     "facebook" | "instagram"
   >("facebook");
+  const [previewSlideIndex, setPreviewSlideIndex] = React.useState(0);
 
   React.useEffect(() => {
     if (!previewTarget) {
@@ -398,29 +485,69 @@ export function SocialAdminPanel({
 
     const target = previewTarget;
     let cancelled = false;
-    let objectUrl: string | null = null;
+    const objectUrls: string[] = [];
 
     async function loadPreview() {
       setPreviewLoading(true);
       setPreviewError(null);
       setPreviewData(null);
       setPreviewPlatform("facebook");
+      setPreviewSlideIndex(0);
       try {
-        const [imageUrl, captions] = await Promise.all([
-          fetchImageObjectUrl(target.postType, target.subjectKey),
-          fetchCaptions(target.postType, target.subjectKey),
-        ]);
-        if (cancelled) {
-          URL.revokeObjectURL(imageUrl);
-          return;
+        if (target.postType === "weekly_digest") {
+          const [manifest, captions] = await Promise.all([
+            fetchWeeklyDigestSlidesManifest(target.subjectKey),
+            fetchCaptions(target.postType, target.subjectKey),
+          ]);
+          if (cancelled) return;
+          if (manifest.length === 0) {
+            throw new Error("No hay slides para esta semana");
+          }
+          const slides: PreviewSlide[] = [];
+          for (const meta of manifest) {
+            const imageUrl = await fetchWeeklyDigestSlideObjectUrl(
+              target.subjectKey,
+              meta.index,
+            );
+            if (cancelled) {
+              URL.revokeObjectURL(imageUrl);
+              return;
+            }
+            objectUrls.push(imageUrl);
+            slides.push({
+              index: meta.index,
+              id: meta.id,
+              title: meta.title,
+              imageUrl,
+            });
+          }
+          setPreviewData({
+            imageUrl: slides[0]!.imageUrl,
+            facebookCaption: captions.facebookCaption,
+            instagramCaption: captions.instagramCaption,
+            slides,
+          });
+        } else {
+          const [imageUrl, captions] = await Promise.all([
+            fetchImageObjectUrl(target.postType, target.subjectKey),
+            fetchCaptions(target.postType, target.subjectKey),
+          ]);
+          if (cancelled) {
+            URL.revokeObjectURL(imageUrl);
+            return;
+          }
+          objectUrls.push(imageUrl);
+          setPreviewData({
+            imageUrl,
+            facebookCaption: captions.facebookCaption,
+            instagramCaption: captions.instagramCaption,
+          });
         }
-        objectUrl = imageUrl;
-        setPreviewData({
-          imageUrl,
-          facebookCaption: captions.facebookCaption,
-          instagramCaption: captions.instagramCaption,
-        });
       } catch (error) {
+        for (const url of objectUrls) {
+          URL.revokeObjectURL(url);
+        }
+        objectUrls.length = 0;
         if (!cancelled) {
           setPreviewError(
             error instanceof Error
@@ -439,8 +566,8 @@ export function SocialAdminPanel({
 
     return () => {
       cancelled = true;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
+      for (const url of objectUrls) {
+        URL.revokeObjectURL(url);
       }
     };
   }, [previewTarget]);
@@ -450,6 +577,7 @@ export function SocialAdminPanel({
     setPreviewData(null);
     setPreviewError(null);
     setPreviewLoading(false);
+    setPreviewSlideIndex(0);
   }
 
   async function runAction(
@@ -462,7 +590,17 @@ export function SocialAdminPanel({
     setBusyAction(action);
     try {
       if (action === "download") {
-        await downloadImage(postType, subjectKey);
+        if (
+          postType === "weekly_digest" &&
+          previewData?.slides &&
+          previewData.slides.length > 0
+        ) {
+          const slide =
+            previewData.slides[previewSlideIndex] ?? previewData.slides[0]!;
+          await downloadWeeklyDigestSlide(subjectKey, slide.index, slide.id);
+        } else {
+          await downloadImage(postType, subjectKey);
+        }
         toast.success("Imagen descargada");
         return;
       }
@@ -1175,8 +1313,15 @@ export function SocialAdminPanel({
             <div className="mx-auto w-full min-w-0 max-w-sm space-y-4">
               <div className="relative">
                 <img
-                  src={previewData.imageUrl}
-                  alt={`Vista previa ${previewTarget?.name ?? ""}`}
+                  src={
+                    previewData.slides?.[previewSlideIndex]?.imageUrl ??
+                    previewData.imageUrl
+                  }
+                  alt={`Vista previa ${previewTarget?.name ?? ""}${
+                    previewData.slides?.[previewSlideIndex]
+                      ? ` · ${previewData.slides[previewSlideIndex]!.title}`
+                      : ""
+                  }`}
                   className="border-border aspect-square w-full rounded-md border object-cover"
                 />
                 <Button
@@ -1203,6 +1348,63 @@ export function SocialAdminPanel({
                   <Download className="size-4" />
                 </Button>
               </div>
+              {previewData.slides && previewData.slides.length > 1 ? (
+                <div className="flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="size-8"
+                    disabled={previewSlideIndex <= 0}
+                    aria-label="Slide anterior"
+                    onClick={() =>
+                      setPreviewSlideIndex((i) => Math.max(0, i - 1))
+                    }
+                  >
+                    <ChevronLeft className="size-4" />
+                  </Button>
+                  <div className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                    <p className="text-muted-foreground text-xs tabular-nums">
+                      {previewSlideIndex + 1}/{previewData.slides.length}
+                      {previewData.slides[previewSlideIndex]
+                        ? ` · ${previewData.slides[previewSlideIndex]!.title}`
+                        : ""}
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-1.5">
+                      {previewData.slides.map((slide, i) => (
+                        <button
+                          key={`${slide.id}-${slide.index}`}
+                          type="button"
+                          aria-label={`Ir a slide ${i + 1}`}
+                          className={
+                            i === previewSlideIndex
+                              ? "bg-foreground size-2 rounded-full"
+                              : "bg-muted-foreground/40 size-2 rounded-full"
+                          }
+                          onClick={() => setPreviewSlideIndex(i)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    className="size-8"
+                    disabled={
+                      previewSlideIndex >= previewData.slides.length - 1
+                    }
+                    aria-label="Slide siguiente"
+                    onClick={() =>
+                      setPreviewSlideIndex((i) =>
+                        Math.min(previewData.slides!.length - 1, i + 1),
+                      )
+                    }
+                  >
+                    <ChevronRight className="size-4" />
+                  </Button>
+                </div>
+              ) : null}
               <div className="min-w-0 space-y-2">
                 <div className="flex flex-wrap gap-2">
                   <Button

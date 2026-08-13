@@ -30,7 +30,13 @@ from social.digest_queries import (
     fetch_weekly_digest_payload,
 )
 from social.media_store import delete_media, put_media
-from social.meta import MetaApiError, post_facebook_photo, post_instagram_image
+from social.meta import (
+    MetaApiError,
+    post_facebook_multi_photo,
+    post_facebook_photo,
+    post_instagram_carousel,
+    post_instagram_image,
+)
 from social.records_image import generate_record_png
 from social.resultados_image import generate_resultados_png, png_bytes_to_jpeg
 from social.image_common import format_place_line
@@ -46,7 +52,11 @@ from social.wca_competition import (
     format_entry_fee,
     parse_wca_datetime,
 )
-from social.weekly_digest_image import generate_weekly_digest_png
+from social.weekly_digest_image import (
+    generate_weekly_digest_png,
+    generate_weekly_digest_slides,
+    plan_weekly_digest_slides,
+)
 
 POST_TYPE_RESULTADOS = "resultados"
 POST_TYPE_RECORD = "record"
@@ -338,6 +348,141 @@ def _publish_image_to_platforms(
     finally:
         if media_token:
             delete_media(media_token)
+
+    return result
+
+
+def _publish_carousel_to_platforms(
+    *,
+    post_type: str,
+    subject_key: str,
+    competition_id: str | None,
+    pngs: list[bytes],
+    facebook_caption: str,
+    instagram_caption: str,
+    skip_fb: bool,
+    skip_ig: bool,
+    result: dict,
+) -> dict:
+    """Publish one or more images; uses carousel APIs when len(pngs) > 1."""
+    if not pngs:
+        result["errors"].append("carousel_empty")
+        return result
+    if len(pngs) == 1:
+        return _publish_image_to_platforms(
+            post_type=post_type,
+            subject_key=subject_key,
+            competition_id=competition_id,
+            png=pngs[0],
+            facebook_caption=facebook_caption,
+            instagram_caption=instagram_caption,
+            skip_fb=skip_fb,
+            skip_ig=skip_ig,
+            result=result,
+        )
+
+    if not SOCIAL_POSTS_ENABLED:
+        log.info(
+            "Social posts disabled (SOCIAL_POSTS_ENABLED is not true). "
+            "Skipping Meta carousel publish for %s/%s.",
+            post_type,
+            subject_key,
+        )
+        result["errors"].append("social_posts_disabled")
+        return result
+
+    media_tokens: list[str] = []
+    facebook_page_id = get_facebook_page_id()
+    meta_token = get_meta_page_access_token()
+    ig_user_id = get_instagram_business_account_id()
+
+    try:
+        if not skip_fb:
+            if not facebook_page_id or not meta_token:
+                result["errors"].append("facebook_credentials_missing")
+            else:
+                try:
+                    fb_id = post_facebook_multi_photo(
+                        page_id=facebook_page_id,
+                        access_token=meta_token,
+                        image_bytes_list=pngs,
+                        caption=facebook_caption,
+                    )
+                    with get_connection() as conn:
+                        with conn.cursor() as cur:
+                            _record_post(
+                                cur,
+                                post_type=post_type,
+                                subject_key=subject_key,
+                                competition_id=competition_id,
+                                platform="facebook",
+                                external_id=fb_id,
+                            )
+                    result["facebook"] = fb_id
+                    log.info(
+                        "Posted Facebook carousel %s for %s (%s, %s slides)",
+                        post_type,
+                        subject_key,
+                        fb_id,
+                        len(pngs),
+                    )
+                except MetaApiError as e:
+                    log.error(
+                        "Facebook carousel failed for %s/%s: %s",
+                        post_type,
+                        subject_key,
+                        e,
+                    )
+                    result["errors"].append(f"facebook:{e}")
+
+        if not skip_ig:
+            if not ig_user_id or not meta_token:
+                result["errors"].append("instagram_credentials_missing")
+            elif not PUBLIC_BASE_URL:
+                result["errors"].append("public_base_url_missing")
+            else:
+                try:
+                    image_urls: list[str] = []
+                    for png in pngs:
+                        jpeg = png_bytes_to_jpeg(png)
+                        token = put_media(jpeg, content_type="image/jpeg")
+                        media_tokens.append(token)
+                        image_urls.append(_public_media_url(token))
+                    ig_id = post_instagram_carousel(
+                        ig_user_id=ig_user_id,
+                        access_token=meta_token,
+                        image_urls=image_urls,
+                        caption=instagram_caption,
+                    )
+                    with get_connection() as conn:
+                        with conn.cursor() as cur:
+                            _record_post(
+                                cur,
+                                post_type=post_type,
+                                subject_key=subject_key,
+                                competition_id=competition_id,
+                                platform="instagram",
+                                external_id=ig_id,
+                            )
+                    result["instagram"] = ig_id
+                    log.info(
+                        "Posted Instagram carousel %s for %s (%s, %s slides)",
+                        post_type,
+                        subject_key,
+                        ig_id,
+                        len(pngs),
+                    )
+                except (MetaApiError, RuntimeError) as e:
+                    log.error(
+                        "Instagram carousel failed for %s/%s: %s",
+                        post_type,
+                        subject_key,
+                        e,
+                    )
+                    result["errors"].append(f"instagram:{e}")
+    finally:
+        for token in media_tokens:
+            delete_media(token)
 
     return result
 
@@ -1253,6 +1398,24 @@ def generate_weekly_digest_png_for_week(week_key: str) -> tuple[bytes, dict] | N
     return generate_weekly_digest_png(payload=payload), payload
 
 
+def generate_weekly_digest_slides_for_week(
+    week_key: str,
+) -> tuple[list[dict], dict] | None:
+    """Return (slides [{id,title,png}], payload) or None if invalid week."""
+    payload = get_weekly_digest_payload(week_key)
+    if not payload:
+        return None
+    slides = generate_weekly_digest_slides(payload=payload)
+    return slides, payload
+
+
+def plan_weekly_digest_slides_for_week(week_key: str) -> tuple[list[dict], dict] | None:
+    payload = get_weekly_digest_payload(week_key)
+    if not payload:
+        return None
+    return plan_weekly_digest_slides(payload), payload
+
+
 def post_weekly_digest(week_key: str) -> dict:
     result = {
         "post_type": POST_TYPE_WEEKLY_DIGEST,
@@ -1293,16 +1456,22 @@ def post_weekly_digest(week_key: str) -> dict:
         result["instagram"] = "already_posted"
         return result
 
-    png = generate_weekly_digest_png(payload=payload)
+    slides = generate_weekly_digest_slides(payload=payload)
+    if not slides:
+        result["errors"].append("weekly_digest_empty")
+        return result
+    pngs = [slide["png"] for slide in slides]
+    result["slide_count"] = len(slides)
+    result["slide_ids"] = [slide["id"] for slide in slides]
     captions = {
         "facebook": build_weekly_digest_caption(payload, include_link=True),
         "instagram": build_weekly_digest_caption(payload, include_link=False),
     }
-    return _publish_image_to_platforms(
+    return _publish_carousel_to_platforms(
         post_type=POST_TYPE_WEEKLY_DIGEST,
         subject_key=week_key,
         competition_id=None,
-        png=png,
+        pngs=pngs,
         facebook_caption=captions["facebook"],
         instagram_caption=captions["instagram"],
         skip_fb=skip_fb,

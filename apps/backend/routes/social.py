@@ -25,6 +25,8 @@ from social.poster import (
     generate_summary_unlock_png_for_year,
     generate_upcoming_png_for_competition,
     generate_weekly_digest_png_for_week,
+    generate_weekly_digest_slides_for_week,
+    plan_weekly_digest_slides_for_week,
     get_competition_resultados_captions,
     get_record_captions,
     get_streaks_monthly_captions,
@@ -538,6 +540,95 @@ def weekly_digest_image(week: str):
         headers={
             "Cache-Control": "no-store",
             "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
+
+
+@social_bp.route("/social/weekly-digest/<week>/slides", methods=["GET"])
+@require_cron_auth
+def weekly_digest_slides(week: str):
+    if parse_iso_week_key(week) is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+    if not is_weekly_digest_due(week):
+        return (
+            jsonify({"success": False, "message": "Weekly digest not due yet"}),
+            404,
+        )
+
+    planned = plan_weekly_digest_slides_for_week(week)
+    if planned is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+
+    slides, payload = planned
+    if payload.get("is_empty") or not slides:
+        return (
+            jsonify({"success": False, "message": "Weekly digest empty"}),
+            404,
+        )
+
+    return jsonify(
+        {
+            "success": True,
+            "post_type": POST_TYPE_WEEKLY_DIGEST,
+            "subject_key": week,
+            "week": week,
+            "count": len(slides),
+            "slides": [
+                {"index": i, "id": s["id"], "title": s["title"]}
+                for i, s in enumerate(slides)
+            ],
+        }
+    )
+
+
+@social_bp.route(
+    "/social/weekly-digest/<week>/slides/<int:index>/image.png",
+    methods=["GET"],
+)
+@require_cron_auth
+def weekly_digest_slide_image(week: str, index: int):
+    if parse_iso_week_key(week) is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+    if not is_weekly_digest_due(week):
+        return (
+            jsonify({"success": False, "message": "Weekly digest not due yet"}),
+            404,
+        )
+    if index < 0:
+        return jsonify({"success": False, "message": "Invalid slide index"}), 400
+
+    try:
+        generated = generate_weekly_digest_slides_for_week(week)
+    except Exception as e:
+        log.exception(
+            "Failed to generate WEEKLY_DIGEST slides for %s: %s", week, e
+        )
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if generated is None:
+        return jsonify({"success": False, "message": "Invalid week"}), 400
+
+    slides, payload = generated
+    if payload.get("is_empty") or not slides:
+        return (
+            jsonify({"success": False, "message": "Weekly digest empty"}),
+            404,
+        )
+    if index >= len(slides):
+        return jsonify({"success": False, "message": "Slide index out of range"}), 404
+
+    slide = slides[index]
+    filename = f"semana-{week}-{slide['id']}.png"
+    return Response(
+        slide["png"],
+        mimetype="image/png",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "X-Slide-Id": slide["id"],
+            "X-Slide-Title": slide["title"],
+            "X-Slide-Index": str(index),
+            "X-Slide-Count": str(len(slides)),
         },
     )
 
