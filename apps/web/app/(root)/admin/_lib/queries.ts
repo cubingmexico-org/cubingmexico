@@ -1,5 +1,7 @@
 import "server-only";
 
+import { streaksMonthlyKeyIfDue } from "@/lib/social-calendar-mx";
+
 import { db } from "@workspace/db";
 import {
   competition,
@@ -479,7 +481,10 @@ export async function getPendingStreaksMonthlyPosts(): Promise<
     instagramPosted: boolean;
   }>
 > {
-  const subjectKey = mexicoCityYmd().slice(0, 7);
+  const subjectKey = streaksMonthlyKeyIfDue();
+  if (!subjectKey) {
+    return [];
+  }
   const rows = await db
     .select({
       platform: socialPost.platform,

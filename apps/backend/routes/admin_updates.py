@@ -2065,7 +2065,7 @@ def post_weekly_digest_route():
 @admin_bp.route("/post-streaks-monthly", methods=["POST"])
 @require_cron_auth
 def post_streaks_monthly_route():
-    """Publish monthly rachas spotlight for the current Mexico City month if due."""
+    """Publish monthly rachas spotlight on the month's last day (México) if due."""
     try:
         from social.poster import post_streaks_monthly_if_due
 

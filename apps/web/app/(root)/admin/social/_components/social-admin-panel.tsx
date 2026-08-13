@@ -1004,8 +1004,8 @@ export function SocialAdminPanel({
             <CardHeader>
               <CardTitle className="text-base">Pendientes · RACHAS</CardTitle>
               <CardDescription>
-                Spotlight mensual de rachas de PRs (desde el día 1 del mes,
-                México).
+                Spotlight mensual de rachas de PRs (último día del mes, México;
+                reintento hasta 3 días después si falla el cron).
               </CardDescription>
             </CardHeader>
             <CardContent>
