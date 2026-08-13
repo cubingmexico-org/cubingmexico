@@ -602,15 +602,92 @@ def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
         fill=CREAM,
     )
 
-    # Scale type to fill panel based on row count.
-    n = max(1, len(rows))
+    n = len(rows)
+    tag_font = load_font(16)
+    bottom = _panel_bottom_y()
+
+    if n == 0:
+        section_font = load_font(28)
+        empty_font = load_font(28)
+        y = panel_top + (PANEL_BOTTOM - panel_top) // 3
+        y = _draw_section_label(draw, eyebrow, section_font, x=CONTENT_LEFT, y=y)
+        draw.text(
+            (CONTENT_LEFT, y),
+            "Sin competencias con resultados",
+            font=empty_font,
+            fill=RED,
+        )
+        _draw_slide_index(draw, index=index, total=total)
+        return _png_bytes(canvas)
+
+    # Single comp → hero layout (typical week: one weekend comp).
+    if n == 1:
+        comp, tag = rows[0]
+        section_font, name_font, meta_font = (
+            load_font(40),
+            load_font(52),
+            load_font(32),
+        )
+        header_h = text_height("Ay", section_font) + 8 + 4 + 16
+        name_w = CONTENT_WIDTH - (120 if tag else 0)
+        name_lines = _wrap_text(
+            comp.get("name") or "", name_font, name_w, max_lines=3
+        ) or ["—"]
+        meta = _comp_meta(comp)
+        status = ""
+        if not tag and not late_only:
+            status = "" if comp.get("has_results") else " · resultados pendientes"
+        content_h = len(name_lines) * (text_height("Ay", name_font) + 6)
+        if meta or status:
+            content_h += 8 + text_height("Ay", meta_font)
+        y, _ = _distribute_start_and_gap(
+            panel_top=panel_top,
+            header_h=header_h,
+            content_h=content_h,
+            n_gaps=0,
+            top_pad=36,
+        )
+        y = _draw_section_label(
+            draw, eyebrow, section_font, x=CONTENT_LEFT, y=y - header_h
+        )
+        name_top = y
+        for line in name_lines:
+            draw.text((CONTENT_LEFT, y), line, font=name_font, fill=BLACK)
+            y += text_height("Ay", name_font) + 6
+        if tag:
+            tw = text_width(tag.upper(), tag_font)
+            th = text_height("Ay", tag_font)
+            bx0 = CONTENT_RIGHT - tw - 24
+            draw.rounded_rectangle(
+                [bx0, name_top + 4, CONTENT_RIGHT, name_top + th + 16],
+                radius=8,
+                fill=GREEN if tag == "recién" else RED,
+            )
+            draw.text(
+                ((bx0 + CONTENT_RIGHT) // 2, name_top + 10 + th // 2),
+                tag.upper(),
+                font=tag_font,
+                fill=CREAM,
+                anchor="mm",
+            )
+        if meta or status:
+            y += 10
+            draw.text(
+                (CONTENT_LEFT, y),
+                _fit_ellipsis((meta or "") + status, meta_font, CONTENT_WIDTH),
+                font=meta_font,
+                fill=GREEN,
+            )
+        _draw_slide_index(draw, index=index, total=total)
+        return _png_bytes(canvas)
+
+    # Scale type to fill panel based on row count (2+ comps).
     if n <= 2:
         section_font, name_font, meta_font = load_font(32), load_font(40), load_font(28)
     elif n <= 4:
         section_font, name_font, meta_font = load_font(28), load_font(34), load_font(24)
     else:
         section_font, name_font, meta_font = load_font(26), load_font(30), load_font(22)
-    tag_font = load_font(16)
 
     header_h = text_height("Ay", section_font) + 8 + 4 + 16
     content_h = _estimate_comp_block_h(rows, name_font=name_font, meta_font=meta_font)
@@ -626,10 +703,7 @@ def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
         top_pad=24,
     )
     y = _draw_section_label(draw, eyebrow, section_font, x=CONTENT_LEFT, y=y - header_h)
-    # _draw_section_label already advanced past header; re-align to computed start.
-    # Actually we drew at y-header_h then label advances by header_h, so y is correct.
 
-    bottom = _panel_bottom_y()
     for i, (comp, tag) in enumerate(rows):
         if y > bottom - 50:
             break
@@ -849,7 +923,9 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
         content_h += text_height("Ay", meta_font) + 4  # event
         if (h.get("competition_name") or "").strip():
             content_h += text_height("Ay", meta_font) + 4
-    show_breakers = n <= 2 and bool(sr_breakers)
+    show_breakers = (
+        n <= 2 and bool(sr_breakers) and not _has_numeros(payload)
+    )
 
     y, gap = _distribute_start_and_gap(
         panel_top=panel_top,

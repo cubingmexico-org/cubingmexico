@@ -202,6 +202,73 @@ export async function fetchWeeklyDigestSlideImage(
   };
 }
 
+export async function fetchWeeklyDigestCaption(
+  week: string,
+): Promise<
+  | {
+      ok: true;
+      caption: string;
+      facebookCaption: string;
+      instagramCaption: string;
+    }
+  | { ok: false; status: number; body: unknown }
+> {
+  const config = backendConfig();
+  if (!config) {
+    return {
+      ok: false,
+      status: 500,
+      body: {
+        error:
+          "BACKEND_URL y CRON_SECRET deben estar configurados en el entorno.",
+      },
+    };
+  }
+
+  const response = await fetch(
+    `${config.backendUrl}/social/weekly-digest/${encodeURIComponent(week)}/caption`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${config.cronSecret}`,
+      },
+    },
+  );
+
+  const body = await parseJsonBody(response);
+  if (!response.ok) {
+    return { ok: false, status: response.status, body };
+  }
+
+  const record =
+    body && typeof body === "object" ? (body as Record<string, unknown>) : null;
+  const facebookCaption =
+    typeof record?.facebook_caption === "string"
+      ? record.facebook_caption
+      : typeof record?.caption === "string"
+        ? record.caption
+        : null;
+  const instagramCaption =
+    typeof record?.instagram_caption === "string"
+      ? record.instagram_caption
+      : facebookCaption;
+
+  if (!facebookCaption || !instagramCaption) {
+    return {
+      ok: false,
+      status: 502,
+      body: { error: "Caption missing in backend response" },
+    };
+  }
+
+  return {
+    ok: true,
+    caption: facebookCaption,
+    facebookCaption,
+    instagramCaption,
+  };
+}
+
 export async function publishSocialPost(
   postType: SocialPostType,
   subjectKey: string,
