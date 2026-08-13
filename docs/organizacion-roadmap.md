@@ -25,10 +25,10 @@ Umbrella brand describes the job (competition ops). Modules stay named after fea
 - Mexico state enrichment on badges (Cubing México API `competitor-states`)
 - Public WCIF read (`…/wcif/public`)
 - Shared 1-month availability window based on `results_posted_at`
+- Cloud design save/load (Neon `designs`) + Cubing México certificate templates + co-organizer ACL
 
 Known gaps (later phases):
 
-- Designs: local JSON download/upload only (no cloud save)
 - Editors: desktop-only
 - Groups / staff desk modules not started
 
@@ -60,9 +60,9 @@ Relevant code:
 
 | Feature | Module | Status | Why | Implementation | Depends |
 | ------- | ------ | ------ | --- | -------------- | ------- |
-| Cloud save for certificate & badge designs | Data | planned | JSON download/upload does not scale for multi-staff comps | Neon via `@workspace/db`: `designs(competitionId, userId, module, json, updatedAt)`; list/load/save API | home-hub |
-| Org / Mexico template library | Printables | planned | Reuse AMS / Cubing México branded defaults | `isPublic` + `ownerScope` (`user` \| `org` \| `global`); clone-to-competition; JSON schema version | save-designs |
-| Co-organizer access | Shell | planned | All managers of a comp should see designs | Authorize via WCA `managed_by_me`; share by `competitionId`, not only `userId` | save-designs |
+| Cloud save for certificate & badge designs | Data | done | JSON download/upload does not scale for multi-staff comps | Neon via `@workspace/db`: `designs(competitionId, userId, module, json, updatedAt)`; list/load/save API | home-hub |
+| Org / Mexico template library | Printables | done | Reuse AMS / Cubing México branded defaults | `isPublic` + `ownerScope` (`user` \| `org` \| `global`); clone-to-competition; JSON schema version | save-designs |
+| Co-organizer access | Shell | done | All managers of a comp should see designs | Authorize via WCA organizers/delegates; share by `competitionId`, not only `userId` | save-designs |
 
 ### Phase 2 — Competition desk
 
@@ -112,7 +112,7 @@ WCA now applies stricter WCIF schema checks on save (no unknown keys, correct ty
 ## Suggested build order
 
 1. ~~**Phase 0** — rename + enable age/newcomer + hub nav~~  
-2. **Phase 1** — DB-backed design save + shared templates  
+2. ~~**Phase 1** — DB-backed design save + shared templates~~  
 3. **Phase 2** — staff roster + print pack + desk overview  
 4. **Phase 3** — groups engine → schedule → WCIF check/PATCH  
 5. **Phase 4** — mobile desk, RBAC, MX packs, tools page polish  
@@ -130,7 +130,7 @@ Organización (shell)
 └── Data
     ├── WCA public WCIF GET (today)
     ├── Cubing México API (states / competitor-states)
-    └── @workspace/db designs table (Phase 1+)
+    └── @workspace/db designs table (Phase 1 — shipped)
 ```
 
 ## Related docs

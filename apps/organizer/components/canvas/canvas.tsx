@@ -5,7 +5,7 @@ import { Toolbar } from "@/components/canvas/toolbar";
 import { PropertiesPanel } from "@/components/canvas/properties-panel";
 import { CanvasSettings } from "@/components/canvas/canvas-settings";
 import { Button } from "@workspace/ui/components/button";
-import { Download, Eye, FlipHorizontal, RotateCcw, Upload } from "lucide-react";
+import { Download, Eye, FlipHorizontal, RotateCcw, Upload, Cloud, CloudDownload, LayoutTemplate } from "lucide-react";
 import { useCanvasStore } from "@/lib/canvas-store";
 import type { CanvasElement } from "@/types/canvas";
 import QRCode from "qrcode";
@@ -25,6 +25,7 @@ import { useState } from "react";
 import type { EventId, ExtendedPerson } from "@/types/wcif";
 import { State, Team } from "@/db/queries";
 import { authClient } from "@/lib/auth-client";
+import { DesignLibraryDialog } from "@/components/design-library-dialog";
 
 interface CanvasProps {
   states: State[];
@@ -54,12 +55,15 @@ export function Canvas({
   } = useCanvasStore();
 
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [cloudMode, setCloudMode] = useState<
+    "save" | "load" | "templates" | null
+  >(null);
 
   const session = authClient.useSession();
 
   const params = useParams();
 
-  const competitionId = params.competitionId;
+  const competitionId = String(params.competitionId ?? "");
 
   const currentYear = new Date().getFullYear();
 
@@ -685,18 +689,7 @@ export function Canvas({
   }
 
   const exportToJSON = () => {
-    const data = JSON.stringify(
-      {
-        elements,
-        canvasWidth,
-        canvasHeight,
-        backgroundImage,
-        backgroundImageBack,
-        enableBackSide,
-      },
-      null,
-      2,
-    );
+    const data = JSON.stringify(getBadgeDesignJson(), null, 2);
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -704,6 +697,42 @@ export function Canvas({
     a.download = `gafete-${competitionId}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const getBadgeDesignJson = () => ({
+    elements,
+    canvasWidth,
+    canvasHeight,
+    backgroundImage,
+    backgroundImageBack,
+    enableBackSide,
+  });
+
+  const applyBadgeDesignJson = (data: unknown) => {
+    if (!data || typeof data !== "object") {
+      toast.error(
+        "Error al importar el diseño. Verifica que el archivo sea válido.",
+      );
+      return;
+    }
+
+    const design = data as {
+      elements?: { front: CanvasElement[]; back: CanvasElement[] };
+      canvasWidth?: number;
+      canvasHeight?: number;
+      backgroundImage?: string;
+      backgroundImageBack?: string;
+      enableBackSide?: boolean;
+    };
+
+    if (design.elements) setElements(design.elements);
+    if (design.canvasWidth && design.canvasHeight)
+      setCanvasSize(design.canvasWidth, design.canvasHeight);
+    if (design.backgroundImage) setBackgroundImage(design.backgroundImage);
+    if (design.backgroundImageBack)
+      setBackgroundImageBack(design.backgroundImageBack);
+    if (design.enableBackSide !== undefined)
+      setEnableBackSide(design.enableBackSide);
   };
 
   const importFromJSON = () => {
@@ -716,16 +745,7 @@ export function Canvas({
 
       try {
         const text = await file.text();
-        const data = JSON.parse(text);
-
-        if (data.elements) setElements(data.elements);
-        if (data.canvasWidth && data.canvasHeight)
-          setCanvasSize(data.canvasWidth, data.canvasHeight);
-        if (data.backgroundImage) setBackgroundImage(data.backgroundImage);
-        if (data.backgroundImageBack)
-          setBackgroundImageBack(data.backgroundImageBack);
-        if (data.enableBackSide !== undefined)
-          setEnableBackSide(data.enableBackSide);
+        applyBadgeDesignJson(JSON.parse(text));
       } catch (error) {
         console.error("Failed to import design:", error);
         toast.error(
@@ -750,6 +770,19 @@ export function Canvas({
 
   return (
     <div className="h-screen w-full flex flex-col bg-background border">
+      {cloudMode && competitionId ? (
+        <DesignLibraryDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setCloudMode(null);
+          }}
+          mode={cloudMode}
+          competitionId={competitionId}
+          module="badges"
+          getJson={() => getBadgeDesignJson()}
+          onApply={(json) => applyBadgeDesignJson(json)}
+        />
+      ) : null}
       <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold text-foreground">Gafetes</h1>
@@ -805,6 +838,30 @@ export function Canvas({
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCloudMode("save")}
+          >
+            <Cloud />
+            Guardar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCloudMode("load")}
+          >
+            <CloudDownload />
+            Cargar
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCloudMode("templates")}
+          >
+            <LayoutTemplate />
+            Plantillas
+          </Button>
           <Button variant="outline" size="sm" onClick={importFromJSON}>
             <Upload />
             Importar JSON

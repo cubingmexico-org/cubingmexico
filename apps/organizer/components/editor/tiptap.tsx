@@ -29,8 +29,6 @@ import {
   MenubarTrigger,
 } from "@workspace/ui/components/menubar";
 import {
-  Save,
-  Loader,
   RotateCcw,
   Sheet,
   FileDown,
@@ -51,10 +49,18 @@ import {
   TableCellsSplit,
   RemoveFormatting,
   Heading,
+  Cloud,
+  CloudDownload,
+  LayoutTemplate,
+  Download,
+  Upload,
 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import { DialogDocumentSettings } from "@/components/editor/dialog-document-settings";
 import { TextTransform } from "@/components/editor/extensions/text-transform";
 import { FontSize } from "@/components/editor/extensions/font-size";
+import { DesignLibraryDialog } from "@/components/design-library-dialog";
 import { participation, podium } from "@/data/certificates";
 import Toolbar from "./toolbar";
 import suggestionPodiumEs from "./mentions/suggestions/suggestion-podium";
@@ -116,6 +122,13 @@ export default function Tiptap({
   competitionId,
   background,
 }: TiptapProps): React.JSX.Element {
+  const [cloudMode, setCloudMode] = useState<
+    "save" | "load" | "templates" | null
+  >(null);
+
+  const designModule =
+    variant === "podium" ? "certificate_podium" : "certificate_participation";
+
   const handleChange = (newContent: JSONContent) => {
     onChange(newContent);
   };
@@ -210,16 +223,29 @@ export default function Tiptap({
     return <></>;
   }
 
+  const getDocumentFile = (): SavedDocumentFile => ({
+    content: editor.getJSON(),
+    pageConfig: {
+      pageSize,
+      pageOrientation,
+      pageMargins,
+    },
+  });
+
+  const applyDocumentFile = (value: unknown) => {
+    if (!isSavedDocumentFile(value)) {
+      toast.error("El diseño no tiene un formato válido de certificado.");
+      return;
+    }
+    setPageSize(value.pageConfig.pageSize);
+    setPageOrientation(value.pageConfig.pageOrientation);
+    setPageMargins(value.pageConfig.pageMargins);
+    editor.commands.setContent(value.content);
+    handleChange(value.content);
+  };
+
   const saveContent = () => {
-    const content = editor.getJSON();
-    const documentFile: SavedDocumentFile = {
-      content,
-      pageConfig: {
-        pageSize,
-        pageOrientation,
-        pageMargins,
-      },
-    };
+    const documentFile = getDocumentFile();
     const jsonString = JSON.stringify(documentFile);
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -249,11 +275,7 @@ export default function Tiptap({
       const parsed = JSON.parse(jsonString) as unknown;
 
       if (isSavedDocumentFile(parsed)) {
-        setPageSize(parsed.pageConfig.pageSize);
-        setPageOrientation(parsed.pageConfig.pageOrientation);
-        setPageMargins(parsed.pageConfig.pageMargins);
-        editor.commands.setContent(parsed.content);
-        handleChange(parsed.content);
+        applyDocumentFile(parsed);
         return;
       }
 
@@ -266,6 +288,19 @@ export default function Tiptap({
 
   return (
     <div className="flex flex-col gap-2">
+      {cloudMode ? (
+        <DesignLibraryDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setCloudMode(null);
+          }}
+          mode={cloudMode}
+          competitionId={competitionId}
+          module={designModule}
+          getJson={() => getDocumentFile()}
+          onApply={(json) => applyDocumentFile(json)}
+        />
+      ) : null}
       <Menubar>
         <MenubarMenu>
           <MenubarTrigger>Archivo</MenubarTrigger>
@@ -286,13 +321,26 @@ export default function Tiptap({
               <RotateCcw />
               Reiniciar
             </MenubarItem>
+            <MenubarItem onClick={() => setCloudMode("save")}>
+              <Cloud />
+              Guardar en la nube
+            </MenubarItem>
+            <MenubarItem onClick={() => setCloudMode("load")}>
+              <CloudDownload />
+              Cargar desde la nube
+            </MenubarItem>
+            <MenubarItem onClick={() => setCloudMode("templates")}>
+              <LayoutTemplate />
+              Plantillas
+            </MenubarItem>
+            <MenubarSeparator />
             <MenubarItem onClick={saveContent}>
-              <Save />
-              Guardar
+              <Download />
+              Descargar JSON
             </MenubarItem>
             <MenubarItem onClick={loadContent}>
-              <Loader />
-              Cargar
+              <Upload />
+              Subir JSON
             </MenubarItem>
             <MenubarSeparator />
             <MenubarItem disabled={pdfDisabled} onClick={pdfOnClick}>

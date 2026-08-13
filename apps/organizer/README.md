@@ -9,6 +9,8 @@ Product roadmap: [`docs/organizacion-roadmap.md`](../../docs/organizacion-roadma
 - Rich text certificates (TipTap + pdfmake) for podium and participation
 - Badge canvas designer with ZIP / PDF export
 - Age and newcomer podium filters
+- Cloud save/load for designs (shared with co-organizers) + template library
+- Local JSON download/upload as backup
 - WCA OAuth (`manage_competitions`) via Better Auth
 - Public WCIF integration + Mexico state enrichment on badges
 
@@ -18,6 +20,7 @@ Product roadmap: [`docs/organizacion-roadmap.md`](../../docs/organizacion-roadma
 
 - Node.js >= 20
 - pnpm 10.4.1 or higher
+- Neon Postgres `DATABASE_URL` (same database as `apps/web` / `@workspace/db`)
 
 ### Installation
 
@@ -26,6 +29,18 @@ From the monorepo root:
 ```bash
 pnpm install
 ```
+
+Copy [`apps/organizer/.env.example`](./.env.example) to `apps/organizer/.env.local` and fill in WCA OAuth, Better Auth, `API_URL`, and `DATABASE_URL`.
+
+### Database
+
+Organización stores designs in the shared `@workspace/db` schema (`designs` table). Apply migrations from the monorepo root (or `apps/web` scripts):
+
+```bash
+pnpm --filter @workspace/db migrate
+```
+
+Global Cubing México certificate templates are upserted automatically the first time `/api/designs/templates` is called.
 
 ### Development
 
@@ -49,6 +64,7 @@ pnpm --filter organizer build
 
 - Next.js 16 (App Router), React 19, TypeScript
 - TipTap, pdfmake, jsPDF, Zustand, SWR, Better Auth
+- Neon / Drizzle via `@workspace/db`
 - Shared `@workspace/ui` and `@workspace/icons`
 
 ## Project Structure
@@ -61,6 +77,7 @@ apps/organizer/
 │   │   ├── badges/[competitionId]/
 │   │   └── page.tsx
 │   └── api/
+│       └── designs/
 ├── components/
 ├── data/
 ├── lib/

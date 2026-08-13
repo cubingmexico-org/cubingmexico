@@ -466,3 +466,43 @@ export const sponsor = pgTable("sponsors", {
 });
 
 export type Sponsor = InferSelectModel<typeof sponsor>;
+
+export const designModuleEnum = [
+  "certificate_podium",
+  "certificate_participation",
+  "badges",
+] as const;
+
+export type DesignModule = (typeof designModuleEnum)[number];
+
+export const designOwnerScopeEnum = ["user", "org", "global"] as const;
+
+export type DesignOwnerScope = (typeof designOwnerScopeEnum)[number];
+
+/** Organización certificate/badge designs and shared templates (no FK to competitions). */
+export const design = pgTable(
+  "designs",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    name: varchar("name", { length: 120 }).notNull(),
+    competitionId: varchar("competition_id", { length: 32 }),
+    userId: varchar("user_id", { length: 64 }).notNull(),
+    module: varchar("module", { length: 32 }).$type<DesignModule>().notNull(),
+    schemaVersion: integer("schema_version").notNull().default(1),
+    json: jsonb("json").notNull(),
+    isPublic: boolean("is_public").notNull().default(false),
+    ownerScope: varchar("owner_scope", { length: 16 })
+      .$type<DesignOwnerScope>()
+      .notNull()
+      .default("user"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("designs_competition_module_idx").on(t.competitionId, t.module),
+    index("designs_owner_scope_idx").on(t.ownerScope, t.isPublic),
+    index("designs_user_idx").on(t.userId),
+  ],
+);
+
+export type Design = InferSelectModel<typeof design>;
