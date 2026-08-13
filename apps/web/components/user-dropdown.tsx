@@ -9,11 +9,12 @@ import {
   CalendarDays,
   CalendarRange,
   Shield,
+  Award,
 } from "lucide-react";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
+import { ANNUAL_SUMMARY_ENABLED, ORGANIZER_APP_URL } from "@/lib/constants";
 import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
 import {
   Avatar,
@@ -101,6 +102,12 @@ export function UserDropdown({
             </Link>
           </DropdownMenuItem>
         ) : null}
+        <DropdownMenuItem>
+          <Award />
+          <a href={ORGANIZER_APP_URL} className="w-full">
+            Organización
+          </a>
+        </DropdownMenuItem>
         {isSuperadmin ? (
           <>
             <DropdownMenuSeparator />

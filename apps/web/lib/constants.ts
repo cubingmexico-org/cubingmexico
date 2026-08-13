@@ -8,6 +8,11 @@ export const unknownError =
 export const ANNUAL_SUMMARY_ENABLED =
   process.env.NEXT_PUBLIC_ANNUAL_SUMMARY_ENABLED === "true";
 
+/** Organización app (`apps/organizer`). Local default: http://localhost:3001 */
+export const ORGANIZER_APP_URL =
+  process.env.NEXT_PUBLIC_ORGANIZER_URL ??
+  "https://certificados.cubingmexico.net";
+
 export const EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic", "fto"];
 
 export const SINGLE_EVENTS = ["333fm", "333bf", "333mbf", "444bf", "555bf"];
