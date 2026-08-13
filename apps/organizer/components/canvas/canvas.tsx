@@ -5,7 +5,16 @@ import { Toolbar } from "@/components/canvas/toolbar";
 import { PropertiesPanel } from "@/components/canvas/properties-panel";
 import { CanvasSettings } from "@/components/canvas/canvas-settings";
 import { Button } from "@workspace/ui/components/button";
-import { Download, Eye, FlipHorizontal, RotateCcw, Upload, Cloud, CloudDownload, LayoutTemplate } from "lucide-react";
+import {
+  Download,
+  Eye,
+  FlipHorizontal,
+  RotateCcw,
+  Upload,
+  Cloud,
+  CloudDownload,
+  LayoutTemplate,
+} from "lucide-react";
 import { useCanvasStore } from "@/lib/canvas-store";
 import type { CanvasElement } from "@/types/canvas";
 import QRCode from "qrcode";

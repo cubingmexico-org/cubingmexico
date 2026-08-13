@@ -17,6 +17,76 @@ export function formatTime(centiseconds: number): string {
   return `${minutes}:${remainingSeconds}`;
 }
 
+export type MultiBlindResult = {
+  solved: number;
+  attempted: number;
+  missed: number;
+  /** solved - missed (higher is better). */
+  points: number;
+  /** Seconds; 99999 means unknown. */
+  timeInSeconds: number;
+};
+
+/**
+ * Decode WCA multi-blind encoded values.
+ *
+ * Old: 1SSAATTTTT — solved = 99 - SS, attempted = AA, time = TTTTT
+ * New: 0DDTTTTTMM — points = 99 - DD, time = TTTTT, missed = MM
+ */
+export function decodeMultiBlind(value: number): MultiBlindResult | null {
+  if (value <= 0) {
+    return null;
+  }
+
+  const valueStr = value.toString();
+
+  // Old format: 1SSAATTTTT (10 digits, leading 1)
+  if (valueStr.length === 10 && valueStr.startsWith("1")) {
+    const ss = parseInt(valueStr.slice(1, 3), 10);
+    const aa = parseInt(valueStr.slice(3, 5), 10);
+    const ttttt = parseInt(valueStr.slice(5, 10), 10);
+
+    if ([ss, aa, ttttt].some((n) => Number.isNaN(n))) {
+      return null;
+    }
+
+    const solved = 99 - ss;
+    const attempted = aa;
+    const missed = attempted - solved;
+
+    return {
+      solved,
+      attempted,
+      missed,
+      points: solved - missed,
+      timeInSeconds: ttttt,
+    };
+  }
+
+  // New format: 0DDTTTTTMM (pad to 9 digits)
+  const padded = valueStr.padStart(9, "0");
+  const dd = parseInt(padded.slice(0, 2), 10);
+  const ttttt = parseInt(padded.slice(2, 7), 10);
+  const mm = parseInt(padded.slice(7, 9), 10);
+
+  if ([dd, ttttt, mm].some((n) => Number.isNaN(n))) {
+    return null;
+  }
+
+  const points = 99 - dd;
+  const missed = mm;
+  const solved = points + missed;
+  const attempted = solved + missed;
+
+  return {
+    solved,
+    attempted,
+    missed,
+    points,
+    timeInSeconds: ttttt,
+  };
+}
+
 export function formatTime333mbf(value: number): string {
   if (value === -1) {
     return "DNF";
@@ -25,22 +95,19 @@ export function formatTime333mbf(value: number): string {
     return "DNS";
   }
 
-  const valueStr = value.toString();
-  const DD = valueStr.slice(0, 2);
-  const TTTTT = valueStr.slice(2, 7);
-  const MM = valueStr.slice(7);
+  const decoded = decodeMultiBlind(value);
+  if (!decoded) {
+    return "DNF";
+  }
 
-  const difference = 99 - parseInt(DD);
-  const missed = parseInt(MM);
-  const solved = difference + missed;
-  const attempted = solved + missed;
+  const { solved, attempted, timeInSeconds } = decoded;
+  if (timeInSeconds === 99999) {
+    return `${solved}/${attempted}`;
+  }
 
-  const TTTTTNum = parseInt(TTTTT);
-  const minutes = Math.floor(TTTTTNum / 60);
-  const seconds = TTTTTNum % 60;
-  const time = `${solved}/${attempted} ${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-
-  return time;
+  const minutes = Math.floor(timeInSeconds / 60);
+  const seconds = timeInSeconds % 60;
+  return `${solved}/${attempted} ${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 }
 
 export function formatDate(

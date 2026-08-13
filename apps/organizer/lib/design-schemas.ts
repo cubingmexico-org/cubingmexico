@@ -6,7 +6,6 @@ export const designModuleSchema = z.enum([
   "badges",
 ]);
 
-
 export const createDesignSchema = z.object({
   name: z.string().trim().min(1).max(120),
   competitionId: z.string().trim().min(1).max(32).nullable().optional(),

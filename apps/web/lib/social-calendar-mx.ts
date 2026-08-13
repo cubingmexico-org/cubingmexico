@@ -2,7 +2,11 @@ const MX_TIME_ZONE = "America/Mexico_City";
 
 export const STREAKS_MONTHLY_GRACE_DAYS = 3;
 
-function mexicoCityParts(now = new Date()): { year: number; month: number; day: number } {
+function mexicoCityParts(now = new Date()): {
+  year: number;
+  month: number;
+  day: number;
+} {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: MX_TIME_ZONE,
     year: "numeric",

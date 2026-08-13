@@ -21,9 +21,7 @@ import { StateFilter } from "./_components/state-filter";
 import { StateGuessTable } from "./_components/state-guess-table";
 import { TeamRolesTable } from "./_components/team-roles-table";
 
-function parseConfidence(
-  value: string | undefined,
-): ConfidenceFilterValue {
+function parseConfidence(value: string | undefined): ConfidenceFilterValue {
   if (value === "all" || value === "medium" || value === "none") {
     return value;
   }
@@ -91,9 +89,8 @@ async function PeopleAdminContent({
         <CardHeader>
           <CardTitle className="text-base">Sugerir estado</CardTitle>
           <CardDescription>
-            Top 10 personas sin afiliación ({confidenceLabel}), ordenadas por
-            NR 333 / comps. Sugerencia según competencias MX (excluye
-            Nacionales).{" "}
+            Top 10 personas sin afiliación ({confidenceLabel}), ordenadas por NR
+            333 / comps. Sugerencia según competencias MX (excluye Nacionales).{" "}
             {highCount > 0
               ? `${highCount} con confianza alta preseleccionadas.`
               : null}

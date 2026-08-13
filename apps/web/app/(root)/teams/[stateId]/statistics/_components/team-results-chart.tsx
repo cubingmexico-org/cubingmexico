@@ -31,7 +31,13 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { formatAttemptValue, roundRank, roundTypeLabel } from "@/lib/utils";
+import {
+  decodeMultiBlind,
+  formatAttemptValue,
+  formatTime333mbf,
+  roundRank,
+  roundTypeLabel,
+} from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
 import { loadTeamCompetitionResults } from "../_lib/actions";
 import type {
@@ -55,11 +61,8 @@ type SessionPoint = {
   isStateRecord: boolean;
 };
 
-function formatSecondsToMMSS(seconds: number): string {
-  if (seconds < 0 || Number.isNaN(seconds)) return "0:00";
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+function isHigherBetter(eventId: string): boolean {
+  return eventId === "333mbf";
 }
 
 function attemptToChartValue(eventId: string, value: number): number | null {
@@ -72,9 +75,7 @@ function attemptToChartValue(eventId: string, value: number): number | null {
   }
 
   if (eventId === "333mbf") {
-    const valueStr = value.toString();
-    const seconds = parseInt(valueStr.slice(2, 7), 10);
-    return Number.isNaN(seconds) || seconds === 99999 ? null : seconds;
+    return decodeMultiBlind(value)?.points ?? null;
   }
 
   return value / 100;
@@ -97,11 +98,18 @@ function formatDisplayValue(eventId: string, val: number | null): string {
     return val.toFixed(2).replace(/\.00$/, "");
   }
   if (eventId === "333mbf") {
-    return formatSecondsToMMSS(val);
+    return Number.isInteger(val) ? `${val}` : val.toFixed(2);
   }
   return (
     formatAttemptValue(eventId, Math.round(val * 100)) ?? `${val.toFixed(2)}`
   );
+}
+
+function formatSolveTooltipValue(eventId: string, rawSolve: number): string {
+  if (eventId === "333mbf" && rawSolve > 0) {
+    return formatTime333mbf(rawSolve);
+  }
+  return formatDisplayValue(eventId, attemptToChartValue(eventId, rawSolve));
 }
 
 function formatTotalTime(eventId: string, val: number | null): string {
@@ -110,6 +118,9 @@ function formatTotalTime(eventId: string, val: number | null): string {
   }
   if (eventId === "333fm") {
     return `${Math.round(val).toLocaleString("es-MX")} movs`;
+  }
+  if (eventId === "333mbf") {
+    return `${Math.round(val).toLocaleString("es-MX")} pts`;
   }
 
   if (val < 60) {
@@ -203,7 +214,8 @@ function TeamResultsChartView({
       }
     }
 
-    let runningBest: number | null = null;
+    let runningBestRaw: number | null = null;
+    const eventId = selectedResults.eventId;
     const resultPoints: SessionPoint[] = [];
 
     for (let i = 0; i < rawSolvesList.length; i++) {
@@ -213,9 +225,15 @@ function TeamResultsChartView({
       let bestVal: number | null = null;
       let isStateRecord = false;
 
-      if (item.value !== null) {
-        if (runningBest === null || item.value < runningBest) {
-          runningBest = item.value;
+      if (item.value !== null && item.rawSolve > 0) {
+        const isNewPb =
+          runningBestRaw === null ||
+          (eventId === "333mbf"
+            ? item.rawSolve < runningBestRaw
+            : item.value < runningBestRaw);
+
+        if (isNewPb) {
+          runningBestRaw = eventId === "333mbf" ? item.rawSolve : item.value;
           bestVal = item.value;
           isStateRecord =
             item.isStateRecordResult && item.rawSolve === item.resultBest;
@@ -240,12 +258,21 @@ function TeamResultsChartView({
   const stats = useMemo(() => {
     if (!selectedResults || points.length === 0) return null;
 
+    const higherBetter = isHigherBetter(selectedResults.eventId);
     const allSolves = points.map((p) => p.value);
     const validAllSolves = allSolves.filter((v): v is number => v !== null);
     const globalBest =
-      validAllSolves.length > 0 ? Math.min(...validAllSolves) : null;
+      validAllSolves.length > 0
+        ? higherBetter
+          ? Math.max(...validAllSolves)
+          : Math.min(...validAllSolves)
+        : null;
     const globalWorst =
-      validAllSolves.length > 0 ? Math.max(...validAllSolves) : null;
+      validAllSolves.length > 0
+        ? higherBetter
+          ? Math.min(...validAllSolves)
+          : Math.max(...validAllSolves)
+        : null;
     const globalMean =
       validAllSolves.length > 0
         ? validAllSolves.reduce((acc, v) => acc + v, 0) / validAllSolves.length
@@ -271,13 +298,21 @@ function TeamResultsChartView({
     .map((point) => point.value)
     .filter((value): value is number => value !== null);
 
-  const bestValue = validValues.length > 0 ? Math.min(...validValues) : null;
+  const higherBetter = selectedResults
+    ? isHigherBetter(selectedResults.eventId)
+    : false;
+  const bestValue =
+    validValues.length > 0
+      ? higherBetter
+        ? Math.max(...validValues)
+        : Math.min(...validValues)
+      : null;
 
   const unit =
     selectedResults?.eventId === "333fm"
       ? "movs"
       : selectedResults?.eventId === "333mbf"
-        ? "s"
+        ? "pts"
         : "s";
 
   const chartConfig = {
@@ -387,7 +422,7 @@ function TeamResultsChartView({
                       return `${value}`;
                     }
                     if (selectedResults.eventId === "333mbf") {
-                      return formatSecondsToMMSS(value);
+                      return `${Math.round(value)}`;
                     }
                     return (
                       formatAttemptValue(
@@ -420,9 +455,6 @@ function TeamResultsChartView({
                     const point = payload[0]?.payload as SessionPoint;
                     if (!point) return null;
 
-                    const fmtVal = (v: number | null) =>
-                      formatDisplayValue(selectedResults.eventId, v);
-
                     const showUnit =
                       selectedResults.eventId !== "333fm" &&
                       selectedResults.eventId !== "333mbf";
@@ -438,7 +470,10 @@ function TeamResultsChartView({
                         label: "Resolución",
                         color: "#ffffff",
                         value:
-                          fmtVal(point.value) + (showUnit ? ` ${unit}` : ""),
+                          formatSolveTooltipValue(
+                            selectedResults.eventId,
+                            point.rawSolve,
+                          ) + (showUnit ? ` ${unit}` : ""),
                       });
                     }
                     if (point.best !== null) {
@@ -448,7 +483,10 @@ function TeamResultsChartView({
                           : "¡Nuevo mejor del team!",
                         color: "#facc15",
                         value:
-                          fmtVal(point.best) + (showUnit ? ` ${unit}` : ""),
+                          formatSolveTooltipValue(
+                            selectedResults.eventId,
+                            point.rawSolve,
+                          ) + (showUnit ? ` ${unit}` : ""),
                       });
                     }
 
@@ -588,7 +626,9 @@ function TeamResultsChartView({
                       <TableCell className="font-medium">
                         {selectedResults.eventId === "333fm"
                           ? "Movimientos totales"
-                          : "Tiempo total"}
+                          : selectedResults.eventId === "333mbf"
+                            ? "Puntos totales"
+                            : "Tiempo total"}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {formatTotalTime(
