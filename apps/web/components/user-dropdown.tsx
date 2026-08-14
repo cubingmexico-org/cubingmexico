@@ -14,8 +14,11 @@ import {
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { ANNUAL_SUMMARY_ENABLED, ORGANIZER_APP_URL } from "@/lib/constants";
-import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
+import { ORGANIZER_APP_URL } from "@/lib/constants";
+import {
+  canShowAnnualSummaryLinks,
+  getDefaultSummaryYear,
+} from "@/app/(root)/summary/_lib/summary-year";
 import {
   Avatar,
   AvatarImage,
@@ -48,6 +51,7 @@ export function UserDropdown({
   const isMobile = useIsMobile();
   const router = useRouter();
   const summaryYear = getDefaultSummaryYear();
+  const showAnnualSummary = canShowAnnualSummaryLinks(isSuperadmin);
 
   return (
     <DropdownMenu>
@@ -72,7 +76,7 @@ export function UserDropdown({
             </Link>
           </DropdownMenuItem>
         ) : null}
-        {ANNUAL_SUMMARY_ENABLED && user.wcaId ? (
+        {showAnnualSummary && user.wcaId ? (
           <DropdownMenuItem>
             <CalendarDays />
             <Link
@@ -91,7 +95,7 @@ export function UserDropdown({
             </Link>
           </DropdownMenuItem>
         )}
-        {ANNUAL_SUMMARY_ENABLED && team ? (
+        {showAnnualSummary && team ? (
           <DropdownMenuItem>
             <CalendarRange />
             <Link

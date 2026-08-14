@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { getTeam } from "@/db/queries";
 import { SummaryLoading } from "../../../_components/summary-loading";
-import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
+import { canAccessAnnualSummary } from "../../../_lib/summary-access";
 import { getTeamAnnualSummary } from "./_lib/queries";
 import { TeamAnnualSummaryView } from "./_components/team-annual-summary-view";
 
@@ -20,7 +20,7 @@ function parseYear(raw: string): number | null {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  if (!ANNUAL_SUMMARY_ENABLED) {
+  if (!(await canAccessAnnualSummary())) {
     return {
       title: "Resumen no encontrado | Cubing México",
       robots: { index: false, follow: false },
@@ -65,7 +65,7 @@ async function TeamSummaryPageContent({
 }
 
 async function TeamSummaryPage({ params }: Props) {
-  if (!ANNUAL_SUMMARY_ENABLED) {
+  if (!(await canAccessAnnualSummary())) {
     notFound();
   }
 
