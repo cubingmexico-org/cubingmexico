@@ -13,8 +13,9 @@ import {
 } from "@workspace/ui/components/avatar";
 import { SignOut } from "./auth-components";
 import { CubingMexico } from "@workspace/icons";
-import { Award } from "lucide-react";
+import { Award, Globe } from "lucide-react";
 import type { User } from "better-auth";
+import { WEB_APP_URL } from "@/lib/constants";
 
 export function Header({ user }: { user: User }) {
   const initials =
@@ -60,6 +61,12 @@ export function Header({ user }: { user: User }) {
                   <Award className="mr-2 h-4 w-4" />
                   Mis Competencias
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={WEB_APP_URL} className="cursor-pointer">
+                  <Globe className="mr-2 h-4 w-4" />
+                  Cubing México
+                </a>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <SignOut />

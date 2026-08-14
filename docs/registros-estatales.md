@@ -6,6 +6,7 @@ Código relevante:
 
 - Web: [`apps/web/lib/update-state-records.ts`](../apps/web/lib/update-state-records.ts)
 - Backend (recompute global / cron): [`apps/backend/routes/admin_updates.py`](../apps/backend/routes/admin_updates.py) (`update_state_records`)
+- Historial (lectura): [`apps/web/app/(root)/records/_lib/queries.ts`](../apps/web/app/(root)/records/_lib/queries.ts) (`getRecordHistory`)
 
 ---
 
@@ -24,6 +25,8 @@ Cubing México añade un nivel inferior:
 **WR > NAR > NR > SR**
 
 Si el resultado ya trae `NR`, `NAR` o `WR` desde la WCA, **no** escribimos `SR` en `state_single_record` / `state_average_record`. El tiempo sí actualiza el “mejor hasta ahora” del estado, para que un resultado peor posterior no se marque como SR por error.
+
+En la **vista de historial** de registros estatales, sí se incluyen esos `NR`/`NAR`/`WR` de miembros del estado (igual que la WCA incluye WR/CR en el historial nacional: cualquier marca regional cuenta). Las marcas almacenadas en `state_*` siguen siendo exclusivas.
 
 ---
 

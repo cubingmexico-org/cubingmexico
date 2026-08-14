@@ -246,11 +246,19 @@ export async function getRecordHistory(
   cacheTag("records");
 
   const isStateFilter = Boolean(input.state);
+  const regionalRecordMarkers = ["NR", "NAR", "WR"] as const;
+  const isRegionalMarker = (marker: string | null | undefined) =>
+    marker != null &&
+    (regionalRecordMarkers as readonly string[]).includes(marker);
 
+  // State history mirrors WCA country history: higher markers (NR/NAR/WR) count
+  // as state records even though state_* is not dual-tagged on write.
   const recordCondition = isStateFilter
     ? or(
         eq(result.stateSingleRecord, "SR"),
         eq(result.stateAverageRecord, "SR"),
+        inArray(result.regionalSingleRecord, [...regionalRecordMarkers]),
+        inArray(result.regionalAverageRecord, [...regionalRecordMarkers]),
       )
     : or(
         eq(result.regionalSingleRecord, "NR"),
@@ -320,10 +328,12 @@ export async function getRecordHistory(
 
   return rows.map((row) => {
     const isSingleRecord = isStateFilter
-      ? row.stateSingleRecord === "SR"
+      ? row.stateSingleRecord === "SR" ||
+        isRegionalMarker(row.regionalSingleRecord)
       : row.regionalSingleRecord === "NR";
     const isAverageRecord = isStateFilter
-      ? row.stateAverageRecord === "SR"
+      ? row.stateAverageRecord === "SR" ||
+        isRegionalMarker(row.regionalAverageRecord)
       : row.regionalAverageRecord === "NR";
 
     return {

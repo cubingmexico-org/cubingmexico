@@ -81,16 +81,6 @@ export function StateGuessTable({
     .map((guess) => guess.wcaId)
     .filter((id) => selected[id] && stateByPerson[id]);
 
-  function selectHigh() {
-    const next: Record<string, boolean> = {};
-    for (const guess of guesses) {
-      if (guess.confidence === "high" && stateByPerson[guess.wcaId]) {
-        next[guess.wcaId] = true;
-      }
-    }
-    setSelected(next);
-  }
-
   async function onApply() {
     const assignments = selectedIds.map((personId) => ({
       personId,
@@ -141,15 +131,6 @@ export function StateGuessTable({
           {pending
             ? "Aplicando..."
             : `Aplicar seleccionadas (${selectedIds.length})`}
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          disabled={pending}
-          onClick={selectHigh}
-        >
-          Seleccionar altas
         </Button>
       </div>
 

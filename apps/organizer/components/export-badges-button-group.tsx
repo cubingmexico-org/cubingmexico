@@ -13,19 +13,22 @@ import {
 } from "@workspace/ui/components/dropdown-menu";
 import { useState } from "react";
 import { useCanvasStore } from "@/lib/canvas-store";
+import { getPrimaryRoleLabel } from "@/lib/person-roles";
 import { toast } from "sonner";
-import type { ExtendedPerson } from "@/types/wcif";
+import type { ExtendedPerson, WCIF } from "@/types/wcif";
 import JSZip from "jszip";
 import QRCode from "qrcode";
 import { jsPDF } from "jspdf";
 import type { State, Team } from "@/db/queries";
 import type { Competition } from "@/types/wca";
+import { getBadgeGroupStationFields } from "@/lib/groups/badge-fields";
 
 interface ExportBadgesButtonGroupProps {
   selectedPersons: ExtendedPerson[];
   competition: Competition;
   states: State[];
   teams: Team[];
+  wcif: WCIF;
 }
 
 export function ExportBadgesButtonGroup({
@@ -33,6 +36,7 @@ export function ExportBadgesButtonGroup({
   competition,
   states,
   teams,
+  wcif,
 }: ExportBadgesButtonGroupProps) {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -172,6 +176,8 @@ export function ExportBadgesButtonGroup({
             content = content.replace(/@país/gi, "");
             content = content.replace(/@estado/gi, "");
             content = content.replace(/@team/gi, "");
+            content = content.replace(/@grupo/gi, "");
+            content = content.replace(/@estación/gi, "");
           } else {
             content = content.replace(/@nombre/gi, currentPerson.name);
             content = content.replace(
@@ -179,21 +185,7 @@ export function ExportBadgesButtonGroup({
               currentPerson.wcaId || "Nuevo",
             );
 
-            const rol = currentPerson.roles.includes("delegate")
-              ? currentPerson.gender === "f"
-                ? "Delegada"
-                : "Delegado"
-              : currentPerson.roles.includes("organizer")
-                ? currentPerson.gender === "f"
-                  ? "Organizadora"
-                  : "Organizador"
-                : currentPerson.roles.find((r) => r.startsWith("staff-"))
-                  ? currentPerson.gender === "f"
-                    ? "Voluntaria"
-                    : "Voluntario"
-                  : currentPerson.gender === "f"
-                    ? "Competidora"
-                    : "Competidor";
+            const rol = getPrimaryRoleLabel(currentPerson);
 
             content = content.replace(/@rol/gi, rol);
 
@@ -223,6 +215,13 @@ export function ExportBadgesButtonGroup({
             )?.name;
 
             content = content.replace(/@team/gi, teamName || "Desconocido");
+
+            const { grupo, estacion } = getBadgeGroupStationFields(
+              currentPerson,
+              wcif,
+            );
+            content = content.replace(/@grupo/gi, grupo || "—");
+            content = content.replace(/@estación/gi, estacion || "—");
           }
 
           // Calculate optimal font size and split into lines

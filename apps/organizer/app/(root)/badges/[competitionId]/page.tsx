@@ -8,6 +8,7 @@ import {
   getWCIFByCompetitionId,
 } from "@/db/queries";
 import { isCompetitionToolsUnavailable } from "@/lib/competition-availability";
+import { enrichPersonsWithStates } from "@/lib/enrich-persons";
 import { AlertCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -109,17 +110,10 @@ export default async function Page({
   const states = await getStates();
   const teams = await getTeams();
   const competitorStates = await getCompetitorStates(competitionId);
-
-  const extendedPersons = wcif.persons.map((person) => {
-    const state = competitorStates.find(
-      (entry) => entry.wcaId === person.wcaId,
-    );
-
-    return {
-      ...person,
-      stateId: state ? state.stateId : null,
-    };
-  });
+  const extendedPersons = enrichPersonsWithStates(
+    wcif.persons,
+    competitorStates,
+  );
 
   return (
     <>
@@ -129,6 +123,7 @@ export default async function Page({
         persons={extendedPersons}
         states={states}
         teams={teams}
+        wcif={wcif}
       />
     </>
   );

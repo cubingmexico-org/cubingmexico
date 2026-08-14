@@ -37,7 +37,7 @@ import {
 } from "@workspace/ui/components/breadcrumb";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { ExtendedPerson } from "@/types/wcif";
+import type { ExtendedPerson, WCIF } from "@/types/wcif";
 import { Input } from "@workspace/ui/components/input";
 import { FileUploader } from "./file-uploader";
 import { WcaMonochrome } from "@workspace/icons";
@@ -55,6 +55,7 @@ interface BadgeManagerProps {
   persons: ExtendedPerson[];
   states: State[];
   teams: Team[];
+  wcif: WCIF;
 }
 
 export function BadgeManager({
@@ -62,6 +63,7 @@ export function BadgeManager({
   persons,
   states,
   teams,
+  wcif,
 }: BadgeManagerProps) {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
@@ -584,6 +586,7 @@ export function BadgeManager({
                     competition={competition}
                     states={states}
                     teams={teams}
+                    wcif={wcif}
                   />
                 </div>
               </CardFooter>
@@ -617,6 +620,8 @@ export function BadgeManager({
             states={states}
             teams={teams}
             eventIds={competition.event_ids}
+            persons={persons}
+            wcif={wcif}
           />
         </div>
       </div>

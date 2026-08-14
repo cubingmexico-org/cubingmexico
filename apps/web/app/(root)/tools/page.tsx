@@ -73,8 +73,8 @@ export default function Page(): React.JSX.Element {
         <div className="p-6 border-b last:border-b-0">
           <h3 className="text-xl font-semibold">Organización</h3>
           <p className="my-2">
-            Suite de herramientas para organizadores: certificados de podio y
-            participación, gafetes, y más módulos en camino.
+            Suite de Cubing México para organizadores: certificados y gafetes
+            para competencias WCA.
           </p>
           <ToolLinks
             siteHref="https://certificados.cubingmexico.net"
@@ -121,14 +121,24 @@ export default function Page(): React.JSX.Element {
         Herramientas para Organización de Competencias
       </h2>
       <p className="mb-4">
-        Herramientas útiles para organizar competencias WCA.
+        Alternativas externas. Para certificados y gafetes de Cubing México usa{" "}
+        <Link
+          href="https://certificados.cubingmexico.net"
+          className="underline underline-offset-2"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Organización
+        </Link>
+        .
       </p>
 
       <div className="border rounded-md mb-8">
         <div className="p-6 border-b">
           <h3 className="text-xl font-semibold">Groupifier</h3>
           <p className="my-2">
-            Herramienta para crear grupos y asignar tareas en competencias WCA.
+            Herramienta externa para crear grupos, asignar tareas e imprimir
+            scorecards en competencias WCA.
           </p>
           <ToolLinks
             siteHref="https://groupifier.jonatanklosko.com"
@@ -138,9 +148,23 @@ export default function Page(): React.JSX.Element {
         </div>
 
         <div className="p-6 border-b">
+          <h3 className="text-xl font-semibold">Delegate Dashboard</h3>
+          <p className="my-2">
+            Panel externo orientado a rondas y asignaciones (inspiración UX de
+            Organización → Grupos). Útil como alternativa o referencia.
+          </p>
+          <ToolLinks
+            siteHref="https://delegate-dashboard.netlify.app/"
+            sourceHref="https://github.com/coder13/delegateDashboard"
+            sourceLabel="Código Fuente (Caleb Hoover)"
+          />
+        </div>
+
+        <div className="p-6 border-b">
           <h3 className="text-xl font-semibold">Badgifier</h3>
           <p className="my-2">
             Genera credenciales para competidores y staff de competencias.
+            Alternativa a Organización → Gafetes.
           </p>
           <ToolLinks
             siteHref="https://badgifier.dallasmcneil.com/"
@@ -152,8 +176,9 @@ export default function Page(): React.JSX.Element {
         <div className="p-6">
           <h3 className="text-xl font-semibold">TNoodle (Scrambles)</h3>
           <p className="my-2">
-            Programa oficial de mezclas para competencias WCA. Permite generar
-            mezclas para todos los eventos oficiales.
+            Programa oficial de mezclas para competencias WCA. Organización →
+            Grupos exporta metadatos y enlaza a TNoodle local; no reemplaza el
+            generador.
           </p>
           <ToolLinks
             siteHref="https://www.worldcubeassociation.org/regulations/scrambles/"

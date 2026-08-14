@@ -1,19 +1,21 @@
 # Organización — product roadmap
 
-Living plan for [`apps/organizer`](../apps/organizer): evolve from a certificates/badges app into **Organización**, Cubing México’s organizer suite (printables, competition desk, and Groupifier-class tools).
+Living plan for [`apps/organizer`](../apps/organizer): evolve from a certificates/badges app into **Organización**, Cubing México’s organizer suite (printables, competition desk, and an **ultimate groups app** that combines [Groupifier](https://github.com/jonatanklosko/groupifier) and [Delegate Dashboard](https://github.com/coder13/delegateDashboard) strengths).
 
 This is a product backlog, not a committed schedule. Adjust phase boundaries after validating groups scope with Mexican organizers.
 
 ## Product framing
 
-| Layer                 | Direction                                                                  |
-| --------------------- | -------------------------------------------------------------------------- |
-| **Product name (ES)** | Organización                                                               |
-| **Package / folder**  | `apps/organizer`                                                           |
-| **Feature routes**    | Keep specific paths: `/certificates`, `/badges`, later `/groups`, `/staff` |
-| **WCIF**              | **Read-only** (public GET) until Phase 3 write gate                        |
+| Layer                 | Direction                                                           |
+| --------------------- | ------------------------------------------------------------------- |
+| **Product name (ES)** | Organización                                                        |
+| **Package / folder**  | `apps/organizer`                                                    |
+| **Feature routes**    | Keep specific paths: `/certificates`, `/badges`, `/desk`, `/groups` |
+| **WCIF**              | **Read-only** (public GET) until Phase 3b write gate                |
 
 Umbrella brand describes the job (competition ops). Modules stay named after features.
+
+**Grupos thesis:** Replace the common organizer loop of **Delegate Dashboard (edit/assign) → Groupifier (print)** with one in-house module — not a clone of either tool. Reuse Mesa, Gafetes, and Certificados where they already cover staff views and nametags.
 
 ## Current baseline (what already ships)
 
@@ -21,22 +23,59 @@ Umbrella brand describes the job (competition ops). Modules stay named after fea
 - Home: competitions managed by the signed-in user
 - **Certificados**: podium + participation PDFs (TipTap + pdfmake), including age / newcomer templates
 - **Gafetes**: canvas designer + ZIP/PDF export (jsPDF)
-- Competition module nav (Certificados \| Gafetes)
-- Mexico state enrichment on badges (Cubing México API `competitor-states`)
+- Competition module nav (Certificados \| Gafetes \| Mesa)
+- Mexico state enrichment on badges and desk
 - Public WCIF read (`…/wcif/public`)
 - Shared 1-month availability window based on `results_posted_at`
 - Cloud design save/load (Neon `designs`) + Cubing México certificate templates + co-organizer ACL
+- **Mesa**: staff roles roster + registration overview (CSV export)
+- Tent / table-card canvas presets inside Gafetes
+- **Grupos (3a–3c)**: local WCIF draft, assignment engine, day-of views, Round-1 CSV import, optional WCA push, scorecards/task cards, TNoodle handoff; Gafetes `@grupo`/`@estación` from published WCIF
+- **Grupos 3d (UX parity)**: stations-driven config, assign-all, staff toggles, competition print/assignment settings, rounds overview, Groupifier-like scorecards, toasts
 
 Known gaps (later phases):
 
 - Editors: desktop-only
-- Groups / staff desk modules not started
+- Phase 4: guided tour, mobile desk, fine-grained roles, MX packs polish
 
 Relevant code:
 
 - App: [`apps/organizer`](../apps/organizer)
 - WCIF fetch: [`apps/organizer/db/queries.ts`](../apps/organizer/db/queries.ts)
 - Tools catalog: [`apps/web/app/(root)/tools/page.tsx`](<../apps/web/app/(root)/tools/page.tsx>)
+
+---
+
+## Competitive inspiration
+
+Sources: [Groupifier](https://github.com/jonatanklosko/groupifier) ([grouping goals](https://github.com/jonatanklosko/groupifier/blob/master/docs/groups.md), [site](https://groupifier.jonatanklosko.com/)) and [Delegate Dashboard](https://github.com/coder13/delegateDashboard) ([spec](https://github.com/coder13/delegateDashboard/blob/main/spec.md), [group generation](https://github.com/coder13/delegateDashboard/blob/main/docs/group-generation-logic.md)). Algorithms inspire Organización; do not copy source verbatim.
+
+| Capability                  | Groupifier                                                                       | Delegate Dashboard                                                                                      | Organización target                                                                                                            |
+| --------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Grouping / assignments**  | Schedule-aware; one activity at a time; seed by results; keep key staff coverage | Round-centric UX; composable generators (staff → delegates → field → judges); station numbers           | **Grupos 3a:** DD-style round workspace + Groupifier conflict/staff goals                                                      |
+| **Rooms & stages**          | Multi-room / simultaneous stages; configurable group counts                      | Child activities; time-split across groups; multi-stage spread or per-room counts                       | **Grupos 3a:** create/edit child activities; multi-stage                                                                       |
+| **Staff / roles**           | Special handling for staff kinds during assignment                               | Staff toggles, non-competing staff, person timeline                                                     | **Mesa (shipped):** read-only roster; **Grupos 3d:** draft staff-\* toggles + task preference                                  |
+| **Printables & CSV**        | Scorecards, competitor/task cards, nametags                                      | Nametags/scorecards/registrations CSV; Round-1 assignment CSV import; links out to Groupifier for print | **Gafetes (shipped):** nametags/tents; **Grupos 3c/3d:** scorecards (+ print options) + task cards; **3b:** Round-1 CSV import |
+| **WCIF write / extensions** | Writes WCIF + `groupifier.*` extensions                                          | Full WCIF save; reads Groupifier extensions; `delegateDashboard.groups`                                 | **Grupos 3b:** subset PATCH; read foreign extensions; **3d:** write `organizacion.*` config on draft                           |
+| **Scrambles**               | —                                                                                | Scrambler schedule by room/day; scramble set picks                                                      | **Grupos 3b:** scrambler-by-room view; **3c:** TNoodle handoff (not a scrambler rewrite)                                       |
+
+### Already covered vs still needed
+
+- **Mesa** covers DD-style staff roster + registration overview (read-only).
+- **Gafetes** covers nametags / tent cards (partial Groupifier printing).
+- **Grupos 3a** covers group creation, assignment engine, conflict checks, stations, local CSV/JSON export.
+- **Grupos 3b** covers day-of troubleshooting, Round-1 CSV import, extension read, optional WCIF push.
+- **Grupos 3c** covers scorecards, task cards, Gafetes `@grupo`/`@estación`, TNoodle handoff, tools demotion.
+- **Grupos 3d** covers stations-driven suggestions, assign-all, staff toggles, competition config (sorting/task/print), rounds overview, scorecard parity, toasts.
+- **Still needed (Phase 4):** guided tour, mobile desk, RBAC, MX packs polish.
+
+### Non-goals (Grupos v1–v2)
+
+- Full schedule / event editor (WCA website)
+- Danger JSON WCIF editor
+- WCIF JSONPath explorer
+- First-timer exact-name matching tool
+- Rewriting TNoodle
 
 ---
 
@@ -68,27 +107,72 @@ Relevant code:
 
 **Goal:** Day-of operations without writing WCIF yet.
 
-| Feature                           | Module  | Status  | Why                                                      | Implementation                                                  | Depends      |
-| --------------------------------- | ------- | ------- | -------------------------------------------------------- | --------------------------------------------------------------- | ------------ |
-| Competition print pack            | Print   | planned | One export for certs + badges                            | ZIP/PDF binder reusing pdfmake / jsPDF exporters                | save-designs |
-| Staff & roles roster              | Staff   | planned | WCIF `roles` only used for badge grouping/mentions today | Table by role; CSV export; optional Mexico state column         | home-hub     |
-| Station / table tent cards        | Gafetes | planned | Natural extension of badge canvas                        | New canvas presets; same export pipeline                        | home-hub     |
-| Registration overview (read-only) | Desk    | planned | Day-of snapshot without replacing WCA registration       | Persons table: competing, events, country, state; no WCIF PATCH | staff-roster |
+Mesa lives at `/desk/[competitionId]` with tabs **Staff** | **Inscripciones**. Tent cards are canvas presets inside Gafetes (`module: badges`). Overlaps DD Staff page in read-only form; write-path staffing stays in Grupos.
 
-### Phase 3 — Groups (Groupifier-class)
+| Feature                           | Module  | Status | Why                                                      | Implementation                                                  | Depends      |
+| --------------------------------- | ------- | ------ | -------------------------------------------------------- | --------------------------------------------------------------- | ------------ |
+| Staff & roles roster              | Mesa    | done   | WCIF `roles` only used for badge grouping/mentions today | Table by role; CSV export; Mexico state column                  | home-hub     |
+| Station / table tent cards        | Gafetes | done   | Natural extension of badge canvas                        | Size presets + starter tent layouts; same export pipeline       | home-hub     |
+| Registration overview (read-only) | Mesa    | done   | Day-of snapshot without replacing WCA registration       | Persons table: competing, events, country, state; no WCIF PATCH | staff-roster |
 
-**Goal:** In-house grouping/staffing; optional WCIF write only after schema validation.
+### Phase 3 — Grupos (ultimate groups)
 
-| Feature                           | Module | Status  | Why                                   | Implementation                                                                                              | Depends                    |
-| --------------------------------- | ------ | ------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- |
-| Group assignment engine (v1)      | Grupos | planned | Core organizer pain; MX workflows     | New module: WCIF persons/events/schedule in; generate groups; local edit; export JSON/CSV first             | staff-roster, wcif-types   |
-| Schedule-aware grouping           | Grupos | planned | WCIF `schedule` typed but unused      | Parse venues/rooms/activities; conflict checks; activity ↔ group linking                                    | groups-core                |
-| Optional WCIF PATCH (assignments) | Data   | planned | Push groups back to WCA               | Subset PATCH `persons[].assignments`; preflight `PUT /api/v0/competitions/wcif/check`; surface JSON `error` | groups-core, schedule-view |
-| Scramble set / TNoodle handoff    | Grupos | planned | Light integration with existing tools | Export metadata aligned with `rounds.scrambleSetCount`; docs deep-link — not a scrambler rewrite            | groups-core                |
+**Goal:** In-house grouping, staffing, printables, and optional WCIF write — the DD → Groupifier loop in one module. Ship as milestones **3a → 3b → 3c → 3d**.
+
+#### Phase 3a — Core assignment workspace
+
+**Goal:** Round-centric local draft (DD UX) with Groupifier-quality constraints. No WCA write yet.
+
+| Feature                          | Module | Status | Why                                             | Implementation                                                                                                                        | Depends                   |
+| -------------------------------- | ------ | ------ | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Groups route + nav               | Grupos | done   | Suite needs a groups entry point                | `/groups/[competitionId]`; add to `CompetitionModuleNav`                                                                              | home-hub, competition-nav |
+| Local WCIF draft                 | Grupos | done   | Edit safely before any PATCH                    | Public GET → in-memory draft; unsaved-changes affordance                                                                              | wcif-types                |
+| Round workspace + group creation | Grupos | done   | DD round UX is the mental model organizers know | Round selector; group count; create child activities; multi-stage spread / per-room; time-split                                       | local-draft               |
+| Assignment generation engine     | Grupos | done   | Core organizer pain; MX workflows               | Pipeline inspired by DD order (staff → delegates → field → judges) + Groupifier goals (no double-booking; seed by results; key staff) | round-workspace           |
+| Manual edit + conflicts          | Grupos | done   | Auto-assign is a start, not the finish          | Drag/edit assignments; surface overlaps / overfull groups; reset group or assignment scopes                                           | groups-engine             |
+| Stations + export                | Grupos | done   | Day-of needs stations; write comes later        | Station numbers once assignments exist; JSON/CSV export                                                                               | groups-engine             |
+
+#### Phase 3b — Day-of staffing views + WCIF write gate
+
+**Goal:** Troubleshooting views, Round-1 CSV import, and optional push to WCA behind schema check.
+
+| Feature                           | Module | Status | Why                                         | Implementation                                                                                                                  | Depends                  |
+| --------------------------------- | ------ | ------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Person timeline + troubleshooting | Grupos | done   | Find orphan / unknown assignments fast      | Person assignment timeline by start time; assignments list by stage/group; flag unmatched activity IDs                          | groups-engine            |
+| Scrambler schedule view           | Grupos | done   | DD scrambler-by-room is useful day-of       | Group scrambler assignments by room and day; link to person detail                                                              | groups-engine            |
+| Round-1 CSV import                | Grupos | done   | Many comps pre-plan R1 in spreadsheets      | Validate CSV → generate missing groups → import assignments (R1 only)                                                           | round-workspace          |
+| Optional WCIF PATCH               | Data   | done   | Push groups/assignments back to WCA         | Subset PATCH: `persons[].assignments` + child activities; preflight `PUT …/wcif/check`; surface JSON `error`                    | groups-engine, 3a-export |
+| Extension compatibility           | Data   | done   | Interop with comps already in Groupifier/DD | Read `groupifier.ActivityConfig` / `delegateDashboard.groups` when present; write Organización-owned extension only if required | wcif-write               |
+
+#### Phase 3c — Printables & handoff
+
+**Goal:** Close Groupifier’s document moat; light scramble handoff; demote external tools once parity lands.
+
+| Feature                        | Module  | Status | Why                                       | Implementation                                                                                         | Depends        |
+| ------------------------------ | ------- | ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ | -------------- |
+| Scorecards PDF                 | Grupos  | done   | Groupifier’s main remaining reason to use | pdfmake (patterns from Certificados); per-round / blank later-round flows                              | groups-engine  |
+| Competitor task cards / sheets | Grupos  | done   | Staff + compete assignments on paper      | Group sheets and per-person task cards                                                                 | groups-engine  |
+| Gafetes group/station wiring   | Gafetes | done   | Nametags already ship; need group data    | Feed group + station into badge export (existing competition-groups QR hooks)                          | groups-engine  |
+| Scramble set / TNoodle handoff | Grupos  | done   | Light integration, not a scrambler        | Export metadata aligned with `rounds.scrambleSetCount`; deep-link TNoodle                              | groups-engine  |
+| External tool demotion         | Web     | done   | Tools page still lists only Groupifier    | Keep Groupifier/DD links until print parity; then mark Organización Grupos as in-house (Phase 4 tools) | scorecards, 3b |
+
+#### Phase 3d — UX parity (Groupifier + DD happy path)
+
+**Goal:** One-click assign-all, stations-driven config, staff-first tasks, print options, large-comp overview, scorecard fidelity, and toast/validation consistency. 3a–3c remain the MVP; 3d closes organizer UX gaps.
+
+| Feature                              | Module | Status | Why                                                   | Implementation                                                                                                 | Depends        |
+| ------------------------------------ | ------ | ------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | -------------- |
+| Competition + room + activity config | Grupos | done   | Stations and print/assignment policies drive the rest | `organizacion.CompetitionConfig` / `RoomConfig` / `ActivityConfig`; seed from Groupifier/DD; Configuración UI  | 3a             |
+| Stations → suggested groups/staff    | Grupos | done   | Organizers think in stations, not raw group counts    | Formulas (`stations×1.7`, scrambler/runner counts); suggestions in group config                                | config         |
+| Assign all pending rounds            | Grupos | done   | Avoid per-round click loop                            | `assignAllPendingRounds` + create missing groups; scrambler/runner/judge passes; sorting rules + task policies | config, engine |
+| Staff role toggles in draft          | Grupos | done   | Mark staff before assign-all                          | Staff panel toggles `staff-*`; skip delegates/orgs/dataentry for competing tasks                               | 3b             |
+| Rounds overview                      | Grupos | done   | Large comps need collapse + status                    | Accordion events→rounds; bulk create/assign/clear; drill into round detail                                     | 3a             |
+| Scorecard print parity               | Grupos | done   | Groupifier printouts are the bar                      | A4/Letter/A6, order, covers, stations, names, scramble checker, background URL                                 | config, 3c     |
+| Toasts + form validation             | Grupos | done   | Match Certificados/web feedback                       | `sonner` across Grupos actions; confirm destructive bulk                                                       | shell          |
 
 #### WCIF write gate
 
-WCA now applies stricter WCIF schema checks on save (no unknown keys, correct types). Any assignments PATCH must:
+WCA applies stricter WCIF schema checks on save (no unknown keys, correct types). Any assignments / activities PATCH must:
 
 1. Send only the allowed subset of WCIF
 2. Preflight with `PUT /api/v0/competitions/wcif/check`
@@ -96,16 +180,17 @@ WCA now applies stricter WCIF schema checks on save (no unknown keys, correct ty
 
 ### Phase 4 — Platform
 
-**Goal:** Suite maturity — mobile desk, permissions, Mexico differentiation, public catalog.
+**Goal:** Suite maturity — mobile desk, permissions, Mexico differentiation, public catalog, onboarding.
 
-| Feature                       | Module | Status  | Why                                                    | Implementation                                                                     | Depends            |
-| ----------------------------- | ------ | ------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- | ------------------ |
-| Mobile-friendly desk views    | Shell  | planned | Heavy editors block mobile; desk needs phones          | Keep designers desktop; make read/select/export flows responsive                   | checkin-read       |
-| Fine-grained roles            | Shell  | planned | Helpers print badges without editing groups            | Map WCA roles + optional local grants; per-module route guards                     | collab, wcif-write |
-| Mexico-specific packs         | México | planned | Differentiate vs global Groupifier/Badgifier           | State teams branding; bilingual templates; AMS cross-links from web                | shared-templates   |
-| Update cubingmexico.net/tools | Web    | planned | Stale certs repo link; only external Groupifier listed | List Organización modules; correct monorepo GitHub link; mark in-house vs external | rename             |
+| Feature                       | Module | Status  | Why                                                    | Implementation                                                                                                                                                                                                                                                                                                | Depends                      |
+| ----------------------------- | ------ | ------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Guided product tour           | Shell  | planned | New organizers need a path through hub + modules       | [Dice UI Tour](https://diceui.com/docs/components/radix/tour) via `pnpm dlx shadcn@latest add @diceui/tour` into `@workspace/ui`; shell-wide steps on hub + `CompetitionModuleNav`; per-module steps (Certificados / Gafetes / Mesa / **Grupos**); first-run + skip/replay (localStorage first; Spanish copy) | home-hub, competition-nav    |
+| Mobile-friendly desk views    | Shell  | planned | Heavy editors block mobile; desk needs phones          | Keep designers desktop; make read/select/export flows responsive                                                                                                                                                                                                                                              | checkin-read                 |
+| Fine-grained roles            | Shell  | planned | Helpers print badges without editing groups            | Map WCA roles + optional local grants; per-module route guards                                                                                                                                                                                                                                                | collab, wcif-write           |
+| Mexico-specific packs         | México | planned | Differentiate vs global Groupifier/Badgifier           | State teams branding; bilingual templates (incl. scorecard / task-card copy); AMS cross-links from web                                                                                                                                                                                                        | shared-templates, scorecards |
+| Update cubingmexico.net/tools | Web    | planned | Stale certs repo link; only external Groupifier listed | List Organización modules (incl. Grupos); correct monorepo GitHub link; mark in-house vs external Groupifier / Delegate Dashboard                                                                                                                                                                             | rename, grupos-print-parity  |
 
-> Note: Phase 4 “Update tools” partially started in Phase 0 (Organización entry + monorepo link). Remaining: mark in-house vs external more clearly as modules ship.
+> Note: Phase 4 “Update tools” partially started in Phase 0 (Organización entry + monorepo link). Remaining: mark in-house vs external more clearly as modules ship. Guided tour can ship in parallel with Phase 3a (no write/print dependency).
 
 ---
 
@@ -113,9 +198,12 @@ WCA now applies stricter WCIF schema checks on save (no unknown keys, correct ty
 
 1. ~~**Phase 0** — rename + enable age/newcomer + hub nav~~
 2. ~~**Phase 1** — DB-backed design save + shared templates~~
-3. **Phase 2** — staff roster + print pack + desk overview
-4. **Phase 3** — groups engine → schedule → WCIF check/PATCH
-5. **Phase 4** — mobile desk, RBAC, MX packs, tools page polish
+3. ~~**Phase 2** — staff roster + tent cards + desk overview~~
+4. ~~**Phase 3a** — groups route + local draft + round workspace + assignment engine + CSV/JSON export~~
+5. ~~**Phase 3b** — troubleshooting views + Round-1 CSV import + WCIF check/PATCH~~
+6. ~~**Phase 3c** — scorecards / task cards + Gafetes wiring + TNoodle handoff~~
+7. ~~**Phase 3d** — UX parity (stations, assign-all, staff, overview, scorecards, toasts)~~
+8. **Phase 4** — guided tour (can land in parallel with 3a), mobile desk, RBAC, MX packs, tools page polish
 
 ## Architecture sketch
 
@@ -123,12 +211,21 @@ WCA now applies stricter WCIF schema checks on save (no unknown keys, correct ty
 Organización (shell)
 ├── Auth          Better Auth + WCA OAuth (manage_competitions)
 ├── Hub           Managed competitions + module nav + shared WCIF cache
+│                 (+ guided tour anchors: hub cards, CompetitionModuleNav;
+│                  per-module step sets: Certificados / Gafetes / Mesa / Grupos)
 ├── Certificados  TipTap + pdfmake
-├── Gafetes       Canvas 2D + jsPDF / ZIP (+ tent-card presets later)
-├── Staff / Desk  Read-only WCIF views (Phase 2)
-├── Grupos        Assignment engine; write path behind wcif-check (Phase 3)
+├── Gafetes       Canvas 2D + jsPDF / ZIP (+ tent-card presets;
+│                 group/station fields from Grupos in 3c)
+├── Mesa (/desk)  Staff roster + registration overview (read-only WCIF;
+│                 overlaps DD Staff without write)
+├── Grupos (/groups)
+│   ├── 3a  Round workspace, child activities, assignment engine, stations, export
+│   ├── 3b  Person/scrambler views, R1 CSV import, WCIF check/PATCH (shipped)
+│   ├── 3c  Scorecards, task cards, TNoodle handoff (shipped)
+│   └── 3d  Config/stations, assign-all, staff toggles, overview, print parity (shipped)
 └── Data
     ├── WCA public WCIF GET (today)
+    ├── WCA WCIF check + subset PATCH (Phase 3b — shipped)
     ├── Cubing México API (states / competitor-states)
     └── @workspace/db designs table (Phase 1 — shipped)
 ```
@@ -137,3 +234,5 @@ Organización (shell)
 
 - [`web-hosting-constraints.md`](./web-hosting-constraints.md) — Vercel free-tier limits for `apps/web`
 - [`registros-estatales.md`](./registros-estatales.md) — state records; notes WCIF schedule for round end times (web/backend, not Organización)
+- [Groupifier](https://github.com/jonatanklosko/groupifier) — task/group management + printables inspiration
+- [Delegate Dashboard](https://github.com/coder13/delegateDashboard) — round/assignment UX + WCIF edit inspiration
