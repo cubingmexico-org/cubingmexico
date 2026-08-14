@@ -30,7 +30,9 @@ export function getDefaultSummaryYear(now: Date = new Date()): number {
  * True once this calendar year's summaries are public (Dec 20 UTC+).
  * Temporary feature gate: after unlock, drop superadmin preview and always show entry points.
  */
-export function isAnnualSummaryPubliclyUnlocked(now: Date = new Date()): boolean {
+export function isAnnualSummaryPubliclyUnlocked(
+  now: Date = new Date(),
+): boolean {
   return isSummaryYearPublished(now.getUTCFullYear(), now);
 }
 

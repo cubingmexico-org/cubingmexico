@@ -6,7 +6,7 @@ Código relevante:
 
 - Web: [`apps/web/lib/update-state-records.ts`](../apps/web/lib/update-state-records.ts)
 - Backend (recompute global / cron): [`apps/backend/routes/admin_updates.py`](../apps/backend/routes/admin_updates.py) (`update_state_records`)
-- Historial (lectura): [`apps/web/app/(root)/records/_lib/queries.ts`](../apps/web/app/(root)/records/_lib/queries.ts) (`getRecordHistory`)
+- Historial (lectura): [`apps/web/app/(root)/records/_lib/queries.ts`](<../apps/web/app/(root)/records/_lib/queries.ts>) (`getRecordHistory`)
 
 ---
 
