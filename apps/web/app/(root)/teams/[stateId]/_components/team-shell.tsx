@@ -15,8 +15,10 @@ import { ScrollArea, ScrollBar } from "@workspace/ui/components/scroll-area";
 import { cn } from "@workspace/ui/lib/utils";
 import { CalendarRange, MapPin, Settings, Users } from "lucide-react";
 import type { getTeamInfo } from "../_lib/queries";
-import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
-import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
+import {
+  canShowAnnualSummaryLinks,
+  getDefaultSummaryYear,
+} from "@/app/(root)/summary/_lib/summary-year";
 
 type Team = NonNullable<Awaited<ReturnType<typeof getTeamInfo>>>;
 
@@ -25,6 +27,7 @@ type TeamShellProps = {
   team: Team;
   totalMembers: number;
   canManage: boolean;
+  isSuperadmin?: boolean;
   children: ReactNode;
 };
 
@@ -33,10 +36,12 @@ export function TeamShell({
   team,
   totalMembers,
   canManage,
+  isSuperadmin = false,
   children,
 }: TeamShellProps) {
   const pathname = usePathname();
   const summaryYear = getDefaultSummaryYear();
+  const showAnnualSummary = canShowAnnualSummaryLinks(isSuperadmin);
   const basePath = `/teams/${stateId}`;
   const isManage = pathname.startsWith(`${basePath}/manage`);
 
@@ -117,7 +122,7 @@ export function TeamShell({
               </div>
             </div>
             <div className="ml-auto flex flex-wrap justify-end gap-2">
-              {ANNUAL_SUMMARY_ENABLED ? (
+              {showAnnualSummary ? (
                 <Link
                   className={cn(
                     buttonVariants({

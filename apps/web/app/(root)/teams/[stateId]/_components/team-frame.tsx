@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { TeamShell } from "./team-shell";
 import { getTeamShellData } from "../_lib/queries";
 import { canManageTeam, getTeamRole } from "@/lib/team-auth";
+import { isSuperadmin } from "@/lib/superadmin";
 
 export async function TeamFrame({
   params,
@@ -24,10 +25,16 @@ export async function TeamFrame({
     return notFound();
   }
 
-  const role = await getTeamRole(stateId, session?.user?.wcaId || "");
+  const wcaId = session?.user?.wcaId || "";
+  const role = await getTeamRole(stateId, wcaId);
 
   return (
-    <TeamShell stateId={stateId} canManage={canManageTeam(role)} {...shellData}>
+    <TeamShell
+      stateId={stateId}
+      canManage={canManageTeam(role)}
+      isSuperadmin={isSuperadmin(wcaId)}
+      {...shellData}
+    >
       {children}
     </TeamShell>
   );

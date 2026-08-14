@@ -20,7 +20,7 @@ import {
   Trophy,
   Users,
 } from "lucide-react";
-import { ANNUAL_SUMMARY_ENABLED } from "@/lib/constants";
+import { canAccessAnnualSummary } from "@/app/(root)/summary/_lib/summary-access";
 import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
 import {
   getStatisticsPageData,
@@ -51,9 +51,10 @@ export default async function Page(props: {
   params: Promise<{ stateId: string }>;
 }) {
   const stateId = (await props.params).stateId;
-  const [data, eventOptions] = await Promise.all([
+  const [data, eventOptions, showAnnualSummary] = await Promise.all([
     getStatisticsPageData(stateId),
     getTeamCompetitionEventOptions(stateId),
+    canAccessAnnualSummary(),
   ]);
 
   if (!data) {
@@ -127,7 +128,7 @@ export default async function Page(props: {
             Medallas, gráfica de resoluciones y enlaces de {stateName}
           </p>
         </div>
-        {ANNUAL_SUMMARY_ENABLED ? (
+        {showAnnualSummary ? (
           <Link
             href={`/summary/team/${summaryYear}/${stateId}`}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
