@@ -7,7 +7,8 @@ interface LayoutProps {
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Mesa | Organización - Cubing México",
-    description: "Staff e inscripciones de competencias WCA - Cubing México",
+    description:
+      "Voluntarios e inscripciones de competencias WCA - Cubing México",
   };
 }
 

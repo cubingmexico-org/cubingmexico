@@ -49,15 +49,15 @@ export function getRoleDisplayLabel(
     case "staff-judge":
       return female ? "Jueza" : "Juez";
     case "staff-scrambler":
-      return "Scrambler";
+      return female ? "Mezcladora" : "Mezclador";
     case "staff-runner":
-      return "Runner";
+      return female ? "Corredora" : "Corredor";
     case "staff-dataentry":
       return "Captura de datos";
     case "staff-announcer":
       return female ? "Anunciadora" : "Anunciador";
     case "staff-other":
-      return "Staff";
+      return female ? "Voluntaria" : "Voluntario";
     default:
       return role;
   }

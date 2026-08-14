@@ -99,7 +99,7 @@ export function buildGroupSheetsDocument(
           layout: "lightHorizontalLines",
           margin: [0, 0, 0, 10],
         },
-        { text: "Staff", style: "section" },
+        { text: "Voluntarios", style: "section" },
         staff.length === 0
           ? { text: "—", fontSize: 9, color: "#888" }
           : {

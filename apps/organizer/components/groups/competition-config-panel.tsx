@@ -18,6 +18,7 @@ import type { WCIF } from "@/types/wcif";
 import {
   type CompetitionConfig,
   type CompetitorsSortingRule,
+  type ScorecardDensity,
   type ScorecardOrder,
   type ScorecardPaperSize,
   type ScorecardsBackgroundMode,
@@ -48,7 +49,7 @@ const SORTING_RULES: {
     id: "symmetric",
     name: "Simétrico",
     description:
-      "Reparte a los mejores entre grupos para tener buenos scramblers en cada uno.",
+      "Reparte a los mejores entre grupos para tener buenos mezcladores en cada uno.",
   },
   {
     id: "name-optimised",
@@ -159,7 +160,7 @@ export function CompetitionConfigPanel({
         <div>
           <h3 className="font-semibold">Asignaciones</h3>
           <p className="text-sm text-muted-foreground">
-            Reglas al generar grupos y tareas de staff.
+            Reglas al generar grupos y tareas de voluntarios.
           </p>
         </div>
 
@@ -211,7 +212,7 @@ export function CompetitionConfigPanel({
         />
         <ConfigSwitch
           id="no-foreign-running"
-          label="No asignar running a extranjeros"
+          label="No asignar corredor a extranjeros"
           checked={config.noRunningForForeigners}
           onCheckedChange={(checked) =>
             updateConfig({ noRunningForForeigners: checked })
@@ -226,7 +227,7 @@ export function CompetitionConfigPanel({
 
         <div className="grid gap-4 sm:grid-cols-2 max-w-2xl">
           <div className="space-y-2">
-            <Label>Tamaño de scorecard</Label>
+            <Label>Tamaño de papeleta</Label>
             <Select
               value={config.scorecardPaperSize}
               onValueChange={(v) =>
@@ -246,7 +247,32 @@ export function CompetitionConfigPanel({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Orden de scorecards</Label>
+            <Label>Densidad</Label>
+            <Select
+              value={config.scorecardDensity}
+              onValueChange={(v) =>
+                updateConfig({ scorecardDensity: v as ScorecardDensity })
+              }
+              disabled={config.scorecardPaperSize === "a6"}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="compact">Compacta (4 por página)</SelectItem>
+                <SelectItem value="comfortable">
+                  Cómoda (2 por página, más espacio)
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {config.scorecardPaperSize === "a6" && (
+              <p className="text-xs text-muted-foreground">
+                A6 siempre es una papeleta por página.
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>Orden de papeletas</Label>
             <Select
               value={config.scorecardOrder}
               onValueChange={(v) =>
@@ -270,7 +296,7 @@ export function CompetitionConfigPanel({
 
         <ConfigSwitch
           id="cover-sheets"
-          label="Imprimir portadas de scorecards"
+          label="Imprimir portadas de papeletas"
           checked={config.printScorecardsCoverSheets}
           onCheckedChange={(checked) =>
             updateConfig({ printScorecardsCoverSheets: checked })
@@ -304,6 +330,22 @@ export function CompetitionConfigPanel({
             por grupo.
           </p>
         </div>
+        <ConfigSwitch
+          id="print-pbs"
+          label="Imprimir récords personales (PB single / average)"
+          checked={config.printPersonalBests}
+          onCheckedChange={(checked) =>
+            updateConfig({ printPersonalBests: checked })
+          }
+        />
+        <ConfigSwitch
+          id="print-qr"
+          label="Imprimir código QR (ID de inscrito + ronda)"
+          checked={config.printScorecardQr}
+          onCheckedChange={(checked) =>
+            updateConfig({ printScorecardQr: checked })
+          }
+        />
 
         <Separator />
 
@@ -334,7 +376,7 @@ export function CompetitionConfigPanel({
         />
         <ConfigSwitch
           id="checker-blank"
-          label="Casilla de scramble checker en scorecards en blanco"
+          label="Casilla de scramble checker en papeletas en blanco"
           checked={config.printScrambleCheckerForBlankScorecards}
           onCheckedChange={(checked) =>
             updateConfig({
@@ -379,7 +421,7 @@ export function CompetitionConfigPanel({
               !competitionImageUrl && (
                 <p className="text-xs text-amber-600 dark:text-amber-400">
                   Esta competencia no tiene logo en la base de datos; las
-                  scorecards saldrán sin fondo hasta que subas uno o elijas una
+                  papeletas saldrán sin fondo hasta que subas uno o elijas una
                   URL.
                 </p>
               )}
@@ -398,7 +440,7 @@ export function CompetitionConfigPanel({
                 }
               />
               <p className="text-xs text-muted-foreground">
-                La imagen se centra en cada scorecard con baja opacidad.
+                La imagen se centra en cada papeleta con baja opacidad.
               </p>
             </div>
           )}

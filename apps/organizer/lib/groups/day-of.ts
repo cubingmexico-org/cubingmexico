@@ -64,9 +64,9 @@ function codeLabel(code: string): string {
     case "staff-judge":
       return "Juez";
     case "staff-scrambler":
-      return "Scrambler";
+      return "Mezclador";
     case "staff-runner":
-      return "Runner";
+      return "Corredor";
     default:
       return code;
   }

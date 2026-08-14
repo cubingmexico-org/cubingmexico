@@ -49,8 +49,8 @@ import {
 const ASSIGNMENT_CODES = [
   { value: "competitor", label: "Competidor" },
   { value: "staff-judge", label: "Juez" },
-  { value: "staff-scrambler", label: "Scrambler" },
-  { value: "staff-runner", label: "Runner" },
+  { value: "staff-scrambler", label: "Mezclador" },
+  { value: "staff-runner", label: "Corredor" },
 ] as const;
 
 function codeLabel(code: string): string {

@@ -28,13 +28,13 @@ export function DeskManager({
           {competition.name}
         </h1>
         <p className="text-muted-foreground">
-          Mesa de operaciones — staff e inscripciones (solo lectura)
+          Mesa de operaciones — voluntarios e inscripciones (solo lectura)
         </p>
       </div>
 
       <Tabs defaultValue="staff">
         <TabsList>
-          <TabsTrigger value="staff">Staff</TabsTrigger>
+          <TabsTrigger value="staff">Voluntarios</TabsTrigger>
           <TabsTrigger value="registration">Inscripciones</TabsTrigger>
         </TabsList>
         <TabsContent value="staff" className="mt-4">

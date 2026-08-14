@@ -202,7 +202,7 @@ export function GroupsManager({
         <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="config">Configuración</TabsTrigger>
-          <TabsTrigger value="staff">Staff</TabsTrigger>
+          <TabsTrigger value="staff">Voluntarios</TabsTrigger>
           <TabsTrigger value="round">Ronda</TabsTrigger>
         </TabsList>
 

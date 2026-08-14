@@ -32,7 +32,7 @@ export function DayOfPanel({
       <TabsList>
         <TabsTrigger value="timeline">Línea de tiempo</TabsTrigger>
         <TabsTrigger value="by-group">Por grupo</TabsTrigger>
-        <TabsTrigger value="scramblers">Scramblers</TabsTrigger>
+        <TabsTrigger value="scramblers">Mezcladores</TabsTrigger>
       </TabsList>
       <TabsContent value="timeline" className="mt-4">
         <PersonTimeline

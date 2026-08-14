@@ -51,7 +51,7 @@ export function ScramblerSchedule({
   if (rows.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No hay asignaciones de scrambler en el borrador.
+        No hay asignaciones de mezclador en el borrador.
       </p>
     );
   }
@@ -73,7 +73,7 @@ export function ScramblerSchedule({
                 <TableRow>
                   <TableHead>Horario</TableHead>
                   <TableHead>Actividad</TableHead>
-                  <TableHead>Scrambler</TableHead>
+                  <TableHead>Mezclador</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

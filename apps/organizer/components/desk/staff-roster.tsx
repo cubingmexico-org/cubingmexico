@@ -35,11 +35,11 @@ const ROLE_FILTERS: { value: "all" | Role; label: string }[] = [
   { value: "trainee-delegate", label: "Delegado en formación" },
   { value: "organizer", label: "Organizador" },
   { value: "staff-judge", label: "Juez" },
-  { value: "staff-scrambler", label: "Scrambler" },
-  { value: "staff-runner", label: "Runner" },
+  { value: "staff-scrambler", label: "Mezclador" },
+  { value: "staff-runner", label: "Corredor" },
   { value: "staff-dataentry", label: "Captura de datos" },
   { value: "staff-announcer", label: "Anunciador" },
-  { value: "staff-other", label: "Staff" },
+  { value: "staff-other", label: "Voluntario" },
 ];
 
 function countryName(iso2: string): string {
@@ -106,7 +106,8 @@ export function StaffRoster({
   if (staff.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No hay personas con roles de staff, organizador o delegado en el WCIF.
+        No hay personas con roles de voluntario, organizador o delegado en el
+        WCIF.
       </p>
     );
   }

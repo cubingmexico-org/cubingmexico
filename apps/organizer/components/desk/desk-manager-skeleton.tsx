@@ -11,7 +11,7 @@ export function DeskManagerSkeleton() {
       <Tabs defaultValue="staff">
         <TabsList>
           <TabsTrigger value="staff" disabled>
-            Staff
+            Voluntarios
           </TabsTrigger>
           <TabsTrigger value="registration" disabled>
             Inscripciones

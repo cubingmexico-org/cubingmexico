@@ -8,7 +8,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Grupos | Organización - Cubing México",
     description:
-      "Asignación de grupos y staff de competencias WCA - Cubing México",
+      "Asignación de grupos y voluntarios de competencias WCA - Cubing México",
   };
 }
 

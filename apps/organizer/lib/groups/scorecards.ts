@@ -1,11 +1,14 @@
 import type { Content, TDocumentDefinitions } from "pdfmake/interfaces";
-import type { Person, Round, WCIF } from "@/types/wcif";
+import QRCode from "qrcode";
+import type { EventId, Person, Round, WCIF } from "@/types/wcif";
 import {
   getCompetitionConfig,
   type CompetitionConfig,
+  type ScorecardDensity,
+  type ScorecardPaperSize,
 } from "@/lib/groups/config";
 import { resolveScorecardsBackgroundUrl } from "@/lib/groups/competition-image";
-import { getFormatInfo } from "@/lib/groups/formats";
+import { getFormatInfo, type FormatInfo } from "@/lib/groups/formats";
 import {
   findActivityById,
   getGroupActivitiesForRound,
@@ -14,6 +17,7 @@ import {
 } from "@/lib/groups/wcif-schedule";
 import { createGroupsPdf, type PrintAction } from "@/lib/groups/print-pdf";
 import { loadImageAsDataUrl } from "@/lib/groups/load-image-data-url";
+import { formatResults } from "@/lib/utils";
 
 const EVENT_NAMES: Record<string, string> = {
   "333": "3x3x3",
@@ -38,21 +42,21 @@ const EVENT_NAMES: Record<string, string> = {
 
 const NO_SCRAMBLE_CHECKER = new Set(["555", "666", "777", "minx"]);
 
-const PAPER = {
+const PAPER_BASE = {
   a4: {
     pageWidth: 595.28,
     pageHeight: 841.89,
     perRow: 2,
     perPage: 4,
-    hMargin: 15,
-    vMargin: 15,
+    hMargin: 14,
+    vMargin: 12,
   },
   letter: {
     pageWidth: 612,
     pageHeight: 792,
     perRow: 2,
     perPage: 4,
-    hMargin: 15,
+    hMargin: 14,
     vMargin: 10,
   },
   a6: {
@@ -60,10 +64,38 @@ const PAPER = {
     pageHeight: 419.53,
     perRow: 1,
     perPage: 1,
-    hMargin: 15,
-    vMargin: 15,
+    hMargin: 14,
+    vMargin: 14,
   },
 } as const;
+
+type PaperLayout = {
+  pageWidth: number;
+  pageHeight: number;
+  perRow: number;
+  perPage: number;
+  hMargin: number;
+  vMargin: number;
+};
+
+function resolvePaperLayout(
+  size: ScorecardPaperSize,
+  density: ScorecardDensity,
+): PaperLayout {
+  const base = PAPER_BASE[size] ?? PAPER_BASE.letter;
+  if (size === "a6" || density === "compact") {
+    return { ...base };
+  }
+  // Comfortable: 2 full-width cards stacked on A4/Letter.
+  return {
+    pageWidth: base.pageWidth,
+    pageHeight: base.pageHeight,
+    perRow: 1,
+    perPage: 2,
+    hMargin: base.hMargin,
+    vMargin: Math.max(base.vMargin, 12),
+  };
+}
 
 const noBorder = {
   border: [false, false, false, false] as [boolean, boolean, boolean, boolean],
@@ -82,12 +114,78 @@ export type ScorecardPerson = {
   worldRankingSingle: number | null;
   worldRankingAverage: number | null;
   nationalRankingAverage: number | null;
+  pbSingle: number | null;
+  pbAverage: number | null;
 };
 
 type CardSlot =
   | { kind: "cover"; content: Content[] }
   | { kind: "scorecard"; content: Content[] }
   | { kind: "empty" };
+
+type ScorecardLabels = {
+  event: string;
+  round: string;
+  group: string;
+  station: string;
+  id: string;
+  name: string;
+  newcomer: string;
+  scramble: string;
+  check: string;
+  result: string;
+  judge: string;
+  competitor: string;
+  moves: string;
+  solved: string;
+  attempted: string;
+  time: string;
+  extra: string;
+  packCount: (n: number) => string;
+  forDelegate: string;
+  forDataEntry: string;
+  packed: (n: number) => string;
+  missingSignatures: string;
+  incidentCards: string;
+  resultsEntered: string;
+  incidentsLogged: string;
+  resultsReviewed: string;
+  initialsDelegate: string;
+  initialsDataEntry: string;
+};
+
+function scorecardLabels(): ScorecardLabels {
+  return {
+    event: "Evento",
+    round: "Ronda",
+    group: "Grupo",
+    station: "Est.",
+    id: "ID",
+    name: "Nombre",
+    newcomer: "NUEVO",
+    scramble: "Scr",
+    check: "Chk",
+    result: "Resultado",
+    judge: "Juez",
+    competitor: "Comp",
+    moves: "Movimientos",
+    solved: "Resueltos",
+    attempted: "Intentados",
+    time: "Tiempo",
+    extra: "Extra (iniciales delegado _______)",
+    packCount: (n) => `${n} papeletas`,
+    forDelegate: "-------------------- PARA DELEGADO --------------------",
+    forDataEntry: "-------------------- PARA CAPTURA --------------------",
+    packed: (n) => `1. Empaquetadas las ${n} papeletas`,
+    missingSignatures: "2. Revisadas firmas faltantes",
+    incidentCards: "3. Papeletas con incidentes: ______",
+    resultsEntered: "4. Resultados capturados por Capturista",
+    incidentsLogged: "5. Incidentes registrados por Delegado",
+    resultsReviewed: "6. Resultados revisados por Delegado",
+    initialsDelegate: "Iniciales Delegado",
+    initialsDataEntry: "Iniciales Capturista",
+  };
+}
 
 function emptyCard(): CardSlot {
   return { kind: "empty" };
@@ -98,23 +196,67 @@ function cardCellContent(card: CardSlot): Content {
   return card.content as unknown as Content;
 }
 
-/** Same offset in every quadrant (slightly above Groupifier's 170 for a more centered look). */
-function scorecardBackgroundPositions(
-  paper: (typeof PAPER)[keyof typeof PAPER],
-) {
-  const offsetX = 60;
-  const offsetY = 145;
-  if (paper.perPage === 1) {
-    return [{ x: offsetX, y: offsetY }];
+function scorecardBackgroundPositions(paper: PaperLayout, imageSize: number) {
+  const cols = paper.perRow;
+  const rows = paper.perPage / paper.perRow;
+  const cellW = paper.pageWidth / cols;
+  const cellH = paper.pageHeight / rows;
+  const positions: Array<{ x: number; y: number }> = [];
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      positions.push({
+        x: col * cellW + (cellW - imageSize) / 2,
+        y: row * cellH + (cellH - imageSize) / 2,
+      });
+    }
   }
-  const halfW = paper.pageWidth / 2;
-  const halfH = paper.pageHeight / 2;
-  return [
-    { x: offsetX, y: offsetY },
-    { x: halfW + offsetX, y: offsetY },
-    { x: offsetX, y: halfH + offsetY },
-    { x: halfW + offsetX, y: halfH + offsetY },
-  ];
+  return positions;
+}
+
+function cutLines(paper: PaperLayout): Content {
+  const color = "#888888";
+  const lw = 0.5;
+  const dash = { length: 8, space: 4 };
+  const marks: Array<Record<string, unknown>> = [];
+
+  if (paper.perPage === 4) {
+    marks.push(
+      {
+        type: "line",
+        x1: paper.hMargin,
+        y1: paper.pageHeight / 2,
+        x2: paper.pageWidth - paper.hMargin,
+        y2: paper.pageHeight / 2,
+        lineWidth: lw,
+        dash,
+        lineColor: color,
+      },
+      {
+        type: "line",
+        x1: paper.pageWidth / 2,
+        y1: paper.vMargin,
+        x2: paper.pageWidth / 2,
+        y2: paper.pageHeight - paper.vMargin,
+        lineWidth: lw,
+        dash,
+        lineColor: color,
+      },
+    );
+  } else if (paper.perPage === 2) {
+    marks.push({
+      type: "line",
+      x1: paper.hMargin,
+      y1: paper.pageHeight / 2,
+      x2: paper.pageWidth - paper.hMargin,
+      y2: paper.pageHeight / 2,
+      lineWidth: lw,
+      dash,
+      lineColor: color,
+    });
+  }
+
+  if (marks.length === 0) return { text: "" };
+  return { canvas: marks } as unknown as Content;
 }
 
 function parseLocalName(fullName: string): {
@@ -177,8 +319,10 @@ function shouldPrintScrambleChecker(
   person: ScorecardPerson | null,
   mode: ScorecardMode,
   config: CompetitionConfig,
+  formatInfo: FormatInfo,
 ): boolean {
   if (!eventId || NO_SCRAMBLE_CHECKER.has(eventId)) return false;
+  if (formatInfo.isFmc || formatInfo.isMbld) return false;
   if (mode === "blank") {
     return config.printScrambleCheckerForBlankScorecards;
   }
@@ -208,6 +352,36 @@ function formatCentiseconds(cs: number): string {
   return `${seconds}.${String(centis).padStart(2, "0")}`;
 }
 
+function formatPbValue(
+  value: number | null,
+  eventId: string | undefined,
+): string | null {
+  if (value == null || value <= 0) return null;
+  if (!eventId) return formatCentiseconds(value);
+  if (eventId === "333fm") {
+    // FMC singles are move counts (integer); averages are move*100.
+    if (Number.isInteger(value) && value < 100) return String(value);
+    return (value / 100).toFixed(2);
+  }
+  try {
+    return formatResults(value, eventId as EventId);
+  } catch {
+    return formatCentiseconds(value);
+  }
+}
+
+function pbLineText(
+  person: ScorecardPerson,
+  eventId: string | undefined,
+): string | null {
+  const single = formatPbValue(person.pbSingle, eventId);
+  const average = formatPbValue(person.pbAverage, eventId);
+  if (!single && !average) return null;
+  if (single && average) return `PB: ${single} / ${average}`;
+  if (single) return `PB: ${single}`;
+  return `PB avg: ${average}`;
+}
+
 function timeLimitText(round: Round | undefined): string | null {
   const tl = round?.timeLimit as
     | { centiseconds?: number; cumulativeRoundIds?: string[] }
@@ -217,7 +391,10 @@ function timeLimitText(round: Round | undefined): string | null {
   return `Límite: ${formatCentiseconds(tl.centiseconds)}`;
 }
 
-function cutoffText(round: Round | undefined, eventId?: string): string | null {
+function cutoffText(
+  round: Round | undefined,
+  eventId: string | undefined,
+): string | null {
   const cutoff = round?.cutoff as
     | { numberOfAttempts?: number; attemptResult?: number }
     | null
@@ -230,65 +407,148 @@ function cutoffText(round: Round | undefined, eventId?: string): string | null {
   return `Corte: ${formatCentiseconds(cutoff.attemptResult)} (${attempts} int.)`;
 }
 
-function columnLabels(
-  labels: Array<
-    string | Record<string, unknown> | Array<Record<string, unknown>>
-  >,
-  style: Record<string, unknown> = {},
+function labelCell(text: string, style: Record<string, unknown> = {}): Content {
+  return {
+    text,
+    ...noBorder,
+    fontSize: 9,
+    ...style,
+  } as Content;
+}
+
+type AttemptLayout = "timed" | "fmc" | "mbld";
+
+function attemptLayoutOf(formatInfo: FormatInfo): AttemptLayout {
+  if (formatInfo.isFmc) return "fmc";
+  if (formatInfo.isMbld) return "mbld";
+  return "timed";
+}
+
+function attemptColumnWidths(
+  layout: AttemptLayout,
+  printScrambleChecker: boolean,
+  comfortable: boolean,
+): Array<number | string> {
+  if (layout === "fmc") {
+    return [16, "*", 25, 25];
+  }
+  if (layout === "mbld") {
+    if (comfortable) {
+      return [16, 40, 45, "*", 25, 25];
+    }
+    return [16, 30, "*", 25, 25];
+  }
+  // Groupifier timed widths
+  return [16, 25, ...(printScrambleChecker ? [25] : []), "*", 25, 25];
+}
+
+function attemptHeaderRow(
+  layout: AttemptLayout,
+  labels: ScorecardLabels,
+  printScrambleChecker: boolean,
+  comfortable: boolean,
 ): Content[] {
-  return labels.map((label) => {
-    const base = {
-      ...style,
-      ...noBorder,
-      fontSize: 9,
-    };
-    if (Array.isArray(label)) {
-      return { ...base, columns: label } as unknown as Content;
+  if (layout === "fmc") {
+    return [
+      labelCell(""),
+      labelCell(labels.moves, { alignment: "center" }),
+      labelCell(labels.judge, { alignment: "center" }),
+      labelCell(labels.competitor, { alignment: "center" }),
+    ];
+  }
+  if (layout === "mbld") {
+    if (comfortable) {
+      return [
+        labelCell(""),
+        labelCell(labels.solved, { alignment: "center" }),
+        labelCell(labels.attempted, { alignment: "center" }),
+        labelCell(labels.time, { alignment: "center" }),
+        labelCell(labels.judge, { alignment: "center" }),
+        labelCell(labels.competitor, { alignment: "center" }),
+      ];
     }
-    if (typeof label === "string") {
-      return { ...base, text: label } as unknown as Content;
-    }
-    return { ...base, ...label } as unknown as Content;
-  });
+    return [
+      labelCell(""),
+      labelCell("R/I", { alignment: "center" }),
+      labelCell(labels.time, { alignment: "center" }),
+      labelCell(labels.judge, { alignment: "center" }),
+      labelCell(labels.competitor, { alignment: "center" }),
+    ];
+  }
+  return [
+    labelCell(""),
+    labelCell(labels.scramble, { alignment: "center" }),
+    ...(printScrambleChecker
+      ? [labelCell(labels.check, { alignment: "center" })]
+      : []),
+    labelCell(labels.result, { alignment: "center" }),
+    labelCell(labels.judge, { alignment: "center" }),
+    labelCell(labels.competitor, { alignment: "center" }),
+  ];
 }
 
 function attemptRow(
   attemptNumber: number | string,
-  needsScrambleChecker: boolean,
+  layout: AttemptLayout,
+  printScrambleChecker: boolean,
+  comfortable: boolean,
 ): Content[] {
   // Empty `{}` cells match Groupifier — `{ text: "" }` adds extra line box height
   // and can push the 2nd row of a page onto the next sheet.
+  const num = {
+    text: String(attemptNumber),
+    ...noBorder,
+    fontSize: 20,
+    bold: true,
+    alignment: "center",
+  };
+  if (layout === "fmc") {
+    return [num, {}, {}, {}] as Content[];
+  }
+  if (layout === "mbld") {
+    if (comfortable) {
+      return [num, {}, {}, {}, {}, {}] as Content[];
+    }
+    return [num, {}, {}, {}, {}] as Content[];
+  }
   return [
-    {
-      text: String(attemptNumber),
-      ...noBorder,
-      fontSize: 20,
-      bold: true,
-      alignment: "center",
-    },
+    num,
     {},
-    ...(needsScrambleChecker ? [{}] : []),
+    ...(printScrambleChecker ? [{}] : []),
     {},
     {},
     {},
   ] as Content[];
 }
 
+function colSpanFor(
+  layout: AttemptLayout,
+  printScrambleChecker: boolean,
+  comfortable: boolean,
+): number {
+  if (layout === "fmc") return 4;
+  if (layout === "mbld") return comfortable ? 6 : 5;
+  return 5 + (printScrambleChecker ? 1 : 0);
+}
+
 function attemptRows(
   attemptCount: number,
   cutoffAttempts: number | null,
   scorecardWidth: number,
+  layout: AttemptLayout,
   printScrambleChecker: boolean,
+  comfortable: boolean,
 ): Content[][] {
   const rows: Content[][] = [];
+  const span = colSpanFor(layout, printScrambleChecker, comfortable);
   for (let i = 0; i < attemptCount; i++) {
-    rows.push(attemptRow(i + 1, printScrambleChecker));
+    rows.push(attemptRow(i + 1, layout, printScrambleChecker, comfortable));
     if (i < attemptCount - 1) {
       const isCutoffLine = cutoffAttempts != null && i + 1 === cutoffAttempts;
       rows.push([
         {
           ...noBorder,
-          colSpan: 5 + (printScrambleChecker ? 1 : 0),
+          colSpan: span,
           margin: [0, 1],
           columns: !isCutoffLine
             ? []
@@ -313,11 +573,20 @@ function attemptRows(
   return rows;
 }
 
-function initialsField(person: string): Content {
+function checkboxLine(label: string): Content {
   return {
-    text: [{ text: `Iniciales ${person}`, bold: true }, " ______"],
+    text: [{ text: `${label} ` }, "[ ]"],
+    fontSize: 10,
+    margin: [20, 4, 0, 4],
+  };
+}
+
+function initialsField(label: string): Content {
+  return {
+    text: [{ text: label, bold: true }, " ______"],
     alignment: "center",
     fontSize: 10,
+    margin: [0, 4, 0, 4],
   };
 }
 
@@ -328,6 +597,7 @@ function buildCoverSheet(params: {
   groupNumber: number;
   roomName: string;
   numberOfScorecards: number;
+  labels: ScorecardLabels;
 }): Content[] {
   const {
     competitionName,
@@ -336,80 +606,75 @@ function buildCoverSheet(params: {
     groupNumber,
     roomName,
     numberOfScorecards,
+    labels,
   } = params;
-  // Keep vertical margins tight so cover + scorecard rows fit 2-per-page on Letter.
-  const m = [0, 4] as [number, number];
-  const mLeft = [20, 4, 0, 4] as [number, number, number, number];
+  const m = [0, 3] as [number, number];
 
   return [
     {
       text: competitionName,
       bold: true,
-      fontSize: 15,
+      fontSize: 12,
+      margin: m,
+      alignment: "center",
+      color: "#444444",
+    },
+    {
+      text: `Grupo ${groupNumber}`,
+      bold: true,
+      fontSize: 22,
+      margin: [0, 6, 0, 2],
+      alignment: "center",
+    },
+    {
+      text: labels.packCount(numberOfScorecards),
+      fontSize: 14,
       margin: m,
       alignment: "center",
     },
     {
-      text: `${eventName} Ronda ${roundNumber}`,
-      fontSize: 15,
+      text: `${eventName} · ${labels.round} ${roundNumber}`,
+      fontSize: 12,
       margin: m,
       alignment: "center",
     },
+    ...(roomName
+      ? [
+          {
+            text: roomName,
+            fontSize: 13,
+            bold: true,
+            margin: [0, 2, 0, 6] as [number, number, number, number],
+            alignment: "center" as const,
+          },
+        ]
+      : []),
     {
-      text: `Grupo ${groupNumber}${roomName ? ` (${roomName})` : ""}`,
-      fontSize: 15,
-      margin: m,
+      text: labels.forDelegate,
       alignment: "center",
+      margin: [0, 6, 0, 4],
+      fontSize: 9,
     },
+    checkboxLine(labels.packed(numberOfScorecards)),
+    checkboxLine(labels.missingSignatures),
     {
-      text: "-------------------- PARA DELEGADO --------------------",
+      text: labels.incidentCards,
+      fontSize: 10,
+      margin: [20, 4, 0, 4],
+    },
+    initialsField(labels.initialsDelegate),
+    {
+      text: labels.forDataEntry,
       alignment: "center",
-      margin: m,
+      margin: [0, 6, 0, 4],
+      fontSize: 9,
     },
-    {
-      text: [
-        "1. Empaquetadas las ",
-        { text: String(numberOfScorecards), bold: true },
-        " scorecards ",
-        "[ ]",
-      ],
-      fontSize: 10,
-      margin: mLeft,
-    },
-    {
-      text: "2. Revisadas firmas faltantes [ ]",
-      fontSize: 10,
-      margin: mLeft,
-    },
-    {
-      text: "3. Scorecards con incidentes: ______",
-      fontSize: 10,
-      margin: mLeft,
-    },
-    initialsField("Delegado"),
-    {
-      text: "-------------------- PARA CAPTURA --------------------",
-      alignment: "center",
-      margin: m,
-    },
-    {
-      text: "4. Resultados capturados por Capturista",
-      fontSize: 10,
-      margin: mLeft,
-    },
-    initialsField("Capturista"),
-    {
-      text: "5. Incidentes registrados por Delegado",
-      fontSize: 10,
-      margin: mLeft,
-    },
-    initialsField("Delegado"),
-    {
-      text: "6. Resultados revisados por Delegado",
-      fontSize: 10,
-      margin: mLeft,
-    },
-    initialsField("Delegado"),
+    checkboxLine(labels.resultsEntered),
+    initialsField(labels.initialsDataEntry),
+    checkboxLine(labels.incidentsLogged),
+    initialsField(labels.initialsDelegate),
+    checkboxLine(labels.resultsReviewed),
+    initialsField(labels.initialsDelegate),
   ];
 }
 
@@ -417,164 +682,218 @@ function buildScorecardContent(params: {
   scorecardNumber: number | null;
   competitionName: string;
   eventName: string | null;
+  eventId: string | undefined;
   roundNumber: number | null;
   groupNumber: number | null;
   person: ScorecardPerson | null;
   config: CompetitionConfig;
-  attemptCount: number;
+  formatInfo: FormatInfo;
   cutoffAttempts: number | null;
   timeLimitLabel: string | null;
   cutoffLabel: string | null;
   printScrambleChecker: boolean;
   scorecardWidth: number;
+  labels: ScorecardLabels;
+  qrDataUrl: string | null;
+  comfortable: boolean;
 }): Content[] {
   const {
     scorecardNumber,
     competitionName,
     eventName,
+    eventId,
     roundNumber,
     groupNumber,
     person,
     config,
-    attemptCount,
+    formatInfo,
     cutoffAttempts,
     timeLimitLabel,
     cutoffLabel,
     printScrambleChecker,
     scorecardWidth,
+    labels,
+    qrDataUrl,
+    comfortable,
   } = params;
 
   const printStations = config.printStations;
   const nameText = person ? displayName(person, config) : " ";
   const isNewcomer =
     person?.name && person.registrantId != null && !person.wcaId;
+  const layout = attemptLayoutOf(formatInfo);
+  const pbText =
+    config.printPersonalBests && person ? pbLineText(person, eventId) : null;
+
+  const stationBlock: Content | null =
+    printStations && person?.stationNumber != null
+      ? ({
+          stack: [
+            {
+              text: labels.station,
+              fontSize: 7,
+              alignment: "center",
+              color: "#666666",
+            },
+            {
+              table: {
+                widths: [40],
+                body: [
+                  [
+                    {
+                      text: String(person.stationNumber),
+                      fontSize: comfortable ? 24 : 18,
+                      bold: true,
+                      alignment: "center",
+                      border: [true, true, true, true],
+                      borderColor: "#222222",
+                      margin: [1, 2, 1, 2],
+                    },
+                  ],
+                ],
+              },
+              layout: {
+                hLineWidth: () => 1,
+                vLineWidth: () => 1,
+                hLineColor: () => "#222222",
+                vLineColor: () => "#222222",
+              },
+            },
+          ],
+          width: 48,
+        } as Content)
+      : null;
+
+  const qrBlock: Content | null = qrDataUrl
+    ? ({
+        image: qrDataUrl,
+        width: 24,
+        height: 24,
+        margin: [2, 0, 0, 0],
+      } as Content)
+    : null;
+
+  const headerRight: Content[] = [];
+  if (stationBlock) headerRight.push(stationBlock);
+  if (qrBlock) headerRight.push(qrBlock);
+
+  const nameStack: Content[] = [
+    {
+      text: nameText,
+      fontSize: comfortable ? 14 : 12,
+      bold: true,
+      maxHeight: comfortable ? 28 : 18,
+    } as Content,
+  ];
+  if (isNewcomer) {
+    nameStack.push({
+      text: labels.newcomer,
+      fontSize: 8,
+      bold: true,
+      color: "#000000",
+      margin: [0, 1, 0, 0],
+    });
+  }
+  if (pbText) {
+    nameStack.push({
+      text: pbText,
+      fontSize: 8,
+      color: "#555555",
+      margin: [0, 1, 0, 0],
+    });
+  }
+
+  const metaParts = [
+    `${labels.event}: ${eventName || "—"}`,
+    `${labels.round}: ${roundNumber ?? "—"}`,
+    `${labels.group}: ${groupNumber ?? "—"}`,
+    `${labels.id}: ${person?.registrantId ?? "—"}`,
+  ];
+
+  // Inset header from cut lines; extra vertical pad uses unused cell space.
+  const headerInset = comfortable ? 10 : 8;
+  const headerPadY = comfortable ? 10 : 8;
 
   return [
     {
-      fontSize: 10,
       columns: [
         {
-          text: scorecardNumber != null ? String(scorecardNumber) : "",
-          alignment: "left",
-        },
-        { text: "" },
-      ],
-    },
-    {
-      text: competitionName,
-      bold: true,
-      fontSize: 15,
-      margin: [0, 0, 0, 8],
-      alignment: "center",
-    },
-    {
-      margin: [25, 0, 0, 0],
-      table: {
-        widths: ["*", 30, 30, ...(printStations ? [30] : [])],
-        body: [
-          columnLabels([
-            "Evento",
-            { text: "Ronda", alignment: "center" },
-            { text: "Grupo", alignment: "center" },
-            ...(printStations ? [{ text: "Est.", alignment: "center" }] : []),
-          ]),
-          [
-            { text: eventName || " " },
-            { text: String(roundNumber ?? " "), alignment: "center" },
-            { text: String(groupNumber ?? " "), alignment: "center" },
-            ...(printStations
-              ? [
-                  {
-                    text: String(person?.stationNumber ?? " "),
-                    alignment: "center" as const,
-                  },
-                ]
-              : []),
-          ],
-        ],
-      },
-    },
-    {
-      margin: [25, 0, 0, 0],
-      table: {
-        widths: [30, "*"],
-        body: [
-          columnLabels([
-            { text: "ID", alignment: "center" },
-            [
-              { text: "Nombre", alignment: "left" },
-              {
-                text: isNewcomer ? "Nuevo" : " ",
-                alignment: "right",
-              },
-            ],
-          ]),
-          [
+          width: "*",
+          stack: [
             {
-              text: String(person?.registrantId ?? " "),
-              alignment: "center",
+              columns: [
+                {
+                  text: scorecardNumber != null ? String(scorecardNumber) : "",
+                  fontSize: 10,
+                  color: "#666666",
+                  width: 28,
+                },
+                {
+                  text: competitionName,
+                  fontSize: 9,
+                  color: "#666666",
+                  alignment: "left",
+                  width: "*",
+                },
+              ],
+              margin: [0, 0, 0, 3],
             },
-            {
-              text: nameText,
-              // Prevent long names from stretching the card past half-page height.
-              // pdfmake supports maxHeight though typings omit it.
-              maxHeight: 20,
-            } as Content,
+            { stack: nameStack },
           ],
-        ],
-      },
+        },
+        ...(headerRight.length > 0
+          ? [
+              {
+                width: "auto" as const,
+                columns: headerRight,
+                columnGap: 4,
+              },
+            ]
+          : []),
+      ],
+      columnGap: 6,
+      margin: [headerInset, headerPadY, headerInset, headerPadY],
     },
     {
-      margin: [0, 8, 0, 0],
+      text: metaParts.join("  ·  "),
+      fontSize: 9,
+      margin: [headerInset, 0, headerInset, headerPadY + 2],
+      color: "#333333",
+    },
+    {
+      margin: [0, 2, 0, 0],
       table: {
-        widths: [16, 25, ...(printScrambleChecker ? [25] : []), "*", 25, 25],
+        widths: attemptColumnWidths(layout, printScrambleChecker, comfortable),
         body: [
-          columnLabels(
-            [
-              "",
-              { text: "Scr", alignment: "center" },
-              ...(printScrambleChecker
-                ? [{ text: "Chk", alignment: "center" }]
-                : []),
-              { text: "Resultado", alignment: "center" },
-              { text: "Juez", alignment: "center" },
-              { text: "Comp", alignment: "center" },
-            ],
-            { alignment: "center" },
-          ),
+          attemptHeaderRow(layout, labels, printScrambleChecker, comfortable),
           ...attemptRows(
-            attemptCount,
+            formatInfo.attemptCount,
             cutoffAttempts,
             scorecardWidth,
+            layout,
             printScrambleChecker,
+            comfortable,
           ),
           [
             {
-              text: "Extra (iniciales delegado _______)",
+              text: labels.extra,
               ...noBorder,
-              colSpan: 5 + (printScrambleChecker ? 1 : 0),
+              colSpan: colSpanFor(layout, printScrambleChecker, comfortable),
               margin: [0, 1],
               fontSize: 10,
             },
           ],
-          attemptRow("–", printScrambleChecker),
-          [
-            {
-              text: "",
-              ...noBorder,
-              colSpan: 5 + (printScrambleChecker ? 1 : 0),
-              margin: [0, 1],
-            },
-          ],
+          attemptRow("–", layout, printScrambleChecker, comfortable),
         ],
       },
     },
     {
-      fontSize: 10,
+      fontSize: 9,
+      margin: [0, 1, 0, 0],
       columns: [
-        cutoffLabel ? { text: cutoffLabel, alignment: "center" } : { text: "" },
+        cutoffLabel ? { text: cutoffLabel, alignment: "left" } : { text: "" },
         timeLimitLabel
-          ? { text: timeLimitLabel, alignment: "center" }
+          ? { text: timeLimitLabel, alignment: "right" }
           : { text: "" },
       ],
     },
@@ -611,7 +930,11 @@ function rankingsForPerson(
   eventId: string,
 ): Pick<
   ScorecardPerson,
-  "worldRankingSingle" | "worldRankingAverage" | "nationalRankingAverage"
+  | "worldRankingSingle"
+  | "worldRankingAverage"
+  | "nationalRankingAverage"
+  | "pbSingle"
+  | "pbAverage"
 > {
   const single = (person.personalBests ?? []).find(
     (b) => b.eventId === eventId && b.type === "single",
@@ -623,7 +946,28 @@ function rankingsForPerson(
     worldRankingSingle: single?.worldRanking ?? null,
     worldRankingAverage: average?.worldRanking ?? null,
     nationalRankingAverage: average?.nationalRanking ?? null,
+    pbSingle: single?.best ?? null,
+    pbAverage: average?.best ?? null,
   };
+}
+
+async function qrDataUrlFor(
+  competitionId: string,
+  registrantId: number,
+  roundActivityCode: string,
+): Promise<string | null> {
+  try {
+    return await QRCode.toDataURL(
+      `${competitionId}:${registrantId}:${roundActivityCode}`,
+      {
+        margin: 0,
+        width: 96,
+        errorCorrectionLevel: "M",
+      },
+    );
+  } catch {
+    return null;
+  }
 }
 
 export function collectAssignedScorecards(
@@ -633,7 +977,7 @@ export function collectAssignedScorecards(
   const groups = getGroupActivitiesForRound(wcif, roundActivityCode);
   if (groups.length === 0) {
     throw new Error(
-      "Crea grupos y asignaciones antes de imprimir scorecards de esta ronda.",
+      "Crea grupos y asignaciones antes de imprimir papeletas de esta ronda.",
     );
   }
   const groupIds = new Set(groups.map((g) => g.activity.id));
@@ -703,14 +1047,14 @@ export function defaultBlankCount(
   }
 }
 
-function buildCardList(
+async function buildCardList(
   wcif: WCIF,
   roundActivityCode: string,
   mode: ScorecardMode,
   blankCount: number,
   config: CompetitionConfig,
-  paper: (typeof PAPER)[keyof typeof PAPER],
-): CardSlot[] {
+  paper: PaperLayout,
+): Promise<CardSlot[]> {
   const parsed = parseRoundActivityCode(roundActivityCode);
   const eventId = parsed?.eventId;
   const roundNumber = parsed?.roundNumber ?? null;
@@ -719,16 +1063,18 @@ function buildCardList(
     .find((e) => e.id === eventId)
     ?.rounds.find((r) => r.id === roundActivityCode);
   const formatInfo = getFormatInfo(round?.format ?? "a", eventId);
-  const attemptCount = formatInfo.attemptCount;
   const cutoff = round?.cutoff as
     | { numberOfAttempts?: number }
     | null
     | undefined;
   const cutoffAttempts = cutoff?.numberOfAttempts ?? null;
+  const labels = scorecardLabels();
   const tl = timeLimitText(round);
   const co = cutoffText(round, eventId);
   const scorecardWidth = paper.pageWidth / paper.perRow - 2 * paper.hMargin;
   const competitionName = wcif.shortName || wcif.name;
+  const comfortable =
+    config.scorecardDensity === "comfortable" && paper.perPage === 2;
 
   if (mode === "blank") {
     const n = Math.max(1, Math.min(blankCount, 500));
@@ -739,6 +1085,7 @@ function buildCardList(
       null,
       mode,
       config,
+      formatInfo,
     );
     return Array.from({ length: n }, () => ({
       kind: "scorecard" as const,
@@ -746,16 +1093,20 @@ function buildCardList(
         scorecardNumber: null,
         competitionName,
         eventName,
+        eventId,
         roundNumber,
         groupNumber: null,
         person: null,
         config,
-        attemptCount,
+        formatInfo,
         cutoffAttempts,
         timeLimitLabel: tl,
         cutoffLabel: co,
         printScrambleChecker: checker,
         scorecardWidth,
+        labels,
+        qrDataUrl: null,
+        comfortable,
       }),
     }));
   }
@@ -763,6 +1114,22 @@ function buildCardList(
   const people = collectAssignedScorecards(wcif, roundActivityCode);
   if (people.length === 0) {
     throw new Error("No hay asignaciones de competidor en esta ronda.");
+  }
+
+  const qrCache = new Map<number, string | null>();
+  if (config.printScorecardQr) {
+    const ids = [
+      ...new Set(
+        people
+          .map((p) => p.registrantId)
+          .filter((id): id is number => id != null),
+      ),
+    ];
+    await Promise.all(
+      ids.map(async (id) => {
+        qrCache.set(id, await qrDataUrlFor(wcif.id, id, roundActivityCode));
+      }),
+    );
   }
 
   const byGroup = new Map<number, ScorecardPerson[]>();
@@ -790,6 +1157,7 @@ function buildCardList(
           groupNumber,
           roomName: groupPeople[0]?.roomName ?? "",
           numberOfScorecards: groupPeople.length,
+          labels,
         }),
       });
     }
@@ -803,13 +1171,20 @@ function buildCardList(
         person,
         mode,
         config,
+        formatInfo,
       );
+      const registrantId = person.registrantId;
+      const qrDataUrl =
+        config.printScorecardQr && registrantId != null
+          ? (qrCache.get(registrantId) ?? null)
+          : null;
       groupCards.push({
         kind: "scorecard",
         content: buildScorecardContent({
           scorecardNumber: remaining--,
           competitionName,
           eventName,
+          eventId,
           roundNumber,
           groupNumber,
           person: {
@@ -819,17 +1194,19 @@ function buildCardList(
               (config.printStations ? stationFallback-- : null),
           },
           config,
-          attemptCount,
+          formatInfo,
           cutoffAttempts,
           timeLimitLabel: tl,
           cutoffLabel: co,
           printScrambleChecker: checker,
           scorecardWidth,
+          labels,
+          qrDataUrl,
+          comfortable,
         }),
       });
     }
 
-    // Pad each group so its last page is full (Groupifier behaviour).
     if (config.scorecardOrder !== "stacked") {
       const rem = groupCards.length % paper.perPage;
       if (rem !== 0) {
@@ -847,7 +1224,7 @@ function buildCardList(
   return cards;
 }
 
-export function buildScorecardsDocument(
+export async function buildScorecardsDocument(
   wcif: WCIF,
   roundActivityCode: string,
   mode: ScorecardMode,
@@ -858,15 +1235,18 @@ export function buildScorecardsDocument(
    * fall back to fetching a remote URL inside pdfmake.
    */
   backgroundDataUrl?: string | null,
-): TDocumentDefinitions {
+): Promise<TDocumentDefinitions> {
   const config = getCompetitionConfig(wcif);
-  const paper = PAPER[config.scorecardPaperSize] ?? PAPER.letter;
+  const paper = resolvePaperLayout(
+    config.scorecardPaperSize,
+    config.scorecardDensity,
+  );
   const background =
     backgroundDataUrl !== undefined
       ? backgroundDataUrl
       : resolveScorecardsBackgroundUrl(config, competitionImageUrl);
 
-  const cards = buildCardList(
+  const cards = await buildCardList(
     wcif,
     roundActivityCode,
     mode,
@@ -875,44 +1255,25 @@ export function buildScorecardsDocument(
     paper,
   );
 
-  const imagePositions = scorecardBackgroundPositions(paper);
+  const bgSize = paper.perPage === 2 ? 220 : paper.perPage === 1 ? 180 : 160;
+  const imagePositions = scorecardBackgroundPositions(paper, bgSize);
+  const marks = cutLines(paper);
 
-  const cutLines: Content =
-    paper.perPage === 4
-      ? {
-          canvas: [
-            {
-              type: "line",
-              x1: paper.hMargin,
-              y1: paper.pageHeight / 2,
-              x2: paper.pageWidth - paper.hMargin,
-              y2: paper.pageHeight / 2,
-              lineWidth: 0.1,
-              dash: { length: 10 },
-              lineColor: "#888888",
-            },
-            {
-              type: "line",
-              x1: paper.pageWidth / 2,
-              y1: paper.vMargin,
-              x2: paper.pageWidth / 2,
-              y2: paper.pageHeight - paper.vMargin,
-              lineWidth: 0.1,
-              dash: { length: 10 },
-              lineColor: "#888888",
-            },
-          ],
-        }
-      : { text: "" };
-
-  const rowHeight = paper.pageHeight / paper.perRow - 2 * paper.vMargin;
+  const rowsPerPage = paper.perPage / paper.perRow;
+  // Page margins already inset the table. Size rows so that
+  // rows * rowHeight + (rows-1) * gap fits exactly in the usable area.
+  // If this overflows by even a few points, pdfmake pushes the 2nd row to the
+  // next page while background watermarks still draw in the empty slots.
+  const usableHeight = paper.pageHeight - 2 * paper.vMargin;
+  const rowGap = paper.vMargin;
+  const rowHeight =
+    (usableHeight - rowGap * Math.max(0, rowsPerPage - 1)) / rowsPerPage;
   const pageChunks = chunkRows(cards, paper.perPage).map((pageCards) =>
     pageCards.length < paper.perPage
       ? [
           ...pageCards,
-          ...Array.from(
-            { length: paper.perPage - pageCards.length },
-            () => emptyCard(),
+          ...Array.from({ length: paper.perPage - pageCards.length }, () =>
+            emptyCard(),
           ),
         ]
       : pageCards,
@@ -923,13 +1284,12 @@ export function buildScorecardsDocument(
       ? { pageBreak: "after" as const }
       : {}),
     layout: {
-      // Outer margin is pageMargins; padding is the remaining inner gap.
-      paddingLeft: (i) => (i % paper.perRow === 0 ? 0 : paper.hMargin),
-      paddingRight: (i) =>
-        i % paper.perRow === paper.perRow - 1 ? 0 : paper.hMargin,
-      paddingTop: (i) => (i % paper.perRow === 0 ? 0 : paper.vMargin),
-      paddingBottom: (i) =>
-        i % paper.perRow === paper.perRow - 1 ? 0 : paper.vMargin,
+      // paddingLeft/Right receive column index; Top/Bottom receive row index.
+      // Apply the shared gap on only one side so it isn't double-counted.
+      paddingLeft: (i) => (i === 0 ? 0 : paper.hMargin),
+      paddingRight: () => 0,
+      paddingTop: (i) => (i === 0 ? 0 : rowGap),
+      paddingBottom: () => 0,
       hLineWidth: () => 0,
       vLineWidth: () => 0,
     },
@@ -943,7 +1303,7 @@ export function buildScorecardsDocument(
 
   const doc: TDocumentDefinitions = {
     info: {
-      title: `Scorecards — ${roundActivityCode}`,
+      title: `Papeletas — ${roundActivityCode}`,
       author: "Cubing México",
     },
     background: (currentPage) => {
@@ -951,20 +1311,19 @@ export function buildScorecardsDocument(
       const images = background
         ? imagePositions.flatMap((absolutePosition, slot) => {
             const card = pageCards[slot];
-            // Covers and empty pads stay without watermark.
             if (!card || card.kind !== "scorecard") return [];
             return [
               {
                 absolutePosition,
                 image: "scorecardBg",
-                width: 200,
-                height: 200,
+                width: bgSize,
+                height: bgSize,
                 opacity: 0.15,
               },
             ];
           })
         : [];
-      return [...images, cutLines];
+      return [...images, marks];
     },
     pageSize: { width: paper.pageWidth, height: paper.pageHeight },
     pageMargins: [paper.hMargin, paper.vMargin],
@@ -999,11 +1358,11 @@ export async function printScorecards(
 
   if (remoteUrl && !backgroundDataUrl) {
     console.warn(
-      "No se pudo cargar la imagen de fondo; se generan scorecards sin fondo.",
+      "No se pudo cargar la imagen de fondo; se generan papeletas sin fondo.",
     );
   }
 
-  const doc = buildScorecardsDocument(
+  const doc = await buildScorecardsDocument(
     wcif,
     roundActivityCode,
     mode,

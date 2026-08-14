@@ -77,7 +77,7 @@ export function PrintablesPanel({
 
       <section className="space-y-3 rounded-lg border p-4">
         <div>
-          <h3 className="font-semibold">Scorecards</h3>
+          <h3 className="font-semibold">Papeletas</h3>
           <p className="text-sm text-muted-foreground">
             Hojas de resultados para la ronda seleccionada (borrador local).
           </p>
@@ -126,7 +126,7 @@ export function PrintablesPanel({
                     "open",
                     competitionImageUrl,
                   ),
-                "Scorecards abiertas",
+                "Papeletas abiertas",
               )
             }
           >
@@ -147,7 +147,7 @@ export function PrintablesPanel({
                     "download",
                     competitionImageUrl,
                   ),
-                "Scorecards descargadas",
+                "Papeletas descargadas",
               )
             }
           >
@@ -161,7 +161,7 @@ export function PrintablesPanel({
         <div>
           <h3 className="font-semibold">Hojas de grupo</h3>
           <p className="text-sm text-muted-foreground">
-            Lista de competidores y staff por grupo de la ronda actual.
+            Lista de competidores y voluntarios por grupo de la ronda actual.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

@@ -19,9 +19,9 @@ import { setPersonStaffRoles } from "@/lib/groups/generate-assignments";
 
 const TOGGLE_ROLES = [
   { value: "staff-judge" as const, label: "Juez" },
-  { value: "staff-scrambler" as const, label: "Scrambler" },
-  { value: "staff-runner" as const, label: "Runner" },
-  { value: "staff-other" as const, label: "Staff" },
+  { value: "staff-scrambler" as const, label: "Mezclador" },
+  { value: "staff-runner" as const, label: "Corredor" },
+  { value: "staff-other" as const, label: "Voluntario" },
 ];
 
 function isOfficialLocked(person: Person): boolean {
@@ -103,11 +103,11 @@ export function StaffRolesPanel({
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="font-semibold">Staff</h3>
+        <h3 className="font-semibold">Voluntarios</h3>
         <p className="text-sm text-muted-foreground">
-          Marca quién es staff para que reciban más tareas al usar{" "}
+          Marca quién es voluntario para que reciban más tareas al usar{" "}
           <strong>Asignar todo</strong>. Delegados y organizadores no reciben
-          tareas de competencia (juez/scrambler/runner); están ocupados con
+          tareas de competencia (juez/mezclador/corredor); están ocupados con
           otras labores.
         </p>
       </div>

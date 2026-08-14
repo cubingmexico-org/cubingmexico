@@ -27,6 +27,7 @@ export type CompetitorsSortingRule =
 
 export type ScorecardPaperSize = "a4" | "letter" | "a6";
 export type ScorecardOrder = "natural" | "stacked";
+export type ScorecardDensity = "compact" | "comfortable";
 export type ScorecardsBackgroundMode = "competition" | "custom" | "none";
 
 export type CompetitionConfig = {
@@ -41,7 +42,10 @@ export type CompetitionConfig = {
   printStations: boolean;
   scorecardPaperSize: ScorecardPaperSize;
   scorecardOrder: ScorecardOrder;
+  scorecardDensity: ScorecardDensity;
   printScorecardsCoverSheets: boolean;
+  printPersonalBests: boolean;
+  printScorecardQr: boolean;
   printScrambleCheckerForTopRankedCompetitors: boolean;
   printScrambleCheckerForFinalRounds: boolean;
   printScrambleCheckerForBlankScorecards: boolean;
@@ -71,7 +75,10 @@ export const DEFAULT_COMPETITION_CONFIG: CompetitionConfig = {
   printStations: false,
   scorecardPaperSize: "letter",
   scorecardOrder: "natural",
+  scorecardDensity: "compact",
   printScorecardsCoverSheets: true,
+  printPersonalBests: false,
+  printScorecardQr: true,
   printScrambleCheckerForTopRankedCompetitors: false,
   printScrambleCheckerForFinalRounds: false,
   printScrambleCheckerForBlankScorecards: false,
@@ -126,16 +133,18 @@ function readBool(
   data: Record<string, unknown>,
   key: string,
   fallback: boolean,
-) {
-  return typeof data[key] === "boolean" ? data[key] : fallback;
+): boolean {
+  const value = data[key];
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function readString(
   data: Record<string, unknown>,
   key: string,
   fallback: string,
-) {
-  return typeof data[key] === "string" ? data[key] : fallback;
+): string {
+  const value = data[key];
+  return typeof value === "string" ? value : fallback;
 }
 
 function readSortingRule(value: unknown): CompetitorsSortingRule {
@@ -158,6 +167,11 @@ function readPaperSize(value: unknown): ScorecardPaperSize {
 function readOrder(value: unknown): ScorecardOrder {
   if (value === "natural" || value === "stacked") return value;
   return DEFAULT_COMPETITION_CONFIG.scorecardOrder;
+}
+
+function readDensity(value: unknown): ScorecardDensity {
+  if (value === "compact" || value === "comfortable") return value;
+  return DEFAULT_COMPETITION_CONFIG.scorecardDensity;
 }
 
 function readBackgroundMode(
@@ -224,10 +238,21 @@ function parseCompetitionConfig(data: unknown): CompetitionConfig {
     ),
     scorecardPaperSize: readPaperSize(data.scorecardPaperSize),
     scorecardOrder: readOrder(data.scorecardOrder),
+    scorecardDensity: readDensity(data.scorecardDensity),
     printScorecardsCoverSheets: readBool(
       data,
       "printScorecardsCoverSheets",
       DEFAULT_COMPETITION_CONFIG.printScorecardsCoverSheets,
+    ),
+    printPersonalBests: readBool(
+      data,
+      "printPersonalBests",
+      DEFAULT_COMPETITION_CONFIG.printPersonalBests,
+    ),
+    printScorecardQr: readBool(
+      data,
+      "printScorecardQr",
+      DEFAULT_COMPETITION_CONFIG.printScorecardQr,
     ),
     printScrambleCheckerForTopRankedCompetitors: readBool(
       data,

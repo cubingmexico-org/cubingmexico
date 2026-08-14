@@ -131,7 +131,7 @@ export function RoundsOverviewPanel({
                 ¿Limpiar todas las asignaciones?
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Se eliminan asignaciones de competidor y staff en todos los
+                Se eliminan asignaciones de competidor y voluntario en todos los
                 grupos. Los grupos (actividades hijas) se conservan.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -148,7 +148,7 @@ export function RoundsOverviewPanel({
       <p className="text-sm text-muted-foreground">
         Vista de competencia: elige una ronda para editar detalle. Usa{" "}
         <strong>Asignar todo</strong> para crear grupos sugeridos y asignar
-        competidores + staff de una vez.
+        competidores + voluntarios de una vez.
       </p>
 
       <Accordion
