@@ -84,7 +84,38 @@ export type ScorecardPerson = {
   nationalRankingAverage: number | null;
 };
 
-type CardSlot = Content[] | Record<string, never>;
+type CardSlot =
+  | { kind: "cover"; content: Content[] }
+  | { kind: "scorecard"; content: Content[] }
+  | { kind: "empty" };
+
+function emptyCard(): CardSlot {
+  return { kind: "empty" };
+}
+
+function cardCellContent(card: CardSlot): Content {
+  if (card.kind === "empty") return { text: "" };
+  return card.content as unknown as Content;
+}
+
+/** Same offset in every quadrant (slightly above Groupifier's 170 for a more centered look). */
+function scorecardBackgroundPositions(
+  paper: (typeof PAPER)[keyof typeof PAPER],
+) {
+  const offsetX = 60;
+  const offsetY = 145;
+  if (paper.perPage === 1) {
+    return [{ x: offsetX, y: offsetY }];
+  }
+  const halfW = paper.pageWidth / 2;
+  const halfH = paper.pageHeight / 2;
+  return [
+    { x: offsetX, y: offsetY },
+    { x: halfW + offsetX, y: offsetY },
+    { x: offsetX, y: halfH + offsetY },
+    { x: halfW + offsetX, y: halfH + offsetY },
+  ];
+}
 
 function parseLocalName(fullName: string): {
   latin: string;
@@ -221,14 +252,12 @@ function columnLabels(
   });
 }
 
-function emptyCell(): Content {
-  return { text: "" };
-}
-
 function attemptRow(
   attemptNumber: number | string,
   needsScrambleChecker: boolean,
 ): Content[] {
+  // Empty `{}` cells match Groupifier — `{ text: "" }` adds extra line box height
+  // and can push the 2nd row of a page onto the next sheet.
   return [
     {
       text: String(attemptNumber),
@@ -237,12 +266,12 @@ function attemptRow(
       bold: true,
       alignment: "center",
     },
-    emptyCell(),
-    ...(needsScrambleChecker ? [emptyCell()] : []),
-    emptyCell(),
-    emptyCell(),
-    emptyCell(),
-  ];
+    {},
+    ...(needsScrambleChecker ? [{}] : []),
+    {},
+    {},
+    {},
+  ] as Content[];
 }
 
 function attemptRows(
@@ -308,31 +337,34 @@ function buildCoverSheet(params: {
     roomName,
     numberOfScorecards,
   } = params;
+  // Keep vertical margins tight so cover + scorecard rows fit 2-per-page on Letter.
+  const m = [0, 4] as [number, number];
+  const mLeft = [20, 4, 0, 4] as [number, number, number, number];
 
   return [
     {
       text: competitionName,
       bold: true,
       fontSize: 15,
-      margin: [0, 6, 0, 6],
+      margin: m,
       alignment: "center",
     },
     {
       text: `${eventName} Ronda ${roundNumber}`,
       fontSize: 15,
-      margin: [0, 6, 0, 6],
+      margin: m,
       alignment: "center",
     },
     {
       text: `Grupo ${groupNumber}${roomName ? ` (${roomName})` : ""}`,
       fontSize: 15,
-      margin: [0, 6, 0, 6],
+      margin: m,
       alignment: "center",
     },
     {
       text: "-------------------- PARA DELEGADO --------------------",
       alignment: "center",
-      margin: [0, 6, 0, 6],
+      margin: m,
     },
     {
       text: [
@@ -342,40 +374,40 @@ function buildCoverSheet(params: {
         "[ ]",
       ],
       fontSize: 10,
-      margin: [20, 6, 0, 6],
+      margin: mLeft,
     },
     {
       text: "2. Revisadas firmas faltantes [ ]",
       fontSize: 10,
-      margin: [20, 6, 0, 6],
+      margin: mLeft,
     },
     {
       text: "3. Scorecards con incidentes: ______",
       fontSize: 10,
-      margin: [20, 6, 0, 6],
+      margin: mLeft,
     },
     initialsField("Delegado"),
     {
       text: "-------------------- PARA CAPTURA --------------------",
       alignment: "center",
-      margin: [0, 6, 0, 6],
+      margin: m,
     },
     {
-      text: "4. Resultados capturados por Scoretaker",
+      text: "4. Resultados capturados por Capturista",
       fontSize: 10,
-      margin: [20, 6, 0, 6],
+      margin: mLeft,
     },
-    initialsField("Scoretaker"),
+    initialsField("Capturista"),
     {
       text: "5. Incidentes registrados por Delegado",
       fontSize: 10,
-      margin: [20, 6, 0, 6],
+      margin: mLeft,
     },
     initialsField("Delegado"),
     {
       text: "6. Resultados revisados por Delegado",
       fontSize: 10,
-      margin: [20, 6, 0, 6],
+      margin: mLeft,
     },
     initialsField("Delegado"),
   ];
@@ -432,7 +464,7 @@ function buildScorecardContent(params: {
       text: competitionName,
       bold: true,
       fontSize: 15,
-      margin: [0, 0, 0, 10],
+      margin: [0, 0, 0, 8],
       alignment: "center",
     },
     {
@@ -472,7 +504,7 @@ function buildScorecardContent(params: {
             [
               { text: "Nombre", alignment: "left" },
               {
-                text: isNewcomer ? "Newcomer" : " ",
+                text: isNewcomer ? "Nuevo" : " ",
                 alignment: "right",
               },
             ],
@@ -484,13 +516,16 @@ function buildScorecardContent(params: {
             },
             {
               text: nameText,
-            },
+              // Prevent long names from stretching the card past half-page height.
+              // pdfmake supports maxHeight though typings omit it.
+              maxHeight: 20,
+            } as Content,
           ],
         ],
       },
     },
     {
-      margin: [0, 10, 0, 0],
+      margin: [0, 8, 0, 0],
       table: {
         widths: [16, 25, ...(printScrambleChecker ? [25] : []), "*", 25, 25],
         body: [
@@ -551,7 +586,7 @@ function applyStackedOrder(cards: CardSlot[], perPage: number): CardSlot[] {
   const padded =
     rem === 0
       ? cards
-      : [...cards, ...Array.from({ length: perPage - rem }, () => ({}))];
+      : [...cards, ...Array.from({ length: perPage - rem }, () => emptyCard())];
   return padded
     .map((card, idx) => ({ overallNumber: idx, card }))
     .sort((a, b) => {
@@ -705,8 +740,9 @@ function buildCardList(
       mode,
       config,
     );
-    return Array.from({ length: n }, () =>
-      buildScorecardContent({
+    return Array.from({ length: n }, () => ({
+      kind: "scorecard" as const,
+      content: buildScorecardContent({
         scorecardNumber: null,
         competitionName,
         eventName,
@@ -721,7 +757,7 @@ function buildCardList(
         printScrambleChecker: checker,
         scorecardWidth,
       }),
-    );
+    }));
   }
 
   const people = collectAssignedScorecards(wcif, roundActivityCode);
@@ -743,9 +779,11 @@ function buildCardList(
   for (const [groupNumber, groupPeople] of [...byGroup.entries()].sort(
     (a, b) => a[0] - b[0],
   )) {
+    const groupCards: CardSlot[] = [];
     if (config.printScorecardsCoverSheets) {
-      cards.push(
-        buildCoverSheet({
+      groupCards.push({
+        kind: "cover",
+        content: buildCoverSheet({
           competitionName,
           eventName: eventName ?? "",
           roundNumber: roundNumber ?? 1,
@@ -753,7 +791,7 @@ function buildCardList(
           roomName: groupPeople[0]?.roomName ?? "",
           numberOfScorecards: groupPeople.length,
         }),
-      );
+      });
     }
 
     let stationFallback = groupPeople.length;
@@ -766,8 +804,9 @@ function buildCardList(
         mode,
         config,
       );
-      cards.push(
-        buildScorecardContent({
+      groupCards.push({
+        kind: "scorecard",
+        content: buildScorecardContent({
           scorecardNumber: remaining--,
           competitionName,
           eventName,
@@ -787,17 +826,19 @@ function buildCardList(
           printScrambleChecker: checker,
           scorecardWidth,
         }),
-      );
+      });
     }
 
+    // Pad each group so its last page is full (Groupifier behaviour).
     if (config.scorecardOrder !== "stacked") {
-      const rem = cards.length % paper.perPage;
-      // Pad only this group's trailing cards relative to group start — Groupifier
-      // pads each group's scorecards (incl. cover) to fill the last page.
+      const rem = groupCards.length % paper.perPage;
       if (rem !== 0) {
-        cards.push(...Array.from({ length: paper.perPage - rem }, () => ({})));
+        groupCards.push(
+          ...Array.from({ length: paper.perPage - rem }, () => emptyCard()),
+        );
       }
     }
+    cards.push(...groupCards);
   }
 
   if (config.scorecardOrder === "stacked") {
@@ -834,12 +875,7 @@ export function buildScorecardsDocument(
     paper,
   );
 
-  const imagePositions = [
-    { x: 60, y: 170 },
-    { x: 360, y: 170 },
-    { x: 60, y: 590 },
-    { x: 360, y: 590 },
-  ].slice(0, paper.perPage);
+  const imagePositions = scorecardBackgroundPositions(paper);
 
   const cutLines: Content =
     paper.perPage === 4
@@ -869,50 +905,70 @@ export function buildScorecardsDocument(
         }
       : { text: "" };
 
-  const backgroundLayers: Content[] = [
-    ...(background
-      ? imagePositions.map((absolutePosition) => ({
-          absolutePosition,
-          image: "scorecardBg",
-          width: 200,
-          height: 200,
-          opacity: 0.15,
-        }))
-      : []),
-    cutLines,
-  ];
+  const rowHeight = paper.pageHeight / paper.perRow - 2 * paper.vMargin;
+  const pageChunks = chunkRows(cards, paper.perPage).map((pageCards) =>
+    pageCards.length < paper.perPage
+      ? [
+          ...pageCards,
+          ...Array.from(
+            { length: paper.perPage - pageCards.length },
+            () => emptyCard(),
+          ),
+        ]
+      : pageCards,
+  );
+
+  const pageTables: Content[] = pageChunks.map((pageCards, pageIndex) => ({
+    ...(pageIndex < pageChunks.length - 1
+      ? { pageBreak: "after" as const }
+      : {}),
+    layout: {
+      // Outer margin is pageMargins; padding is the remaining inner gap.
+      paddingLeft: (i) => (i % paper.perRow === 0 ? 0 : paper.hMargin),
+      paddingRight: (i) =>
+        i % paper.perRow === paper.perRow - 1 ? 0 : paper.hMargin,
+      paddingTop: (i) => (i % paper.perRow === 0 ? 0 : paper.vMargin),
+      paddingBottom: (i) =>
+        i % paper.perRow === paper.perRow - 1 ? 0 : paper.vMargin,
+      hLineWidth: () => 0,
+      vLineWidth: () => 0,
+    },
+    table: {
+      widths: Array.from({ length: paper.perRow }, () => "*"),
+      heights: rowHeight,
+      dontBreakRows: true,
+      body: chunkRows(pageCards.map(cardCellContent), paper.perRow),
+    },
+  }));
 
   const doc: TDocumentDefinitions = {
     info: {
       title: `Scorecards — ${roundActivityCode}`,
       author: "Cubing México",
     },
-    background: backgroundLayers,
+    background: (currentPage) => {
+      const pageCards = pageChunks[currentPage - 1] ?? [];
+      const images = background
+        ? imagePositions.flatMap((absolutePosition, slot) => {
+            const card = pageCards[slot];
+            // Covers and empty pads stay without watermark.
+            if (!card || card.kind !== "scorecard") return [];
+            return [
+              {
+                absolutePosition,
+                image: "scorecardBg",
+                width: 200,
+                height: 200,
+                opacity: 0.15,
+              },
+            ];
+          })
+        : [];
+      return [...images, cutLines];
+    },
     pageSize: { width: paper.pageWidth, height: paper.pageHeight },
     pageMargins: [paper.hMargin, paper.vMargin],
-    content: {
-      layout: {
-        paddingLeft: (i) => (i % paper.perRow === 0 ? 0 : paper.hMargin),
-        paddingRight: (i) =>
-          i % paper.perRow === paper.perRow - 1 ? 0 : paper.hMargin,
-        paddingTop: (i) => (i % paper.perRow === 0 ? 0 : paper.vMargin),
-        paddingBottom: (i) =>
-          i % paper.perRow === paper.perRow - 1 ? 0 : paper.vMargin,
-        hLineWidth: () => 0,
-        vLineWidth: () => 0,
-      },
-      table: {
-        widths: Array.from({ length: paper.perRow }, () => "*"),
-        heights: paper.pageHeight / paper.perRow - 2 * paper.vMargin,
-        dontBreakRows: true,
-        body: chunkRows(
-          cards.map((card) =>
-            Array.isArray(card) ? { stack: card } : { text: "" },
-          ),
-          paper.perRow,
-        ),
-      },
-    },
+    content: pageTables,
     defaultStyle: {
       font: "Roboto",
       fontSize: 9,

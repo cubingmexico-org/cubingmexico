@@ -153,7 +153,7 @@ export function StaffRolesPanel({
                     <TableCell>
                       <div className="font-medium">{person.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {person.wcaId ?? "Newcomer"}
+                        {person.wcaId ?? "Nuevo"}
                       </div>
                     </TableCell>
                     <TableCell>
