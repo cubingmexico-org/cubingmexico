@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Download, ExternalLink, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
-import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import {
   Select,
@@ -20,11 +19,11 @@ import {
 } from "@workspace/ui/components/alert";
 import type { WCIF } from "@/types/wcif";
 import {
-  defaultBlankCount,
-  printScorecards,
+  printAllAssignedScorecards,
+  printBlankScorecardVariants,
   type ScorecardMode,
 } from "@/lib/groups/scorecards";
-import { printGroupSheets, printTaskCards } from "@/lib/groups/task-cards";
+import { printAllGroupSheets, printTaskCards } from "@/lib/groups/task-cards";
 import {
   downloadScrambleMetadata,
   TNOODLE_LOCAL_URL,
@@ -32,24 +31,13 @@ import {
 
 export function PrintablesPanel({
   wcif,
-  roundActivityCode,
   competitionImageUrl,
 }: {
   wcif: WCIF;
-  roundActivityCode: string;
   competitionImageUrl?: string | null;
 }) {
   const [mode, setMode] = useState<ScorecardMode>("assigned");
-  const suggestedBlank = useMemo(
-    () => defaultBlankCount(wcif, roundActivityCode),
-    [wcif, roundActivityCode],
-  );
-  const [blankCount, setBlankCount] = useState(suggestedBlank);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setBlankCount(suggestedBlank);
-  }, [suggestedBlank]);
 
   const run = async (
     fn: () => void | Promise<void>,
@@ -66,6 +54,11 @@ export function PrintablesPanel({
     }
   };
 
+  const printScorecardsAction = (action: "open" | "download") =>
+    mode === "assigned"
+      ? printAllAssignedScorecards(wcif, action, competitionImageUrl)
+      : printBlankScorecardVariants(wcif, action, competitionImageUrl);
+
   return (
     <div className="space-y-8">
       {error && (
@@ -77,9 +70,20 @@ export function PrintablesPanel({
 
       <section className="space-y-3 rounded-lg border p-4">
         <div>
+          <h3 className="font-semibold">Imprimibles</h3>
+          <p className="text-sm text-muted-foreground">
+            Papeletas y hojas para toda la competencia (borrador local).
+          </p>
+        </div>
+      </section>
+
+      <section className="space-y-3 rounded-lg border p-4">
+        <div>
           <h3 className="font-semibold">Papeletas</h3>
           <p className="text-sm text-muted-foreground">
-            Hojas de resultados para la ronda seleccionada (borrador local).
+            {mode === "assigned"
+              ? "Todas las rondas con asignaciones de competidor."
+              : "Una página por variante de formato (campos para llenar a mano)."}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
@@ -98,36 +102,10 @@ export function PrintablesPanel({
               </SelectContent>
             </Select>
           </div>
-          {mode === "blank" && (
-            <div className="space-y-1 w-32">
-              <Label htmlFor="blank-count">Cantidad</Label>
-              <Input
-                id="blank-count"
-                type="number"
-                min={1}
-                max={500}
-                value={blankCount}
-                onChange={(e) =>
-                  setBlankCount(Number(e.target.value) || suggestedBlank)
-                }
-              />
-            </div>
-          )}
           <Button
             type="button"
             onClick={() =>
-              run(
-                () =>
-                  printScorecards(
-                    wcif,
-                    roundActivityCode,
-                    mode,
-                    blankCount,
-                    "open",
-                    competitionImageUrl,
-                  ),
-                "Papeletas abiertas",
-              )
+              run(() => printScorecardsAction("open"), "Papeletas abiertas")
             }
           >
             <Printer className="size-4" />
@@ -138,15 +116,7 @@ export function PrintablesPanel({
             variant="outline"
             onClick={() =>
               run(
-                () =>
-                  printScorecards(
-                    wcif,
-                    roundActivityCode,
-                    mode,
-                    blankCount,
-                    "download",
-                    competitionImageUrl,
-                  ),
+                () => printScorecardsAction("download"),
                 "Papeletas descargadas",
               )
             }
@@ -161,7 +131,8 @@ export function PrintablesPanel({
         <div>
           <h3 className="font-semibold">Hojas de grupo</h3>
           <p className="text-sm text-muted-foreground">
-            Lista de competidores y voluntarios por grupo de la ronda actual.
+            Lista de competidores y voluntarios por grupo en todas las rondas
+            con asignaciones.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -169,7 +140,7 @@ export function PrintablesPanel({
             type="button"
             onClick={() =>
               run(
-                () => printGroupSheets(wcif, roundActivityCode, "open"),
+                () => printAllGroupSheets(wcif, "open"),
                 "Hojas de grupo abiertas",
               )
             }
@@ -182,7 +153,7 @@ export function PrintablesPanel({
             variant="outline"
             onClick={() =>
               run(
-                () => printGroupSheets(wcif, roundActivityCode, "download"),
+                () => printAllGroupSheets(wcif, "download"),
                 "Hojas de grupo descargadas",
               )
             }

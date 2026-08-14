@@ -6,9 +6,11 @@ import {
 } from "@/lib/groups/wcif-schedule";
 import { suggestGroupCountsFromExtensions } from "@/lib/groups/extensions";
 import {
+  suggestStaffForRound,
   suggestedGroupCount,
   suggestedRunners,
   suggestedScramblers,
+  type StaffSuggestion,
 } from "@/lib/groups/formulas";
 
 export const ORGANIZACION_COMPETITION_CONFIG = "organizacion.CompetitionConfig";
@@ -49,6 +51,9 @@ export type CompetitionConfig = {
   printScrambleCheckerForTopRankedCompetitors: boolean;
   printScrambleCheckerForFinalRounds: boolean;
   printScrambleCheckerForBlankScorecards: boolean;
+  assignScramblers: boolean;
+  assignRunners: boolean;
+  assignJudges: boolean;
 };
 
 export type RoomConfig = {
@@ -82,6 +87,9 @@ export const DEFAULT_COMPETITION_CONFIG: CompetitionConfig = {
   printScrambleCheckerForTopRankedCompetitors: false,
   printScrambleCheckerForFinalRounds: false,
   printScrambleCheckerForBlankScorecards: false,
+  assignScramblers: true,
+  assignRunners: true,
+  assignJudges: true,
 };
 
 export const DEFAULT_ROOM_CONFIG: RoomConfig = {
@@ -269,6 +277,21 @@ function parseCompetitionConfig(data: unknown): CompetitionConfig {
       "printScrambleCheckerForBlankScorecards",
       DEFAULT_COMPETITION_CONFIG.printScrambleCheckerForBlankScorecards,
     ),
+    assignScramblers: readBool(
+      data,
+      "assignScramblers",
+      DEFAULT_COMPETITION_CONFIG.assignScramblers,
+    ),
+    assignRunners: readBool(
+      data,
+      "assignRunners",
+      DEFAULT_COMPETITION_CONFIG.assignRunners,
+    ),
+    assignJudges: readBool(
+      data,
+      "assignJudges",
+      DEFAULT_COMPETITION_CONFIG.assignJudges,
+    ),
   };
 }
 
@@ -388,6 +411,91 @@ export function setActivityConfig(
   return draft;
 }
 
+export function hasOrganizacionActivityConfig(activity: Activity): boolean {
+  return !!findExtension(activity.extensions, ORGANIZACION_ACTIVITY_CONFIG);
+}
+
+/** True when any parent round activity already has a saved groups config. */
+export function roundHasActivityConfig(
+  wcif: WCIF,
+  roundActivityCode: string,
+): boolean {
+  const parents = findRoundActivities(wcif, roundActivityCode);
+  return parents.some(
+    (parent) =>
+      hasOrganizacionActivityConfig(parent.activity) &&
+      getActivityConfig(parent.activity).groups >= 1,
+  );
+}
+
+export function setRoundActivityConfigs(
+  wcif: WCIF,
+  roundActivityCode: string,
+  buildConfig: (params: {
+    parentRoomId: number;
+    groups: number;
+    stations: number;
+    parentCount: number;
+  }) => ActivityConfig,
+  groupsByRoom: Record<number, number>,
+): WCIF {
+  let draft = wcif;
+  const parents = findRoundActivities(wcif, roundActivityCode);
+  for (const parent of parents) {
+    const room = wcif.schedule.venues
+      .flatMap((v) => v.rooms)
+      .find((r) => r.id === parent.roomId);
+    const stations = room ? getRoomConfig(room).stations : 0;
+    const groups =
+      groupsByRoom[parent.roomId] ??
+      getActivityConfig(parent.activity).groups ??
+      2;
+    draft = setActivityConfig(
+      draft,
+      parent.activity.id,
+      buildConfig({
+        parentRoomId: parent.roomId,
+        groups,
+        stations,
+        parentCount: parents.length,
+      }),
+    );
+  }
+  return draft;
+}
+
+export type PopulateActivityConfigOptions = {
+  force?: boolean;
+  scramblers?: number;
+  runners?: number;
+  assignScramblers?: boolean;
+  assignRunners?: boolean;
+  assignJudges?: boolean;
+};
+
+export type InitialStaffPreview = StaffSuggestion & {
+  competitors: number;
+  stations: number;
+};
+
+/** Preview staff counts for the largest Round-1 field (Config tab card). */
+export function suggestInitialStaffPreview(wcif: WCIF): InitialStaffPreview {
+  const competitors = largestRound1Field(wcif);
+  const stations = suggestStationsBreakdown(wcif).perRoom;
+  const competitionConfig = getCompetitionConfig(wcif);
+  const suggestion = suggestStaffForRound({
+    stations,
+    competitors: Math.max(competitors, 1),
+    roundNumber: 1,
+    assignScramblers: competitionConfig.assignScramblers,
+    assignRunners: competitionConfig.assignRunners,
+    assignJudges: competitionConfig.assignJudges,
+  });
+  return { ...suggestion, competitors, stations };
+}
+
+export { type StaffSuggestion } from "@/lib/groups/formulas";
+
 export function listRooms(wcif: WCIF): Array<{
   room: Room;
   venueName: string;
@@ -505,11 +613,18 @@ export function ensureDefaultRoomStations(wcif: WCIF): WCIF {
 export function populateActivityConfigsForRound(
   wcif: WCIF,
   roundActivityCode: string,
-  options?: { force?: boolean },
+  options?: PopulateActivityConfigOptions,
 ): WCIF {
   const draft = deepCloneWcif(wcif);
   const parsed = parseRoundActivityCode(roundActivityCode);
   if (!parsed) return draft;
+
+  const competitionConfig = getCompetitionConfig(draft);
+  const assignScramblers =
+    options?.assignScramblers ?? competitionConfig.assignScramblers;
+  const assignRunners =
+    options?.assignRunners ?? competitionConfig.assignRunners;
+  const assignJudges = options?.assignJudges ?? competitionConfig.assignJudges;
 
   const competitors = countCompetingInEvent(draft, parsed.eventId);
   const parents = findRoundActivities(draft, roundActivityCode);
@@ -523,10 +638,7 @@ export function populateActivityConfigsForRound(
       .find((r) => r.id === parent.roomId);
     const stations = room ? getRoomConfig(room).stations : 0;
     const current = getActivityConfig(parent.activity);
-    const hasOrg = !!findExtension(
-      parent.activity.extensions,
-      ORGANIZACION_ACTIVITY_CONFIG,
-    );
+    const hasOrg = hasOrganizacionActivityConfig(parent.activity);
 
     if (hasOrg && !options?.force && current.groups >= 1) {
       continue;
@@ -554,12 +666,19 @@ export function populateActivityConfigsForRound(
       groupCompetitors,
     );
 
+    const scramblers = assignScramblers
+      ? (options?.scramblers ?? suggestedScramblers(stationsInUse))
+      : 0;
+    const runners = assignRunners
+      ? (options?.runners ?? suggestedRunners(stationsInUse))
+      : 0;
+
     const config: ActivityConfig = {
       capacity: 1 / Math.max(parents.length, 1),
       groups,
-      scramblers: suggestedScramblers(stationsInUse),
-      runners: suggestedRunners(stationsInUse),
-      assignJudges: stations > 0,
+      scramblers,
+      runners,
+      assignJudges: assignJudges && stations > 0,
     };
 
     parent.activity.extensions = setExtension(
@@ -570,6 +689,30 @@ export function populateActivityConfigsForRound(
   }
 
   return draft;
+}
+
+const SKIP_INITIAL_CONFIG_EVENTS = new Set(["333fm", "333mbf"]);
+
+/** Apply ActivityConfig to every scheduled round (Groupifier initial configuration). */
+export function populateActivityConfigsForAllRounds(
+  wcif: WCIF,
+  options?: PopulateActivityConfigOptions,
+): { wcif: WCIF; roundCount: number } {
+  let draft = wcif;
+  let roundCount = 0;
+  for (const event of wcif.events) {
+    if (SKIP_INITIAL_CONFIG_EVENTS.has(event.id)) continue;
+    for (const round of event.rounds) {
+      const parents = findRoundActivities(draft, round.id);
+      if (parents.length === 0) continue;
+      draft = populateActivityConfigsForRound(draft, round.id, {
+        ...options,
+        force: options?.force ?? true,
+      });
+      roundCount++;
+    }
+  }
+  return { wcif: draft, roundCount };
 }
 
 export function suggestedGroupsForRound(

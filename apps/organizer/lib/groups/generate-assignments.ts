@@ -4,6 +4,7 @@ import {
   getCompetitionConfig,
   getRoomConfig,
   populateActivityConfigsForRound,
+  roundHasActivityConfig,
   type CompetitionConfig,
   type CompetitorsSortingRule,
 } from "@/lib/groups/config";
@@ -705,9 +706,9 @@ export function assignAllPendingRounds(wcif: WCIF): AssignAllResult {
     try {
       let groups = getGroupActivitiesForRound(draft, roundId);
       if (groups.length === 0) {
-        draft = populateActivityConfigsForRound(draft, roundId, {
-          force: true,
-        });
+        if (!roundHasActivityConfig(draft, roundId)) {
+          draft = populateActivityConfigsForRound(draft, roundId);
+        }
         const parents = findRoundActivities(draft, roundId);
         if (parents.length === 0) {
           errors.push({
@@ -758,7 +759,9 @@ export function createMissingGroupsForAllRounds(wcif: WCIF): {
       if (parents.length === 0) continue;
       const groups = getGroupActivitiesForRound(draft, round.id);
       if (groups.length > 0) continue;
-      draft = populateActivityConfigsForRound(draft, round.id, { force: true });
+      if (!roundHasActivityConfig(draft, round.id)) {
+        draft = populateActivityConfigsForRound(draft, round.id);
+      }
       const parents2 = findRoundActivities(draft, round.id);
       const configs = parents2.map((p) => getActivityConfig(p.activity));
       const allSame = configs.every((c) => c.groups === configs[0]?.groups);

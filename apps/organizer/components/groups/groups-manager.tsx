@@ -38,7 +38,6 @@ import { GroupConfigPanel } from "@/components/groups/group-config-panel";
 import { AssignmentsPanel } from "@/components/groups/assignments-panel";
 import { DayOfPanel } from "@/components/groups/day-of-panel";
 import { ImportCsvPanel } from "@/components/groups/import-csv-panel";
-import { PrintablesPanel } from "@/components/groups/printables-panel";
 import { CompetitionConfigPanel } from "@/components/groups/competition-config-panel";
 import { StaffRolesPanel } from "@/components/groups/staff-roles-panel";
 import { RoundsOverviewPanel } from "@/components/groups/rounds-overview-panel";
@@ -55,7 +54,7 @@ export function GroupsManager({
   const router = useRouter();
   const [pushError, setPushError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [mainTab, setMainTab] = useState("overview");
+  const [mainTab, setMainTab] = useState("config");
 
   const {
     draftWcif,
@@ -200,20 +199,11 @@ export function GroupsManager({
 
       <Tabs value={mainTab} onValueChange={setMainTab}>
         <TabsList className="flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="config">Configuración</TabsTrigger>
           <TabsTrigger value="staff">Voluntarios</TabsTrigger>
+          <TabsTrigger value="overview">Resumen</TabsTrigger>
           <TabsTrigger value="round">Ronda</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="overview" className="mt-4">
-          <RoundsOverviewPanel
-            wcif={draftWcif}
-            selectedRoundId={selectedRoundId}
-            onSelectRound={handleSelectRound}
-            onApply={replaceDraft}
-          />
-        </TabsContent>
 
         <TabsContent value="config" className="mt-4">
           <CompetitionConfigPanel
@@ -225,6 +215,16 @@ export function GroupsManager({
 
         <TabsContent value="staff" className="mt-4">
           <StaffRolesPanel wcif={draftWcif} onApply={replaceDraft} />
+        </TabsContent>
+
+        <TabsContent value="overview" className="mt-4">
+          <RoundsOverviewPanel
+            wcif={draftWcif}
+            selectedRoundId={selectedRoundId}
+            onSelectRound={handleSelectRound}
+            onApply={replaceDraft}
+            competitionImageUrl={competitionLogoUrl}
+          />
         </TabsContent>
 
         <TabsContent value="round" className="mt-4 space-y-4">
@@ -241,7 +241,6 @@ export function GroupsManager({
                 <TabsTrigger value="assignments">Asignaciones</TabsTrigger>
                 <TabsTrigger value="day-of">Día de</TabsTrigger>
                 <TabsTrigger value="import">Importar</TabsTrigger>
-                <TabsTrigger value="printables">Imprimibles</TabsTrigger>
               </TabsList>
               <TabsContent value="groups" className="mt-4">
                 <GroupConfigPanel
@@ -266,13 +265,6 @@ export function GroupsManager({
               </TabsContent>
               <TabsContent value="import" className="mt-4">
                 <ImportCsvPanel wcif={draftWcif} onApply={replaceDraft} />
-              </TabsContent>
-              <TabsContent value="printables" className="mt-4">
-                <PrintablesPanel
-                  wcif={draftWcif}
-                  roundActivityCode={roundActivityCode}
-                  competitionImageUrl={competitionLogoUrl}
-                />
               </TabsContent>
             </Tabs>
           ) : (

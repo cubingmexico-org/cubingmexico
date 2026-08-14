@@ -123,3 +123,29 @@ export function buildRoundsOverview(wcif: WCIF): Array<{
     }),
   }));
 }
+
+export type RoundsOverview = ReturnType<typeof buildRoundsOverview>;
+
+export function deriveOverviewActions(overview: RoundsOverview): {
+  needsGroups: boolean;
+  needsAssign: boolean;
+  hasAssignments: boolean;
+  allReady: boolean;
+} {
+  const rounds = overview.flatMap((event) => event.rounds);
+  const needsGroups = rounds.some((round) => round.status === "no_groups");
+  const needsAssign = rounds.some(
+    (round) =>
+      round.status === "no_groups" || round.status === "no_assignments",
+  );
+  const hasAssignments = rounds.some(
+    (round) => round.status === "ready" || round.status === "conflicts",
+  );
+  const allReady =
+    rounds.length > 0 &&
+    rounds.every(
+      (round) => round.status === "ready" || round.status === "no_schedule",
+    );
+
+  return { needsGroups, needsAssign, hasAssignments, allReady };
+}

@@ -165,7 +165,7 @@ export function StaffRolesPanel({
                         ))}
                         {locked && (
                           <span className="text-xs text-muted-foreground">
-                            Sin tareas de pista
+                            No recibe tareas de grupo
                           </span>
                         )}
                       </div>

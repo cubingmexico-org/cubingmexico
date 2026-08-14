@@ -2,7 +2,13 @@
 
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { Eraser, Layers, Shuffle, ChevronRight } from "lucide-react";
+import {
+  AlertTriangle,
+  Eraser,
+  Layers,
+  Shuffle,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { Badge } from "@workspace/ui/components/badge";
 import {
@@ -11,6 +17,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@workspace/ui/components/accordion";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +41,12 @@ import {
 } from "@/lib/groups/generate-assignments";
 import {
   buildRoundsOverview,
+  deriveOverviewActions,
   statusLabel,
   type RoundStatus,
 } from "@/lib/groups/overview";
 import { ensureDefaultRoomStations } from "@/lib/groups/config";
+import { PrintablesPanel } from "@/components/groups/printables-panel";
 
 function statusVariant(
   status: RoundStatus,
@@ -55,13 +68,16 @@ export function RoundsOverviewPanel({
   selectedRoundId,
   onSelectRound,
   onApply,
+  competitionImageUrl,
 }: {
   wcif: WCIF;
   selectedRoundId: string | null;
   onSelectRound: (roundId: string) => void;
   onApply: (next: WCIF) => void;
+  competitionImageUrl?: string | null;
 }) {
   const overview = useMemo(() => buildRoundsOverview(wcif), [wcif]);
+  const actions = useMemo(() => deriveOverviewActions(overview), [overview]);
 
   const handleCreateMissing = () => {
     const seeded = ensureDefaultRoomStations(wcif);
@@ -108,48 +124,111 @@ export function RoundsOverviewPanel({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" variant="outline" onClick={handleCreateMissing}>
-          <Layers className="size-4" />
-          Crear grupos faltantes
-        </Button>
-        <Button type="button" onClick={handleAssignAll}>
-          <Shuffle className="size-4" />
-          Asignar todo
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button type="button" variant="outline">
-              <Eraser className="size-4" />
-              Limpiar asignaciones
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                ¿Limpiar todas las asignaciones?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Se eliminan asignaciones de competidor y voluntario en todos los
-                grupos. Los grupos (actividades hijas) se conservan.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleClearAll}>
-                Limpiar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+    <div className="space-y-6">
+      <div className="space-y-3">
+        {actions.needsGroups && (
+          <Alert>
+            <AlertTriangle className="size-4" />
+            <AlertTitle>Faltan grupos</AlertTitle>
+            <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Hay rondas con horario pero sin actividades hijas. Créalos antes
+                de asignar competidores.
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={handleCreateMissing}
+              >
+                <Layers className="size-4" />
+                Crear grupos faltantes
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      <p className="text-sm text-muted-foreground">
-        Vista de competencia: elige una ronda para editar detalle. Usa{" "}
-        <strong>Asignar todo</strong> para crear grupos sugeridos y asignar
-        competidores + voluntarios de una vez.
-      </p>
+        {actions.needsAssign && (
+          <Alert>
+            <AlertTriangle className="size-4" />
+            <AlertTitle>Faltan asignaciones</AlertTitle>
+            <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Crea grupos sugeridos y asigna competidores + voluntarios de una
+                vez en todas las rondas pendientes.
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                className="shrink-0"
+                onClick={handleAssignAll}
+              >
+                <Shuffle className="size-4" />
+                Asignar todo
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {actions.hasAssignments && (
+          <Alert>
+            <AlertTriangle className="size-4" />
+            <AlertTitle>Limpiar asignaciones</AlertTitle>
+            <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Elimina asignaciones de competidor y voluntario en todos los
+                grupos. Los grupos se conservan.
+              </span>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                  >
+                    <Eraser className="size-4" />
+                    Limpiar asignaciones
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      ¿Limpiar todas las asignaciones?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Se eliminan asignaciones de competidor y voluntario en
+                      todos los grupos. Los grupos (actividades hijas) se
+                      conservan.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearAll}>
+                      Limpiar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {actions.allReady && (
+          <p className="text-sm text-muted-foreground">Grupos listos.</p>
+        )}
+
+        {!actions.needsGroups &&
+          !actions.needsAssign &&
+          !actions.hasAssignments &&
+          !actions.allReady && (
+            <p className="text-sm text-muted-foreground">
+              Configura estaciones y voluntarios, luego crea grupos y asigna
+              desde aquí. Abre una ronda para ajustes finos.
+            </p>
+          )}
+      </div>
 
       <Accordion
         type="multiple"
@@ -211,6 +290,8 @@ export function RoundsOverviewPanel({
           </AccordionItem>
         ))}
       </Accordion>
+
+      <PrintablesPanel wcif={wcif} competitionImageUrl={competitionImageUrl} />
     </div>
   );
 }

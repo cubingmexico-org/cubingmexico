@@ -49,3 +49,54 @@ export function suggestedJudges(
   if (!assignJudges || stations <= 0) return 0;
   return Math.min(stations, Math.max(groupCompetitors, 0));
 }
+
+export type StaffSuggestion = {
+  groups: number;
+  peoplePerGroup: number;
+  stationsInUse: number;
+  scramblers: number;
+  runners: number;
+  judges: number;
+  cubesPerScrambler: number;
+  stationsPerRunner: number;
+};
+
+/** Suggest groups and staff counts for a round (Groupifier-style helpers). */
+export function suggestStaffForRound(params: {
+  stations: number;
+  competitors: number;
+  roundNumber: number;
+  groups?: number;
+  assignScramblers?: boolean;
+  assignRunners?: boolean;
+  assignJudges?: boolean;
+}): StaffSuggestion {
+  const groups =
+    params.groups ??
+    suggestedGroupCount({
+      competitors: params.competitors,
+      stations: params.stations,
+      roundNumber: params.roundNumber,
+    });
+  const peoplePerGroup = Math.ceil(params.competitors / Math.max(groups, 1));
+  const stationsUsed = stationsInUse(params.stations, peoplePerGroup);
+  const assignScramblers = params.assignScramblers !== false;
+  const assignRunners = params.assignRunners !== false;
+  const assignJudges = params.assignJudges !== false && params.stations > 0;
+  const scramblers = assignScramblers ? suggestedScramblers(stationsUsed) : 0;
+  const runners = assignRunners ? suggestedRunners(stationsUsed) : 0;
+  const judges = suggestedJudges(params.stations, peoplePerGroup, assignJudges);
+
+  return {
+    groups,
+    peoplePerGroup,
+    stationsInUse: stationsUsed,
+    scramblers,
+    runners,
+    judges,
+    cubesPerScrambler:
+      scramblers > 0 ? Math.round((stationsUsed / scramblers) * 10) / 10 : 0,
+    stationsPerRunner:
+      runners > 0 ? Math.round((stationsUsed / runners) * 10) / 10 : 0,
+  };
+}

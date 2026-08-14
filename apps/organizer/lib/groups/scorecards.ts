@@ -97,6 +97,11 @@ function resolvePaperLayout(
   };
 }
 
+/** Inner width of one scorecard cell in the page grid (between cut lines). */
+function scorecardCellWidth(paper: PaperLayout): number {
+  return (paper.pageWidth - paper.hMargin * (paper.perRow + 1)) / paper.perRow;
+}
+
 const noBorder = {
   border: [false, false, false, false] as [boolean, boolean, boolean, boolean],
 };
@@ -199,14 +204,22 @@ function cardCellContent(card: CardSlot): Content {
 function scorecardBackgroundPositions(paper: PaperLayout, imageSize: number) {
   const cols = paper.perRow;
   const rows = paper.perPage / paper.perRow;
-  const cellW = paper.pageWidth / cols;
-  const cellH = paper.pageHeight / rows;
+  const colWidth = scorecardCellWidth(paper);
+  const contentHeight = paper.pageHeight - 2 * paper.vMargin;
+  const rowGap = paper.vMargin;
+  const rowHeight = (contentHeight - rowGap * Math.max(0, rows - 1)) / rows;
   const positions: Array<{ x: number; y: number }> = [];
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       positions.push({
-        x: col * cellW + (cellW - imageSize) / 2,
-        y: row * cellH + (cellH - imageSize) / 2,
+        x:
+          paper.hMargin +
+          col * (colWidth + paper.hMargin) +
+          (colWidth - imageSize) / 2,
+        y:
+          paper.vMargin +
+          row * (rowHeight + rowGap) +
+          (rowHeight - imageSize) / 2,
       });
     }
   }
@@ -590,6 +603,83 @@ function initialsField(label: string): Content {
   };
 }
 
+const fillInBorder = {
+  hLineWidth: () => 0,
+  vLineWidth: () => 0,
+  paddingLeft: () => 0,
+  paddingRight: () => 2,
+  paddingTop: () => 0,
+  paddingBottom: () => 0,
+};
+
+function blankLabelCell(text: string): Content {
+  return {
+    text,
+    fontSize: 7,
+    color: "#333333",
+    border: [false, false, false, false],
+    margin: [0, 3, 1, 0],
+  } as Content;
+}
+
+function blankFieldCell(): Content {
+  return {
+    text: " ",
+    border: [true, true, true, true],
+    borderColor: ["#222222", "#222222", "#222222", "#222222"],
+    margin: [1, 2, 1, 2],
+  } as Content;
+}
+
+function blankNameRow(label: string, width: number): Content {
+  return {
+    table: {
+      widths: [32, width - 32],
+      body: [[blankLabelCell(`${label}:`), blankFieldCell()]],
+    },
+    layout: fillInBorder,
+    margin: [0, 0, 0, 3],
+  } as Content;
+}
+
+function blankMetaTable(
+  labels: ScorecardLabels,
+  width: number,
+  printStations: boolean,
+  margin: [number, number, number, number],
+): Content {
+  const fields: Array<{ label: string; boxWeight: number }> = [
+    { label: `${labels.event}:`, boxWeight: 34 },
+    { label: `${labels.round}:`, boxWeight: 12 },
+    { label: `${labels.group}:`, boxWeight: 12 },
+    { label: `${labels.id}:`, boxWeight: 18 },
+  ];
+  if (printStations) {
+    fields.push({ label: `${labels.station}:`, boxWeight: 12 });
+  }
+
+  const labelColWidth = 11;
+  const boxSpace = width - labelColWidth * fields.length;
+  const boxWeightTotal = fields.reduce(
+    (sum, field) => sum + field.boxWeight,
+    0,
+  );
+  const widths: Array<number | string> = [];
+  const row: Content[] = [];
+  for (const field of fields) {
+    widths.push(labelColWidth);
+    row.push(blankLabelCell(field.label));
+    widths.push((boxSpace * field.boxWeight) / boxWeightTotal);
+    row.push(blankFieldCell());
+  }
+
+  return {
+    table: { widths, body: [row] },
+    layout: fillInBorder,
+    margin,
+  } as Content;
+}
+
 function buildCoverSheet(params: {
   competitionName: string;
   eventName: string;
@@ -718,6 +808,7 @@ function buildScorecardContent(params: {
   } = params;
 
   const printStations = config.printStations;
+  const isBlank = person == null;
   const nameText = person ? displayName(person, config) : " ";
   const isNewcomer =
     person?.name && person.registrantId != null && !person.wcaId;
@@ -726,7 +817,7 @@ function buildScorecardContent(params: {
     config.printPersonalBests && person ? pbLineText(person, eventId) : null;
 
   const stationBlock: Content | null =
-    printStations && person?.stationNumber != null
+    printStations && !isBlank && person?.stationNumber != null
       ? ({
           stack: [
             {
@@ -777,14 +868,20 @@ function buildScorecardContent(params: {
   if (stationBlock) headerRight.push(stationBlock);
   if (qrBlock) headerRight.push(qrBlock);
 
-  const nameStack: Content[] = [
-    {
-      text: nameText,
-      fontSize: comfortable ? 14 : 12,
-      bold: true,
-      maxHeight: comfortable ? 28 : 18,
-    } as Content,
-  ];
+  const headerInset = comfortable ? 10 : 8;
+  const headerPadY = comfortable ? 10 : 8;
+  const innerWidth = scorecardWidth - 2 * headerInset;
+
+  const nameStack: Content[] = isBlank
+    ? [blankNameRow(labels.name, innerWidth)]
+    : [
+        {
+          text: nameText,
+          fontSize: comfortable ? 14 : 12,
+          bold: true,
+          maxHeight: comfortable ? 28 : 18,
+        } as Content,
+      ];
   if (isNewcomer) {
     nameStack.push({
       text: labels.newcomer,
@@ -803,18 +900,7 @@ function buildScorecardContent(params: {
     });
   }
 
-  const metaParts = [
-    `${labels.event}: ${eventName || "—"}`,
-    `${labels.round}: ${roundNumber ?? "—"}`,
-    `${labels.group}: ${groupNumber ?? "—"}`,
-    `${labels.id}: ${person?.registrantId ?? "—"}`,
-  ];
-
-  // Inset header from cut lines; extra vertical pad uses unused cell space.
-  const headerInset = comfortable ? 10 : 8;
-  const headerPadY = comfortable ? 10 : 8;
-
-  return [
+  const sections: Content[] = [
     {
       columns: [
         {
@@ -854,12 +940,24 @@ function buildScorecardContent(params: {
       columnGap: 6,
       margin: [headerInset, headerPadY, headerInset, headerPadY],
     },
-    {
-      text: metaParts.join("  ·  "),
-      fontSize: 9,
-      margin: [headerInset, 0, headerInset, headerPadY + 2],
-      color: "#333333",
-    },
+    (isBlank
+      ? blankMetaTable(labels, innerWidth, printStations, [
+          headerInset,
+          0,
+          headerInset,
+          headerPadY + 2,
+        ])
+      : {
+          text: [
+            `${labels.event}: ${eventName || "—"}`,
+            `${labels.round}: ${roundNumber ?? "—"}`,
+            `${labels.group}: ${groupNumber ?? "—"}`,
+            `${labels.id}: ${person?.registrantId ?? "—"}`,
+          ].join("  ·  "),
+          fontSize: 9,
+          color: "#333333",
+          margin: [headerInset, 0, headerInset, headerPadY + 2],
+        }) as Content,
     {
       margin: [0, 2, 0, 0],
       table: {
@@ -897,6 +995,13 @@ function buildScorecardContent(params: {
           : { text: "" },
       ],
     },
+  ];
+
+  return [
+    {
+      width: scorecardWidth,
+      stack: sections,
+    } as Content,
   ];
 }
 
@@ -1047,6 +1152,132 @@ export function defaultBlankCount(
   }
 }
 
+type ScorecardVariant = {
+  key: string;
+  eventId: string;
+  format: string;
+  formatInfo: FormatInfo;
+  printScrambleChecker: boolean;
+  cutoffAttempts: number | null;
+  timeLimitLabel: string | null;
+  cutoffLabel: string | null;
+};
+
+function collectScorecardVariants(
+  wcif: WCIF,
+  config: CompetitionConfig,
+): ScorecardVariant[] {
+  const seen = new Map<string, ScorecardVariant>();
+  for (const event of wcif.events) {
+    for (const round of event.rounds) {
+      const formatInfo = getFormatInfo(round.format ?? "a", event.id);
+      const printScrambleChecker = shouldPrintScrambleChecker(
+        event.id,
+        round.id,
+        wcif,
+        null,
+        "blank",
+        config,
+        formatInfo,
+      );
+      const layout = attemptLayoutOf(formatInfo);
+      const key = `${layout}:${round.format ?? "a"}:${event.id}:${printScrambleChecker}`;
+      if (seen.has(key)) continue;
+      const cutoff = round.cutoff as
+        | { numberOfAttempts?: number }
+        | null
+        | undefined;
+      seen.set(key, {
+        key,
+        eventId: event.id,
+        format: round.format ?? "a",
+        formatInfo,
+        printScrambleChecker,
+        cutoffAttempts: cutoff?.numberOfAttempts ?? null,
+        timeLimitLabel: timeLimitText(round),
+        cutoffLabel: cutoffText(round, event.id),
+      });
+    }
+  }
+  return [...seen.values()];
+}
+
+async function buildAllAssignedCardList(
+  wcif: WCIF,
+  config: CompetitionConfig,
+  paper: PaperLayout,
+): Promise<CardSlot[]> {
+  const allCards: CardSlot[] = [];
+  for (const event of wcif.events) {
+    for (const round of event.rounds) {
+      try {
+        const people = collectAssignedScorecards(wcif, round.id);
+        if (people.length === 0) continue;
+        const cards = await buildCardList(
+          wcif,
+          round.id,
+          "assigned",
+          0,
+          config,
+          paper,
+        );
+        allCards.push(...cards);
+      } catch {
+        // Skip rounds without groups or assignments.
+      }
+    }
+  }
+  if (allCards.length === 0) {
+    throw new Error("No hay asignaciones de competidor en ninguna ronda.");
+  }
+  return allCards;
+}
+
+function buildBlankVariantCardList(
+  wcif: WCIF,
+  config: CompetitionConfig,
+  paper: PaperLayout,
+): CardSlot[] {
+  const variants = collectScorecardVariants(wcif, config);
+  if (variants.length === 0) {
+    throw new Error("No hay rondas en el WCIF.");
+  }
+  const labels = scorecardLabels();
+  const competitionName = wcif.shortName || wcif.name;
+  const scorecardWidth = scorecardCellWidth(paper);
+  const comfortable =
+    config.scorecardDensity === "comfortable" && paper.perPage === 2;
+  const cards: CardSlot[] = [];
+
+  for (const variant of variants) {
+    const pageCards = Array.from({ length: paper.perPage }, () => ({
+      kind: "scorecard" as const,
+      content: buildScorecardContent({
+        scorecardNumber: null,
+        competitionName,
+        eventName: null,
+        eventId: variant.eventId,
+        roundNumber: null,
+        groupNumber: null,
+        person: null,
+        config,
+        formatInfo: variant.formatInfo,
+        cutoffAttempts: variant.cutoffAttempts,
+        timeLimitLabel: variant.timeLimitLabel,
+        cutoffLabel: variant.cutoffLabel,
+        printScrambleChecker: variant.printScrambleChecker,
+        scorecardWidth,
+        labels,
+        qrDataUrl: null,
+        comfortable,
+      }),
+    }));
+    cards.push(...pageCards);
+  }
+
+  return cards;
+}
+
 async function buildCardList(
   wcif: WCIF,
   roundActivityCode: string,
@@ -1071,7 +1302,7 @@ async function buildCardList(
   const labels = scorecardLabels();
   const tl = timeLimitText(round);
   const co = cutoffText(round, eventId);
-  const scorecardWidth = paper.pageWidth / paper.perRow - 2 * paper.hMargin;
+  const scorecardWidth = scorecardCellWidth(paper);
   const competitionName = wcif.shortName || wcif.name;
   const comfortable =
     config.scorecardDensity === "comfortable" && paper.perPage === 2;
@@ -1241,11 +1472,6 @@ export async function buildScorecardsDocument(
     config.scorecardPaperSize,
     config.scorecardDensity,
   );
-  const background =
-    backgroundDataUrl !== undefined
-      ? backgroundDataUrl
-      : resolveScorecardsBackgroundUrl(config, competitionImageUrl);
-
   const cards = await buildCardList(
     wcif,
     roundActivityCode,
@@ -1254,6 +1480,31 @@ export async function buildScorecardsDocument(
     config,
     paper,
   );
+  return buildScorecardsDocumentFromCards(
+    wcif,
+    cards,
+    `Papeletas — ${roundActivityCode}`,
+    competitionImageUrl,
+    backgroundDataUrl,
+  );
+}
+
+async function buildScorecardsDocumentFromCards(
+  wcif: WCIF,
+  cards: CardSlot[],
+  title: string,
+  competitionImageUrl?: string | null,
+  backgroundDataUrl?: string | null,
+): Promise<TDocumentDefinitions> {
+  const config = getCompetitionConfig(wcif);
+  const paper = resolvePaperLayout(
+    config.scorecardPaperSize,
+    config.scorecardDensity,
+  );
+  const background =
+    backgroundDataUrl !== undefined
+      ? backgroundDataUrl
+      : resolveScorecardsBackgroundUrl(config, competitionImageUrl);
 
   const bgSize = paper.perPage === 2 ? 220 : paper.perPage === 1 ? 180 : 160;
   const imagePositions = scorecardBackgroundPositions(paper, bgSize);
@@ -1303,7 +1554,7 @@ export async function buildScorecardsDocument(
 
   const doc: TDocumentDefinitions = {
     info: {
-      title: `Papeletas — ${roundActivityCode}`,
+      title,
       author: "Cubing México",
     },
     background: (currentPage) => {
@@ -1375,5 +1626,77 @@ export async function printScorecards(
     doc,
     action,
     `${wcif.id}-${roundActivityCode}-scorecards-${suffix}`,
+  );
+}
+
+async function printScorecardsFromCards(
+  wcif: WCIF,
+  cards: CardSlot[],
+  title: string,
+  filenameSuffix: string,
+  action: PrintAction,
+  competitionImageUrl?: string | null,
+): Promise<void> {
+  const config = getCompetitionConfig(wcif);
+  const remoteUrl = resolveScorecardsBackgroundUrl(config, competitionImageUrl);
+  const backgroundDataUrl = remoteUrl
+    ? await loadImageAsDataUrl(remoteUrl)
+    : null;
+
+  if (remoteUrl && !backgroundDataUrl) {
+    console.warn(
+      "No se pudo cargar la imagen de fondo; se generan papeletas sin fondo.",
+    );
+  }
+
+  const doc = await buildScorecardsDocumentFromCards(
+    wcif,
+    cards,
+    title,
+    competitionImageUrl,
+    backgroundDataUrl,
+  );
+  createGroupsPdf(doc, action, `${wcif.id}-${filenameSuffix}`);
+}
+
+export async function printAllAssignedScorecards(
+  wcif: WCIF,
+  action: PrintAction,
+  competitionImageUrl?: string | null,
+): Promise<void> {
+  const config = getCompetitionConfig(wcif);
+  const paper = resolvePaperLayout(
+    config.scorecardPaperSize,
+    config.scorecardDensity,
+  );
+  const cards = await buildAllAssignedCardList(wcif, config, paper);
+  await printScorecardsFromCards(
+    wcif,
+    cards,
+    `Papeletas — ${wcif.shortName || wcif.name}`,
+    "scorecards-assigned-all",
+    action,
+    competitionImageUrl,
+  );
+}
+
+export async function printBlankScorecardVariants(
+  wcif: WCIF,
+  action: PrintAction,
+  competitionImageUrl?: string | null,
+): Promise<void> {
+  const config = getCompetitionConfig(wcif);
+  const paper = resolvePaperLayout(
+    config.scorecardPaperSize,
+    config.scorecardDensity,
+  );
+  const cards = buildBlankVariantCardList(wcif, config, paper);
+  await printScorecardsFromCards(
+    wcif,
+    cards,
+    `Papeletas en blanco — ${wcif.shortName || wcif.name}`,
+    "scorecards-blank-variants",
+    action,
+    competitionImageUrl,
   );
 }

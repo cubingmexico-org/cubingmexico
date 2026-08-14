@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@workspace/ui/components/button";
+import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { Switch } from "@workspace/ui/components/switch";
@@ -10,12 +11,21 @@ import {
   createGroupsForRound,
   findRoundActivities,
   getGroupActivitiesForRound,
+  parseRoundActivityCode,
 } from "@/lib/groups/wcif-schedule";
 import {
   extensionSourceLabel,
   suggestGroupCountsFromExtensions,
 } from "@/lib/groups/extensions";
-import { suggestedGroupsForRound } from "@/lib/groups/config";
+import {
+  getActivityConfig,
+  getCompetitionConfig,
+  getRoomConfig,
+  hasOrganizacionActivityConfig,
+  setRoundActivityConfigs,
+  suggestedGroupsForRound,
+} from "@/lib/groups/config";
+import { suggestStaffForRound } from "@/lib/groups/formulas";
 import { toast } from "sonner";
 
 function formatTime(iso: string): string {
@@ -46,6 +56,23 @@ export function GroupConfigPanel({
     () => getGroupActivitiesForRound(wcif, roundActivityCode),
     [wcif, roundActivityCode],
   );
+  const roundMeta = useMemo(
+    () => parseRoundActivityCode(roundActivityCode),
+    [roundActivityCode],
+  );
+  const competitionConfig = useMemo(() => getCompetitionConfig(wcif), [wcif]);
+  const roundSuggestion = useMemo(
+    () => suggestedGroupsForRound(wcif, roundActivityCode),
+    [wcif, roundActivityCode],
+  );
+  const primaryStations = useMemo(() => {
+    const first = parents[0];
+    if (!first) return 0;
+    const room = wcif.schedule.venues
+      .flatMap((v) => v.rooms)
+      .find((r) => r.id === first.roomId);
+    return room ? getRoomConfig(room).stations : 0;
+  }, [wcif, parents]);
 
   const [spreadAcrossStages, setSpreadAcrossStages] = useState(true);
   const [groupCount, setGroupCount] = useState(2);
@@ -53,13 +80,51 @@ export function GroupConfigPanel({
     {},
   );
   const [timeSplit, setTimeSplit] = useState(true);
+  const [scramblersEnabled, setScramblersEnabled] = useState(true);
+  const [runnersEnabled, setRunnersEnabled] = useState(true);
+  const [assignJudges, setAssignJudges] = useState(true);
+  const [scramblerCount, setScramblerCount] = useState(1);
+  const [runnerCount, setRunnerCount] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [extensionHint, setExtensionHint] = useState<string | null>(null);
+
+  const effectiveGroups = spreadAcrossStages
+    ? groupCount
+    : Math.max(...Object.values(perRoomCounts), groupCount, 1);
+
+  const staffHelpers = useMemo(
+    () =>
+      suggestStaffForRound({
+        stations: primaryStations,
+        competitors: Math.max(roundSuggestion.competitors, 1),
+        roundNumber: roundMeta?.roundNumber ?? 1,
+        groups: effectiveGroups,
+        assignScramblers: scramblersEnabled,
+        assignRunners: runnersEnabled,
+        assignJudges,
+      }),
+    [
+      primaryStations,
+      roundSuggestion.competitors,
+      roundMeta?.roundNumber,
+      effectiveGroups,
+      scramblersEnabled,
+      runnersEnabled,
+      assignJudges,
+    ],
+  );
 
   useEffect(() => {
     setError(null);
     const foreign = suggestGroupCountsFromExtensions(wcif, roundActivityCode);
     const suggestion = suggestedGroupsForRound(wcif, roundActivityCode);
+    const firstParent = parents[0];
+    const savedConfig = firstParent
+      ? getActivityConfig(firstParent.activity)
+      : null;
+    const hasSaved = firstParent
+      ? hasOrganizacionActivityConfig(firstParent.activity)
+      : false;
 
     if (existingGroups.length > 0) {
       setGroupCount(Math.max(1, existingGroups.length));
@@ -69,27 +134,62 @@ export function GroupConfigPanel({
       }
       setPerRoomCounts(initial);
       setExtensionHint(null);
-      return;
-    }
-
-    setSpreadAcrossStages(suggestion.spreadAcrossStages);
-    setGroupCount(Math.max(1, suggestion.groupCount));
-    setPerRoomCounts({ ...suggestion.perRoomCounts });
-
-    if (foreign) {
-      setExtensionHint(
-        `Detectado desde ${extensionSourceLabel(foreign.source)}`,
-      );
-    } else if (suggestion.stations > 0) {
-      setExtensionHint(
-        `Sugerido: ${suggestion.competitors} inscritos · ${suggestion.stations} estaciones → ${suggestion.groupCount} grupo(s)`,
-      );
     } else {
-      setExtensionHint(
-        "Configura estaciones en Configuración para una mejor sugerencia",
-      );
+      setSpreadAcrossStages(suggestion.spreadAcrossStages);
+      setGroupCount(Math.max(1, suggestion.groupCount));
+      setPerRoomCounts({ ...suggestion.perRoomCounts });
+
+      if (foreign) {
+        setExtensionHint(
+          `Detectado desde ${extensionSourceLabel(foreign.source)}`,
+        );
+      } else if (suggestion.stations > 0) {
+        setExtensionHint(
+          `Sugerido: ${suggestion.competitors} inscritos · ${suggestion.stations} estaciones → ${suggestion.groupCount} grupo(s)`,
+        );
+      } else {
+        setExtensionHint(
+          "Configura estaciones en Configuración para una mejor sugerencia",
+        );
+      }
     }
-  }, [roundActivityCode, parents, existingGroups.length, wcif]);
+
+    const staffSeed = suggestStaffForRound({
+      stations: primaryStations,
+      competitors: Math.max(suggestion.competitors, 1),
+      roundNumber: roundMeta?.roundNumber ?? 1,
+      groups: hasSaved
+        ? (savedConfig?.groups ?? suggestion.groupCount)
+        : suggestion.groupCount,
+      assignScramblers: competitionConfig.assignScramblers,
+      assignRunners: competitionConfig.assignRunners,
+      assignJudges: competitionConfig.assignJudges,
+    });
+
+    if (hasSaved && savedConfig) {
+      setScramblersEnabled(savedConfig.scramblers > 0);
+      setRunnersEnabled(savedConfig.runners > 0);
+      setAssignJudges(savedConfig.assignJudges);
+      setScramblerCount(savedConfig.scramblers);
+      setRunnerCount(savedConfig.runners);
+    } else {
+      setScramblersEnabled(competitionConfig.assignScramblers);
+      setRunnersEnabled(competitionConfig.assignRunners);
+      setAssignJudges(competitionConfig.assignJudges);
+      setScramblerCount(staffSeed.scramblers);
+      setRunnerCount(staffSeed.runners);
+    }
+  }, [
+    roundActivityCode,
+    parents,
+    existingGroups.length,
+    wcif,
+    primaryStations,
+    roundMeta?.roundNumber,
+    competitionConfig.assignScramblers,
+    competitionConfig.assignRunners,
+    competitionConfig.assignJudges,
+  ]);
 
   if (parents.length === 0) {
     return (
@@ -102,10 +202,32 @@ export function GroupConfigPanel({
     );
   }
 
+  const persistStaffConfig = (source: WCIF) => {
+    const groupsByRoom = spreadAcrossStages
+      ? Object.fromEntries(
+          parents.map((p) => [p.roomId, Math.max(1, groupCount)]),
+        )
+      : perRoomCounts;
+
+    return setRoundActivityConfigs(
+      source,
+      roundActivityCode,
+      ({ groups, parentCount }) => ({
+        capacity: 1 / parentCount,
+        groups,
+        scramblers: scramblersEnabled ? Math.max(0, scramblerCount) : 0,
+        runners: runnersEnabled ? Math.max(0, runnerCount) : 0,
+        assignJudges,
+      }),
+      groupsByRoom,
+    );
+  };
+
   const handleCreate = () => {
     setError(null);
     try {
-      const next = createGroupsForRound(wcif, roundActivityCode, {
+      let next = persistStaffConfig(wcif);
+      next = createGroupsForRound(next, roundActivityCode, {
         spreadAcrossStages,
         groupCount: Math.max(1, groupCount),
         perRoomCounts,
@@ -118,6 +240,19 @@ export function GroupConfigPanel({
     } catch (e) {
       const message =
         e instanceof Error ? e.message : "No se pudieron crear grupos";
+      setError(message);
+      toast.error(message);
+    }
+  };
+
+  const handleSaveStaff = () => {
+    setError(null);
+    try {
+      onApply(persistStaffConfig(wcif));
+      toast.success("Configuración de voluntarios guardada");
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "No se pudo guardar la configuración";
       setError(message);
       toast.error(message);
     }
@@ -167,6 +302,9 @@ export function GroupConfigPanel({
             value={groupCount}
             onChange={(e) => setGroupCount(Number(e.target.value) || 1)}
           />
+          <p className="text-xs text-muted-foreground">
+            {staffHelpers.peoplePerGroup} personas por grupo
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -195,6 +333,52 @@ export function GroupConfigPanel({
         </div>
       )}
 
+      <div className="space-y-3 rounded-md border p-3">
+        <h4 className="text-sm font-medium">Voluntarios por grupo</h4>
+        <StaffField
+          id="round-scramblers"
+          label="Mezcladores"
+          enabled={scramblersEnabled}
+          onEnabledChange={setScramblersEnabled}
+          count={scramblerCount}
+          onCountChange={setScramblerCount}
+          helper={
+            scramblersEnabled && scramblerCount > 0
+              ? `${staffHelpers.cubesPerScrambler} cubos por mezclador`
+              : undefined
+          }
+        />
+        <StaffField
+          id="round-runners"
+          label="Corredores"
+          enabled={runnersEnabled}
+          onEnabledChange={setRunnersEnabled}
+          count={runnerCount}
+          onCountChange={setRunnerCount}
+          helper={
+            runnersEnabled && runnerCount > 0
+              ? `${staffHelpers.stationsPerRunner} estaciones por corredor`
+              : undefined
+          }
+        />
+        <div className="flex items-center gap-3">
+          <Checkbox
+            id="round-judges"
+            checked={assignJudges}
+            onCheckedChange={(checked) => setAssignJudges(checked === true)}
+          />
+          <Label htmlFor="round-judges" className="cursor-pointer">
+            Asignar jueces
+            {assignJudges && staffHelpers.judges > 0 && (
+              <span className="block text-xs text-muted-foreground font-normal">
+                Hasta {staffHelpers.judges} juez
+                {staffHelpers.judges === 1 ? "" : "es"} por grupo
+              </span>
+            )}
+          </Label>
+        </div>
+      </div>
+
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1">
           <Label htmlFor="time-split">Dividir horario entre grupos</Label>
@@ -215,9 +399,16 @@ export function GroupConfigPanel({
         </p>
       )}
 
-      <Button type="button" onClick={handleCreate}>
-        {existingGroups.length > 0 ? "Reemplazar grupos" : "Crear grupos"}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="button" onClick={handleCreate}>
+          {existingGroups.length > 0 ? "Reemplazar grupos" : "Crear grupos"}
+        </Button>
+        {existingGroups.length > 0 && (
+          <Button type="button" variant="outline" onClick={handleSaveStaff}>
+            Guardar voluntarios
+          </Button>
+        )}
+      </div>
 
       {existingGroups.length > 0 && (
         <div className="overflow-x-auto rounded-md border">
@@ -244,6 +435,51 @@ export function GroupConfigPanel({
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+function StaffField({
+  id,
+  label,
+  enabled,
+  onEnabledChange,
+  count,
+  onCountChange,
+  helper,
+}: {
+  id: string;
+  label: string;
+  enabled: boolean;
+  onEnabledChange: (enabled: boolean) => void;
+  count: number;
+  onCountChange: (count: number) => void;
+  helper?: string;
+}) {
+  return (
+    <div className="flex flex-wrap items-start gap-3">
+      <Checkbox
+        id={id}
+        checked={enabled}
+        onCheckedChange={(value) => onEnabledChange(value === true)}
+        className="mt-2.5"
+      />
+      <div className="space-y-1 min-w-0 flex-1">
+        <Label htmlFor={id} className="cursor-pointer">
+          {label}
+        </Label>
+        {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
+      </div>
+      <Input
+        type="number"
+        min={0}
+        max={32}
+        className="w-20"
+        disabled={!enabled}
+        value={count}
+        onChange={(e) => onCountChange(Number(e.target.value) || 0)}
+        aria-label={`Cantidad de ${label.toLowerCase()}`}
+      />
     </div>
   );
 }

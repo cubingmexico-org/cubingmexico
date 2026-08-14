@@ -209,6 +209,48 @@ export function printGroupSheets(
   createGroupsPdf(doc, action, `${wcif.id}-${roundActivityCode}-group-sheets`);
 }
 
+export function buildAllGroupSheetsDocument(wcif: WCIF): TDocumentDefinitions {
+  const content: Content[] = [];
+  for (const event of wcif.events) {
+    for (const round of event.rounds) {
+      try {
+        const doc = buildGroupSheetsDocument(wcif, round.id);
+        const roundContent = doc.content;
+        if (Array.isArray(roundContent)) {
+          content.push(...roundContent);
+        } else if (roundContent) {
+          content.push(roundContent);
+        }
+      } catch {
+        // Skip rounds without assignments.
+      }
+    }
+  }
+  if (content.length === 0) {
+    throw new Error("No hay asignaciones para generar hojas de grupo.");
+  }
+  return {
+    info: {
+      title: `Hojas de grupo — ${wcif.name}`,
+      author: "Cubing México",
+    },
+    content,
+    pageSize: "LETTER",
+    pageMargins: [36, 36, 36, 36],
+    defaultStyle: { font: "Roboto", fontSize: 9 },
+    styles: {
+      section: { bold: true, fontSize: 10, margin: [0, 6, 0, 4] },
+      th: { bold: true, fontSize: 8 },
+    },
+    language: "es",
+  };
+}
+
+export function printAllGroupSheets(wcif: WCIF, action: PrintAction): void {
+  const doc = buildAllGroupSheetsDocument(wcif);
+  createGroupsPdf(doc, action, `${wcif.id}-group-sheets-all`);
+}
+
 export function printTaskCards(wcif: WCIF, action: PrintAction): void {
   const doc = buildTaskCardsDocument(wcif);
   createGroupsPdf(doc, action, `${wcif.id}-task-cards`);
