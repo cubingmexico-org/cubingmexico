@@ -6,6 +6,7 @@ import {
   requireSessionUser,
 } from "@/lib/design-access";
 import { isCompetitionToolsUnavailable } from "@/lib/competition-availability";
+import { GROUPS_ENABLED } from "@/lib/constants";
 import { buildWcifPatchPayload } from "@/lib/groups/wcif-patch";
 import {
   checkWcif,
@@ -26,6 +27,10 @@ export async function pushGroupsWcif(
   draftWcif: WCIF,
 ): Promise<PushGroupsResult> {
   try {
+    if (!GROUPS_ENABLED) {
+      return { ok: false, error: "Grupos no está disponible." };
+    }
+
     const user = await requireSessionUser();
     if (!user) {
       return { ok: false, error: "Debes iniciar sesión." };

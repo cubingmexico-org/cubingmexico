@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Herramientas | Cubing México",
   description:
-    "Encuentra herramientas útiles para speedcubers y organizadores de competencias. Explora Organización (certificados, gafetes y grupos), visualizadores de mezclas y más.",
+    "Encuentra herramientas útiles para speedcubers y organizadores de competencias. Explora Organización (certificados y gafetes), visualizadores de mezclas y más.",
 };
 
 function ToolLinks({
@@ -73,9 +73,8 @@ export default function Page(): React.JSX.Element {
         <div className="p-6 border-b last:border-b-0">
           <h3 className="text-xl font-semibold">Organización</h3>
           <p className="my-2">
-            Suite de Cubing México para organizadores: certificados, gafetes,
-            mesa y <strong>Grupos</strong> (asignación, scorecards y tarjetas de
-            tareas). Módulo propio frente a herramientas externas.
+            Suite de Cubing México para organizadores: certificados y gafetes
+            para competencias WCA.
           </p>
           <ToolLinks
             siteHref="https://certificados.cubingmexico.net"
@@ -122,8 +121,7 @@ export default function Page(): React.JSX.Element {
         Herramientas para Organización de Competencias
       </h2>
       <p className="mb-4">
-        Alternativas externas. Para el flujo de Cubing México (grupos,
-        scorecards y gafetes) usa{" "}
+        Alternativas externas. Para certificados y gafetes de Cubing México usa{" "}
         <Link
           href="https://certificados.cubingmexico.net"
           className="underline underline-offset-2"
@@ -140,7 +138,7 @@ export default function Page(): React.JSX.Element {
           <h3 className="text-xl font-semibold">Groupifier</h3>
           <p className="my-2">
             Herramienta externa para crear grupos, asignar tareas e imprimir
-            scorecards en competencias WCA. Alternativa a Organización → Grupos.
+            scorecards en competencias WCA.
           </p>
           <ToolLinks
             siteHref="https://groupifier.jonatanklosko.com"

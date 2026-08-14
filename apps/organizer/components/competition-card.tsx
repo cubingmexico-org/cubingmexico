@@ -23,6 +23,7 @@ import { Competition } from "@/types/wca";
 import { cn } from "@workspace/ui/lib/utils";
 import { useRouter } from "next/navigation";
 import { isCompetitionToolsUnavailable } from "@/lib/competition-availability";
+import { DESK_ENABLED, GROUPS_ENABLED } from "@/lib/constants";
 
 const statusConfig = {
   upcoming: {
@@ -139,30 +140,34 @@ export function CompetitionCard({
           <IdCard />
           Gafetes
         </Button>
-        <Button
-          variant="outline"
-          className="w-full"
-          size="sm"
-          disabled={isNotAvailable}
-          onClick={() => {
-            router.push(`/desk/${competition.id}`);
-          }}
-        >
-          <ClipboardList />
-          Mesa
-        </Button>
-        <Button
-          variant="outline"
-          className="w-full"
-          size="sm"
-          disabled={isNotAvailable}
-          onClick={() => {
-            router.push(`/groups/${competition.id}`);
-          }}
-        >
-          <Users />
-          Grupos
-        </Button>
+        {DESK_ENABLED ? (
+          <Button
+            variant="outline"
+            className="w-full"
+            size="sm"
+            disabled={isNotAvailable}
+            onClick={() => {
+              router.push(`/desk/${competition.id}`);
+            }}
+          >
+            <ClipboardList />
+            Mesa
+          </Button>
+        ) : null}
+        {GROUPS_ENABLED ? (
+          <Button
+            variant="outline"
+            className="w-full"
+            size="sm"
+            disabled={isNotAvailable}
+            onClick={() => {
+              router.push(`/groups/${competition.id}`);
+            }}
+          >
+            <Users />
+            Grupos
+          </Button>
+        ) : null}
       </CardFooter>
     </Card>
   );
