@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import type { WCIF } from "@/types/wcif";
 import { deepCloneWcif } from "@/lib/groups/wcif-schedule";
+import { ensureDefaultRoomStations } from "@/lib/groups/config";
 
 interface GroupsStore {
   originalWcif: WCIF | null;
@@ -33,14 +34,14 @@ export const useGroupsStore = create<GroupsStore>((set, get) => ({
   load: (wcif) => {
     const { selectedRoundId, originalWcif } = get();
     const sameCompetition = originalWcif?.id === wcif.id;
-    const clone = deepCloneWcif(wcif);
-    const roundStillExists = wcif.events.some((e) =>
+    const seeded = ensureDefaultRoomStations(deepCloneWcif(wcif));
+    const roundStillExists = seeded.events.some((e) =>
       e.rounds.some((r) => r.id === selectedRoundId),
     );
-    const firstRound = wcif.events[0]?.rounds[0]?.id ?? null;
+    const firstRound = seeded.events[0]?.rounds[0]?.id ?? null;
     set({
-      originalWcif: deepCloneWcif(wcif),
-      draftWcif: clone,
+      originalWcif: deepCloneWcif(seeded),
+      draftWcif: deepCloneWcif(seeded),
       selectedRoundId:
         sameCompetition && roundStillExists ? selectedRoundId : firstRound,
       selectedActivityId: null,

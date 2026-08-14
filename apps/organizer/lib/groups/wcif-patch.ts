@@ -5,9 +5,7 @@ function sanitizeAssignment(assignment: Assignment): Assignment {
   return {
     activityId: assignment.activityId,
     stationNumber:
-      assignment.stationNumber === undefined
-        ? null
-        : assignment.stationNumber,
+      assignment.stationNumber === undefined ? null : assignment.stationNumber,
     assignmentCode: assignment.assignmentCode,
   };
 }
@@ -72,10 +70,7 @@ export function buildWcifPatchPayload(
   for (const venue of draft.schedule.venues) {
     for (const room of venue.rooms) {
       for (const activity of room.activities) {
-        draftParents.set(
-          `${room.id}:${activity.activityCode}`,
-          activity,
-        );
+        draftParents.set(`${room.id}:${activity.activityCode}`, activity);
         // Also key by activity id for robust match
         draftParents.set(`id:${activity.id}`, activity);
       }

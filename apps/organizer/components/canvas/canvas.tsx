@@ -91,7 +91,8 @@ export function Canvas({
   );
 
   const currentPerson = {
-    name: session.data?.user?.name || matchedPerson?.name || "Leonardo Del Toro",
+    name:
+      session.data?.user?.name || matchedPerson?.name || "Leonardo Del Toro",
     wcaId: sessionWcaId || matchedPerson?.wcaId || `${currentYear}ABCD01`,
     avatar: {
       url:

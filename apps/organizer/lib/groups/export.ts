@@ -67,10 +67,7 @@ export function exportAssignmentsCsv(
   });
 }
 
-export function exportDraftJson(
-  wcif: WCIF,
-  competitionId: string,
-): void {
+export function exportDraftJson(wcif: WCIF, competitionId: string): void {
   const payload = {
     formatVersion: wcif.formatVersion ?? "1.0",
     id: wcif.id,

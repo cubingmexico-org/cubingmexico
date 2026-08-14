@@ -61,10 +61,7 @@ export function RoundSelector({
   return (
     <div className="space-y-2 max-w-sm">
       <Label htmlFor="round-select">Ronda</Label>
-      <Select
-        value={selectedRoundId ?? undefined}
-        onValueChange={onSelect}
-      >
+      <Select value={selectedRoundId ?? undefined} onValueChange={onSelect}>
         <SelectTrigger id="round-select">
           <SelectValue placeholder="Selecciona una ronda" />
         </SelectTrigger>

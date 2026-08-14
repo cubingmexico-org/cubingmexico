@@ -13,7 +13,7 @@ Product roadmap: [`docs/organizacion-roadmap.md`](../../docs/organizacion-roadma
 - Cloud save/load for designs (shared with co-organizers) + template library
 - Local JSON download/upload as backup
 - Mesa: staff roles roster + registration overview (CSV)
-- Grupos: round workspace, assignment engine, day-of views, Round-1 CSV import, optional WCA push, scorecards / group sheets / task cards, TNoodle metadata handoff
+- Grupos: rounds overview, stations-driven config, assign-all, staff toggles, day-of views, Round-1 CSV import, optional WCA push, Groupifier-parity scorecards / group sheets / task cards, TNoodle metadata handoff
 - WCA OAuth (`manage_competitions`) via Better Auth
 - Public WCIF integration + Mexico state enrichment on badges and desk
 

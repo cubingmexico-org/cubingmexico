@@ -32,7 +32,10 @@ export type ImportResult = {
 };
 
 function normalizeHeaderKey(key: string): string {
-  return key.trim().toLowerCase().replace(/[\s_]+/g, "");
+  return key
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_]+/g, "");
 }
 
 const HEADER_MAP: Record<string, keyof ImportCsvRow> = {
@@ -76,10 +79,7 @@ function isRound1(roundCode: string): boolean {
   return parsed?.roundNumber === 1;
 }
 
-function resolvePerson(
-  wcif: WCIF,
-  row: ImportCsvRow,
-): Person | undefined {
+function resolvePerson(wcif: WCIF, row: ImportCsvRow): Person | undefined {
   const registrantId =
     row.registrantId != null && row.registrantId !== ""
       ? Number(row.registrantId)
@@ -90,9 +90,7 @@ function resolvePerson(
   }
 
   const wcaId =
-    typeof row.wcaId === "string" && row.wcaId.trim()
-      ? row.wcaId.trim()
-      : null;
+    typeof row.wcaId === "string" && row.wcaId.trim() ? row.wcaId.trim() : null;
   if (wcaId) {
     const byWca = wcif.persons.find(
       (p) => p.wcaId?.toLowerCase() === wcaId.toLowerCase(),
@@ -284,9 +282,7 @@ export function importRound1Assignments(
       continue;
     }
     if (!isRound1(round)) {
-      errors.push(
-        `Fila ${i + 2}: solo se permite Round 1 (recibido ${round})`,
-      );
+      errors.push(`Fila ${i + 2}: solo se permite Round 1 (recibido ${round})`);
     }
   }
 
@@ -300,9 +296,7 @@ export function importRound1Assignments(
     const group = Number(row.group);
     if (!Number.isFinite(group) || group < 1) continue;
     const roomId =
-      row.roomId != null && row.roomId !== ""
-        ? Number(row.roomId)
-        : null;
+      row.roomId != null && row.roomId !== "" ? Number(row.roomId) : null;
     needs.push({
       round,
       roomId: roomId != null && Number.isFinite(roomId) ? roomId : null,
@@ -362,9 +356,7 @@ export function importRound1Assignments(
     }
 
     const roomId =
-      row.roomId != null && row.roomId !== ""
-        ? Number(row.roomId)
-        : null;
+      row.roomId != null && row.roomId !== "" ? Number(row.roomId) : null;
     const activity = findGroupActivity(
       draft,
       round,
@@ -379,9 +371,7 @@ export function importRound1Assignments(
           `Fila ${i + 2}: hay varios escenarios; indica roomId para el grupo ${group}`,
         );
       } else {
-        errors.push(
-          `Fila ${i + 2}: no existe grupo ${group} para ${round}`,
-        );
+        errors.push(`Fila ${i + 2}: no existe grupo ${group} para ${round}`);
       }
       continue;
     }
@@ -390,9 +380,7 @@ export function importRound1Assignments(
       (typeof row.assignmentCode === "string" && row.assignmentCode.trim()) ||
       "competitor";
     const station =
-      row.station != null && row.station !== ""
-        ? Number(row.station)
-        : null;
+      row.station != null && row.station !== "" ? Number(row.station) : null;
 
     const assignment: Assignment = {
       activityId: activity.id,

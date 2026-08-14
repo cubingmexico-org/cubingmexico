@@ -122,7 +122,9 @@ export function PersonTimeline({
                       <div className="font-medium">{row.activityName}</div>
                       <div className="text-xs text-muted-foreground font-mono">
                         {row.activityCode}
-                        {row.groupNumber != null ? ` · G${row.groupNumber}` : ""}
+                        {row.groupNumber != null
+                          ? ` · G${row.groupNumber}`
+                          : ""}
                       </div>
                       {row.orphan && (
                         <Badge variant="destructive" className="mt-1">

@@ -23,7 +23,9 @@ export type ScrambleHandoffPayload = {
   note: string;
 };
 
-export function buildScrambleHandoffPayload(wcif: WCIF): ScrambleHandoffPayload {
+export function buildScrambleHandoffPayload(
+  wcif: WCIF,
+): ScrambleHandoffPayload {
   const rounds: ScrambleRoundMeta[] = [];
 
   for (const event of wcif.events) {

@@ -1,5 +1,8 @@
 import type { WCIF } from "@/types/wcif";
 import type { Competition } from "@/types/wca";
+import { db } from "@workspace/db";
+import { competition as competitionTable } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
 
 export async function getCompetitionsManagedByUser({
   token,
@@ -77,6 +80,23 @@ export async function getCompetitionById({
   } catch (error) {
     console.error("Error fetching location:", error);
     return undefined;
+  }
+}
+
+/** Cubing México `competitions.logo` from Neon (may be null). */
+export async function getCompetitionLogoById(
+  competitionId: string,
+): Promise<string | null> {
+  try {
+    const row = await db.query.competition.findFirst({
+      where: eq(competitionTable.id, competitionId),
+      columns: { logo: true },
+    });
+    const logo = row?.logo?.trim();
+    return logo || null;
+  } catch (error) {
+    console.error("Error fetching competition logo:", error);
+    return null;
   }
 }
 

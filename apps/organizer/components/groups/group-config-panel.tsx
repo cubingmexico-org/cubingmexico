@@ -15,6 +15,8 @@ import {
   extensionSourceLabel,
   suggestGroupCountsFromExtensions,
 } from "@/lib/groups/extensions";
+import { suggestedGroupsForRound } from "@/lib/groups/config";
+import { toast } from "sonner";
 
 function formatTime(iso: string): string {
   try {
@@ -56,7 +58,8 @@ export function GroupConfigPanel({
 
   useEffect(() => {
     setError(null);
-    const suggestion = suggestGroupCountsFromExtensions(wcif, roundActivityCode);
+    const foreign = suggestGroupCountsFromExtensions(wcif, roundActivityCode);
+    const suggestion = suggestedGroupsForRound(wcif, roundActivityCode);
 
     if (existingGroups.length > 0) {
       setGroupCount(Math.max(1, existingGroups.length));
@@ -69,33 +72,23 @@ export function GroupConfigPanel({
       return;
     }
 
-    if (suggestion) {
-      setSpreadAcrossStages(suggestion.spreadAcrossStages);
-      if (suggestion.groupCount != null) {
-        setGroupCount(Math.max(1, suggestion.groupCount));
-      }
-      if (suggestion.perRoomCounts) {
-        setPerRoomCounts({ ...suggestion.perRoomCounts });
-      } else {
-        const initial: Record<number, number> = {};
-        for (const parent of parents) {
-          initial[parent.roomId] = suggestion.groupCount ?? 2;
-        }
-        setPerRoomCounts(initial);
-      }
-      setExtensionHint(
-        `Detectado desde ${extensionSourceLabel(suggestion.source)}`,
-      );
-      return;
-    }
+    setSpreadAcrossStages(suggestion.spreadAcrossStages);
+    setGroupCount(Math.max(1, suggestion.groupCount));
+    setPerRoomCounts({ ...suggestion.perRoomCounts });
 
-    setGroupCount(2);
-    const initial: Record<number, number> = {};
-    for (const parent of parents) {
-      initial[parent.roomId] = 2;
+    if (foreign) {
+      setExtensionHint(
+        `Detectado desde ${extensionSourceLabel(foreign.source)}`,
+      );
+    } else if (suggestion.stations > 0) {
+      setExtensionHint(
+        `Sugerido: ${suggestion.competitors} inscritos · ${suggestion.stations} estaciones → ${suggestion.groupCount} grupo(s)`,
+      );
+    } else {
+      setExtensionHint(
+        "Configura estaciones en Configuración para una mejor sugerencia",
+      );
     }
-    setPerRoomCounts(initial);
-    setExtensionHint(null);
   }, [roundActivityCode, parents, existingGroups.length, wcif]);
 
   if (parents.length === 0) {
@@ -119,8 +112,14 @@ export function GroupConfigPanel({
         timeSplit,
       });
       onApply(next);
+      toast.success(
+        existingGroups.length > 0 ? "Grupos reemplazados" : "Grupos creados",
+      );
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudieron crear grupos");
+      const message =
+        e instanceof Error ? e.message : "No se pudieron crear grupos";
+      setError(message);
+      toast.error(message);
     }
   };
 
@@ -143,7 +142,9 @@ export function GroupConfigPanel({
 
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-1">
-          <Label htmlFor="spread-stages">Misma cantidad en todos los escenarios</Label>
+          <Label htmlFor="spread-stages">
+            Misma cantidad en todos los escenarios
+          </Label>
           <p className="text-xs text-muted-foreground">
             Si se desactiva, puedes definir conteo por sala
           </p>
@@ -170,7 +171,10 @@ export function GroupConfigPanel({
       ) : (
         <div className="space-y-3">
           {parents.map((parent) => (
-            <div key={parent.roomId} className="flex items-center gap-3 max-w-md">
+            <div
+              key={parent.roomId}
+              className="flex items-center gap-3 max-w-md"
+            >
               <Label className="w-40 shrink-0 truncate" title={parent.roomName}>
                 {parent.roomName}
               </Label>

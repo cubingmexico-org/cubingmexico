@@ -151,8 +151,7 @@ export function CanvasSettings() {
   };
 
   const applyTentTemplate = (orientation: "landscape" | "portrait") => {
-    const size =
-      orientation === "landscape" ? TENT_LANDSCAPE : TENT_PORTRAIT;
+    const size = orientation === "landscape" ? TENT_LANDSCAPE : TENT_PORTRAIT;
     setEnableBackSide(false);
     setActiveSide("front");
     setBackgroundImage(undefined);
@@ -282,10 +281,7 @@ export function CanvasSettings() {
                   variant="outline"
                   size="sm"
                   onClick={() =>
-                    applySizePreset(
-                      TENT_LANDSCAPE.width,
-                      TENT_LANDSCAPE.height,
-                    )
+                    applySizePreset(TENT_LANDSCAPE.width, TENT_LANDSCAPE.height)
                   }
                 >
                   Carpa mesa (152×102 mm)

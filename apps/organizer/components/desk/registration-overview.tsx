@@ -75,7 +75,8 @@ export function RegistrationOverview({
         "ID registro": person.registrantId ?? "",
         "WCA ID": person.wcaId ?? "",
         País: countryName(person.countryIso2),
-        Estado: stateName(person.stateId) === "—" ? "" : stateName(person.stateId),
+        Estado:
+          stateName(person.stateId) === "—" ? "" : stateName(person.stateId),
         Eventos: person.registration?.eventIds.join(" ") ?? "",
         Estatus: person.registration?.status ?? "",
         Compite: person.registration?.isCompeting ? "Sí" : "No",

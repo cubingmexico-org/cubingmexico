@@ -3,10 +3,15 @@
 import { useState } from "react";
 import Papa from "papaparse";
 import { Upload } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Input } from "@workspace/ui/components/input";
-import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert";
 import type { WCIF } from "@/types/wcif";
 import {
   importRound1Assignments,
@@ -74,6 +79,9 @@ export function ImportCsvPanel({
     setAppliedCount(result.applied);
     if (result.errors.length === 0) {
       onApply(result.wcif);
+      toast.success(`Importadas ${result.applied} asignaciones (R1)`);
+    } else {
+      toast.error("El CSV tiene errores de validación");
     }
   };
 

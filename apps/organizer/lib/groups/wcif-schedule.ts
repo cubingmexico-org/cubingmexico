@@ -1,7 +1,10 @@
 import type { Activity, EventId, WCIF } from "@/types/wcif";
 
 /** Round activity code, e.g. `333-r1`. */
-export function roundActivityCode(eventId: EventId | string, roundNumber: number): string {
+export function roundActivityCode(
+  eventId: EventId | string,
+  roundNumber: number,
+): string {
   return `${eventId}-r${roundNumber}`;
 }
 
@@ -15,7 +18,10 @@ export function parseRoundActivityCode(
 }
 
 /** Group activity code, e.g. `333-r1-g2`. */
-export function groupActivityCode(roundCode: string, groupNumber: number): string {
+export function groupActivityCode(
+  roundCode: string,
+  groupNumber: number,
+): string {
   return `${roundCode}-g${groupNumber}`;
 }
 
@@ -263,10 +269,7 @@ export function clearRoundAssignments(
 }
 
 /** Clear assignments for a single group activity. */
-export function clearGroupAssignments(
-  wcif: WCIF,
-  activityId: number,
-): WCIF {
+export function clearGroupAssignments(wcif: WCIF, activityId: number): WCIF {
   const draft = deepCloneWcif(wcif);
   for (const person of draft.persons) {
     person.assignments = (person.assignments ?? []).filter(

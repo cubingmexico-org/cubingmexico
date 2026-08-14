@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
   Tabs,
@@ -10,7 +11,11 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs";
-import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,18 +39,23 @@ import { AssignmentsPanel } from "@/components/groups/assignments-panel";
 import { DayOfPanel } from "@/components/groups/day-of-panel";
 import { ImportCsvPanel } from "@/components/groups/import-csv-panel";
 import { PrintablesPanel } from "@/components/groups/printables-panel";
+import { CompetitionConfigPanel } from "@/components/groups/competition-config-panel";
+import { StaffRolesPanel } from "@/components/groups/staff-roles-panel";
+import { RoundsOverviewPanel } from "@/components/groups/rounds-overview-panel";
 
 export function GroupsManager({
   competition,
   wcif,
+  competitionLogoUrl,
 }: {
   competition: Competition;
   wcif: WCIF;
+  competitionLogoUrl?: string | null;
 }) {
   const router = useRouter();
   const [pushError, setPushError] = useState<string | null>(null);
-  const [pushSuccess, setPushSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [mainTab, setMainTab] = useState("overview");
 
   const {
     draftWcif,
@@ -87,17 +97,24 @@ export function GroupsManager({
 
   const handlePush = () => {
     setPushError(null);
-    setPushSuccess(false);
     startTransition(async () => {
       const result = await pushGroupsWcif(competition.id, draftWcif);
       if (!result.ok) {
         setPushError(result.error);
+        toast.error("Error al publicar en WCA", {
+          description: result.error.slice(0, 200),
+        });
         return;
       }
       markClean();
-      setPushSuccess(true);
+      toast.success("Grupos publicados en WCA");
       router.refresh();
     });
+  };
+
+  const handleSelectRound = (roundId: string) => {
+    setSelectedRoundId(roundId);
+    setMainTab("round");
   };
 
   return (
@@ -113,7 +130,14 @@ export function GroupsManager({
         </div>
         <div className="flex flex-wrap gap-2">
           {isDirty && (
-            <Button type="button" variant="outline" onClick={resetAll}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                resetAll();
+                toast.message("Cambios descartados");
+              }}
+            >
               Descartar cambios
             </Button>
           )}
@@ -159,8 +183,8 @@ export function GroupsManager({
         <Alert>
           <AlertTitle>Publicación deshabilitada</AlertTitle>
           <AlertDescription>
-            Los resultados ya fueron publicados; WCA no permite editar el WCIF
-            a organizadores.
+            Los resultados ya fueron publicados; WCA no permite editar el WCIF a
+            organizadores.
           </AlertDescription>
         </Alert>
       )}
@@ -174,66 +198,90 @@ export function GroupsManager({
         </Alert>
       )}
 
-      {pushSuccess && !isDirty && (
-        <Alert>
-          <AlertTitle>Publicado en WCA</AlertTitle>
-          <AlertDescription>
-            Los grupos y asignaciones se enviaron correctamente.
-          </AlertDescription>
-        </Alert>
-      )}
+      <Tabs value={mainTab} onValueChange={setMainTab}>
+        <TabsList className="flex flex-wrap h-auto gap-1">
+          <TabsTrigger value="overview">Resumen</TabsTrigger>
+          <TabsTrigger value="config">Configuración</TabsTrigger>
+          <TabsTrigger value="staff">Staff</TabsTrigger>
+          <TabsTrigger value="round">Ronda</TabsTrigger>
+        </TabsList>
 
-      <RoundSelector
-        wcif={draftWcif}
-        selectedRoundId={selectedRoundId}
-        onSelect={setSelectedRoundId}
-      />
+        <TabsContent value="overview" className="mt-4">
+          <RoundsOverviewPanel
+            wcif={draftWcif}
+            selectedRoundId={selectedRoundId}
+            onSelectRound={handleSelectRound}
+            onApply={replaceDraft}
+          />
+        </TabsContent>
 
-      {roundActivityCode ? (
-        <Tabs defaultValue="groups">
-          <TabsList>
-            <TabsTrigger value="groups">Grupos</TabsTrigger>
-            <TabsTrigger value="assignments">Asignaciones</TabsTrigger>
-            <TabsTrigger value="day-of">Día de</TabsTrigger>
-            <TabsTrigger value="import">Importar</TabsTrigger>
-            <TabsTrigger value="printables">Imprimibles</TabsTrigger>
-          </TabsList>
-          <TabsContent value="groups" className="mt-4">
-            <GroupConfigPanel
-              wcif={draftWcif}
-              roundActivityCode={roundActivityCode}
-              onApply={replaceDraft}
-            />
-          </TabsContent>
-          <TabsContent value="assignments" className="mt-4">
-            <AssignmentsPanel
-              wcif={draftWcif}
-              roundActivityCode={roundActivityCode}
-              competitionId={competition.id}
-              onApply={replaceDraft}
-            />
-          </TabsContent>
-          <TabsContent value="day-of" className="mt-4">
-            <DayOfPanel
-              wcif={draftWcif}
-              roundActivityCode={roundActivityCode}
-            />
-          </TabsContent>
-          <TabsContent value="import" className="mt-4">
-            <ImportCsvPanel wcif={draftWcif} onApply={replaceDraft} />
-          </TabsContent>
-          <TabsContent value="printables" className="mt-4">
-            <PrintablesPanel
-              wcif={draftWcif}
-              roundActivityCode={roundActivityCode}
-            />
-          </TabsContent>
-        </Tabs>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Selecciona una ronda para configurar grupos y asignaciones.
-        </p>
-      )}
+        <TabsContent value="config" className="mt-4">
+          <CompetitionConfigPanel
+            wcif={draftWcif}
+            competitionImageUrl={competitionLogoUrl}
+            onApply={replaceDraft}
+          />
+        </TabsContent>
+
+        <TabsContent value="staff" className="mt-4">
+          <StaffRolesPanel wcif={draftWcif} onApply={replaceDraft} />
+        </TabsContent>
+
+        <TabsContent value="round" className="mt-4 space-y-4">
+          <RoundSelector
+            wcif={draftWcif}
+            selectedRoundId={selectedRoundId}
+            onSelect={setSelectedRoundId}
+          />
+
+          {roundActivityCode ? (
+            <Tabs defaultValue="groups">
+              <TabsList>
+                <TabsTrigger value="groups">Grupos</TabsTrigger>
+                <TabsTrigger value="assignments">Asignaciones</TabsTrigger>
+                <TabsTrigger value="day-of">Día de</TabsTrigger>
+                <TabsTrigger value="import">Importar</TabsTrigger>
+                <TabsTrigger value="printables">Imprimibles</TabsTrigger>
+              </TabsList>
+              <TabsContent value="groups" className="mt-4">
+                <GroupConfigPanel
+                  wcif={draftWcif}
+                  roundActivityCode={roundActivityCode}
+                  onApply={replaceDraft}
+                />
+              </TabsContent>
+              <TabsContent value="assignments" className="mt-4">
+                <AssignmentsPanel
+                  wcif={draftWcif}
+                  roundActivityCode={roundActivityCode}
+                  competitionId={competition.id}
+                  onApply={replaceDraft}
+                />
+              </TabsContent>
+              <TabsContent value="day-of" className="mt-4">
+                <DayOfPanel
+                  wcif={draftWcif}
+                  roundActivityCode={roundActivityCode}
+                />
+              </TabsContent>
+              <TabsContent value="import" className="mt-4">
+                <ImportCsvPanel wcif={draftWcif} onApply={replaceDraft} />
+              </TabsContent>
+              <TabsContent value="printables" className="mt-4">
+                <PrintablesPanel
+                  wcif={draftWcif}
+                  roundActivityCode={roundActivityCode}
+                  competitionImageUrl={competitionLogoUrl}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Selecciona una ronda desde Resumen o el selector superior.
+            </p>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

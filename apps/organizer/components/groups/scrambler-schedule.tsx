@@ -59,7 +59,10 @@ export function ScramblerSchedule({
   return (
     <div className="space-y-6">
       {grouped.map((section) => (
-        <div key={`${section.dayKey}-${section.roomName}`} className="space-y-2">
+        <div
+          key={`${section.dayKey}-${section.roomName}`}
+          className="space-y-2"
+        >
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="font-semibold text-sm">{section.roomName}</h3>
             <Badge variant="outline">{section.dayKey}</Badge>

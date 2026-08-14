@@ -19,9 +19,7 @@ export async function revalidateWCIF(competitionId: string): Promise<void> {
   updateTag(`wcif-${competitionId}`);
 }
 
-export type PushGroupsResult =
-  | { ok: true }
-  | { ok: false; error: string };
+export type PushGroupsResult = { ok: true } | { ok: false; error: string };
 
 export async function pushGroupsWcif(
   competitionId: string,
@@ -58,7 +56,10 @@ export async function pushGroupsWcif(
     }
 
     if (!draftWcif || draftWcif.id !== competitionId) {
-      return { ok: false, error: "El borrador no coincide con la competencia." };
+      return {
+        ok: false,
+        error: "El borrador no coincide con la competencia.",
+      };
     }
 
     const token = await requireWcaAccessToken();

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Download, Eraser, Shuffle, Hash, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -21,7 +22,11 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { Badge } from "@workspace/ui/components/badge";
-import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert";
 import type { Assignment, EventId, Person, WCIF } from "@/types/wcif";
 import { detectConflicts } from "@/lib/groups/conflicts";
 import {
@@ -29,10 +34,7 @@ import {
   removePersonAssignment,
   setPersonAssignment,
 } from "@/lib/groups/generate-assignments";
-import {
-  exportAssignmentsCsv,
-  exportDraftJson,
-} from "@/lib/groups/export";
+import { exportAssignmentsCsv, exportDraftJson } from "@/lib/groups/export";
 import {
   assignStationsForRound,
   clearStationsForRound,
@@ -163,29 +165,37 @@ export function AssignmentsPanel({
     );
   }
 
-  const run = (fn: () => WCIF) => {
+  const run = (fn: () => WCIF, successMessage?: string) => {
     setError(null);
     try {
       onApply(fn());
+      if (successMessage) toast.success(successMessage);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al actualizar");
+      const message = e instanceof Error ? e.message : "Error al actualizar";
+      setError(message);
+      toast.error(message);
     }
   };
 
   const handleManualAssign = () => {
-    if (!manualPersonId || !manualActivityId) return;
+    if (!manualPersonId || !manualActivityId) {
+      toast.error("Selecciona persona y grupo");
+      return;
+    }
     const activityId = Number(manualActivityId);
-    run(() =>
-      setPersonAssignment(
-        wcif,
-        { wcaUserId: Number(manualPersonId) },
-        {
-          activityId,
-          stationNumber: null,
-          assignmentCode: manualCode,
-        },
-        groupIds,
-      ),
+    run(
+      () =>
+        setPersonAssignment(
+          wcif,
+          { wcaUserId: Number(manualPersonId) },
+          {
+            activityId,
+            stationNumber: null,
+            assignmentCode: manualCode,
+          },
+          groupIds,
+        ),
+      "Asignación manual aplicada",
     );
   };
 
@@ -195,7 +205,10 @@ export function AssignmentsPanel({
         <Button
           type="button"
           onClick={() =>
-            run(() => generateAssignmentsForRound(wcif, roundActivityCode))
+            run(
+              () => generateAssignmentsForRound(wcif, roundActivityCode),
+              "Asignaciones generadas para esta ronda",
+            )
           }
         >
           <Shuffle className="size-4" />
@@ -205,7 +218,10 @@ export function AssignmentsPanel({
           type="button"
           variant="outline"
           onClick={() =>
-            run(() => assignStationsForRound(wcif, roundActivityCode))
+            run(
+              () => assignStationsForRound(wcif, roundActivityCode),
+              "Estaciones asignadas",
+            )
           }
         >
           <Hash className="size-4" />
@@ -215,7 +231,10 @@ export function AssignmentsPanel({
           type="button"
           variant="outline"
           onClick={() =>
-            run(() => clearStationsForRound(wcif, roundActivityCode))
+            run(
+              () => clearStationsForRound(wcif, roundActivityCode),
+              "Estaciones limpiadas",
+            )
           }
         >
           Limpiar estaciones
@@ -224,7 +243,10 @@ export function AssignmentsPanel({
           type="button"
           variant="outline"
           onClick={() =>
-            run(() => clearRoundAssignments(wcif, roundActivityCode))
+            run(
+              () => clearRoundAssignments(wcif, roundActivityCode),
+              "Asignaciones de la ronda reiniciadas",
+            )
           }
         >
           <Eraser className="size-4" />
@@ -233,9 +255,10 @@ export function AssignmentsPanel({
         <Button
           type="button"
           variant="outline"
-          onClick={() =>
-            exportAssignmentsCsv(wcif, roundActivityCode, competitionId)
-          }
+          onClick={() => {
+            exportAssignmentsCsv(wcif, roundActivityCode, competitionId);
+            toast.success("CSV exportado");
+          }}
           disabled={rows.length === 0}
         >
           <Download className="size-4" />
@@ -244,7 +267,10 @@ export function AssignmentsPanel({
         <Button
           type="button"
           variant="outline"
-          onClick={() => exportDraftJson(wcif, competitionId)}
+          onClick={() => {
+            exportDraftJson(wcif, competitionId);
+            toast.success("JSON exportado");
+          }}
         >
           <Download className="size-4" />
           JSON
@@ -265,9 +291,7 @@ export function AssignmentsPanel({
               {conflicts.slice(0, 12).map((c, i) => (
                 <li key={`${c.type}-${i}`}>{c.message}</li>
               ))}
-              {conflicts.length > 12 && (
-                <li>…y {conflicts.length - 12} más</li>
-              )}
+              {conflicts.length > 12 && <li>…y {conflicts.length - 12} más</li>}
             </ul>
           </AlertDescription>
         </Alert>
@@ -325,7 +349,11 @@ export function AssignmentsPanel({
             </Select>
           </div>
           <div className="flex items-end">
-            <Button type="button" className="w-full" onClick={handleManualAssign}>
+            <Button
+              type="button"
+              className="w-full"
+              onClick={handleManualAssign}
+            >
               Asignar
             </Button>
           </div>

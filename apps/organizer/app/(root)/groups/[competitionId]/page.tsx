@@ -1,6 +1,10 @@
 import { CompetitionModuleNav } from "@/components/competition-module-nav";
 import { GroupsManager } from "@/components/groups/groups-manager";
-import { getCompetitionById, getWCIFByCompetitionId } from "@/db/queries";
+import {
+  getCompetitionById,
+  getCompetitionLogoById,
+  getWCIFByCompetitionId,
+} from "@/db/queries";
 import { isCompetitionToolsUnavailable } from "@/lib/competition-availability";
 import { AlertCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
@@ -55,6 +59,8 @@ export default async function Page({
     competitionId,
   });
 
+  const competitionLogoUrl = await getCompetitionLogoById(competitionId);
+
   if (!wcif) {
     return (
       <div className="relative border-2 border-amber-200 dark:border-amber-900/50 rounded-xl p-8 sm:p-10 shadow-lg bg-linear-to-br from-amber-50/50 to-orange-50/30 dark:from-amber-950/20 dark:to-orange-950/10 backdrop-blur-sm">
@@ -102,7 +108,11 @@ export default async function Page({
   return (
     <>
       <CompetitionModuleNav competitionId={competitionId} />
-      <GroupsManager competition={competition} wcif={wcif} />
+      <GroupsManager
+        competition={competition}
+        wcif={wcif}
+        competitionLogoUrl={competitionLogoUrl}
+      />
     </>
   );
 }

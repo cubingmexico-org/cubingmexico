@@ -10,7 +10,11 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { Badge } from "@workspace/ui/components/badge";
-import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert";
 import type { WCIF } from "@/types/wcif";
 import {
   buildAssignmentsByGroup,
@@ -84,7 +88,9 @@ export function AssignmentsByGroup({
                     {row.orphan ? (
                       <Badge variant="destructive">Huérfana</Badge>
                     ) : (
-                      <Badge variant="secondary">G{row.groupNumber ?? "?"}</Badge>
+                      <Badge variant="secondary">
+                        G{row.groupNumber ?? "?"}
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell>{row.roomName}</TableCell>

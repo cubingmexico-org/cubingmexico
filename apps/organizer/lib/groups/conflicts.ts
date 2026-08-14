@@ -38,7 +38,8 @@ export function detectConflicts(
     const competitorCount = wcif.persons.filter((p) =>
       (p.assignments ?? []).some(
         (a) =>
-          a.activityId === group.activity.id && a.assignmentCode === "competitor",
+          a.activityId === group.activity.id &&
+          a.assignmentCode === "competitor",
       ),
     ).length;
     if (competitorCount > softTarget + 1 && softTarget > 0) {

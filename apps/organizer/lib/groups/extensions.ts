@@ -62,7 +62,11 @@ function readPerRoomMap(data: unknown): Record<number, number> | null {
   const result: Record<number, number> = {};
   let found = false;
   for (const [key, value] of Object.entries(maybeMap)) {
-    if (key === "groups" || key === "groupCount" || key === "spreadGroupsAcrossAllStages") {
+    if (
+      key === "groups" ||
+      key === "groupCount" ||
+      key === "spreadGroupsAcrossAllStages"
+    ) {
       continue;
     }
     const roomId = Number(key);

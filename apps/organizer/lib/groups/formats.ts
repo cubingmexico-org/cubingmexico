@@ -18,10 +18,7 @@ const FORMAT_MAP: Record<string, { attempts: number; mean?: boolean }> = {
   m: { attempts: 3, mean: true },
 };
 
-export function getFormatInfo(
-  format: string,
-  eventId?: string,
-): FormatInfo {
+export function getFormatInfo(format: string, eventId?: string): FormatInfo {
   const isFmc = eventId === "333fm";
   const isMbld = eventId === "333mbf";
   const base = FORMAT_MAP[format] ?? FORMAT_MAP.a!;

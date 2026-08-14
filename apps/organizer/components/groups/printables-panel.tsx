@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Download, ExternalLink, Printer } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -12,7 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@workspace/ui/components/alert";
 import type { WCIF } from "@/types/wcif";
 import {
   defaultBlankCount,
@@ -28,9 +33,11 @@ import {
 export function PrintablesPanel({
   wcif,
   roundActivityCode,
+  competitionImageUrl,
 }: {
   wcif: WCIF;
   roundActivityCode: string;
+  competitionImageUrl?: string | null;
 }) {
   const [mode, setMode] = useState<ScorecardMode>("assigned");
   const suggestedBlank = useMemo(
@@ -44,12 +51,18 @@ export function PrintablesPanel({
     setBlankCount(suggestedBlank);
   }, [suggestedBlank]);
 
-  const run = (fn: () => void) => {
+  const run = async (
+    fn: () => void | Promise<void>,
+    successMessage: string,
+  ) => {
     setError(null);
     try {
-      fn();
+      await fn();
+      toast.success(successMessage);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al generar PDF");
+      const message = e instanceof Error ? e.message : "Error al generar PDF";
+      setError(message);
+      toast.error(message);
     }
   };
 
@@ -103,14 +116,17 @@ export function PrintablesPanel({
           <Button
             type="button"
             onClick={() =>
-              run(() =>
-                printScorecards(
-                  wcif,
-                  roundActivityCode,
-                  mode,
-                  blankCount,
-                  "open",
-                ),
+              run(
+                () =>
+                  printScorecards(
+                    wcif,
+                    roundActivityCode,
+                    mode,
+                    blankCount,
+                    "open",
+                    competitionImageUrl,
+                  ),
+                "Scorecards abiertas",
               )
             }
           >
@@ -121,14 +137,17 @@ export function PrintablesPanel({
             type="button"
             variant="outline"
             onClick={() =>
-              run(() =>
-                printScorecards(
-                  wcif,
-                  roundActivityCode,
-                  mode,
-                  blankCount,
-                  "download",
-                ),
+              run(
+                () =>
+                  printScorecards(
+                    wcif,
+                    roundActivityCode,
+                    mode,
+                    blankCount,
+                    "download",
+                    competitionImageUrl,
+                  ),
+                "Scorecards descargadas",
               )
             }
           >
@@ -149,7 +168,10 @@ export function PrintablesPanel({
           <Button
             type="button"
             onClick={() =>
-              run(() => printGroupSheets(wcif, roundActivityCode, "open"))
+              run(
+                () => printGroupSheets(wcif, roundActivityCode, "open"),
+                "Hojas de grupo abiertas",
+              )
             }
           >
             <Printer className="size-4" />
@@ -159,7 +181,10 @@ export function PrintablesPanel({
             type="button"
             variant="outline"
             onClick={() =>
-              run(() => printGroupSheets(wcif, roundActivityCode, "download"))
+              run(
+                () => printGroupSheets(wcif, roundActivityCode, "download"),
+                "Hojas de grupo descargadas",
+              )
             }
           >
             <Download className="size-4" />
@@ -178,7 +203,9 @@ export function PrintablesPanel({
         <div className="flex flex-wrap gap-2">
           <Button
             type="button"
-            onClick={() => run(() => printTaskCards(wcif, "open"))}
+            onClick={() =>
+              run(() => printTaskCards(wcif, "open"), "Tarjetas abiertas")
+            }
           >
             <Printer className="size-4" />
             Abrir
@@ -186,7 +213,12 @@ export function PrintablesPanel({
           <Button
             type="button"
             variant="outline"
-            onClick={() => run(() => printTaskCards(wcif, "download"))}
+            onClick={() =>
+              run(
+                () => printTaskCards(wcif, "download"),
+                "Tarjetas descargadas",
+              )
+            }
           >
             <Download className="size-4" />
             Descargar
@@ -207,7 +239,9 @@ export function PrintablesPanel({
           <Button
             type="button"
             variant="outline"
-            onClick={() => run(() => downloadScrambleMetadata(wcif))}
+            onClick={() =>
+              run(() => downloadScrambleMetadata(wcif), "Metadatos descargados")
+            }
           >
             <Download className="size-4" />
             Metadatos JSON

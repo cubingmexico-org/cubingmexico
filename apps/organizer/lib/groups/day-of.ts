@@ -88,7 +88,8 @@ export function buildPersonTimeline(
       personName: person.name,
       wcaUserId: person.wcaUserId,
       activityId: assignment.activityId,
-      activityName: located?.activity.name ?? `Actividad #${assignment.activityId}`,
+      activityName:
+        located?.activity.name ?? `Actividad #${assignment.activityId}`,
       activityCode: located?.activity.activityCode ?? "?",
       assignmentCode: assignment.assignmentCode,
       stationNumber: assignment.stationNumber,
@@ -103,16 +104,18 @@ export function buildPersonTimeline(
   }
 
   return rows.sort((a, b) => {
-    const ta = a.startTime ? new Date(a.startTime).getTime() : Number.MAX_SAFE_INTEGER;
-    const tb = b.startTime ? new Date(b.startTime).getTime() : Number.MAX_SAFE_INTEGER;
+    const ta = a.startTime
+      ? new Date(a.startTime).getTime()
+      : Number.MAX_SAFE_INTEGER;
+    const tb = b.startTime
+      ? new Date(b.startTime).getTime()
+      : Number.MAX_SAFE_INTEGER;
     return ta - tb;
   });
 }
 
 export function findUnmatchedActivityIds(wcif: WCIF): number[] {
-  const known = new Set(
-    listAllActivitiesFlat(wcif).map((a) => a.activity.id),
-  );
+  const known = new Set(listAllActivitiesFlat(wcif).map((a) => a.activity.id));
   const unmatched = new Set<number>();
   for (const person of wcif.persons) {
     for (const assignment of person.assignments ?? []) {
@@ -144,7 +147,9 @@ export function buildAssignmentsByGroup(
         group != null ||
         (located != null &&
           (located.activity.activityCode === roundActivityCode ||
-            located.activity.activityCode.startsWith(`${roundActivityCode}-g`)));
+            located.activity.activityCode.startsWith(
+              `${roundActivityCode}-g`,
+            )));
 
       if (!inRound && knownIds.has(assignment.activityId)) {
         continue;
@@ -183,9 +188,9 @@ export function buildAssignmentsByGroup(
         roomId: located?.roomId ?? group?.roomId ?? -1,
         groupNumber: located
           ? parseGroupNumber(located.activity.activityCode)
-          : (group
-              ? parseGroupNumber(group.activity.activityCode)
-              : null),
+          : group
+            ? parseGroupNumber(group.activity.activityCode)
+            : null,
         activityName:
           located?.activity.name ??
           group?.activity.name ??
@@ -232,7 +237,8 @@ export function buildScramblerSchedule(wcif: WCIF): ScramblerRow[] {
 
   return rows.sort((a, b) => {
     if (a.dayKey !== b.dayKey) return a.dayKey.localeCompare(b.dayKey);
-    if (a.roomName !== b.roomName) return a.roomName.localeCompare(b.roomName, "es");
+    if (a.roomName !== b.roomName)
+      return a.roomName.localeCompare(b.roomName, "es");
     const ta = a.startTime ? new Date(a.startTime).getTime() : 0;
     const tb = b.startTime ? new Date(b.startTime).getTime() : 0;
     if (ta !== tb) return ta - tb;

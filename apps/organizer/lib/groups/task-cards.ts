@@ -104,8 +104,7 @@ export function buildGroupSheetsDocument(
           ? { text: "—", fontSize: 9, color: "#888" }
           : {
               ul: staff.map(
-                (s) =>
-                  `${s.personName} — ${codeLabel(s.assignmentCode)}`,
+                (s) => `${s.personName} — ${codeLabel(s.assignmentCode)}`,
               ),
               fontSize: 9,
             },
@@ -134,7 +133,9 @@ export function buildGroupSheetsDocument(
 export function buildTaskCardsDocument(wcif: WCIF): TDocumentDefinitions {
   const people = personsWithAssignments(wcif);
   if (people.length === 0) {
-    throw new Error("No hay personas con asignaciones para tarjetas de tareas.");
+    throw new Error(
+      "No hay personas con asignaciones para tarjetas de tareas.",
+    );
   }
 
   const content: Content[] = [];

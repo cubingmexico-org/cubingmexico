@@ -14,9 +14,10 @@
  * Typed for future modules but not consumed yet:
  * - competitorLimit
  *
- * Grupos 3b: optional PATCH via PUT …/wcif/check then PATCH …/wcif;
+ * Grupos 3b+: optional PATCH via PUT …/wcif/check then PATCH …/wcif;
  * surface response.error on failure. Extensions are read for Groupifier/DD
- * interop; Organización does not write its own extension in 3b.
+ * interop; Organización writes `organizacion.CompetitionConfig`,
+ * `organizacion.RoomConfig`, and `organizacion.ActivityConfig` on the local draft.
  */
 
 export type EventId =

@@ -95,7 +95,8 @@ export function StaffRoster({
         "WCA ID": person.wcaId ?? "",
         Roles: formatPersonRoles(person),
         País: countryName(person.countryIso2),
-        Estado: stateName(person.stateId) === "—" ? "" : stateName(person.stateId),
+        Estado:
+          stateName(person.stateId) === "—" ? "" : stateName(person.stateId),
         Compite: person.registration?.isCompeting ? "Sí" : "No",
       })),
       { filename: `${competitionId}-staff` },
