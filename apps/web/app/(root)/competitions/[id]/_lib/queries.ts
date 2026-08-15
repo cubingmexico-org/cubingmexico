@@ -2,7 +2,13 @@
 
 import "server-only";
 import { db } from "@workspace/db";
-import { competition, event, person, result, state } from "@workspace/db/schema";
+import {
+  competition,
+  event,
+  person,
+  result,
+  state,
+} from "@workspace/db/schema";
 import type { Competition } from "@/types/wca";
 import { and, count, eq, gt, inArray, or } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";

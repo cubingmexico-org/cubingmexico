@@ -1,8 +1,5 @@
 import { notFound } from "next/navigation";
-import {
-  getCompetitionLogo,
-  getWcaCompetitionData,
-} from "../../_lib/queries";
+import { getCompetitionLogo, getWcaCompetitionData } from "../../_lib/queries";
 import { getCompetitionResultsForEvent } from "./_lib/queries";
 import { ResultsHeader } from "../_components/results-header";
 import { ResultsAllView } from "../_components/results-views";
