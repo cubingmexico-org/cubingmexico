@@ -72,7 +72,8 @@ async function PeopleAdminContent({
         <CardHeader>
           <CardTitle className="text-base">Roles por estado</CardTitle>
           <CardDescription>
-            Bootstrap o revoca admins/editores de cualquier team
+            Bootstrap o revoca admins/editores, u oculta miembros del directorio
+            público sin quitar afiliación
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

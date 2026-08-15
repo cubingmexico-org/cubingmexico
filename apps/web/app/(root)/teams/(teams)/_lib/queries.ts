@@ -3,7 +3,7 @@
 import "server-only";
 import { db } from "@workspace/db";
 import { team, state, person } from "@workspace/db/schema";
-import { eq, desc, count } from "drizzle-orm";
+import { eq, desc, count, and } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
 export async function getTeams() {
@@ -24,7 +24,10 @@ export async function getTeams() {
     })
     .from(team)
     .innerJoin(state, eq(team.stateId, state.id))
-    .innerJoin(person, eq(team.stateId, person.stateId))
+    .innerJoin(
+      person,
+      and(eq(team.stateId, person.stateId), eq(person.hideFromRoster, false)),
+    )
     .groupBy(
       team.stateId,
       team.name,

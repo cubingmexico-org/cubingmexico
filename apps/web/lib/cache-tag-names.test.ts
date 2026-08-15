@@ -18,6 +18,7 @@ describe("cache tags", () => {
       "members-list-CMX",
       "members-gender-count-CMX",
       "total-members-CMX",
+      "team-top-members-CMX",
       "team-podiums-CMX",
       "single-national-records-CMX",
       "average-national-records-CMX",

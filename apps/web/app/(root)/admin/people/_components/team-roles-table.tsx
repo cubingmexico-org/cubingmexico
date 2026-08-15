@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { Switch } from "@workspace/ui/components/switch";
 import {
   Table,
   TableBody,
@@ -18,12 +19,16 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { updateAdminMemberRole } from "../../_lib/actions";
+import {
+  updateAdminMemberRole,
+  updatePersonHideFromRoster,
+} from "../../_lib/actions";
 
 type Member = {
   wcaId: string;
   name: string | null;
   role: "admin" | "editor" | null;
+  hideFromRoster: boolean;
 };
 
 export function TeamRolesTable({
@@ -57,6 +62,28 @@ export function TeamRolesTable({
     router.refresh();
   }
 
+  async function onHideFromRosterChange(
+    personId: string,
+    hideFromRoster: boolean,
+  ) {
+    setPendingId(personId);
+    const result = await updatePersonHideFromRoster({
+      personId,
+      hideFromRoster,
+    });
+    setPendingId(null);
+
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+
+    toast.success(
+      hideFromRoster ? "Oculto del directorio" : "Visible en el directorio",
+    );
+    router.refresh();
+  }
+
   if (members.length === 0) {
     return (
       <p className="text-muted-foreground text-sm">
@@ -73,6 +100,7 @@ export function TeamRolesTable({
             <TableHead>Persona</TableHead>
             <TableHead>WCA ID</TableHead>
             <TableHead className="w-40">Rol</TableHead>
+            <TableHead className="w-48">Ocultar del directorio</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -102,6 +130,16 @@ export function TeamRolesTable({
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
+              </TableCell>
+              <TableCell>
+                <Switch
+                  checked={member.hideFromRoster}
+                  disabled={pendingId === member.wcaId}
+                  onCheckedChange={(checked) =>
+                    void onHideFromRosterChange(member.wcaId, checked)
+                  }
+                  aria-label={`Ocultar ${member.name ?? member.wcaId} del directorio`}
+                />
               </TableCell>
             </TableRow>
           ))}

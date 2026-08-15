@@ -33,6 +33,11 @@ const updateMemberRoleSchema = z.object({
   role: z.enum(["admin", "editor"]).nullable(),
 });
 
+const updatePersonHideFromRosterSchema = z.object({
+  personId: z.string().min(1),
+  hideFromRoster: z.boolean(),
+});
+
 const updateCompetitionStateSchema = z.object({
   competitionId: z.string().min(1),
   stateId: z.string().min(1).nullable(),
@@ -272,6 +277,41 @@ export async function updateAdminMemberRole(input: {
       });
 
     invalidateStateMemberTags(data.stateId);
+
+    return { data: null, error: null };
+  } catch (err) {
+    return { data: null, error: getErrorMessage(err) };
+  }
+}
+
+export async function updatePersonHideFromRoster(input: {
+  personId: string;
+  hideFromRoster: boolean;
+}) {
+  try {
+    await requireSuperadmin();
+    const data = updatePersonHideFromRosterSchema.parse(input);
+
+    const existing = await db
+      .select({ stateId: person.stateId })
+      .from(person)
+      .where(eq(person.wcaId, data.personId))
+      .limit(1);
+
+    if (existing.length === 0) {
+      return { data: null, error: "Persona no encontrada" };
+    }
+
+    await db
+      .update(person)
+      .set({ hideFromRoster: data.hideFromRoster })
+      .where(eq(person.wcaId, data.personId));
+
+    const stateId = existing[0]?.stateId;
+    if (stateId) {
+      invalidateStateMemberTags(stateId);
+    }
+    updateTag("teams-data");
 
     return { data: null, error: null };
   } catch (err) {
