@@ -11,7 +11,7 @@ export default async function Layout({
   params: Promise<{ stateId: string }>;
 }) {
   return (
-    <main className="grow">
+    <main className="min-w-0 grow overflow-x-clip">
       <Suspense fallback={<TeamPageSkeleton />}>
         <TeamFrame params={params}>{children}</TeamFrame>
       </Suspense>

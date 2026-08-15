@@ -196,6 +196,7 @@ export default async function Page({
             label="Competencias"
             value={competitionsCount}
             href={`/teams/${stateId}/competitions`}
+            className={activeYears > 0 ? undefined : "col-span-2 sm:col-span-1"}
           />
           {activeYears > 0 ? (
             <KeyStat label="Años activo" value={activeYears} />
