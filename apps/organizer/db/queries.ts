@@ -2,7 +2,7 @@ import type { WCIF } from "@/types/wcif";
 import type { Competition } from "@/types/wca";
 import { db } from "@workspace/db";
 import { competition as competitionTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 export async function getCompetitionsManagedByUser({
   token,
@@ -98,6 +98,41 @@ export async function getCompetitionLogoById(
     console.error("Error fetching competition logo:", error);
     return null;
   }
+}
+
+/** Batch-fetch Neon logos for home cards (avoids N+1). */
+export async function getCompetitionLogosByIds(
+  competitionIds: string[],
+): Promise<Map<string, string | null>> {
+  const map = new Map<string, string | null>();
+  if (competitionIds.length === 0) {
+    return map;
+  }
+
+  try {
+    const rows = await db
+      .select({
+        id: competitionTable.id,
+        logo: competitionTable.logo,
+      })
+      .from(competitionTable)
+      .where(inArray(competitionTable.id, competitionIds));
+
+    for (const id of competitionIds) {
+      map.set(id, null);
+    }
+    for (const row of rows) {
+      const logo = row.logo?.trim();
+      map.set(row.id, logo || null);
+    }
+  } catch (error) {
+    console.error("Error fetching competition logos:", error);
+    for (const id of competitionIds) {
+      map.set(id, null);
+    }
+  }
+
+  return map;
 }
 
 export interface Team {

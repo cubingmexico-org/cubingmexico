@@ -36,6 +36,7 @@ import {
   TeamPersonLink,
 } from "./_components/team-profile-shared";
 import { TeamLocation } from "./_components/team-location";
+import { CompetitionLogo } from "@/components/competition-logo";
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -151,7 +152,7 @@ export default async function Page({
   }>;
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -195,6 +196,7 @@ export default async function Page({
             label="Competencias"
             value={competitionsCount}
             href={`/teams/${stateId}/competitions`}
+            className={activeYears > 0 ? undefined : "col-span-2 sm:col-span-1"}
           />
           {activeYears > 0 ? (
             <KeyStat label="Años activo" value={activeYears} />
@@ -202,8 +204,8 @@ export default async function Page({
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Acerca de</CardTitle>
@@ -323,7 +325,7 @@ export default async function Page({
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Ubicación</CardTitle>
@@ -359,46 +361,57 @@ export default async function Page({
               ) : (
                 <div className="space-y-4">
                   {upcomingCompetitions.map((competition) => (
-                    <div key={competition.id} className="space-y-1.5">
-                      <h3 className="font-semibold leading-snug">
-                        <Link
-                          href={`/competitions/${competition.id}`}
-                          className="text-link hover:text-link/80"
-                        >
-                          {competition.name}
-                        </Link>
-                      </h3>
-                      <div className="space-y-1 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 shrink-0" />
-                          {competition.startDate.toLocaleDateString("es-ES", {
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            timeZone: "UTC",
-                          })}
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                          <span className="line-clamp-2">
-                            <ReactMarkdown
-                              components={{
-                                a: ({ children, href }) => (
-                                  <Link
-                                    className="hover:underline"
-                                    href={href ?? ""}
-                                    target="_blank"
-                                  >
-                                    {children}
-                                  </Link>
-                                ),
-                                p: ({ children }) => <>{children}</>,
-                              }}
-                            >
-                              {competition.venue}
-                            </ReactMarkdown>
-                            , {competition.cityName}
-                          </span>
+                    <div
+                      key={competition.id}
+                      className="flex items-start gap-3 space-y-0"
+                    >
+                      <CompetitionLogo
+                        src={competition.logo}
+                        alt={`Logo de ${competition.name}`}
+                        size={36}
+                        className="mt-0.5 rounded-md"
+                      />
+                      <div className="min-w-0 grow space-y-1.5">
+                        <h3 className="font-semibold leading-snug">
+                          <Link
+                            href={`/competitions/${competition.id}`}
+                            className="text-link hover:text-link/80"
+                          >
+                            {competition.name}
+                          </Link>
+                        </h3>
+                        <div className="space-y-1 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 shrink-0" />
+                            {competition.startDate.toLocaleDateString("es-ES", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              timeZone: "UTC",
+                            })}
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span className="line-clamp-2">
+                              <ReactMarkdown
+                                components={{
+                                  a: ({ children, href }) => (
+                                    <Link
+                                      className="hover:underline"
+                                      href={href ?? ""}
+                                      target="_blank"
+                                    >
+                                      {children}
+                                    </Link>
+                                  ),
+                                  p: ({ children }) => <>{children}</>,
+                                }}
+                              >
+                                {competition.venue}
+                              </ReactMarkdown>
+                              , {competition.cityName}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>

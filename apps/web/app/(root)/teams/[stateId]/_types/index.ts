@@ -5,6 +5,8 @@ export interface Member {
   name: Person["name"];
   gender: Person["gender"];
   role: TeamMember["role"] | null;
+  /** Present on manage roster; omitted on public filtered roster. */
+  hideFromRoster?: boolean;
   podiums: number;
   /** Current state records (state_rank = 1). */
   stateRecords: number;

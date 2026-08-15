@@ -5,6 +5,7 @@ from __future__ import annotations
 import io
 from pathlib import Path
 
+import requests
 from PIL import Image, ImageDraw, ImageFont
 
 ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
@@ -194,11 +195,29 @@ def paste_logo(
     *,
     max_size: tuple[int, int] = (340, 340),
     y: int = 150,
+    logo_url: str | None = None,
 ) -> int:
-    """Paste centered logo; return bottom y of logo (or y if missing)."""
-    if not LOGO_PATH.exists():
-        return y
-    logo = Image.open(LOGO_PATH).convert("RGBA")
+    """Paste centered logo; return bottom y of logo (or y if missing).
+
+    When ``logo_url`` is set, fetch that image (timeout/size guarded). On any
+    failure, fall back to the Cubing México brand mark at ``LOGO_PATH``.
+    """
+    logo: Image.Image | None = None
+    url = (logo_url or "").strip()
+    if url:
+        try:
+            response = requests.get(url, timeout=8)
+            response.raise_for_status()
+            if len(response.content) <= 8 * 1024 * 1024:
+                logo = Image.open(io.BytesIO(response.content)).convert("RGBA")
+        except Exception:
+            logo = None
+
+    if logo is None:
+        if not LOGO_PATH.exists():
+            return y
+        logo = Image.open(LOGO_PATH).convert("RGBA")
+
     logo.thumbnail(max_size, Image.Resampling.LANCZOS)
     lx = (SIZE - logo.width) // 2
     canvas.paste(logo, (lx, y), logo if logo.mode == "RGBA" else None)

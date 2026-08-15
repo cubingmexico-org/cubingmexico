@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getWcaCompetitionData } from "../../_lib/queries";
+import { getCompetitionLogo, getWcaCompetitionData } from "../../_lib/queries";
 import { getCompetitionResultsForEvent } from "./_lib/queries";
 import { ResultsHeader } from "../_components/results-header";
 import { ResultsAllView } from "../_components/results-views";
@@ -12,6 +12,7 @@ async function ResultsAllCached({
   competitionCity,
   eventIds,
   mainEventId,
+  logo,
 }: {
   competitionId: string;
   eventId: string;
@@ -19,6 +20,7 @@ async function ResultsAllCached({
   competitionCity: string;
   eventIds: string[];
   mainEventId: string | null;
+  logo: string | null;
 }) {
   "use cache";
   cacheLife("weeks");
@@ -37,6 +39,7 @@ async function ResultsAllCached({
         competitionName={competitionName}
         competitionCity={competitionCity}
         defaultEventId={eventId}
+        logo={logo}
       />
       <ResultsAllView
         competitionId={competitionId}
@@ -60,7 +63,10 @@ export default async function Page({
 }) {
   const [{ id }, searchParamsValue] = await Promise.all([params, searchParams]);
 
-  const competitionData = await getWcaCompetitionData(id);
+  const [competitionData, logo] = await Promise.all([
+    getWcaCompetitionData(id),
+    getCompetitionLogo(id),
+  ]);
   if (!competitionData) {
     notFound();
   }
@@ -83,6 +89,7 @@ export default async function Page({
       competitionCity={competitionData.city}
       eventIds={competitionData.event_ids}
       mainEventId={competitionData.main_event_id}
+      logo={logo}
     />
   );
 }

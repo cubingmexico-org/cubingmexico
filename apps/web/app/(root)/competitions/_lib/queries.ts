@@ -110,6 +110,7 @@ export async function getCompetitions(input: GetCompetitionsSchema) {
       .select({
         id: competition.id,
         name: competition.name,
+        logo: competition.logo,
         state: state.name,
         startDate: competition.startDate,
         endDate: competition.endDate,
@@ -304,6 +305,34 @@ export async function getCompetitionsLocations(input: GetCompetitionsSchema) {
       competition.latitudeMicrodegrees,
       competition.longitudeMicrodegrees,
     );
+
+  return data;
+}
+
+export async function getUpcomingCompetitions(limit = 5) {
+  cacheLife("days");
+  cacheTag("competitions");
+
+  const data = await db
+    .select({
+      id: competition.id,
+      name: competition.name,
+      logo: competition.logo,
+      state: state.name,
+      cityName: competition.cityName,
+      startDate: competition.startDate,
+      endDate: competition.endDate,
+    })
+    .from(competition)
+    .leftJoin(state, eq(competition.stateId, state.id))
+    .where(
+      and(
+        eq(competition.countryId, "Mexico"),
+        gt(competition.startDate, sql`NOW()`),
+      ),
+    )
+    .orderBy(asc(competition.startDate))
+    .limit(limit);
 
   return data;
 }

@@ -74,11 +74,17 @@ export function TeamStateMap({ statesData }: TeamStateMapProps) {
       map.fitBounds(bounds, { padding: [20, 20], maxZoom: 8 });
     }
 
+    requestAnimationFrame(() => {
+      map.invalidateSize();
+    });
+
     return () => {
       map.remove();
       mapRef.current = null;
     };
   }, [statesData, resolvedTheme]);
 
-  return <div ref={containerRef} className="h-full w-full" />;
+  return (
+    <div ref={containerRef} className="h-full w-full min-w-0 max-w-full" />
+  );
 }

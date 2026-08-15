@@ -356,3 +356,83 @@ export async function getRecordHistory(
     };
   });
 }
+
+export type RecentNationalRecord = {
+  resultId: string;
+  eventId: string;
+  eventName: string;
+  personId: string;
+  personName: string | null;
+  personState: string | null;
+  competitionId: string;
+  competitionName: string;
+  competitionStartDate: string;
+  type: "single" | "average";
+  value: number;
+};
+
+export async function getRecentNationalRecords(
+  limit = 5,
+): Promise<RecentNationalRecord[]> {
+  cacheLife("days");
+  cacheTag("records");
+
+  const rows = await db
+    .select({
+      resultId: result.id,
+      eventId: result.eventId,
+      eventName: event.name,
+      personId: result.personId,
+      personName: person.name,
+      personState: state.name,
+      competitionId: competition.id,
+      competitionName: competition.name,
+      competitionStartDate: competition.startDate,
+      best: result.best,
+      average: result.average,
+      regionalSingleRecord: result.regionalSingleRecord,
+      regionalAverageRecord: result.regionalAverageRecord,
+    })
+    .from(result)
+    .innerJoin(person, eq(result.personId, person.wcaId))
+    .innerJoin(event, eq(result.eventId, event.id))
+    .innerJoin(competition, eq(result.competitionId, competition.id))
+    .leftJoin(state, eq(person.stateId, state.id))
+    .where(
+      and(
+        or(
+          eq(result.regionalSingleRecord, "NR"),
+          eq(result.regionalAverageRecord, "NR"),
+        ),
+        notInArray(result.eventId, EXCLUDED_EVENTS),
+      ),
+    )
+    .orderBy(desc(competition.startDate), event.rank)
+    .limit(limit * 2);
+
+  const recent: RecentNationalRecord[] = [];
+
+  for (const row of rows) {
+    const base = {
+      resultId: row.resultId,
+      eventId: row.eventId,
+      eventName: row.eventName,
+      personId: row.personId,
+      personName: row.personName,
+      personState: row.personState,
+      competitionId: row.competitionId,
+      competitionName: row.competitionName,
+      competitionStartDate: row.competitionStartDate.toISOString(),
+    };
+
+    if (row.regionalSingleRecord === "NR" && row.best > 0) {
+      recent.push({ ...base, type: "single", value: row.best });
+    }
+    if (row.regionalAverageRecord === "NR" && row.average > 0) {
+      recent.push({ ...base, type: "average", value: row.average });
+    }
+    if (recent.length >= limit) break;
+  }
+
+  return recent.slice(0, limit);
+}

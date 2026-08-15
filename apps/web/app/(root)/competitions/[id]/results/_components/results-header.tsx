@@ -13,12 +13,14 @@ import {
 } from "@workspace/ui/components/card";
 import { cn } from "@workspace/ui/lib/utils";
 import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
+import { CompetitionLogo } from "@/components/competition-logo";
 
 interface ResultsHeaderProps {
   competitionId: string;
   competitionName: string;
   competitionCity: string;
   defaultEventId: string;
+  logo?: string | null;
 }
 
 export function ResultsHeader({
@@ -26,6 +28,7 @@ export function ResultsHeader({
   competitionName,
   competitionCity,
   defaultEventId,
+  logo,
 }: ResultsHeaderProps) {
   const pathname = usePathname() || "";
 
@@ -56,12 +59,20 @@ export function ResultsHeader({
     <Card className="border-primary/10 bg-muted/20">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <CardTitle className="text-2xl">Resultados</CardTitle>
-            <CardDescription>
-              {competitionName}
-              {competitionCity ? ` · ${competitionCity}` : ""}
-            </CardDescription>
+          <div className="flex items-start gap-3">
+            <CompetitionLogo
+              src={logo}
+              alt={`Logo de ${competitionName}`}
+              size={48}
+              className="mt-0.5 rounded-md"
+            />
+            <div className="space-y-1">
+              <CardTitle className="text-2xl">Resultados</CardTitle>
+              <CardDescription>
+                {competitionName}
+                {competitionCity ? ` · ${competitionCity}` : ""}
+              </CardDescription>
+            </div>
           </div>
           <Link
             href={`/competitions/${competitionId}`}

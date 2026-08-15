@@ -5,6 +5,7 @@ import { buttonVariants } from "@workspace/ui/components/button";
 import { Calendar, MapPin } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { getCompetitionsPageData } from "./_lib/queries";
+import { CompetitionLogo } from "@/components/competition-logo";
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -29,6 +30,12 @@ function CompetitionItem({
 }) {
   return (
     <div className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-start">
+      <CompetitionLogo
+        src={competition.logo}
+        alt={`Logo de ${competition.name}`}
+        size={40}
+        className="rounded-md"
+      />
       <div className="grow space-y-2">
         <h3 className="font-semibold leading-snug">
           <Link

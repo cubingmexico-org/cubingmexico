@@ -97,9 +97,11 @@ import Papa from "papaparse";
 export function CertificateManager({
   competition,
   persons,
+  competitionLogoUrl,
 }: {
   competition: Competition;
   persons: RegisteredPerson[];
+  competitionLogoUrl?: string | null;
 }) {
   const [activeTab, setActiveTab] = useState<"podium" | "participation">(
     "podium",
@@ -968,8 +970,16 @@ export function CertificateManager({
       </Breadcrumb>
 
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl">
-          Certificados: {competition.name}
+        <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tighter sm:text-4xl">
+          {competitionLogoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={competitionLogoUrl}
+              alt=""
+              className="size-10 shrink-0 rounded-md object-contain sm:size-12"
+            />
+          ) : null}
+          <span>Certificados: {competition.name}</span>
         </h1>
         <p className="text-muted-foreground">
           Gestiona los certificados de podio y participación para esta

@@ -60,10 +60,12 @@ export function KeyStat({
   label,
   value,
   href,
+  className,
 }: {
   label: string;
   value: number | string;
   href?: string;
+  className?: string;
 }) {
   const content = (
     <div className="rounded-lg border px-3 py-4 text-center">
@@ -74,10 +76,15 @@ export function KeyStat({
     </div>
   );
 
-  if (!href) return content;
+  if (!href) {
+    return className ? <div className={className}>{content}</div> : content;
+  }
 
   return (
-    <Link href={href} className="transition-opacity hover:opacity-80">
+    <Link
+      href={href}
+      className={cn("transition-opacity hover:opacity-80", className)}
+    >
       {content}
     </Link>
   );

@@ -44,6 +44,7 @@ interface CanvasProps {
   eventIds: EventId[];
   persons?: ExtendedPerson[];
   wcif?: WCIF;
+  competitionLogoUrl?: string | null;
 }
 
 export function Canvas({
@@ -52,6 +53,7 @@ export function Canvas({
   eventIds,
   persons = [],
   wcif,
+  competitionLogoUrl,
 }: CanvasProps): React.JSX.Element {
   const {
     elements,
@@ -356,6 +358,8 @@ export function Canvas({
 
             const isWcaAvatar = element.imageUrl === "/avatar.png";
             const isTeamLogo = element.imageUrl === "/team-logo.svg";
+            const isCompetitionLogo =
+              element.imageUrl === "/competition-logo.svg";
             const isCountryFlag = element.imageUrl === "/country.svg";
             const isEventsIcon = element.imageUrl === "/events.svg";
 
@@ -427,9 +431,13 @@ export function Canvas({
                 ? `/api/image-proxy?url=${encodeURIComponent(currentPerson.avatar.url)}`
                 : isTeamLogo
                   ? teamImage || "/logo.svg"
-                  : isCountryFlag
-                    ? `https://flagcdn.com/h240/${currentPerson.countryIso2.toLowerCase()}.png`
-                    : element.imageUrl;
+                  : isCompetitionLogo
+                    ? competitionLogoUrl
+                      ? `/api/image-proxy?url=${encodeURIComponent(competitionLogoUrl)}`
+                      : "/logo.svg"
+                    : isCountryFlag
+                      ? `https://flagcdn.com/h240/${currentPerson.countryIso2.toLowerCase()}.png`
+                      : element.imageUrl;
 
             if (imageUrl.startsWith("http")) {
               img.crossOrigin = "anonymous";

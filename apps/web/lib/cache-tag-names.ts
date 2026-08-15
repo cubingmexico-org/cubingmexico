@@ -18,6 +18,7 @@ export function stateMemberTags(stateId: string): string[] {
     `members-list-${stateId}`,
     `members-gender-count-${stateId}`,
     `total-members-${stateId}`,
+    `team-top-members-${stateId}`,
     `team-podiums-${stateId}`,
     `single-national-records-${stateId}`,
     `average-national-records-${stateId}`,

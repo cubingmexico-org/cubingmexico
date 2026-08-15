@@ -91,6 +91,7 @@ def generate_upcoming_png(
     start_date: date | datetime | None,
     city_name: str,
     state_name: str | None = None,
+    logo_url: str | None = None,
 ) -> bytes:
     """Ticket-style cream poster: red header band + green footer (no side rail)."""
     canvas = Image.new("RGBA", (SIZE, SIZE), CREAM)
@@ -113,7 +114,9 @@ def generate_upcoming_png(
         WHITE,
     )
 
-    logo_bottom = paste_logo(canvas, max_size=(150, 150), y=TOP_BAR + 40)
+    logo_bottom = paste_logo(
+        canvas, max_size=(150, 150), y=TOP_BAR + 40, logo_url=logo_url
+    )
 
     badge_font = load_font(26)
     badge_cy = logo_bottom + 48

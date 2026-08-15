@@ -211,7 +211,7 @@ export async function getTotalMembers(stateId: string) {
   const data = await db
     .select({ count: count() })
     .from(person)
-    .where(eq(person.stateId, stateId));
+    .where(and(eq(person.stateId, stateId), eq(person.hideFromRoster, false)));
 
   return data[0]?.count ?? 0;
 }
@@ -224,6 +224,7 @@ export async function getTeamCompetitions(stateId: string) {
     .select({
       id: competition.id,
       name: competition.name,
+      logo: competition.logo,
       cityName: competition.cityName,
       venue: competition.venue,
       startDate: competition.startDate,
@@ -326,6 +327,7 @@ export async function getTopMembersByPodiums(
     .where(
       and(
         eq(person.stateId, stateId),
+        eq(person.hideFromRoster, false),
         or(eq(result.roundTypeId, "f"), eq(result.roundTypeId, "c")),
         inArray(result.pos, [1, 2, 3]),
         gt(result.best, 0),
@@ -392,6 +394,7 @@ export async function getMembers(
         name: person.name,
         gender: person.gender,
         role: teamMember.role,
+        hideFromRoster: person.hideFromRoster,
         podiums: count(
           sql`CASE 
                     WHEN ${result.roundTypeId} IN ('f', 'c') 
@@ -434,6 +437,7 @@ export async function getMembers(
         person.name,
         person.gender,
         teamMember.role,
+        person.hideFromRoster,
         teamMember.specialties,
       )
       .orderBy(...orderBy);

@@ -33,6 +33,11 @@ const updateMemberRoleSchema = z.object({
   role: z.enum(["admin", "editor"]).nullable(),
 });
 
+const updatePersonHideFromRosterSchema = z.object({
+  personId: z.string().min(1),
+  hideFromRoster: z.boolean(),
+});
+
 const updateCompetitionStateSchema = z.object({
   competitionId: z.string().min(1),
   stateId: z.string().min(1).nullable(),
@@ -279,6 +284,41 @@ export async function updateAdminMemberRole(input: {
   }
 }
 
+export async function updatePersonHideFromRoster(input: {
+  personId: string;
+  hideFromRoster: boolean;
+}) {
+  try {
+    await requireSuperadmin();
+    const data = updatePersonHideFromRosterSchema.parse(input);
+
+    const existing = await db
+      .select({ stateId: person.stateId })
+      .from(person)
+      .where(eq(person.wcaId, data.personId))
+      .limit(1);
+
+    if (existing.length === 0) {
+      return { data: null, error: "Persona no encontrada" };
+    }
+
+    await db
+      .update(person)
+      .set({ hideFromRoster: data.hideFromRoster })
+      .where(eq(person.wcaId, data.personId));
+
+    const stateId = existing[0]?.stateId;
+    if (stateId) {
+      invalidateStateMemberTags(stateId);
+    }
+    updateTag("teams-data");
+
+    return { data: null, error: null };
+  } catch (err) {
+    return { data: null, error: getErrorMessage(err) };
+  }
+}
+
 export async function updateCompetitionState(input: {
   competitionId: string;
   stateId: string | null;
@@ -346,9 +386,15 @@ const importMissingLogosSchema = z.object({
   limit: z.number().int().min(1).max(100).optional(),
 });
 
-function invalidateCompetitionLogoTags(competitionId: string) {
+function invalidateCompetitionLogoTags(
+  competitionId: string,
+  stateId?: string | null,
+) {
   updateTag("competitions");
-  updateTag(`wca-competition-data-${competitionId}`);
+  updateTag(`competition-logo-${competitionId}`);
+  if (stateId) {
+    updateTag(`team-competitions-${stateId}`);
+  }
 }
 
 async function getMexicanCompetitionForLogo(competitionId: string) {
@@ -358,6 +404,7 @@ async function getMexicanCompetitionForLogo(competitionId: string) {
       countryId: competition.countryId,
       information: competition.information,
       logo: competition.logo,
+      stateId: competition.stateId,
     })
     .from(competition)
     .where(eq(competition.id, competitionId))
@@ -397,7 +444,7 @@ export async function updateCompetitionLogo(input: {
       .set({ logo: data.logo })
       .where(eq(competition.id, data.competitionId));
 
-    invalidateCompetitionLogoTags(data.competitionId);
+    invalidateCompetitionLogoTags(data.competitionId, row.stateId);
 
     return { data: { logo: data.logo }, error: null };
   } catch (err) {
@@ -422,7 +469,7 @@ export async function clearCompetitionLogo(input: { competitionId: string }) {
       .set({ logo: null })
       .where(eq(competition.id, data.competitionId));
 
-    invalidateCompetitionLogoTags(data.competitionId);
+    invalidateCompetitionLogoTags(data.competitionId, row.stateId);
 
     return { data: null, error: null };
   } catch (err) {
@@ -513,7 +560,7 @@ export async function importCompetitionLogoFromInformation(input: {
       .set({ logo: sourceUrl })
       .where(eq(competition.id, data.competitionId));
 
-    invalidateCompetitionLogoTags(data.competitionId);
+    invalidateCompetitionLogoTags(data.competitionId, row.stateId);
 
     return { data: { logo: sourceUrl, skipped: false as const }, error: null };
   } catch (err) {
@@ -535,6 +582,7 @@ export async function importMissingCompetitionLogos(input?: {
       .select({
         id: competition.id,
         information: competition.information,
+        stateId: competition.stateId,
       })
       .from(competition)
       .where(and(eq(competition.countryId, "Mexico"), isNull(competition.logo)))
@@ -544,11 +592,17 @@ export async function importMissingCompetitionLogos(input?: {
     const withImages = candidates
       .map((row) => ({
         id: row.id,
+        stateId: row.stateId,
         sourceUrl: extractFirstImageUrl(row.information),
       }))
       .filter(
-        (row): row is { id: string; sourceUrl: string } =>
-          row.sourceUrl !== null,
+        (
+          row,
+        ): row is {
+          id: string;
+          stateId: string | null;
+          sourceUrl: string;
+        } => row.sourceUrl !== null,
       )
       .slice(0, limit);
 
@@ -562,7 +616,7 @@ export async function importMissingCompetitionLogos(input?: {
           .update(competition)
           .set({ logo: row.sourceUrl })
           .where(eq(competition.id, row.id));
-        invalidateCompetitionLogoTags(row.id);
+        invalidateCompetitionLogoTags(row.id, row.stateId);
         imported += 1;
       } catch (err) {
         failed += 1;

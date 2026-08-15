@@ -761,6 +761,7 @@ export async function getTeamMembersWithRoles(stateId: string) {
       wcaId: person.wcaId,
       name: person.name,
       role: teamMember.role,
+      hideFromRoster: person.hideFromRoster,
     })
     .from(person)
     .leftJoin(teamMember, eq(person.wcaId, teamMember.personId))

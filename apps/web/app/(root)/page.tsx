@@ -6,6 +6,15 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { HomeHero } from "@/components/home-hero";
+import { HomeUpcomingCompetitions } from "@/components/home-upcoming-competitions";
+import { HomeRecentRecords } from "@/components/home-recent-records";
+import { HomeCommunityStats } from "@/components/home-community-stats";
+import { getUpcomingCompetitions } from "@/app/(root)/competitions/_lib/queries";
+import { getRecentNationalRecords } from "@/app/(root)/records/_lib/queries";
+import {
+  getNumberOfPersons,
+  getNumberOfCompetitions,
+} from "@/app/(root)/about/_lib/queries";
 
 const destinations = [
   {
@@ -31,7 +40,15 @@ const destinations = [
   },
 ] as const;
 
-export default function Page() {
+export default async function Page() {
+  const [upcomingCompetitions, recentRecords, persons, competitions] =
+    await Promise.all([
+      getUpcomingCompetitions(5),
+      getRecentNationalRecords(5),
+      getNumberOfPersons(),
+      getNumberOfCompetitions(),
+    ]);
+
   return (
     <main className="grow md:-mt-24">
       <HomeHero />
@@ -70,6 +87,10 @@ export default function Page() {
           </div>
         </div>
       </section>
+
+      <HomeUpcomingCompetitions competitions={upcomingCompetitions} />
+      <HomeRecentRecords records={recentRecords} />
+      <HomeCommunityStats persons={persons} competitions={competitions} />
     </main>
   );
 }

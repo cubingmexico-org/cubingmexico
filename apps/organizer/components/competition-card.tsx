@@ -46,9 +46,11 @@ const statusConfig = {
 export function CompetitionCard({
   competition,
   status,
+  logoUrl,
 }: {
   competition: Competition;
   status: "upcoming" | "ongoing" | "past";
+  logoUrl?: string | null;
 }) {
   const startDate = new Date(`${competition.start_date}T00:00:00`);
   const endDate = new Date(`${competition.end_date}T00:00:00`);
@@ -64,9 +66,19 @@ export function CompetitionCard({
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-[1.02] hover:border-primary/50">
       <CardHeader className="space-y-3">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="line-clamp-2 text-xl leading-tight">
-            {competition.name}
-          </CardTitle>
+          <div className="flex min-w-0 items-start gap-3">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt=""
+                className="mt-0.5 size-10 shrink-0 rounded-md object-contain"
+              />
+            ) : null}
+            <CardTitle className="line-clamp-2 text-xl leading-tight">
+              {competition.name}
+            </CardTitle>
+          </div>
           {competition.announced_at === null ? (
             <Badge variant="destructive" className="shrink-0 font-medium">
               No anunciada

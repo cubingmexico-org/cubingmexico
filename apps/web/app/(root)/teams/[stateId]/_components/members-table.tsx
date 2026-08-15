@@ -4,15 +4,12 @@ import * as React from "react";
 import { useDataTable } from "@/hooks/use-data-table";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
-import type { getMembers, getMembersGenderCounts } from "../_lib/queries";
+import type { Member } from "../_types";
 import { getColumns } from "./members-table-columns";
 
 interface MembersTableProps {
   promises: Promise<
-    [
-      Awaited<ReturnType<typeof getMembers>>,
-      Awaited<ReturnType<typeof getMembersGenderCounts>>,
-    ]
+    [{ data: Member[]; pageCount: number }, Record<string, number>]
   >;
 }
 

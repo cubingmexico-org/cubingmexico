@@ -22,9 +22,11 @@ const emptyStateConfig = {
 export function CompetitionList({
   competitions,
   status,
+  logoById,
 }: {
   competitions: Competition[];
   status: "upcoming" | "ongoing" | "past";
+  logoById?: Map<string, string | null>;
 }) {
   if (!competitions.length) {
     const config = emptyStateConfig[status];
@@ -48,6 +50,7 @@ export function CompetitionList({
           key={competition.id}
           competition={competition}
           status={status}
+          logoUrl={logoById?.get(competition.id) ?? null}
         />
       ))}
     </div>

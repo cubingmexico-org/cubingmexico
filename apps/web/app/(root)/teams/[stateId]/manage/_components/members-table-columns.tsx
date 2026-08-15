@@ -153,13 +153,18 @@ export function getColumns({
       ),
       cell: ({ row }) => {
         return (
-          <div className="flex space-x-2 w-72">
+          <div className="flex items-center gap-2 space-x-2 w-72">
             <Link
               className="text-link hover:text-link/80"
               href={`/persons/${row.original.wcaId}`}
             >
               {row.getValue("name")}
             </Link>
+            {row.original.hideFromRoster ? (
+              <Badge variant="outline" className="text-muted-foreground">
+                Oculto del directorio
+              </Badge>
+            ) : null}
           </div>
         );
       },

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <rect width="120" height="120" rx="12" fill="#eaeaea"/>
+  <circle cx="60" cy="52" r="22" fill="#fff" stroke="#c9c9c9" stroke-width="2"/>
+  <path fill="#666" d="M48 72h24a12 12 0 0 1 12 12v6H36v-6a12 12 0 0 1 12-12z"/>
+  <text x="60" y="108" text-anchor="middle" font-size="10" fill="#666" font-family="system-ui,sans-serif">Logo competencia</text>
+</svg>

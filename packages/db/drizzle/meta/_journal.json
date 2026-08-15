@@ -92,6 +92,13 @@
       "when": 1786755600000,
       "tag": "0012_organizer_designs",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786842000000,
+      "tag": "0013_person_hide_from_roster",
+      "breakpoints": true
     }
   ]
 }

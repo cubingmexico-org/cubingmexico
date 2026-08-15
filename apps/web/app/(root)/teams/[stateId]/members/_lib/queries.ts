@@ -27,6 +27,7 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
 
   const where = and(
     eq(person.stateId, stateId!),
+    eq(person.hideFromRoster, false),
     input.name ? accentInsensitiveContains(person.name, input.name) : undefined,
     input.gender.length > 0 ? inArray(person.gender, input.gender) : undefined,
     input.specialties.length > 0
@@ -148,7 +149,7 @@ async function getMembersGenderCounts(stateId: Person["stateId"]) {
       count: count(),
     })
     .from(person)
-    .where(eq(person.stateId, stateId!))
+    .where(and(eq(person.stateId, stateId!), eq(person.hideFromRoster, false)))
     .groupBy(person.gender)
     .having(gt(count(), 0))
     .orderBy(person.gender)

@@ -132,6 +132,7 @@ export const person = pgTable(
     stateId: varchar("state_id", { length: 3 }).references(() => state.id, {
       onDelete: "cascade",
     }),
+    hideFromRoster: boolean("hide_from_roster").notNull().default(false),
   },
   (t) => [
     index("person_name_idx").on(t.name),
