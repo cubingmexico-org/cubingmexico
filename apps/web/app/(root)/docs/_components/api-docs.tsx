@@ -94,7 +94,8 @@ const endpoints: Record<Category, Endpoint[]> = {
       "stateId": "CMX",
       "stateName": "Ciudad de México",
       "startDate": "2024-06-01",
-      "endDate": "2024-06-02"
+      "endDate": "2024-06-02",
+      "logo": "https://example.com/mexico-city-open-2024-logo.png"
     }
   ]
 }`,
@@ -104,7 +105,7 @@ const endpoints: Record<Category, Endpoint[]> = {
       path: "/competitions/:id",
       title: "Obtener una competencia",
       description:
-        "Devuelve una competencia en México con eventos, organizadores, delegados y campeonatos relacionados. Si no existe o no está disponible para México, responde con success: false.",
+        "Devuelve una competencia en México con eventos, organizadores, delegados y campeonatos relacionados. Incluye logo cuando está disponible. Si no existe o no está disponible para México, responde con success: false.",
       pathParams: [
         {
           name: "id",
@@ -118,6 +119,7 @@ const endpoints: Record<Category, Endpoint[]> = {
   "city": "Ciudad de México",
   "stateId": "CMX",
   "stateName": "Ciudad de México",
+  "logo": "https://example.com/mexico-city-open-2024-logo.png",
   "events": [{ "eventId": "333", "eventName": "3x3x3 Cube" }],
   "organizers": [],
   "delegates": [],
