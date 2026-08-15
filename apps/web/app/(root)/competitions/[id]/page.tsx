@@ -35,6 +35,7 @@ import {
 import { eventNames } from "@/lib/constants";
 import {
   getCompetitionMainEventResults,
+  getCompetitionLogo,
   getWcaCompetitionData,
 } from "./_lib/queries";
 import { notFound } from "next/navigation";
@@ -43,6 +44,7 @@ import ReactMarkdown from "react-markdown";
 import { Map as CompetitionMap } from "./_components/map";
 import { RegistrationButton } from "./_components/registration-button";
 import { formatAverageResult, formatBestResult } from "./_lib/results";
+import { CompetitionLogo } from "@/components/competition-logo";
 
 export default async function Page({
   params,
@@ -51,7 +53,10 @@ export default async function Page({
 }) {
   const id = (await params).id;
 
-  const competitionData = await getWcaCompetitionData(id);
+  const [competitionData, logo] = await Promise.all([
+    getWcaCompetitionData(id),
+    getCompetitionLogo(id),
+  ]);
 
   if (!competitionData) {
     notFound();
@@ -95,6 +100,12 @@ export default async function Page({
         <div className="flex flex-col sm:flex-row items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-3">
+              <CompetitionLogo
+                src={logo}
+                alt={`Logo de ${competitionData.name}`}
+                size={56}
+                className="rounded-md"
+              />
               <h1 className="text-4xl font-bold text-balance">
                 {competitionData.name}
               </h1>

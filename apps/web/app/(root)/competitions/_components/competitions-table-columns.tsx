@@ -11,6 +11,7 @@ import { formatStatusName, getStatusIcon } from "../_lib/utils";
 import { ExternalLink, Trophy } from "lucide-react";
 import { WcaMonochrome } from "@workspace/icons";
 import { StateLabel } from "@/components/state-flag";
+import { CompetitionLogo } from "@/components/competition-logo";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
@@ -54,7 +55,13 @@ export function getColumns({
           enumValues[row.original.status as keyof typeof enumValues];
 
         return (
-          <div className="flex space-x-2">
+          <div className="flex items-center space-x-2">
+            <CompetitionLogo
+              src={row.original.logo}
+              alt=""
+              size={28}
+              className="rounded-sm"
+            />
             {(row.original.isChampionship as boolean) && (
               <Badge className="bg-green-600 text-white dark:bg-green-700">
                 <Trophy />

@@ -2,6 +2,7 @@ import { CompetitionModuleNav } from "@/components/competition-module-nav";
 import { DeskManager } from "@/components/desk/desk-manager";
 import {
   getCompetitionById,
+  getCompetitionLogoById,
   getCompetitorStates,
   getStates,
   getWCIFByCompetitionId,
@@ -107,6 +108,7 @@ export default async function Page({
 
   const states = await getStates();
   const competitorStates = await getCompetitorStates(competitionId);
+  const competitionLogoUrl = await getCompetitionLogoById(competitionId);
   const extendedPersons = enrichPersonsWithStates(
     wcif.persons,
     competitorStates,
@@ -119,6 +121,7 @@ export default async function Page({
         competition={competition}
         persons={extendedPersons}
         states={states}
+        competitionLogoUrl={competitionLogoUrl}
       />
     </>
   );

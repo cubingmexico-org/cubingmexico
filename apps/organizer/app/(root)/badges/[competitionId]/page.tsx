@@ -2,6 +2,7 @@ import { BadgeManager } from "@/components/badge-manager";
 import { CompetitionModuleNav } from "@/components/competition-module-nav";
 import {
   getCompetitionById,
+  getCompetitionLogoById,
   getCompetitorStates,
   getStates,
   getTeams,
@@ -110,6 +111,7 @@ export default async function Page({
   const states = await getStates();
   const teams = await getTeams();
   const competitorStates = await getCompetitorStates(competitionId);
+  const competitionLogoUrl = await getCompetitionLogoById(competitionId);
   const extendedPersons = enrichPersonsWithStates(
     wcif.persons,
     competitorStates,
@@ -124,6 +126,7 @@ export default async function Page({
         states={states}
         teams={teams}
         wcif={wcif}
+        competitionLogoUrl={competitionLogoUrl}
       />
     </>
   );

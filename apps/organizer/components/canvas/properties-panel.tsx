@@ -714,18 +714,21 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                     ? "avatar"
                     : selectedElement.imageUrl === "/team-logo.svg"
                       ? "team-logo"
-                      : selectedElement.imageUrl === "/country.svg"
-                        ? "country"
-                        : selectedElement.imageUrl === "/events.svg"
-                          ? "events"
-                          : // : selectedElement.imageUrl === "/state.png"
-                            // ? "state"
-                            "custom"
+                      : selectedElement.imageUrl === "/competition-logo.svg"
+                        ? "competition-logo"
+                        : selectedElement.imageUrl === "/country.svg"
+                          ? "country"
+                          : selectedElement.imageUrl === "/events.svg"
+                            ? "events"
+                            : // : selectedElement.imageUrl === "/state.png"
+                              // ? "state"
+                              "custom"
                 }
                 onValueChange={(value) => {
                   const urlMap = {
                     avatar: "/avatar.png",
                     "team-logo": "/team-logo.svg",
+                    "competition-logo": "/competition-logo.svg",
                     country: "/country.svg",
                     // state: "/state.png",
                     custom: "/placeholder.svg",
@@ -779,6 +782,18 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <RadioGroupItem
+                    value="competition-logo"
+                    id="competition-logo"
+                  />
+                  <Label
+                    htmlFor="competition-logo"
+                    className="text-xs font-normal cursor-pointer"
+                  >
+                    Logo de la competencia
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2">
                   <RadioGroupItem value="country" id="country" />
                   <Label
                     htmlFor="country"
@@ -818,6 +833,7 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
             </div>
             {selectedElement.imageUrl !== "/avatar.png" &&
             selectedElement.imageUrl !== "/team-logo.svg" &&
+            selectedElement.imageUrl !== "/competition-logo.svg" &&
             selectedElement.imageUrl !== "/country.svg" &&
             selectedElement.imageUrl !== "/events.svg" ? (
               // selectedElement.imageUrl !== "/state.png"

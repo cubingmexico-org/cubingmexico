@@ -1,4 +1,5 @@
 import logging
+import math
 import os
 import re
 from datetime import datetime
@@ -79,6 +80,71 @@ def get_year_from_competition_id(competition_id: str):
     match = re.search(r"([12]\d{3})$", competition_id)
     if match:
         return int(match.group(1))
+
+    return None
+
+
+def _find_markdown_link_url_end(text: str, url_start: int) -> int:
+    """Closing `)` of a Markdown link destination, allowing nested parentheses."""
+    depth = 0
+    for i in range(url_start, len(text)):
+        ch = text[i]
+        if ch == "(":
+            depth += 1
+            continue
+        if ch == ")":
+            if depth == 0:
+                return i
+            depth -= 1
+            continue
+        if ch == "\n":
+            return -1
+    return -1
+
+
+def extract_first_image_url(information) -> str | None:
+    """
+    Extract the first Markdown image URL from competition information text.
+    Mirrors apps/web/lib/competition-logo.ts (handles nested parens in filenames).
+    """
+    if information is None:
+        return None
+    if isinstance(information, float):
+        # pandas empty cells often become NaN
+        if math.isnan(information):
+            return None
+        information = str(information)
+
+    if not isinstance(information, str):
+        information = str(information)
+
+    text = information.strip()
+    if not text or text.lower() == "nan":
+        return None
+
+    marker = "!["
+    search_from = 0
+    while search_from < len(text):
+        bang_index = text.find(marker, search_from)
+        if bang_index == -1:
+            return None
+
+        after_alt_start = bang_index + len(marker)
+        alt_end = text.find("](", after_alt_start)
+        if alt_end == -1:
+            return None
+
+        url_start = alt_end + 2
+        url_end = _find_markdown_link_url_end(text, url_start)
+        if url_end == -1:
+            search_from = url_start
+            continue
+
+        url = text[url_start:url_end].strip()
+        if url:
+            return url
+
+        search_from = url_end + 1
 
     return None
 

@@ -56,6 +56,7 @@ def generate_resultados_png(
     year: str,
     city_name: str | None = None,
     state_name: str | None = None,
+    logo_url: str | None = None,
 ) -> bytes:
     """Green field with a floating cream card — distinct from rail-frame posters."""
     canvas = Image.new("RGBA", (SIZE, SIZE), GREEN)
@@ -75,7 +76,9 @@ def generate_resultados_png(
     place = format_place_line(city_name, state_name)
 
     inner_w = SIZE - CARD_MARGIN * 2 - 64
-    logo_bottom = paste_logo(canvas, max_size=(170, 170), y=card[1] + 36)
+    logo_bottom = paste_logo(
+        canvas, max_size=(170, 170), y=card[1] + 36, logo_url=logo_url
+    )
 
     badge_font = load_font(28)
     badge_cy = logo_bottom + 48

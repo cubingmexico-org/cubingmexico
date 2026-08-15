@@ -5,7 +5,10 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs";
 import "@cubing/icons";
-import { getCompetitionsManagedByUser } from "@/db/queries";
+import {
+  getCompetitionsManagedByUser,
+  getCompetitionLogosByIds,
+} from "@/db/queries";
 import { CompetitionList } from "@/components/competition-list";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -23,6 +26,10 @@ export default async function Page(): Promise<React.JSX.Element> {
   const competitions = await getCompetitionsManagedByUser({
     token: tokenData?.accessToken || "",
   });
+
+  const logoById = await getCompetitionLogosByIds(
+    competitions.map((c) => c.id),
+  );
 
   const todayStr = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Mexico_City",
@@ -83,16 +90,22 @@ export default async function Page(): Promise<React.JSX.Element> {
             <CompetitionList
               competitions={upcomingCompetitions}
               status="upcoming"
+              logoById={logoById}
             />
           </TabsContent>
           <TabsContent value="ongoing" className="mt-8">
             <CompetitionList
               competitions={onGoingCompetitions}
               status="ongoing"
+              logoById={logoById}
             />
           </TabsContent>
           <TabsContent value="past" className="mt-8">
-            <CompetitionList competitions={pastCompetitions} status="past" />
+            <CompetitionList
+              competitions={pastCompetitions}
+              status="past"
+              logoById={logoById}
+            />
           </TabsContent>
         </Tabs>
       </div>

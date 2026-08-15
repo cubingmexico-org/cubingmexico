@@ -110,6 +110,7 @@ export async function getCompetitions(input: GetCompetitionsSchema) {
       .select({
         id: competition.id,
         name: competition.name,
+        logo: competition.logo,
         state: state.name,
         startDate: competition.startDate,
         endDate: competition.endDate,

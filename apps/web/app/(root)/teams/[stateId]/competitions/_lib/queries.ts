@@ -14,6 +14,7 @@ export async function getCompetitionsPageData(stateId: string) {
     .select({
       id: competition.id,
       name: competition.name,
+      logo: competition.logo,
       cityName: competition.cityName,
       venue: competition.venue,
       startDate: competition.startDate,

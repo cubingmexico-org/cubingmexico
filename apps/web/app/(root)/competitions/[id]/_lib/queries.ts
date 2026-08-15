@@ -2,7 +2,7 @@
 
 import "server-only";
 import { db } from "@workspace/db";
-import { event, person, result, state } from "@workspace/db/schema";
+import { competition, event, person, result, state } from "@workspace/db/schema";
 import type { Competition } from "@/types/wca";
 import { and, count, eq, gt, inArray, or } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
@@ -70,6 +70,21 @@ export async function getWcaCompetitionData(
 
   cacheLife("weeks");
   return response.json();
+}
+
+/** Cubing México Neon `competitions.logo` (UploadThing / imported URL). */
+export async function getCompetitionLogo(
+  competitionId: string,
+): Promise<string | null> {
+  cacheLife("weeks");
+  cacheTag(`competition-logo-${competitionId}`);
+
+  const row = await db.query.competition.findFirst({
+    where: eq(competition.id, competitionId),
+    columns: { logo: true },
+  });
+  const logo = row?.logo?.trim();
+  return logo || null;
 }
 
 export async function getCompetitionMainEventResults(

@@ -29,6 +29,7 @@ interface ExportBadgesButtonGroupProps {
   states: State[];
   teams: Team[];
   wcif: WCIF;
+  competitionLogoUrl?: string | null;
 }
 
 export function ExportBadgesButtonGroup({
@@ -37,6 +38,7 @@ export function ExportBadgesButtonGroup({
   states,
   teams,
   wcif,
+  competitionLogoUrl,
 }: ExportBadgesButtonGroupProps) {
   const [isExporting, setIsExporting] = useState(false);
 
@@ -284,6 +286,8 @@ export function ExportBadgesButtonGroup({
 
             const isWcaAvatar = element.imageUrl === "/avatar.png";
             const isTeamLogo = element.imageUrl === "/team-logo.svg";
+            const isCompetitionLogo =
+              element.imageUrl === "/competition-logo.svg";
             const isCountryFlag = element.imageUrl === "/country.svg";
             const isEventsIcon = element.imageUrl === "/events.svg";
 
@@ -373,9 +377,13 @@ export function ExportBadgesButtonGroup({
                 ? `/api/image-proxy?url=${encodeURIComponent(currentPerson.avatar.url)}`
                 : isTeamLogo
                   ? teamImage || "/logo.svg"
-                  : isCountryFlag
-                    ? `https://flagcdn.com/h240/${currentPerson.countryIso2.toLowerCase()}.png`
-                    : element.imageUrl;
+                  : isCompetitionLogo
+                    ? competitionLogoUrl
+                      ? `/api/image-proxy?url=${encodeURIComponent(competitionLogoUrl)}`
+                      : "/logo.svg"
+                    : isCountryFlag
+                      ? `https://flagcdn.com/h240/${currentPerson.countryIso2.toLowerCase()}.png`
+                      : element.imageUrl;
 
             if (imageUrl.startsWith("http")) {
               img.crossOrigin = "anonymous";

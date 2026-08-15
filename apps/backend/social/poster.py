@@ -193,6 +193,7 @@ def _competition_details(cur, competition_id: str, *, mexico_only: bool = True) 
             c.end_date,
             c.cancelled,
             c.country_id,
+            c.logo,
             s.name AS state_name
         FROM competitions c
         LEFT JOIN states s ON s.id = c.state_id
@@ -204,6 +205,7 @@ def _competition_details(cur, competition_id: str, *, mexico_only: bool = True) 
     row = cur.fetchone()
     if not row:
         return None
+    logo = (row.logo or "").strip() or None
     return {
         "id": row.id,
         "name": row.name,
@@ -212,6 +214,7 @@ def _competition_details(cur, competition_id: str, *, mexico_only: bool = True) 
         "end_date": row.end_date,
         "cancelled": bool(row.cancelled),
         "country_id": row.country_id,
+        "logo": logo,
         "state_name": row.state_name,
     }
 
@@ -552,6 +555,7 @@ def generate_competition_resultados_png(competition_id: str) -> tuple[bytes, dic
         year=year or _year(comp),
         city_name=comp.get("city_name"),
         state_name=comp.get("state_name"),
+        logo_url=comp.get("logo"),
     )
     return png, comp
 
@@ -593,6 +597,7 @@ def post_competition_resultados(competition_id: str) -> dict:
         year=year or _year(comp),
         city_name=comp.get("city_name"),
         state_name=comp.get("state_name"),
+        logo_url=comp.get("logo"),
     )
     return _publish_image_to_platforms(
         post_type=POST_TYPE_RESULTADOS,
@@ -1034,6 +1039,7 @@ def generate_upcoming_png_for_competition(
         start_date=comp.get("start_date"),
         city_name=comp.get("city_name") or "",
         state_name=comp.get("state_name"),
+        logo_url=comp.get("logo"),
     )
     return png, comp
 
@@ -1075,6 +1081,7 @@ def post_upcoming_competition(competition_id: str) -> dict:
         start_date=comp.get("start_date"),
         city_name=comp.get("city_name") or "",
         state_name=comp.get("state_name"),
+        logo_url=comp.get("logo"),
     )
     captions = _upcoming_captions(comp)
     return _publish_image_to_platforms(

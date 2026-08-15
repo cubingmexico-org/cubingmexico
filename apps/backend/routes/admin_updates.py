@@ -11,7 +11,7 @@ from flask import Blueprint, jsonify
 from psycopg2.extras import execute_values
 
 from common import EXCLUDED_EVENTS, SINGLE_EVENTS, get_connection, log, require_cron_auth
-from utils import get_state_from_coordinates
+from utils import extract_first_image_url, get_state_from_coordinates
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -202,16 +202,18 @@ def update_full_database():
                                                 break
                                 start_date = datetime(row["year"], row["month"], row["day"])
                                 end_date = datetime(row["year"], row["end_month"], row["end_day"])
+                                logo = extract_first_image_url(row.get("information"))
                                 cur.execute(
                                     """
                                     INSERT INTO competitions
                                     (id, name, city_name, country_id, information, start_date, end_date, cancelled,
                                      venue, venue_address, venue_details, external_website, cell_name,
-                                     latitude_microdegrees, longitude_microdegrees, state_id)
+                                     latitude_microdegrees, longitude_microdegrees, state_id, logo)
                                     VALUES (%(id)s, %(name)s, %(city_name)s, %(country_id)s, %(information)s,
                                             %(start_date)s, %(end_date)s, %(cancelled)s, %(venue)s,
                                             %(venue_address)s, %(venue_details)s, %(external_website)s,
-                                            %(cell_name)s, %(latitude_microdegrees)s, %(longitude_microdegrees)s, %(state_id)s)
+                                            %(cell_name)s, %(latitude_microdegrees)s, %(longitude_microdegrees)s,
+                                            %(state_id)s, %(logo)s)
                                     ON CONFLICT DO NOTHING
                                     """,
                                     {
@@ -231,6 +233,7 @@ def update_full_database():
                                         "latitude_microdegrees": row["latitude_microdegrees"],
                                         "longitude_microdegrees": row["longitude_microdegrees"],
                                         "state_id": state_id,
+                                        "logo": logo,
                                     },
                                 )
                                 if row["country_id"] == "Mexico":
@@ -1546,6 +1549,8 @@ def update_existing_mexican_competitions():
 
                     latitude = normalize_value(row.get("latitude_microdegrees"))
                     longitude = normalize_value(row.get("longitude_microdegrees"))
+                    information = normalize_value(row.get("information"))
+                    extracted_logo = extract_first_image_url(information)
 
                     start_date = datetime(
                         int(row["year"]),
@@ -1574,7 +1579,8 @@ def update_existing_mexican_competitions():
                             external_website = %(external_website)s,
                             cell_name = %(cell_name)s,
                             latitude_microdegrees = %(latitude_microdegrees)s,
-                            longitude_microdegrees = %(longitude_microdegrees)s
+                            longitude_microdegrees = %(longitude_microdegrees)s,
+                            logo = COALESCE(logo, %(extracted_logo)s)
                         WHERE id = %(id)s AND country_id = 'Mexico'
                         """,
                         {
@@ -1582,7 +1588,7 @@ def update_existing_mexican_competitions():
                             "name": normalize_value(row.get("name")),
                             "city_name": normalize_value(row.get("city_name")),
                             "country_id": normalize_value(row.get("country_id")),
-                            "information": normalize_value(row.get("information")),
+                            "information": information,
                             "start_date": start_date,
                             "end_date": end_date,
                             "cancelled": bool(normalize_value(row.get("cancelled"))),
@@ -1592,7 +1598,8 @@ def update_existing_mexican_competitions():
                             "external_website": normalize_value(row.get("external_website")),
                             "cell_name": normalize_value(row.get("cell_name")),
                             "latitude_microdegrees": latitude,
-                            "longitude_microdegrees": longitude
+                            "longitude_microdegrees": longitude,
+                            "extracted_logo": extracted_logo,
                         },
                     )
 
