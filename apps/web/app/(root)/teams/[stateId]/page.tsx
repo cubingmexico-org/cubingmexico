@@ -152,7 +152,7 @@ export default async function Page({
   }>;
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -204,8 +204,8 @@ export default async function Page({
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-3">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           <Card>
             <CardHeader>
               <CardTitle>Acerca de</CardTitle>
@@ -325,7 +325,7 @@ export default async function Page({
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Ubicación</CardTitle>

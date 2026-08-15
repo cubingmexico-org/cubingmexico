@@ -42,13 +42,13 @@ export function TeamPageSkeleton() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="space-y-6 lg:col-span-2">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-3">
+          <div className="min-w-0 space-y-6 lg:col-span-2">
             <Skeleton className="h-40 w-full rounded-lg" />
             <Skeleton className="h-48 w-full rounded-lg" />
             <Skeleton className="h-48 w-full rounded-lg" />
           </div>
-          <Skeleton className="h-56 w-full rounded-lg" />
+          <Skeleton className="h-56 w-full min-w-0 rounded-lg" />
         </div>
       </div>
     </>

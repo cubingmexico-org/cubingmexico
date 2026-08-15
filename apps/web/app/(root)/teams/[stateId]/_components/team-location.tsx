@@ -22,7 +22,7 @@ export function TeamLocation({
   statesData,
 }: TeamLocationProps) {
   return (
-    <div className="space-y-4">
+    <div className="min-w-0 space-y-4">
       <div className="flex flex-col items-center justify-center gap-2">
         <StateFlag
           stateId={stateId}
@@ -33,7 +33,7 @@ export function TeamLocation({
         <span className="text-sm font-medium">{stateName}</span>
       </div>
 
-      <div className="h-48 overflow-hidden rounded-lg border">
+      <div className="h-48 w-full min-w-0 overflow-hidden rounded-lg border">
         {statesData ? (
           <TeamStateMap statesData={statesData} />
         ) : (
