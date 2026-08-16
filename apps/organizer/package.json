@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "next dev --port 3001",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "lint": "eslint . --max-warnings 0",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@cubing/icons": "^1.1.2",
@@ -65,6 +68,8 @@
     "@types/webfontloader": "^1.6.38",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "typescript": "^5.9.3"
+    "eslint": "^9.39.1",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

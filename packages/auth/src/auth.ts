@@ -38,7 +38,7 @@ function wcaIdFromUser(user: {
 function trustedOriginsFromEnv(): string[] {
   return (process.env.AUTH_TRUSTED_ORIGINS ?? "")
     .split(",")
-    .map((origin) => origin.trim())
+    .map((origin: string) => origin.trim())
     .filter(Boolean);
 }
 

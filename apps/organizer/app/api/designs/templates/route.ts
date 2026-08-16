@@ -18,7 +18,7 @@ export async function GET(request: Request): Promise<Response> {
     return Response.json({ error: "Invalid module" }, { status: 400 });
   }
 
-  const module = moduleParam;
+  const designModule = moduleParam;
 
   await ensureGlobalDesignTemplates();
 
@@ -31,7 +31,7 @@ export async function GET(request: Request): Promise<Response> {
   const conditions = [
     isNull(design.competitionId),
     visibility,
-    ...(module ? [eq(design.module, module)] : []),
+    ...(designModule ? [eq(design.module, designModule)] : []),
   ];
 
   const rows = await db
