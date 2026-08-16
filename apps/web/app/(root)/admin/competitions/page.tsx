@@ -15,6 +15,7 @@ import {
 } from "./_components/competitions-admin";
 import { RefreshMxCompetitionsButton } from "./_components/refresh-mx-button";
 import { ImportMissingLogosButton } from "./_components/import-missing-logos-button";
+import { ImportMissingSchedulesButton } from "./_components/import-missing-schedules-button";
 
 async function CompetitionsAdminContent({
   searchParams,
@@ -22,6 +23,7 @@ async function CompetitionsAdminContent({
   searchParams: Promise<{
     missing?: string;
     missingLogo?: string;
+    missingSchedule?: string;
     stateId?: string;
     q?: string;
   }>;
@@ -29,6 +31,7 @@ async function CompetitionsAdminContent({
   const params = await searchParams;
   const missingOnly = params.missing === "1";
   const missingLogoOnly = params.missingLogo === "1";
+  const missingScheduleOnly = params.missingSchedule === "1";
   const stateId = missingOnly ? null : (params.stateId ?? null);
   const search = params.q ?? "";
 
@@ -37,6 +40,7 @@ async function CompetitionsAdminContent({
     getMexicanCompetitions({
       missingStateOnly: missingOnly,
       missingLogoOnly,
+      missingScheduleOnly,
       stateId,
       search,
       limit: 100,
@@ -50,6 +54,7 @@ async function CompetitionsAdminContent({
           states={states}
           missingOnly={missingOnly}
           missingLogoOnly={missingLogoOnly}
+          missingScheduleOnly={missingScheduleOnly}
           stateId={stateId}
           search={search}
         />
@@ -65,6 +70,7 @@ export default function AdminCompetitionsPage({
   searchParams: Promise<{
     missing?: string;
     missingLogo?: string;
+    missingSchedule?: string;
     stateId?: string;
     q?: string;
   }>;
@@ -76,11 +82,12 @@ export default function AdminCompetitionsPage({
           <div>
             <CardTitle className="text-base">Competencias mexicanas</CardTitle>
             <CardDescription>
-              Asigna `stateId` y gestiona logos (importar URL WCA, subir o
-              borrar fondo)
+              Asigna `stateId`, gestiona logos y fechas de fin de ronda (9i2)
+              cuando ya hay resultados
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
+            <ImportMissingSchedulesButton />
             <ImportMissingLogosButton />
             <RefreshMxCompetitionsButton />
           </div>

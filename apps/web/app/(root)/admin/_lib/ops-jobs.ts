@@ -21,6 +21,12 @@ export const ADMIN_OPS_JOBS = [
       "Sincroniza metadatos y organizadores/delegados de competencias mexicanas desde el export.",
   },
   {
+    path: "/update-competition-schedules",
+    label: "Actualizar horarios de rondas",
+    description:
+      "Importa fechas de fin de ronda (WCIF) para competencias MX con resultados y sin horario.",
+  },
+  {
     path: "/update-sum-of-ranks",
     label: "Actualizar Sum of Ranks",
     description: "Recalcula SOR.",

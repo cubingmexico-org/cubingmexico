@@ -775,12 +775,14 @@ export async function getTeamMembersWithRoles(stateId: string) {
 export async function getMexicanCompetitions({
   missingStateOnly,
   missingLogoOnly,
+  missingScheduleOnly,
   stateId,
   search,
   limit = 100,
 }: {
   missingStateOnly?: boolean;
   missingLogoOnly?: boolean;
+  missingScheduleOnly?: boolean;
   stateId?: string | null;
   search?: string;
   limit?: number;
@@ -793,6 +795,18 @@ export async function getMexicanCompetitions({
 
   if (missingLogoOnly) {
     filters.push(isNull(competition.logo));
+  }
+
+  if (missingScheduleOnly) {
+    filters.push(
+      sql`EXISTS (SELECT 1 FROM results r WHERE r.competition_id = ${competition.id})`,
+    );
+    filters.push(
+      sql`NOT EXISTS (
+        SELECT 1 FROM competition_round_dates d
+        WHERE d.competition_id = ${competition.id}
+      )`,
+    );
   }
 
   if (stateId) {
@@ -820,6 +834,20 @@ export async function getMexicanCompetitions({
       stateName: state.name,
       logo: competition.logo,
       information: competition.information,
+      hasResults: sql<boolean>`EXISTS (
+        SELECT 1 FROM results r WHERE r.competition_id = ${competition.id}
+      )`,
+      hasSchedule: sql<boolean>`EXISTS (
+        SELECT 1 FROM competition_round_dates d
+        WHERE d.competition_id = ${competition.id}
+      )`,
+      scheduleSource: sql<"wcif" | "manual" | null>`(
+        SELECT d.source
+        FROM competition_round_dates d
+        WHERE d.competition_id = ${competition.id}
+        ORDER BY CASE WHEN d.source = 'manual' THEN 0 ELSE 1 END
+        LIMIT 1
+      )`,
     })
     .from(competition)
     .leftJoin(state, eq(competition.stateId, state.id))
@@ -839,5 +867,8 @@ export async function getMexicanCompetitions({
     stateName: row.stateName,
     logo: row.logo,
     hasExtractableLogo: informationHasExtractableLogo(row.information),
+    hasResults: Boolean(row.hasResults),
+    hasSchedule: Boolean(row.hasSchedule),
+    scheduleSource: row.scheduleSource,
   }));
 }

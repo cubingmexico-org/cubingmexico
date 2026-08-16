@@ -24,6 +24,7 @@ import {
 import { updateCompetitionState } from "../../_lib/actions";
 import { StateFlag } from "@/components/state-flag";
 import { CompetitionLogoCell } from "./competition-logo-cell";
+import { CompetitionScheduleCell } from "./competition-schedule-cell";
 
 type StateOption = { id: string; name: string };
 
@@ -36,18 +37,23 @@ type CompetitionRow = {
   stateName: string | null;
   logo: string | null;
   hasExtractableLogo: boolean;
+  hasResults: boolean;
+  hasSchedule: boolean;
+  scheduleSource: "wcif" | "manual" | null;
 };
 
 export function CompetitionsFilters({
   states,
   missingOnly,
   missingLogoOnly,
+  missingScheduleOnly,
   stateId,
   search,
 }: {
   states: StateOption[];
   missingOnly: boolean;
   missingLogoOnly: boolean;
+  missingScheduleOnly: boolean;
   stateId: string | null;
   search: string;
 }) {
@@ -65,7 +71,9 @@ export function CompetitionsFilters({
     ? "missing"
     : missingLogoOnly
       ? "missingLogo"
-      : "all";
+      : missingScheduleOnly
+        ? "missingSchedule"
+        : "all";
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
@@ -108,6 +116,7 @@ export function CompetitionsFilters({
               }
               params.delete("missing");
               params.delete("missingLogo");
+              params.delete("missingSchedule");
             });
           }}
         >
@@ -135,11 +144,14 @@ export function CompetitionsFilters({
             updateParams((params) => {
               params.delete("missing");
               params.delete("missingLogo");
+              params.delete("missingSchedule");
               if (value === "missing") {
                 params.set("missing", "1");
                 params.delete("stateId");
               } else if (value === "missingLogo") {
                 params.set("missingLogo", "1");
+              } else if (value === "missingSchedule") {
+                params.set("missingSchedule", "1");
               }
             });
           }}
@@ -151,6 +163,7 @@ export function CompetitionsFilters({
             <SelectItem value="all">Todas las MX</SelectItem>
             <SelectItem value="missing">Sin estado</SelectItem>
             <SelectItem value="missingLogo">Sin logo</SelectItem>
+            <SelectItem value="missingSchedule">Sin horario</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -202,6 +215,7 @@ export function CompetitionsTable({
             <TableHead>Competencia</TableHead>
             <TableHead>Ciudad</TableHead>
             <TableHead>Fecha</TableHead>
+            <TableHead className="w-28">Horario</TableHead>
             <TableHead className="w-50">Estado</TableHead>
           </TableRow>
         </TableHeader>
@@ -227,6 +241,15 @@ export function CompetitionsTable({
               <TableCell>{comp.cityName}</TableCell>
               <TableCell className="whitespace-nowrap text-sm">
                 {new Date(comp.startDate).toLocaleDateString("es-MX")}
+              </TableCell>
+              <TableCell>
+                <CompetitionScheduleCell
+                  competitionId={comp.id}
+                  competitionName={comp.name}
+                  hasResults={comp.hasResults}
+                  hasSchedule={comp.hasSchedule}
+                  scheduleSource={comp.scheduleSource}
+                />
               </TableCell>
               <TableCell>
                 <Select

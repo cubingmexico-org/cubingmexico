@@ -6,6 +6,7 @@ Código relevante:
 
 - Web: [`apps/web/lib/update-state-records.ts`](../apps/web/lib/update-state-records.ts)
 - Backend (recompute global / cron): [`apps/backend/routes/admin_updates.py`](../apps/backend/routes/admin_updates.py) (`update_state_records`)
+- Fechas de ronda (WCIF / manual): tabla `competition_round_dates`; extractor [`apps/web/lib/competition-round-dates.ts`](../apps/web/lib/competition-round-dates.ts)
 - Historial (lectura): [`apps/web/app/(root)/records/_lib/queries.ts`](<../apps/web/app/(root)/records/_lib/queries.ts>) (`getRecordHistory`)
 
 ---
@@ -52,13 +53,13 @@ Implementación de referencia en la WCA: [`lib/check_regional_records.rb`](https
 1. Se toman las personas con `persons.state_id` = estado actual.
 2. Se limpian sus marcas `state_*_record`.
 3. Por cada evento (salvo eventos excluidos), se cargan singles y averages válidos, ordenados por:
-   - `competitions.start_date`
+   - fecha efectiva 9i2: `COALESCE(competition_round_dates.end_date, competitions.start_date)`
    - `competitions.id`
    - rango del tipo de ronda
    - tiempo (mejor primero)
    - `results.id`
 4. Se recorre en orden cronológico con un “mejor hasta ahora” (`bestSoFar`).
-5. Los resultados se agrupan por **día = `competitions.start_date`** (solo fecha).
+5. Los resultados se agrupan por **día = esa fecha efectiva** (solo fecha).
 6. En cada día, entre los que igualan o mejoran `bestSoFar`, solo se etiquetan como `SR` los que empatan el **mejor valor de ese día**, y solo si no tienen ya `NR`/`NAR`/`WR`.
 7. `bestSoFar` pasa a ese mejor del día (aunque todos hayan sido degradados por marca regional).
 
@@ -67,50 +68,42 @@ Propiedades importantes:
 - La atribución es **retroactiva al estado actual** del competidor (no al estado histórico en la fecha de la competencia).
 - Los empates en el mejor tiempo del día (mismo valor) pueden recibir todos `SR`, salvo los que ya son regionales.
 
+### Fechas de ronda (`competition_round_dates`)
+
+Para igualar 9i2 se persiste, por competencia / evento / `round_type_id`, la **fecha calendario local de fin de esa ronda**:
+
+- **Automático (cron / admin):** solo si la competencia MX **ya tiene resultados** y aún no tiene filas de horario. Se lee el WCIF público, se extraen actividades de ronda (`startTime`/`endTime` + timezone del venue) y se mapea a `round_type_id`. Una vez importado, el cron **no vuelve a sobrescribir** esa competencia (el horario post-resultados se considera estable). Tampoco pisa filas con `source = 'manual'`.
+- **Manual (admin):** para competencias sin WCIF disponible; se capturan fechas por las rondas presentes en `results`.
+- **Fallback:** si no hay fila para esa ronda, se usa `competitions.start_date` (comportamiento anterior).
+
 ---
 
 ## Qué ya alineamos con la WCA
 
-| Comportamiento                         | WCA                          | Cubing México (SR)                     |
-| -------------------------------------- | ---------------------------- | -------------------------------------- |
-| Solo la marca más alta                 | WR / NAR / NR en una columna | No poner SR si ya hay NR/NAR/WR        |
-| Empate con el récord vigente (`<=`)    | Sí                           | Sí                                     |
-| Mismo día calendario → solo el mejor   | 9i2                          | Sí (con la clave de fecha que tenemos) |
-| Mejor histórico corriendo en el tiempo | Sí                           | Sí                                     |
+| Comportamiento                         | WCA                          | Cubing México (SR)                                            |
+| -------------------------------------- | ---------------------------- | ------------------------------------------------------------- |
+| Solo la marca más alta                 | WR / NAR / NR en una columna | No poner SR si ya hay NR/NAR/WR                               |
+| Empate con el récord vigente (`<=`)    | Sí                           | Sí                                                            |
+| Mismo día calendario → solo el mejor   | 9i2                          | Sí                                                            |
+| Día = último día local de la ronda     | 9i2                          | Sí, cuando hay `competition_round_dates`; si no, `start_date` |
+| Mejor histórico corriendo en el tiempo | Sí                           | Sí                                                            |
 
 ---
 
 ## Qué nos falta para el comportamiento completo WCA
 
-### 1. Fecha real de cada ronda (lo principal)
+### 1. Cobertura de horarios
 
-La WCA fecha cada ronda a su **último día calendario**. Nosotros usamos **`competitions.start_date`**.
-
-Consecuencia en una competencia viernes–domingo:
-
-- WCA: primera ronda sábado y final domingo → dos días distintos → pueden haber dos SR.
-- Nosotros: todo el fin de semana cae bajo el `start_date` (p. ej. viernes) → solo sobrevive el mejor de ese bucket.
-
-Para igualar 9i2 hace falta saber **cuándo terminó cada ronda** (hora local). Eso sale del **horario / WCIF** de la competencia (actividades con `startTime`/`endTime` y zona horaria), no solo de `start_date`/`end_date` de la competencia. Hoy no persistimos ese dato a nivel ronda en nuestra base.
+Sin fila en `competition_round_dates` (comps viejas sin WCIF, o pendientes de importar/capturar), el día sigue siendo `start_date`. El panel de admin (filtro “Sin horario”) y el job `/update-competition-schedules` sirven para ir cerrando ese hueco.
 
 ### 2. Competencias con fechas solapadas
 
 La WCA, en `CheckRegionalRecords.confirm_records`, no “confirma” el récord de una competencia hasta que la siguiente empieza **después** del `end_date` de la anterior (`next_start > prev_end`). Así evita inconsistencias cuando dos competencias se solapan el mismo fin de semana.
 
-Nosotros solo colapsamos por `start_date` compartido; no implementamos esa cola de competencias pendientes con rangos `start`–`end`.
-
-### 3. Datos de horario
-
-Sin horarios (o al menos una fecha de fin por ronda), cualquier aproximación será incompleta:
-
-- `start_date` de la competencia (actual)
-- `end_date` de la competencia
-- solapamiento estilo WCA a nivel competencia
-
-Ninguna de esas tres opciones reproduce “último día de la ronda” en competencias de varios días.
+Nosotros colapsamos por la fecha efectiva 9i2 compartida; no implementamos esa cola de competencias pendientes con rangos `start`–`end`.
 
 ---
 
 ## Resumen
 
-El SR de Cubing México sigue la **jerarquía de marcas** de la WCA y la idea de **9i2** (mismo día → solo el mejor), usando como día el inicio de la competencia. Para igualar del todo el criterio WCA haría falta **fechas por ronda** derivadas del schedule/WCIF, y opcionalmente la lógica de **competencias solapadas** del checker oficial.
+El SR de Cubing México sigue la **jerarquía de marcas** de la WCA y **9i2** (mismo día → solo el mejor), usando como día el **fin local de la ronda** cuando está en `competition_round_dates`, o `start_date` como respaldo. Queda pendiente la lógica de **competencias solapadas** del checker oficial y completar horarios faltantes (sobre todo comps sin WCIF).
