@@ -89,13 +89,17 @@ RECORD_MARKERS_SQL = """
         e.name AS event_name,
         s.name AS state_name,
         c.name AS competition_name,
-        c.start_date AS competition_start_date,
+        COALESCE(crd.end_date, c.start_date::date) AS competition_start_date,
         c.city_name AS competition_city_name
     FROM results r
     JOIN persons p ON p.wca_id = r.person_id
     JOIN events e ON e.id = r.event_id
     LEFT JOIN states s ON s.id = p.state_id
     LEFT JOIN competitions c ON c.id = r.competition_id
+    LEFT JOIN competition_round_dates crd
+      ON crd.competition_id = r.competition_id
+     AND crd.event_id = r.event_id
+     AND crd.round_type_id = r.round_type_id
     WHERE r.regional_single_record IN ('NR', 'NAR', 'WR')
        OR r.regional_average_record IN ('NR', 'NAR', 'WR')
 """

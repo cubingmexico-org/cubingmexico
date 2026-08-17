@@ -7,8 +7,9 @@ type HomeRecentRecordsProps = {
   records: RecentNationalRecord[];
 };
 
-function formatCircaDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("es-MX", {
+function formatCircaDate(dateKey: string): string {
+  const key = dateKey.slice(0, 10);
+  return new Date(`${key}T12:00:00.000Z`).toLocaleDateString("es-MX", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -102,10 +103,10 @@ export function HomeRecentRecords({ records }: HomeRecentRecordsProps) {
                       )}
                     </span>
                     <time
-                      dateTime={record.competitionStartDate}
+                      dateTime={record.recordDate}
                       className="text-sm text-muted-foreground"
                     >
-                      {formatCircaDate(record.competitionStartDate)}
+                      {formatCircaDate(record.recordDate)}
                     </time>
                   </div>
                 </li>

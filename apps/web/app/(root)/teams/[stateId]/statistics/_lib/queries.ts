@@ -4,6 +4,7 @@ import "server-only";
 import { db } from "@workspace/db";
 import {
   competition,
+  competitionRoundDate,
   event,
   person,
   result,
@@ -12,6 +13,7 @@ import {
 import { and, eq, inArray, asc } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { roundRank } from "@/lib/utils";
+import { recordDateSql, toDateKey } from "@/lib/record-date";
 import { getTeamStatisticsData } from "../../_lib/queries";
 
 export async function getStatisticsPageData(stateId: string) {
@@ -115,7 +117,7 @@ export async function getTeamCompetitionResults(
       personName: person.name,
       competitionId: competition.id,
       competitionName: competition.name,
-      competitionStartDate: competition.startDate,
+      competitionStartDate: recordDateSql,
       roundTypeId: result.roundTypeId,
       position: result.pos,
       best: result.best,
@@ -126,8 +128,16 @@ export async function getTeamCompetitionResults(
     .innerJoin(event, eq(result.eventId, event.id))
     .innerJoin(competition, eq(result.competitionId, competition.id))
     .innerJoin(person, eq(result.personId, person.wcaId))
+    .leftJoin(
+      competitionRoundDate,
+      and(
+        eq(competitionRoundDate.competitionId, result.competitionId),
+        eq(competitionRoundDate.eventId, result.eventId),
+        eq(competitionRoundDate.roundTypeId, result.roundTypeId),
+      ),
+    )
     .where(and(eq(person.stateId, stateId), eq(result.eventId, eventId)))
-    .orderBy(asc(competition.startDate), asc(result.pos), asc(result.best));
+    .orderBy(asc(recordDateSql), asc(result.pos), asc(result.best));
 
   if (rows.length === 0) {
     return null;
@@ -139,14 +149,15 @@ export async function getTeamCompetitionResults(
 
   const results: TeamCompetitionResultRow[] = rows.map((row) => ({
     ...row,
-    competitionStartDate: row.competitionStartDate.toISOString(),
+    competitionStartDate: toDateKey(row.competitionStartDate),
     solves: attemptsByResultId.get(row.resultId) ?? [],
     isStateRecordSingle: false,
   }));
 
   const chronological = results.slice().sort((a, b) => {
-    const dateDelta =
-      Date.parse(a.competitionStartDate) - Date.parse(b.competitionStartDate);
+    const dateDelta = a.competitionStartDate.localeCompare(
+      b.competitionStartDate,
+    );
     if (dateDelta !== 0) return dateDelta;
 
     const roundDelta = roundRank(b.roundTypeId) - roundRank(a.roundTypeId);

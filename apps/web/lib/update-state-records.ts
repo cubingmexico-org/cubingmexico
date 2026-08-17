@@ -20,6 +20,7 @@ import {
   state,
 } from "@workspace/db/schema";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { recordDateSql, toDateKey } from "@/lib/record-date";
 
 const SR = "SR";
 const REGIONAL_RECORD_MARKERS = ["NR", "NAR", "WR"] as const;
@@ -94,16 +95,12 @@ export async function updateStateRecords(stateId: string) {
   const singleSrIds: string[] = [];
   const averageSrIds: string[] = [];
 
-  const recordDateExpr = sql<
-    Date | string
-  >`COALESCE(${competitionRoundDate.endDate}, ${competition.startDate})`;
-
   for (const e of events) {
     const singleRows = await db
       .select({
         id: result.id,
         value: result.best,
-        recordDate: recordDateExpr,
+        recordDate: recordDateSql,
         regionalRecord: result.regionalSingleRecord,
       })
       .from(result)
@@ -125,7 +122,7 @@ export async function updateStateRecords(stateId: string) {
         ),
       )
       .orderBy(
-        asc(recordDateExpr),
+        asc(recordDateSql),
         asc(competition.id),
         asc(sql`COALESCE(${roundType.rank}, 0)`),
         asc(result.best),
@@ -138,7 +135,7 @@ export async function updateStateRecords(stateId: string) {
       .select({
         id: result.id,
         value: result.average,
-        recordDate: recordDateExpr,
+        recordDate: recordDateSql,
         regionalRecord: result.regionalAverageRecord,
       })
       .from(result)
@@ -160,7 +157,7 @@ export async function updateStateRecords(stateId: string) {
         ),
       )
       .orderBy(
-        asc(recordDateExpr),
+        asc(recordDateSql),
         asc(competition.id),
         asc(sql`COALESCE(${roundType.rank}, 0)`),
         asc(result.average),
@@ -213,13 +210,6 @@ export async function updateStateRecords(stateId: string) {
     singleCount: singleSrIds.length,
     averageCount: averageSrIds.length,
   };
-}
-
-function toDateKey(recordDate: Date | string): string {
-  if (recordDate instanceof Date) {
-    return recordDate.toISOString().slice(0, 10);
-  }
-  return String(recordDate).slice(0, 10);
 }
 
 function isRegionalRecord(marker: string | null | undefined): boolean {

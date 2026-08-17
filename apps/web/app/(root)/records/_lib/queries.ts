@@ -8,11 +8,13 @@ import {
   person,
   result,
   competition,
+  competitionRoundDate,
   resultAttempts,
 } from "@workspace/db/schema";
 import { and, desc, eq, gt, notInArray, sql, inArray, or } from "drizzle-orm";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
 import { competitionAsOfCondition } from "@/lib/as-of-date";
+import { recordDateSql, toDateKey } from "@/lib/record-date";
 import { GetRecordsSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -44,7 +46,8 @@ export type RecordHistoryEntry = {
   personState: string | null;
   competitionId: string;
   competitionName: string;
-  competitionStartDate: string;
+  /** Calendar day used for 9i2 (round end date, else competition start date). YYYY-MM-DD */
+  recordDate: string;
   roundTypeId: string | null;
   best: number;
   average: number;
@@ -285,7 +288,7 @@ export async function getRecordHistory(
       personState: state.name,
       competitionId: competition.id,
       competitionName: competition.name,
-      competitionStartDate: competition.startDate,
+      recordDate: recordDateSql,
       roundTypeId: result.roundTypeId,
       best: result.best,
       average: result.average,
@@ -299,8 +302,16 @@ export async function getRecordHistory(
     .innerJoin(event, eq(result.eventId, event.id))
     .innerJoin(competition, eq(result.competitionId, competition.id))
     .leftJoin(state, eq(person.stateId, state.id))
+    .leftJoin(
+      competitionRoundDate,
+      and(
+        eq(competitionRoundDate.competitionId, result.competitionId),
+        eq(competitionRoundDate.eventId, result.eventId),
+        eq(competitionRoundDate.roundTypeId, result.roundTypeId),
+      ),
+    )
     .where(where)
-    .orderBy(desc(competition.startDate), event.rank);
+    .orderBy(desc(recordDateSql), event.rank);
 
   if (rows.length === 0) return [];
 
@@ -346,7 +357,7 @@ export async function getRecordHistory(
       personState: row.personState,
       competitionId: row.competitionId,
       competitionName: row.competitionName,
-      competitionStartDate: row.competitionStartDate.toISOString(),
+      recordDate: toDateKey(row.recordDate),
       roundTypeId: row.roundTypeId,
       best: row.best,
       average: row.average,
@@ -366,7 +377,7 @@ export type RecentNationalRecord = {
   personState: string | null;
   competitionId: string;
   competitionName: string;
-  competitionStartDate: string;
+  recordDate: string;
   type: "single" | "average";
   value: number;
 };
@@ -387,7 +398,7 @@ export async function getRecentNationalRecords(
       personState: state.name,
       competitionId: competition.id,
       competitionName: competition.name,
-      competitionStartDate: competition.startDate,
+      recordDate: recordDateSql,
       best: result.best,
       average: result.average,
       regionalSingleRecord: result.regionalSingleRecord,
@@ -398,6 +409,14 @@ export async function getRecentNationalRecords(
     .innerJoin(event, eq(result.eventId, event.id))
     .innerJoin(competition, eq(result.competitionId, competition.id))
     .leftJoin(state, eq(person.stateId, state.id))
+    .leftJoin(
+      competitionRoundDate,
+      and(
+        eq(competitionRoundDate.competitionId, result.competitionId),
+        eq(competitionRoundDate.eventId, result.eventId),
+        eq(competitionRoundDate.roundTypeId, result.roundTypeId),
+      ),
+    )
     .where(
       and(
         or(
@@ -407,7 +426,7 @@ export async function getRecentNationalRecords(
         notInArray(result.eventId, EXCLUDED_EVENTS),
       ),
     )
-    .orderBy(desc(competition.startDate), event.rank)
+    .orderBy(desc(recordDateSql), event.rank)
     .limit(limit * 2);
 
   const recent: RecentNationalRecord[] = [];
@@ -422,7 +441,7 @@ export async function getRecentNationalRecords(
       personState: row.personState,
       competitionId: row.competitionId,
       competitionName: row.competitionName,
-      competitionStartDate: row.competitionStartDate.toISOString(),
+      recordDate: toDateKey(row.recordDate),
     };
 
     if (row.regionalSingleRecord === "NR" && row.best > 0) {
