@@ -51,7 +51,7 @@ export const ADMIN_OPS_JOBS = [
     path: "/post-weekly-digest",
     label: "Publicar resumen semanal",
     description:
-      "Publica el digest SEMANA de la semana ISO actual (México), con recap W−2 + llegadas tardías (idempotente).",
+      "Publica el digest SEMANA de la semana ISO actual (México), con recap W−2 + llegadas tardías (idempotente). Debe correr después de actualizar state records para incluir SR.",
   },
   {
     path: "/post-streaks-monthly",

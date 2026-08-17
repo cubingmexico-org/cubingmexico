@@ -1146,16 +1146,12 @@ def update_full_database():
                         log.info("Finished processing all chunks for %s.", file_name)
 
         try:
-            from social.poster import (
-                post_summary_unlock_if_due,
-                post_weekly_digest_if_due,
-            )
+            from social.poster import post_summary_unlock_if_due
 
             post_summary_unlock_if_due()
-            post_weekly_digest_if_due()
         except Exception as e:
             log.error(
-                "Social SUMMARY_UNLOCK/WEEKLY_DIGEST posting failed "
+                "Social SUMMARY_UNLOCK posting failed "
                 "(database import succeeded): %s",
                 e,
             )
@@ -2178,7 +2174,11 @@ def post_summary_unlock_route():
 @admin_bp.route("/post-weekly-digest", methods=["POST"])
 @require_cron_auth
 def post_weekly_digest_route():
-    """Publish weekly digest for the current Mexico City ISO week if due."""
+    """Publish weekly digest for the current Mexico City ISO week if due.
+
+    SR stats require `/update-state-records` to have run after the latest
+    results import; `/update-all` posts SEMANA in that order automatically.
+    """
     try:
         from social.poster import post_weekly_digest_if_due
 
@@ -2291,12 +2291,17 @@ def update_all():
                 )
 
         try:
-            from social.poster import post_streaks_monthly_if_due
+            from social.poster import (
+                post_streaks_monthly_if_due,
+                post_weekly_digest_if_due,
+            )
 
+            post_weekly_digest_if_due()
             post_streaks_monthly_if_due()
         except Exception as e:
             log.error(
-                "Social STREAKS_MONTHLY posting failed (update-all succeeded): %s",
+                "Social WEEKLY_DIGEST/STREAKS_MONTHLY posting failed "
+                "(update-all succeeded): %s",
                 e,
             )
 

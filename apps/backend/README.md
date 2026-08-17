@@ -99,8 +99,9 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-sum-of-ranks` — Update sum of ranks
   - `POST /update-kinch-ranks` — Update Kinch ranks
   - `POST /update-streak-ranks` — Update personal-record streak ranks
-  - `POST /update-all` — Run full database import plus all derived rank updates
+  - `POST /update-all` — Run full database import plus all derived rank updates; then publish SEMANA (after state records) and RACHAS if due
   - `POST /post-summary-unlock` — If Dec 20+ UTC, publish the annual summary unlock graphic (idempotent; respects `SOCIAL_POSTS_ENABLED`)
+  - `POST /post-weekly-digest` — Publish the current Mexico City ISO-week SEMANA digest (idempotent; run after `/update-state-records`)
 
 - **Social media (typed posts)**
   - `GET /social/media/<token>.jpg` — Short-lived public JPEG URL used by Instagram Content Publishing (unguessable token, ~10 min TTL; stored in Postgres so any Cloud Run replica can serve it)
@@ -170,7 +171,7 @@ When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish four graphic ty
 | **PRÓXIMAS**   | Newly inserted Mexican competition with `start_date > now` and not cancelled | `(upcoming, competition_id, platform)`            |
 | **RESUMEN**    | Current calendar year summaries unlocked (Dec 20 UTC onward)                 | `(summary_unlock, {year}, platform)`              |
 
-`POST /post-summary-unlock` runs the same Dec 20 due-check without a WCA import (useful for Cloud Scheduler on Dec 20). Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
+`/update-all` also publishes **SEMANA** (weekly digest) after state records have been recomputed, so SR totals appear on the carousel. `/update-database` does not post SEMANA on its own (the WCA import wipes `state_*_record` flags). `POST /post-weekly-digest` is the manual/retry job; run it after `/update-state-records`. `POST /post-summary-unlock` runs the same Dec 20 due-check without a WCA import (useful for Cloud Scheduler on Dec 20). Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
 
 ### Meta setup (before enabling)
 
