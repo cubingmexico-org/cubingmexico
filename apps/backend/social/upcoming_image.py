@@ -21,6 +21,7 @@ from social.image_common import (
     load_font,
     paste_logo,
     text_height,
+    text_width,
 )
 
 TOP_BAR = 96
@@ -65,6 +66,33 @@ def format_competition_date(start: date | datetime | None) -> str:
     return f"{start.day} de {_MONTHS_ES[start.month - 1]} de {start.year}"
 
 
+def format_competition_date_range(
+    start: date | datetime | None,
+    end: date | datetime | None = None,
+) -> str:
+    start_d = _as_date(start)
+    if start_d is None:
+        return ""
+    end_d = _as_date(end)
+    if end_d is None or end_d <= start_d:
+        return format_competition_date(start_d)
+    start_month = _MONTHS_ES[start_d.month - 1]
+    end_month = _MONTHS_ES[end_d.month - 1]
+    if start_d.year == end_d.year and start_d.month == end_d.month:
+        return (
+            f"del {start_d.day} al {end_d.day} de {start_month} de {start_d.year}"
+        )
+    if start_d.year == end_d.year:
+        return (
+            f"del {start_d.day} de {start_month} "
+            f"al {end_d.day} de {end_month} de {start_d.year}"
+        )
+    return (
+        f"del {start_d.day} de {start_month} de {start_d.year} "
+        f"al {end_d.day} de {end_month} de {end_d.year}"
+    )
+
+
 def format_competition_datetime(value: date | datetime | None) -> str:
     """Date (and time when not midnight) in Spanish for registration windows."""
     if value is None:
@@ -85,6 +113,41 @@ def _as_date(value: date | datetime | None) -> date | None:
     return value
 
 
+DAY_MAX_WIDTH = SIZE - 160
+
+
+def _day_font_for(label: str):
+    preferred = 124 if "–" not in label else 96
+    for size in range(preferred, 47, -4):
+        font = load_font(size)
+        if text_width(label, font) <= DAY_MAX_WIDTH:
+            return font
+    return load_font(48)
+
+
+def _poster_date_labels(
+    start: date, end: date | None
+) -> tuple[str, str, str]:
+    if end is None or end <= start:
+        return (
+            str(start.day),
+            _MONTHS_ES_SHORT[start.month - 1],
+            str(start.year),
+        )
+    day_label = f"{start.day}–{end.day}"
+    if start.year == end.year and start.month == end.month:
+        month_label = _MONTHS_ES_SHORT[start.month - 1]
+        year_label = str(start.year)
+    else:
+        month_label = (
+            f"{_MONTHS_ES_SHORT[start.month - 1]}–{_MONTHS_ES_SHORT[end.month - 1]}"
+        )
+        year_label = (
+            str(start.year) if start.year == end.year else f"{start.year}–{end.year}"
+        )
+    return day_label, month_label, year_label
+
+
 def generate_upcoming_png(
     *,
     competition_name: str,
@@ -92,6 +155,7 @@ def generate_upcoming_png(
     city_name: str,
     state_name: str | None = None,
     logo_url: str | None = None,
+    end_date: date | datetime | None = None,
 ) -> bytes:
     """Ticket-style cream poster: red header band + green footer (no side rail)."""
     canvas = Image.new("RGBA", (SIZE, SIZE), CREAM)
@@ -152,19 +216,21 @@ def generate_upcoming_png(
         fill=RED,
     )
 
-    d = _as_date(start_date)
+    start = _as_date(start_date)
+    end = _as_date(end_date)
     date_block_top = rule_y + 32
-    if d is not None:
-        day_font = load_font(124)
+    if start is not None:
+        day_label, month_label, year_label = _poster_date_labels(start, end)
+        day_font = _day_font_for(day_label)
         month_font = load_font(36)
         year_font = load_font(30)
 
-        center_text(draw, str(d.day), day_font, date_block_top, GREEN)
+        center_text(draw, day_label, day_font, date_block_top, GREEN)
         meta_y = date_block_top + text_height("Ay", day_font) + 6
-        center_text(draw, _MONTHS_ES_SHORT[d.month - 1], month_font, meta_y, RED)
+        center_text(draw, month_label, month_font, meta_y, RED)
         center_text(
             draw,
-            str(d.year),
+            year_label,
             year_font,
             meta_y + text_height("Ay", month_font) + 8,
             BLACK,

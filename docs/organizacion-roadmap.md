@@ -233,6 +233,6 @@ Organización (shell)
 ## Related docs
 
 - [`web-hosting-constraints.md`](./web-hosting-constraints.md) — Vercel free-tier limits for `apps/web`
-- [`registros-estatales.md`](./registros-estatales.md) — state records; notes WCIF schedule for round end times (web/backend, not Organización)
+- [`registros-estatales.md`](./registros-estatales.md) — state records; round end dates via `competition_round_dates` (WCIF/manual) for 9i2 (web/backend, not Organización)
 - [Groupifier](https://github.com/jonatanklosko/groupifier) — task/group management + printables inspiration
 - [Delegate Dashboard](https://github.com/coder13/delegateDashboard) — round/assignment UX + WCIF edit inspiration

@@ -5,6 +5,7 @@ import {
   competitionEvent,
   competitionOrganizer,
   competitionDelegate,
+  competitionRoundDate,
   result,
   state,
   person,
@@ -24,8 +25,23 @@ export const competitionRelations = relations(competition, ({ many, one }) => ({
   organizers: many(competitionOrganizer),
   delegates: many(competitionDelegate),
   results: many(result),
+  roundDates: many(competitionRoundDate),
   state: one(state, { fields: [competition.stateId], references: [state.id] }),
 }));
+
+export const competitionRoundDateRelations = relations(
+  competitionRoundDate,
+  ({ one }) => ({
+    competition: one(competition, {
+      fields: [competitionRoundDate.competitionId],
+      references: [competition.id],
+    }),
+    event: one(event, {
+      fields: [competitionRoundDate.eventId],
+      references: [event.id],
+    }),
+  }),
+);
 
 export const personRelations = relations(person, ({ many, one }) => ({
   results: many(result),

@@ -152,7 +152,10 @@ pnpm services:up
 | `pnpm dev`                     | All apps in development mode                     |
 | `pnpm build`                   | Build all apps and packages                      |
 | `pnpm lint`                    | Lint all apps and packages                       |
+| `pnpm check-types`             | Typecheck apps and shared packages               |
+| `pnpm test`                    | Run unit tests (web + organizer)                 |
 | `pnpm format`                  | Format with Prettier                             |
+| `pnpm clean`                   | Remove Turbo cache, build outputs, node_modules  |
 | `pnpm --filter web db:migrate` | Apply Drizzle migrations                         |
 | `pnpm --filter web db:seed`    | Seed Mexican states                              |
 | `pnpm --filter web db:studio`  | Open Drizzle Studio                              |
@@ -167,7 +170,7 @@ pnpm services:up
 - **Styling:** Tailwind CSS
 - **Database:** PostgreSQL + Drizzle ORM (`@workspace/db`)
 - **Backend:** Flask (WCA import and rankings)
-- **Authentication:** Better Auth (organizer), NextAuth (web)
+- **Authentication:** Better Auth via `@workspace/auth` (web + organizer)
 
 ## Working with UI Components
 

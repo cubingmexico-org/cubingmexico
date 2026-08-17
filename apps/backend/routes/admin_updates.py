@@ -11,7 +11,11 @@ from flask import Blueprint, jsonify
 from psycopg2.extras import execute_values
 
 from common import EXCLUDED_EVENTS, SINGLE_EVENTS, get_connection, log, require_cron_auth
-from utils import extract_first_image_url, get_state_from_coordinates
+from utils import (
+    extract_first_image_url,
+    extract_round_end_dates_from_wcif,
+    get_state_from_coordinates,
+)
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -942,6 +946,17 @@ def update_full_database():
                                     e,
                                 )
 
+                        try:
+                            log.info("Importing WCIF round dates for competitions with new results")
+                            schedule_body = run_update_competition_schedules()
+                            log.info("Competition schedules update finished: %s", schedule_body)
+                        except Exception as e:
+                            log.error(
+                                "Competition schedules update failed "
+                                "(database import succeeded): %s",
+                                e,
+                            )
+
                 elif file_name == "WCA_export_result_attempts.tsv":
                     if not results_updated:
                         log.info("Results table update was skipped. Skipping result attempts as well.")
@@ -1131,16 +1146,12 @@ def update_full_database():
                         log.info("Finished processing all chunks for %s.", file_name)
 
         try:
-            from social.poster import (
-                post_summary_unlock_if_due,
-                post_weekly_digest_if_due,
-            )
+            from social.poster import post_summary_unlock_if_due
 
             post_summary_unlock_if_due()
-            post_weekly_digest_if_due()
         except Exception as e:
             log.error(
-                "Social SUMMARY_UNLOCK/WEEKLY_DIGEST posting failed "
+                "Social SUMMARY_UNLOCK posting failed "
                 "(database import succeeded): %s",
                 e,
             )
@@ -1287,10 +1298,10 @@ def update_state_ranks():
 REGIONAL_RECORD_MARKERS = frozenset({"NR", "NAR", "WR"})
 
 
-def _to_date_key(start_date):
-    if hasattr(start_date, "isoformat"):
-        return start_date.isoformat()[:10]
-    return str(start_date)[:10]
+def _to_date_key(record_date):
+    if hasattr(record_date, "isoformat"):
+        return record_date.isoformat()[:10]
+    return str(record_date)[:10]
 
 
 def _is_regional_record(marker):
@@ -1302,7 +1313,8 @@ def _is_regional_record(marker):
 def _mark_state_records(rows, out_ids):
     """Tag SR for chronological improvements.
 
-    Same competition start_date → only the best improvement that day is tagged.
+    Same calendar day (round end date, else competition start_date) → only the
+    best improvement that day is tagged (WCA 9i2).
     Results that already have NR/NAR/WR are not tagged SR, but still advance best_so_far.
     """
     best_so_far = None
@@ -1338,7 +1350,7 @@ def _mark_state_records(rows, out_ids):
         if row.value <= 0:
             continue
 
-        key = _to_date_key(row.start_date)
+        key = _to_date_key(row.record_date)
 
         if day_key is not None and key != day_key:
             flush_day()
@@ -1398,15 +1410,19 @@ def update_state_records():
                             """
                             SELECT r.id,
                                    r.best AS value,
-                                   c.start_date,
+                                   COALESCE(crd.end_date, c.start_date) AS record_date,
                                    r.regional_single_record AS regional_record
                             FROM results r
                             INNER JOIN competitions c ON r.competition_id = c.id
                             LEFT JOIN round_types rt ON r.round_type_id = rt.id
+                            LEFT JOIN competition_round_dates crd
+                              ON crd.competition_id = r.competition_id
+                             AND crd.event_id = r.event_id
+                             AND crd.round_type_id = r.round_type_id
                             WHERE r.event_id = %s
                               AND r.person_id = ANY(%s)
                               AND r.best > 0
-                            ORDER BY c.start_date ASC,
+                            ORDER BY COALESCE(crd.end_date, c.start_date) ASC,
                                      c.id ASC,
                                      COALESCE(rt.rank, 0) ASC,
                                      r.best ASC,
@@ -1420,15 +1436,19 @@ def update_state_records():
                             """
                             SELECT r.id,
                                    r.average AS value,
-                                   c.start_date,
+                                   COALESCE(crd.end_date, c.start_date) AS record_date,
                                    r.regional_average_record AS regional_record
                             FROM results r
                             INNER JOIN competitions c ON r.competition_id = c.id
                             LEFT JOIN round_types rt ON r.round_type_id = rt.id
+                            LEFT JOIN competition_round_dates crd
+                              ON crd.competition_id = r.competition_id
+                             AND crd.event_id = r.event_id
+                             AND crd.round_type_id = r.round_type_id
                             WHERE r.event_id = %s
                               AND r.person_id = ANY(%s)
                               AND r.average > 0
-                            ORDER BY c.start_date ASC,
+                            ORDER BY COALESCE(crd.end_date, c.start_date) ASC,
                                      c.id ASC,
                                      COALESCE(rt.rank, 0) ASC,
                                      r.average ASC,
@@ -1488,6 +1508,126 @@ def update_state_records():
     except Exception as e:
         log.error("Error updating state records: %s", e)
         return jsonify({"success": False, "message": "Error updating state records"}), 500
+
+
+def _fetch_public_wcif(competition_id: str):
+    url = f"https://www.worldcubeassociation.org/api/v0/competitions/{competition_id}/wcif/public"
+    response = requests.get(url, timeout=30)
+    if response.status_code == 404:
+        return None
+    response.raise_for_status()
+    return response.json()
+
+
+def _upsert_round_dates(cur, competition_id: str, rows: list[dict], source: str):
+    if not rows:
+        return 0
+    values = [
+        (competition_id, row["eventId"], row["roundTypeId"], row["endDate"], source)
+        for row in rows
+    ]
+    execute_values(
+        cur,
+        """
+        INSERT INTO competition_round_dates
+            (competition_id, event_id, round_type_id, end_date, source, updated_at)
+        VALUES %s
+        ON CONFLICT (competition_id, event_id, round_type_id) DO UPDATE
+        SET end_date = EXCLUDED.end_date,
+            source = EXCLUDED.source,
+            updated_at = NOW()
+        """,
+        values,
+        template="(%s, %s, %s, %s::date, %s, NOW())",
+    )
+    return len(values)
+
+
+SCHEDULE_IMPORT_BATCH_SIZE = 50
+
+
+def run_update_competition_schedules():
+    """Import WCIF round end dates for competitions that have results and no schedule yet.
+
+    Includes foreign competitions: the WCA export only stores Mexican persons'
+    results, so any competition with rows in `results` is relevant for 9i2.
+    """
+    imported = 0
+    skipped = 0
+    failed = 0
+    errors = []
+    candidates = []
+
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            cur.execute(
+                """
+                SELECT c.id
+                FROM competitions c
+                WHERE EXISTS (
+                        SELECT 1 FROM results r WHERE r.competition_id = c.id
+                      )
+                  AND NOT EXISTS (
+                    SELECT 1
+                    FROM competition_round_dates d
+                    WHERE d.competition_id = c.id
+                  )
+                ORDER BY c.start_date DESC
+                LIMIT %s
+                """,
+                (SCHEDULE_IMPORT_BATCH_SIZE,),
+            )
+            candidates = [row.id for row in cur.fetchall()]
+
+            log.info(
+                "Found %s competitions with results and no round dates (batch limit %s)",
+                len(candidates),
+                SCHEDULE_IMPORT_BATCH_SIZE,
+            )
+
+            for competition_id in candidates:
+                try:
+                    wcif = _fetch_public_wcif(competition_id)
+                    if wcif is None:
+                        skipped += 1
+                        log.info("No public WCIF for %s; skipping", competition_id)
+                        continue
+
+                    rows = extract_round_end_dates_from_wcif(wcif)
+                    if not rows:
+                        skipped += 1
+                        log.info("WCIF for %s has no extractable round dates", competition_id)
+                        continue
+
+                    count = _upsert_round_dates(cur, competition_id, rows, "wcif")
+                    imported += 1
+                    log.info("Imported %s round dates for %s", count, competition_id)
+                except Exception as e:
+                    failed += 1
+                    errors.append({"competitionId": competition_id, "error": str(e)})
+                    log.error("Failed to import schedule for %s: %s", competition_id, e)
+
+            conn.commit()
+
+    return {
+        "success": True,
+        "message": "Competition schedules updated",
+        "imported": imported,
+        "skipped": skipped,
+        "failed": failed,
+        "attempted": len(candidates),
+        "errors": errors[:20],
+    }
+
+
+@admin_bp.route("/update-competition-schedules", methods=["POST"])
+@require_cron_auth
+def update_competition_schedules():
+    try:
+        return jsonify(run_update_competition_schedules())
+    except Exception as e:
+        log.error("Error updating competition schedules: %s", e)
+        return jsonify({"success": False, "message": "Error updating competition schedules"}), 500
 
 
 @admin_bp.route("/update-existing-mexican-competitions", methods=["POST"])
@@ -2034,7 +2174,11 @@ def post_summary_unlock_route():
 @admin_bp.route("/post-weekly-digest", methods=["POST"])
 @require_cron_auth
 def post_weekly_digest_route():
-    """Publish weekly digest for the current Mexico City ISO week if due."""
+    """Publish weekly digest for the current Mexico City ISO week if due.
+
+    SR stats require `/update-state-records` to have run after the latest
+    results import; `/update-all` posts SEMANA in that order automatically.
+    """
     try:
         from social.poster import post_weekly_digest_if_due
 
@@ -2114,6 +2258,7 @@ def update_all():
         log.info("Starting all updates")
         updates = [
             ("update_full_database", update_full_database),
+            ("update_competition_schedules", update_competition_schedules),
             ("update_state_ranks", update_state_ranks),
             ("update_state_records", update_state_records),
             ("update_sum_of_ranks", update_sum_of_ranks),
@@ -2146,12 +2291,17 @@ def update_all():
                 )
 
         try:
-            from social.poster import post_streaks_monthly_if_due
+            from social.poster import (
+                post_streaks_monthly_if_due,
+                post_weekly_digest_if_due,
+            )
 
+            post_weekly_digest_if_due()
             post_streaks_monthly_if_due()
         except Exception as e:
             log.error(
-                "Social STREAKS_MONTHLY posting failed (update-all succeeded): %s",
+                "Social WEEKLY_DIGEST/STREAKS_MONTHLY posting failed "
+                "(update-all succeeded): %s",
                 e,
             )
 

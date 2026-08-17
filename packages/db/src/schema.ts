@@ -7,6 +7,7 @@ import {
   integer,
   primaryKey,
   timestamp,
+  date,
   doublePrecision,
   boolean,
   jsonb,
@@ -121,6 +122,41 @@ export const competitionEvent = pgTable(
 );
 
 export type CompetitionEvent = InferSelectModel<typeof competitionEvent>;
+
+/**
+ * Last local calendar date of each round (WCA 9i2), derived from WCIF schedule
+ * or entered manually after results exist.
+ */
+export const competitionRoundDate = pgTable(
+  "competition_round_dates",
+  {
+    competitionId: varchar("competition_id", { length: 32 })
+      .references(() => competition.id, { onDelete: "cascade" })
+      .notNull(),
+    eventId: varchar("event_id", { length: 6 })
+      .references(() => event.id, { onDelete: "cascade" })
+      .notNull(),
+    roundTypeId: varchar("round_type_id", { length: 1 })
+      .references(() => roundType.id, { onDelete: "cascade" })
+      .notNull(),
+    endDate: date("end_date").notNull(),
+    source: varchar("source", {
+      length: 16,
+      enum: ["wcif", "manual"],
+    }).notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({
+      columns: [t.competitionId, t.eventId, t.roundTypeId],
+    }),
+    index("comp_round_dates_comp_idx").on(t.competitionId),
+  ],
+);
+
+export type CompetitionRoundDate = InferSelectModel<
+  typeof competitionRoundDate
+>;
 
 export const person = pgTable(
   "persons",

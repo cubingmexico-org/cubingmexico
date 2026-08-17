@@ -165,9 +165,9 @@ function TeamResultsChartView({
     const chronological = selectedResults.results
       .slice()
       .sort((left, right) => {
-        const dateDelta =
-          Date.parse(left.competitionStartDate) -
-          Date.parse(right.competitionStartDate);
+        const dateDelta = left.competitionStartDate.localeCompare(
+          right.competitionStartDate,
+        );
 
         if (dateDelta !== 0) {
           return dateDelta;

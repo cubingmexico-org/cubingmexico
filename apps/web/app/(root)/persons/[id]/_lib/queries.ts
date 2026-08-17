@@ -6,6 +6,7 @@ import {
   competition,
   competitionDelegate,
   competitionOrganizer,
+  competitionRoundDate,
   delegate,
   organizer,
   person,
@@ -44,6 +45,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
+import { recordDateSql, toDateKey } from "@/lib/record-date";
 
 export type { OrganizerLevel };
 
@@ -529,7 +531,7 @@ export async function getPersonCompetitionResults(
       eventRank: event.rank,
       competitionId: competition.id,
       competitionName: competition.name,
-      competitionStartDate: competition.startDate,
+      competitionStartDate: recordDateSql,
       roundTypeId: result.roundTypeId,
       position: result.pos,
       best: result.best,
@@ -538,8 +540,16 @@ export async function getPersonCompetitionResults(
     .from(result)
     .innerJoin(event, eq(result.eventId, event.id))
     .innerJoin(competition, eq(result.competitionId, competition.id))
+    .leftJoin(
+      competitionRoundDate,
+      and(
+        eq(competitionRoundDate.competitionId, result.competitionId),
+        eq(competitionRoundDate.eventId, result.eventId),
+        eq(competitionRoundDate.roundTypeId, result.roundTypeId),
+      ),
+    )
     .where(and(eq(result.personId, wcaId), eq(result.eventId, eventId)))
-    .orderBy(event.rank, desc(competition.startDate), result.pos, result.best);
+    .orderBy(event.rank, desc(recordDateSql), result.pos, result.best);
 
   if (rows.length === 0) {
     return null;
@@ -577,7 +587,7 @@ export async function getPersonCompetitionResults(
 
     eventGroup.results.push({
       ...row,
-      competitionStartDate: row.competitionStartDate.toISOString(),
+      competitionStartDate: toDateKey(row.competitionStartDate),
       solves: attemptsByResultId.get(row.resultId) ?? [],
     });
 
@@ -589,9 +599,9 @@ export async function getPersonCompetitionResults(
     .map((group) => ({
       ...group,
       results: group.results.slice().sort((left, right) => {
-        const startDateDelta =
-          Date.parse(right.competitionStartDate) -
-          Date.parse(left.competitionStartDate);
+        const startDateDelta = right.competitionStartDate.localeCompare(
+          left.competitionStartDate,
+        );
 
         if (startDateDelta !== 0) {
           return startDateDelta;
@@ -618,8 +628,9 @@ export async function getPersonCompetitionResults(
     // order by round properly (first rounds before second rounds before finals),
     // then by position and best as tie-breakers.
     const chronological = selectedEventGroup.results.slice().sort((a, b) => {
-      const dateDelta =
-        Date.parse(a.competitionStartDate) - Date.parse(b.competitionStartDate);
+      const dateDelta = a.competitionStartDate.localeCompare(
+        b.competitionStartDate,
+      );
       if (dateDelta !== 0) return dateDelta;
 
       const roundDelta = roundRank(b.roundTypeId) - roundRank(a.roundTypeId);
@@ -755,7 +766,7 @@ export async function getPersonRecordHistory(
       eventRank: event.rank,
       competitionId: competition.id,
       competitionName: competition.name,
-      competitionStartDate: competition.startDate,
+      competitionStartDate: recordDateSql,
       roundTypeId: result.roundTypeId,
       position: result.pos,
       best: result.best,
@@ -768,6 +779,14 @@ export async function getPersonRecordHistory(
     .from(result)
     .innerJoin(event, eq(result.eventId, event.id))
     .innerJoin(competition, eq(result.competitionId, competition.id))
+    .leftJoin(
+      competitionRoundDate,
+      and(
+        eq(competitionRoundDate.competitionId, result.competitionId),
+        eq(competitionRoundDate.eventId, result.eventId),
+        eq(competitionRoundDate.roundTypeId, result.roundTypeId),
+      ),
+    )
     .where(
       and(
         eq(result.personId, wcaId),
@@ -779,7 +798,7 @@ export async function getPersonRecordHistory(
         ),
       ),
     )
-    .orderBy(event.rank, desc(competition.startDate));
+    .orderBy(event.rank, desc(recordDateSql));
 
   if (rows.length === 0) return [];
 
@@ -807,7 +826,7 @@ export async function getPersonRecordHistory(
 
   return rows.map((row) => ({
     ...row,
-    competitionStartDate: row.competitionStartDate.toISOString(),
+    competitionStartDate: toDateKey(row.competitionStartDate),
     solves: attemptsByResultId.get(row.resultId) ?? [],
   }));
 }

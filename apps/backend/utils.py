@@ -3,6 +3,7 @@ import math
 import os
 import re
 from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import request
 from geopy.extra.rate_limiter import RateLimiter
@@ -255,3 +256,113 @@ def build_competitions_filter_query_parts():
         query_params.append(cancelled)
 
     return where_clauses, query_params
+
+
+_ROUND_ACTIVITY_RE = re.compile(r"^(.+)-r(\d+)(?:-|$)")
+
+
+def round_type_id_from_wcif(number: int, total_rounds: int, has_cutoff: bool) -> str:
+    """WCA Round#round_type_id from number, total rounds, and cutoff presence."""
+    if number == total_rounds:
+        return "c" if has_cutoff else "f"
+    if number == 1:
+        return "d" if has_cutoff else "1"
+    if number == 2:
+        return "e" if has_cutoff else "2"
+    return "g" if has_cutoff else "3"
+
+
+def parse_round_activity_code(code: str):
+    match = _ROUND_ACTIVITY_RE.match(code or "")
+    if not match:
+        return None
+    return match.group(1), int(match.group(2))
+
+
+def to_local_date_key(iso_datetime: str, timezone: str) -> str | None:
+    """Local calendar date YYYY-MM-DD in the venue timezone."""
+    if not iso_datetime:
+        return None
+    try:
+        dt = datetime.fromisoformat(iso_datetime.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    try:
+        tz = ZoneInfo(timezone.strip() if timezone else "UTC")
+    except (ZoneInfoNotFoundError, ValueError):
+        tz = ZoneInfo("UTC")
+    return dt.astimezone(tz).date().isoformat()
+
+
+def _walk_activities(activities, timezone: str, acc: dict):
+    if not activities:
+        return
+    for activity in activities:
+        code = activity.get("activityCode") or ""
+        parsed = parse_round_activity_code(code)
+        end_time = activity.get("endTime")
+        if parsed and end_time:
+            event_id, round_number = parsed
+            local_date = to_local_date_key(end_time, timezone)
+            if local_date:
+                key = (event_id, round_number)
+                prev = acc.get(key)
+                if prev is None or local_date > prev:
+                    acc[key] = local_date
+        _walk_activities(activity.get("childActivities") or [], timezone, acc)
+
+
+def extract_round_end_dates_from_wcif(wcif) -> list[dict]:
+    """
+    Derive per-round local end dates from a WCA WCIF schedule (regulation 9i2).
+    Mirrors apps/web/lib/competition-round-dates.ts.
+    Returns list of {eventId, roundTypeId, endDate}.
+    """
+    if not wcif or not isinstance(wcif, dict):
+        return []
+
+    schedule = wcif.get("schedule") or {}
+    venues = schedule.get("venues") or []
+    events = wcif.get("events") or []
+    if not venues or not events:
+        return []
+
+    round_type_by_key: dict[tuple[str, int], str] = {}
+    for event in events:
+        event_id = event.get("id")
+        rounds = event.get("rounds") or []
+        total = len(rounds)
+        if not event_id or total == 0:
+            continue
+        for i, round_obj in enumerate(rounds):
+            parsed = parse_round_activity_code(round_obj.get("id") or "")
+            round_number = parsed[1] if parsed else i + 1
+            has_cutoff = round_obj.get("cutoff") is not None
+            round_type_by_key[(event_id, round_number)] = round_type_id_from_wcif(
+                round_number, total, has_cutoff
+            )
+
+    end_date_by_key: dict[tuple[str, int], str] = {}
+    for venue in venues:
+        timezone = (venue.get("timezone") or "UTC").strip() or "UTC"
+        for room in venue.get("rooms") or []:
+            _walk_activities(room.get("activities") or [], timezone, end_date_by_key)
+
+    by_round: dict[tuple[str, str], dict] = {}
+    for (event_id, round_number), end_date in end_date_by_key.items():
+        round_type_id = round_type_by_key.get((event_id, round_number))
+        if not round_type_id:
+            continue
+        key = (event_id, round_type_id)
+        prev = by_round.get(key)
+        if prev is None or end_date > prev["endDate"]:
+            by_round[key] = {
+                "eventId": event_id,
+                "roundTypeId": round_type_id,
+                "endDate": end_date,
+            }
+
+    return sorted(
+        by_round.values(),
+        key=lambda row: (row["eventId"], row["roundTypeId"]),
+    )

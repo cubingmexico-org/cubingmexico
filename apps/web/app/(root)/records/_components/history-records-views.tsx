@@ -12,11 +12,14 @@ import type { RecordHistoryEntry } from "../_lib/queries";
 import { formatRecordResult, formatRecordSolves } from "../_lib/format";
 import { StateLabel } from "@/components/state-flag";
 
-function formatCircaDate(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("es-MX", {
+/** Format a calendar date key (YYYY-MM-DD) without local timezone day shifts. */
+function formatCircaDate(dateKey: string): string {
+  const key = dateKey.slice(0, 10);
+  return new Date(`${key}T12:00:00.000Z`).toLocaleDateString("es-MX", {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
 }
 
@@ -52,7 +55,7 @@ function HistoryRow({
   return (
     <TableRow>
       <TableCell className="whitespace-nowrap">
-        {formatCircaDate(entry.competitionStartDate)}
+        {formatCircaDate(entry.recordDate)}
       </TableCell>
       {showEvent ? (
         <TableCell className="whitespace-nowrap">
@@ -136,9 +139,7 @@ function byChronologicalDesc(
   a: HistoryDisplayRow,
   b: HistoryDisplayRow,
 ): number {
-  const dateDelta =
-    new Date(b.entry.competitionStartDate).getTime() -
-    new Date(a.entry.competitionStartDate).getTime();
+  const dateDelta = b.entry.recordDate.localeCompare(a.entry.recordDate);
   if (dateDelta !== 0) return dateDelta;
 
   const roundDelta =

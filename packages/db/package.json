@@ -9,6 +9,7 @@
     "./relations": "./src/relations.ts"
   },
   "scripts": {
+    "check-types": "tsc --noEmit",
     "migrate": "tsx src/migrate.ts",
     "seed": "tsx src/seed.ts",
     "generate": "drizzle-kit generate",

@@ -57,5 +57,5 @@ That tells crawlers those trees are gone and reduces wasted server work from obs
 ## Related free-tier choices (elsewhere)
 
 - Prefer Server Components, `"use cache"`, and cache tags over paid observability.
-- Prefer unit tests over heavy e2e on CI.
+- Prefer unit tests (web + organizer pure helpers) over heavy e2e on CI.
 - Query failures should throw into `error.tsx` rather than returning cached empty data (see recent query-error work in `apps/web`).

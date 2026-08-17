@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm";
 import {
   competition,
+  competitionRoundDate,
   event,
   person,
   result,
@@ -19,6 +20,7 @@ import {
   state,
 } from "@workspace/db/schema";
 import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { recordDateSql, toDateKey } from "@/lib/record-date";
 
 const SR = "SR";
 const REGIONAL_RECORD_MARKERS = ["NR", "NAR", "WR"] as const;
@@ -27,7 +29,8 @@ const REGIONAL_RECORD_MARKER_SET = new Set<string>(REGIONAL_RECORD_MARKERS);
 type StateRecordRow = {
   id: string;
   value: number;
-  startDate: Date | string;
+  /** Effective 9i2 day: round local end date, else competition start_date */
+  recordDate: Date | string;
   regionalRecord: string | null;
 };
 
@@ -50,7 +53,8 @@ export async function clearPersonStateRecords(personIds: string[]) {
  * Recompute historical state record markers for all current members of a state.
  * Attributes every past result to the person's current state_id (WCA-style running best).
  *
- * Same competition start_date → only the best improvement that day is tagged.
+ * Same calendar day (round end date from schedule, else competition start_date) →
+ * only the best improvement that day is tagged.
  * Results that already have NR/NAR/WR are not tagged SR, but still advance bestSoFar.
  */
 export async function updateStateRecords(stateId: string) {
@@ -96,12 +100,20 @@ export async function updateStateRecords(stateId: string) {
       .select({
         id: result.id,
         value: result.best,
-        startDate: competition.startDate,
+        recordDate: recordDateSql,
         regionalRecord: result.regionalSingleRecord,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .leftJoin(roundType, eq(result.roundTypeId, roundType.id))
+      .leftJoin(
+        competitionRoundDate,
+        and(
+          eq(competitionRoundDate.competitionId, result.competitionId),
+          eq(competitionRoundDate.eventId, result.eventId),
+          eq(competitionRoundDate.roundTypeId, result.roundTypeId),
+        ),
+      )
       .where(
         and(
           eq(result.eventId, e.id),
@@ -110,7 +122,7 @@ export async function updateStateRecords(stateId: string) {
         ),
       )
       .orderBy(
-        asc(competition.startDate),
+        asc(recordDateSql),
         asc(competition.id),
         asc(sql`COALESCE(${roundType.rank}, 0)`),
         asc(result.best),
@@ -123,12 +135,20 @@ export async function updateStateRecords(stateId: string) {
       .select({
         id: result.id,
         value: result.average,
-        startDate: competition.startDate,
+        recordDate: recordDateSql,
         regionalRecord: result.regionalAverageRecord,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .leftJoin(roundType, eq(result.roundTypeId, roundType.id))
+      .leftJoin(
+        competitionRoundDate,
+        and(
+          eq(competitionRoundDate.competitionId, result.competitionId),
+          eq(competitionRoundDate.eventId, result.eventId),
+          eq(competitionRoundDate.roundTypeId, result.roundTypeId),
+        ),
+      )
       .where(
         and(
           eq(result.eventId, e.id),
@@ -137,7 +157,7 @@ export async function updateStateRecords(stateId: string) {
         ),
       )
       .orderBy(
-        asc(competition.startDate),
+        asc(recordDateSql),
         asc(competition.id),
         asc(sql`COALESCE(${roundType.rank}, 0)`),
         asc(result.average),
@@ -192,13 +212,6 @@ export async function updateStateRecords(stateId: string) {
   };
 }
 
-function toDateKey(startDate: Date | string): string {
-  if (startDate instanceof Date) {
-    return startDate.toISOString().slice(0, 10);
-  }
-  return String(startDate).slice(0, 10);
-}
-
 function isRegionalRecord(marker: string | null | undefined): boolean {
   if (marker == null) return false;
   return REGIONAL_RECORD_MARKER_SET.has(marker.trim());
@@ -206,7 +219,7 @@ function isRegionalRecord(marker: string | null | undefined): boolean {
 
 /**
  * Tag SR for chronological improvements, collapsing to the best value per
- * competition start_date and skipping results that already hold NR/NAR/WR.
+ * calendar day (9i2) and skipping results that already hold NR/NAR/WR.
  */
 function markStateRecords(rows: StateRecordRow[], outIds: string[]) {
   let bestSoFar: number | null = null;
@@ -242,7 +255,7 @@ function markStateRecords(rows: StateRecordRow[], outIds: string[]) {
   for (const row of rows) {
     if (row.value <= 0) continue;
 
-    const key = toDateKey(row.startDate);
+    const key = toDateKey(row.recordDate);
 
     if (dayKey !== null && key !== dayKey) {
       flushDay();

@@ -107,12 +107,18 @@ async function AdminOverviewContent() {
               ))}
             </ul>
           )}
-          <div className="mt-4">
+          <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href="/admin/ops"
               className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
             >
               Ir a Ops
+            </Link>
+            <Link
+              href="/admin/schedules"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              Horarios 9i2
             </Link>
           </div>
         </CardContent>

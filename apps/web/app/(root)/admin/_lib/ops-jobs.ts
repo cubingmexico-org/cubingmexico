@@ -21,6 +21,12 @@ export const ADMIN_OPS_JOBS = [
       "Sincroniza metadatos y organizadores/delegados de competencias mexicanas desde el export.",
   },
   {
+    path: "/update-competition-schedules",
+    label: "Actualizar horarios de rondas",
+    description:
+      "Importa fechas de fin de ronda (WCIF) para competencias con resultados (México o extranjeras) y sin horario. Hasta 50 por ejecución.",
+  },
+  {
     path: "/update-sum-of-ranks",
     label: "Actualizar Sum of Ranks",
     description: "Recalcula SOR.",
@@ -45,7 +51,7 @@ export const ADMIN_OPS_JOBS = [
     path: "/post-weekly-digest",
     label: "Publicar resumen semanal",
     description:
-      "Publica el digest SEMANA de la semana ISO actual (México), con recap W−2 + llegadas tardías (idempotente).",
+      "Publica el digest SEMANA de la semana ISO actual (México), con recap W−2 + llegadas tardías (idempotente). Debe correr después de actualizar state records para incluir SR.",
   },
   {
     path: "/post-streaks-monthly",
