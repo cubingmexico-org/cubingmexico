@@ -872,3 +872,50 @@ export async function getMexicanCompetitions({
     scheduleSource: row.scheduleSource,
   }));
 }
+
+export async function getCompetitionsMissingSchedules({
+  search,
+  limit = 100,
+}: {
+  search?: string;
+  limit?: number;
+}) {
+  const filters = [
+    sql`EXISTS (SELECT 1 FROM results r WHERE r.competition_id = ${competition.id})`,
+    sql`NOT EXISTS (
+      SELECT 1 FROM competition_round_dates d
+      WHERE d.competition_id = ${competition.id}
+    )`,
+  ];
+
+  const term = search?.trim();
+  if (term) {
+    filters.push(
+      or(
+        accentInsensitiveContains(competition.name, term),
+        accentInsensitiveContains(competition.id, term),
+        accentInsensitiveContains(competition.cityName, term),
+      )!,
+    );
+  }
+
+  const rows = await db
+    .select({
+      id: competition.id,
+      name: competition.name,
+      cityName: competition.cityName,
+      countryId: competition.countryId,
+      startDate: competition.startDate,
+    })
+    .from(competition)
+    .where(and(...filters))
+    .orderBy(desc(competition.startDate))
+    .limit(limit);
+
+  return rows.map((row) => ({
+    ...row,
+    hasResults: true,
+    hasSchedule: false,
+    scheduleSource: null as "wcif" | "manual" | null,
+  }));
+}

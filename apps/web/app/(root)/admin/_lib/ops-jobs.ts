@@ -24,7 +24,7 @@ export const ADMIN_OPS_JOBS = [
     path: "/update-competition-schedules",
     label: "Actualizar horarios de rondas",
     description:
-      "Importa fechas de fin de ronda (WCIF) para competencias MX con resultados y sin horario.",
+      "Importa fechas de fin de ronda (WCIF) para competencias con resultados (México o extranjeras) y sin horario. Hasta 50 por ejecución.",
   },
   {
     path: "/update-sum-of-ranks",

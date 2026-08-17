@@ -654,11 +654,12 @@ function invalidateCompetitionScheduleTags(competitionId: string) {
   updateTag(`competition-schedule-${competitionId}`);
 }
 
-async function getMexicanCompetitionForSchedule(competitionId: string) {
+async function getCompetitionForSchedule(competitionId: string) {
   const existing = await db
     .select({
       id: competition.id,
       countryId: competition.countryId,
+      name: competition.name,
       stateId: competition.stateId,
     })
     .from(competition)
@@ -667,13 +668,6 @@ async function getMexicanCompetitionForSchedule(competitionId: string) {
 
   if (existing.length === 0) {
     return { error: "Competencia no encontrada" as const, row: null };
-  }
-
-  if (existing[0]?.countryId !== "Mexico") {
-    return {
-      error: "Solo se pueden editar competencias de México" as const,
-      row: null,
-    };
   }
 
   const [resultsCount] = await db
@@ -712,9 +706,7 @@ export async function getCompetitionRoundDatesForEdit(input: {
     await requireSuperadmin();
     const data = competitionIdSchema.parse(input);
 
-    const { error, row } = await getMexicanCompetitionForSchedule(
-      data.competitionId,
-    );
+    const { error, row } = await getCompetitionForSchedule(data.competitionId);
     if (error || !row) {
       return { data: null, error: error ?? "Competencia no encontrada" };
     }
@@ -773,9 +765,47 @@ export async function getCompetitionRoundDatesForEdit(input: {
     return {
       data: {
         competitionId: data.competitionId,
+        competitionName: row.name,
         hasSchedule: stored.length > 0,
         source,
         rounds,
+      },
+      error: null,
+    };
+  } catch (err) {
+    return { data: null, error: getErrorMessage(err) };
+  }
+}
+
+export async function lookupCompetitionForSchedule(input: {
+  competitionId: string;
+}) {
+  try {
+    await requireSuperadmin();
+    const data = competitionIdSchema.parse(input);
+
+    const { error, row } = await getCompetitionForSchedule(data.competitionId);
+    if (error || !row) {
+      return { data: null, error: error ?? "Competencia no encontrada" };
+    }
+
+    const [scheduleRow] = await db
+      .select({ source: competitionRoundDate.source })
+      .from(competitionRoundDate)
+      .where(eq(competitionRoundDate.competitionId, data.competitionId))
+      .limit(1);
+
+    return {
+      data: {
+        id: row.id,
+        name: row.name,
+        countryId: row.countryId,
+        hasResults: true,
+        hasSchedule: Boolean(scheduleRow),
+        scheduleSource: (scheduleRow?.source ?? null) as
+          | "wcif"
+          | "manual"
+          | null,
       },
       error: null,
     };
@@ -795,9 +825,7 @@ export async function importCompetitionScheduleFromWcif(input: {
       .extend({ overwrite: z.boolean().optional() })
       .parse(input);
 
-    const { error, row } = await getMexicanCompetitionForSchedule(
-      data.competitionId,
-    );
+    const { error, row } = await getCompetitionForSchedule(data.competitionId);
     if (error || !row) {
       return { data: null, error: error ?? "Competencia no encontrada" };
     }
@@ -882,9 +910,7 @@ export async function saveCompetitionScheduleManual(input: {
     await requireSuperadmin();
     const data = saveManualScheduleSchema.parse(input);
 
-    const { error, row } = await getMexicanCompetitionForSchedule(
-      data.competitionId,
-    );
+    const { error, row } = await getCompetitionForSchedule(data.competitionId);
     if (error || !row) {
       return { data: null, error: error ?? "Competencia no encontrada" };
     }
@@ -921,9 +947,7 @@ export async function clearCompetitionSchedule(input: {
     await requireSuperadmin();
     const data = competitionIdSchema.parse(input);
 
-    const { error, row } = await getMexicanCompetitionForSchedule(
-      data.competitionId,
-    );
+    const { error, row } = await getCompetitionForSchedule(data.competitionId);
     if (error || !row) {
       return { data: null, error: error ?? "Competencia no encontrada" };
     }
@@ -957,7 +981,6 @@ export async function importMissingCompetitionSchedules(input?: {
       .from(competition)
       .where(
         and(
-          eq(competition.countryId, "Mexico"),
           sql`EXISTS (SELECT 1 FROM results r WHERE r.competition_id = ${competition.id})`,
           sql`NOT EXISTS (
             SELECT 1 FROM competition_round_dates d

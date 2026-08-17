@@ -66,9 +66,9 @@ export function ImportMissingSchedulesButton() {
         <AlertDialogHeader>
           <AlertDialogTitle>¿Importar horarios faltantes?</AlertDialogTitle>
           <AlertDialogDescription>
-            Busca competencias MX con resultados y sin fechas de ronda, y las
-            importa desde el WCIF público. Hasta 15 por lote. No sobrescribe
-            horarios ya guardados.
+            Busca competencias con resultados (México o extranjeras) y sin
+            fechas de ronda, y las importa desde el WCIF público. Hasta 15 por
+            lote. No sobrescribe horarios ya guardados.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

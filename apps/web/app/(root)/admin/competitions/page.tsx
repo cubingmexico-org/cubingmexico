@@ -82,8 +82,8 @@ export default function AdminCompetitionsPage({
           <div>
             <CardTitle className="text-base">Competencias mexicanas</CardTitle>
             <CardDescription>
-              Asigna `stateId`, gestiona logos y fechas de fin de ronda (9i2)
-              cuando ya hay resultados
+              Asigna `stateId` y gestiona logos. Los horarios 9i2 de cualquier
+              país están en Horarios.
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">

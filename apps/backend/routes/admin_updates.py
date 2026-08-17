@@ -1547,8 +1547,15 @@ def _upsert_round_dates(cur, competition_id: str, rows: list[dict], source: str)
     return len(values)
 
 
+SCHEDULE_IMPORT_BATCH_SIZE = 50
+
+
 def run_update_competition_schedules():
-    """Import WCIF round end dates for MX competitions that have results and no schedule yet."""
+    """Import WCIF round end dates for competitions that have results and no schedule yet.
+
+    Includes foreign competitions: the WCA export only stores Mexican persons'
+    results, so any competition with rows in `results` is relevant for 9i2.
+    """
     imported = 0
     skipped = 0
     failed = 0
@@ -1561,23 +1568,25 @@ def run_update_competition_schedules():
                 """
                 SELECT c.id
                 FROM competitions c
-                WHERE c.country_id = 'Mexico'
-                  AND EXISTS (
-                    SELECT 1 FROM results r WHERE r.competition_id = c.id
-                  )
+                WHERE EXISTS (
+                        SELECT 1 FROM results r WHERE r.competition_id = c.id
+                      )
                   AND NOT EXISTS (
                     SELECT 1
                     FROM competition_round_dates d
                     WHERE d.competition_id = c.id
                   )
                 ORDER BY c.start_date DESC
-                """
+                LIMIT %s
+                """,
+                (SCHEDULE_IMPORT_BATCH_SIZE,),
             )
             candidates = [row.id for row in cur.fetchall()]
 
             log.info(
-                "Found %s Mexican competitions with results and no round dates",
+                "Found %s competitions with results and no round dates (batch limit %s)",
                 len(candidates),
+                SCHEDULE_IMPORT_BATCH_SIZE,
             )
 
             for competition_id in candidates:

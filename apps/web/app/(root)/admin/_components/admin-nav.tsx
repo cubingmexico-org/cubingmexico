@@ -15,6 +15,7 @@ const NAV_ITEMS: {
   { href: "/admin/social", label: "Social" },
   { href: "/admin/people", label: "Personas" },
   { href: "/admin/competitions", label: "Competencias" },
+  { href: "/admin/schedules", label: "Horarios" },
 ];
 
 export function AdminNav() {

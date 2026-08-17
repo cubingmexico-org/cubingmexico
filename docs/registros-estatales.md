@@ -72,8 +72,8 @@ Propiedades importantes:
 
 Para igualar 9i2 se persiste, por competencia / evento / `round_type_id`, la **fecha calendario local de fin de esa ronda**:
 
-- **Automático (cron / admin):** solo si la competencia MX **ya tiene resultados** y aún no tiene filas de horario. Se lee el WCIF público, se extraen actividades de ronda (`startTime`/`endTime` + timezone del venue) y se mapea a `round_type_id`. Una vez importado, el cron **no vuelve a sobrescribir** esa competencia (el horario post-resultados se considera estable). Tampoco pisa filas con `source = 'manual'`.
-- **Manual (admin):** para competencias sin WCIF disponible; se capturan fechas por las rondas presentes en `results`.
+- **Automático (cron / admin):** cualquier competencia que **ya tiene resultados** en Neon (mexicanos, en México o en el extranjero) y aún no tiene filas de horario. Se lee el WCIF público, se extraen actividades de ronda (`startTime`/`endTime` + timezone del venue) y se mapea a `round_type_id`. El cron procesa un lote acotado y **no vuelve a sobrescribir** una competencia ya importada. Tampoco pisa filas con `source = 'manual'`.
+- **Manual (admin):** `/admin/schedules` para competencias sin WCIF disponible (p. ej. históricas extranjeras); se capturan fechas por las rondas presentes en `results`. Las competencias MX también se pueden editar desde `/admin/competitions`.
 - **Fallback:** si no hay fila para esa ronda, se usa `competitions.start_date` (comportamiento anterior).
 
 ---
@@ -94,7 +94,7 @@ Para igualar 9i2 se persiste, por competencia / evento / `round_type_id`, la **f
 
 ### 1. Cobertura de horarios
 
-Sin fila en `competition_round_dates` (comps viejas sin WCIF, o pendientes de importar/capturar), el día sigue siendo `start_date`. El panel de admin (filtro “Sin horario”) y el job `/update-competition-schedules` sirven para ir cerrando ese hueco.
+Sin fila en `competition_round_dates` (comps viejas sin WCIF, o pendientes de importar/capturar), el día sigue siendo `start_date`. El panel `/admin/schedules`, el filtro “Sin horario” de competencias MX y el job `/update-competition-schedules` sirven para ir cerrando ese hueco, **incluyendo competencias extranjeras** donde un mexicano tiene resultados.
 
 ### 2. Competencias con fechas solapadas
 
