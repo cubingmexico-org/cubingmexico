@@ -12,6 +12,13 @@ import {
   teamMember,
 } from "@workspace/db/schema";
 import { accentInsensitiveContains } from "@/lib/search";
+import {
+  BLD_FMC_MEANS_EVENTS,
+  EXCLUDED_EVENTS,
+  SPEEDSOLVING_AVERAGES_EVENTS,
+} from "@/lib/constants";
+import { getTier } from "@/lib/utils";
+import type { Tier } from "@/types";
 import { isSummaryYearPublished } from "@/app/(root)/summary/_lib/summary-year";
 import { and, asc, count, desc, eq, isNull, or, sql } from "drizzle-orm";
 
@@ -111,6 +118,7 @@ export async function getSocialPostStats() {
       summaryUnlock: sql<number>`count(*) filter (where ${socialPost.postType} = 'summary_unlock')`,
       weeklyDigest: sql<number>`count(*) filter (where ${socialPost.postType} = 'weekly_digest')`,
       streaksMonthly: sql<number>`count(*) filter (where ${socialPost.postType} = 'streaks_monthly')`,
+      mollerz: sql<number>`count(*) filter (where ${socialPost.postType} = 'mollerz')`,
     })
     .from(socialPost);
 
@@ -125,6 +133,7 @@ export async function getSocialPostStats() {
     summaryUnlock: Number(totals?.summaryUnlock ?? 0),
     weeklyDigest: Number(totals?.weeklyDigest ?? 0),
     streaksMonthly: Number(totals?.streaksMonthly ?? 0),
+    mollerz: Number(totals?.mollerz ?? 0),
   };
 }
 
@@ -525,6 +534,142 @@ export async function getPendingStreaksMonthlyPosts(): Promise<
       instagramPosted,
     },
   ];
+}
+
+const MOLLERZ_TIER_SLUGS: Record<Tier, string> = {
+  Bronce: "bronce",
+  Plata: "plata",
+  Oro: "oro",
+  Platino: "platino",
+  Ópalo: "opalo",
+  Diamante: "diamante",
+};
+
+function sqlInList(values: string[]) {
+  return sql.join(
+    values.map((value) => sql`${value}`),
+    sql`, `,
+  );
+}
+
+export async function getPendingMollerzPosts(limit = 50): Promise<
+  Array<{
+    subjectKey: string;
+    personId: string;
+    personName: string;
+    stateName: string | null;
+    tier: Tier;
+    isNewMember: boolean;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const [members, posts] = await Promise.all([
+    db.execute(sql`
+      WITH current_events AS (
+        SELECT id FROM events WHERE id NOT IN (${sqlInList(EXCLUDED_EVENTS)})
+      )
+      SELECT
+        p.wca_id AS "personId",
+        p.name AS "personName",
+        s.name AS "stateName",
+        COUNT(DISTINCT CASE
+          WHEN r.event_id IN (${sqlInList(SPEEDSOLVING_AVERAGES_EVENTS)}) AND r.average > 0
+          THEN r.event_id
+        END) AS "numberOfSpeedsolvingAverages",
+        COUNT(DISTINCT CASE
+          WHEN r.event_id IN (${sqlInList(BLD_FMC_MEANS_EVENTS)}) AND r.average > 0
+          THEN r.event_id
+        END) AS "numberOfBLDFMCMeans",
+        MAX(CASE
+          WHEN r.regional_single_record = 'WR' OR r.regional_average_record = 'WR'
+          THEN 1 ELSE 0
+        END) = 1 AS "hasWorldRecord",
+        MAX(CASE
+          WHEN r.pos IN (1, 2, 3) AND r.round_type_id IN ('f', 'c')
+               AND ch.championship_type = 'world'
+          THEN 1 ELSE 0
+        END) = 1 AS "hasWorldChampionshipPodium",
+        COUNT(DISTINCT CASE
+          WHEN r.pos = 1 AND r.round_type_id IN ('f', 'c') THEN r.event_id
+        END) AS "eventsWon"
+      FROM persons p
+      JOIN results r ON r.person_id = p.wca_id
+      LEFT JOIN states s ON s.id = p.state_id
+      LEFT JOIN championships ch ON ch.competition_id = r.competition_id
+      WHERE r.event_id IN (SELECT id FROM current_events)
+        AND r.best > 0
+      GROUP BY p.wca_id, p.name, s.name
+      HAVING COUNT(DISTINCT r.event_id) = (SELECT COUNT(*) FROM current_events)
+    `) as unknown as Promise<
+      Array<{
+        personId: string;
+        personName: string;
+        stateName: string | null;
+        numberOfSpeedsolvingAverages: number | string;
+        numberOfBLDFMCMeans: number | string;
+        hasWorldRecord: boolean;
+        hasWorldChampionshipPodium: boolean;
+        eventsWon: number | string;
+      }>
+    >,
+    db
+      .select({
+        subjectKey: socialPost.subjectKey,
+        platform: socialPost.platform,
+      })
+      .from(socialPost)
+      .where(eq(socialPost.postType, "mollerz")),
+  ]);
+
+  const postedPlatforms = new Map<string, Set<string>>();
+  const postedPersons = new Map<string, Set<string>>();
+  for (const post of posts) {
+    const platforms = postedPlatforms.get(post.subjectKey) ?? new Set<string>();
+    platforms.add(post.platform);
+    postedPlatforms.set(post.subjectKey, platforms);
+
+    const personId = post.subjectKey.split(":")[0] ?? "";
+    const keys = postedPersons.get(personId) ?? new Set<string>();
+    keys.add(post.subjectKey);
+    postedPersons.set(personId, keys);
+  }
+
+  const pending = [];
+  for (const member of members) {
+    const tier = getTier({
+      numberOfSpeedsolvingAverages: Number(member.numberOfSpeedsolvingAverages),
+      numberOfBLDFMCMeans: Number(member.numberOfBLDFMCMeans),
+      hasWorldRecord: Boolean(member.hasWorldRecord),
+      hasWorldChampionshipPodium: Boolean(member.hasWorldChampionshipPodium),
+      eventsWon: Number(member.eventsWon),
+    });
+    if (!tier) continue;
+
+    const subjectKey = `${member.personId}:${MOLLERZ_TIER_SLUGS[tier]}`;
+    const platforms = postedPlatforms.get(subjectKey);
+    const facebookPosted = platforms?.has("facebook") ?? false;
+    const instagramPosted = platforms?.has("instagram") ?? false;
+    if (facebookPosted && instagramPosted) continue;
+
+    const otherKeys = [...(postedPersons.get(member.personId) ?? [])].filter(
+      (key) => key !== subjectKey,
+    );
+    pending.push({
+      subjectKey,
+      personId: member.personId,
+      personName: member.personName,
+      stateName: member.stateName,
+      tier,
+      isNewMember: otherKeys.length === 0,
+      facebookPosted,
+      instagramPosted,
+    });
+  }
+
+  return pending
+    .sort((a, b) => a.personName.localeCompare(b.personName, "es"))
+    .slice(0, limit);
 }
 
 export async function searchPersons(search: string, limit = 20) {

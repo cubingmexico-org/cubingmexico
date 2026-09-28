@@ -89,6 +89,7 @@ async function recomputeStateSideEffects(
 
   updateTag(`profile-person-${personId}`);
   updateTag(`person-page-${personId}`);
+  updateTag(`person-data-wca-${personId}`);
   updateTag("persons-without-state");
 }
 
@@ -104,6 +105,7 @@ function invalidateAfterBulkStateAssign(
   for (const personId of personIds) {
     updateTag(`profile-person-${personId}`);
     updateTag(`person-page-${personId}`);
+    updateTag(`person-data-wca-${personId}`);
   }
 
   updateTag("persons-without-state");

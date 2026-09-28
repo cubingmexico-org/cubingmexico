@@ -79,7 +79,8 @@ export type SocialPostType =
   | "upcoming"
   | "summary_unlock"
   | "weekly_digest"
-  | "streaks_monthly";
+  | "streaks_monthly"
+  | "mollerz";
 
 export type PendingResultadosRow = {
   id: string;
@@ -139,6 +140,17 @@ export type PendingStreaksMonthlyRow = {
   instagramPosted: boolean;
 };
 
+export type PendingMollerzRow = {
+  subjectKey: string;
+  personId: string;
+  personName: string;
+  stateName: string | null;
+  tier: string;
+  isNewMember: boolean;
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+};
+
 export type SocialPostRow = {
   id: string;
   postType: string;
@@ -162,6 +174,7 @@ export type SocialPostStats = {
   summaryUnlock: number;
   weeklyDigest: number;
   streaksMonthly: number;
+  mollerz: number;
 };
 
 function platformLabel(platform: string) {
@@ -189,6 +202,7 @@ function postTypeLabel(postType: string) {
   if (postType === "summary_unlock") return "RESUMEN";
   if (postType === "weekly_digest") return "SEMANA";
   if (postType === "streaks_monthly") return "RACHAS";
+  if (postType === "mollerz") return "MOLLERZ";
   return postType;
 }
 
@@ -199,6 +213,7 @@ function apiBase(postType: SocialPostType) {
   if (postType === "weekly_digest") return "/api/admin/social/weekly-digest";
   if (postType === "streaks_monthly")
     return "/api/admin/social/streaks-monthly";
+  if (postType === "mollerz") return "/api/admin/social/mollerz";
   return "/api/admin/social/upcoming";
 }
 
@@ -255,7 +270,9 @@ async function downloadImage(postType: SocialPostType, subjectKey: string) {
             ? "semana"
             : postType === "streaks_monthly"
               ? "rachas"
-              : "proxima";
+              : postType === "mollerz"
+                ? "mollerz"
+                : "proxima";
   a.download = `${prefix}-${subjectKey.replace(/[:/]/g, "-")}.png`;
   document.body.appendChild(a);
   a.click();
@@ -449,6 +466,7 @@ export function SocialAdminPanel({
   pendingSummaryUnlock,
   pendingWeeklyDigest,
   pendingStreaksMonthly,
+  pendingMollerz,
   posts,
   postsTotal = 0,
   page = 1,
@@ -463,6 +481,7 @@ export function SocialAdminPanel({
   pendingSummaryUnlock: PendingSummaryUnlockRow[];
   pendingWeeklyDigest: PendingWeeklyDigestRow[];
   pendingStreaksMonthly: PendingStreaksMonthlyRow[];
+  pendingMollerz: PendingMollerzRow[];
   posts: SocialPostRow[];
   postsTotal?: number;
   page?: number;
@@ -684,7 +703,8 @@ export function SocialAdminPanel({
     pendingUpcoming.length +
     pendingSummaryUnlock.length +
     pendingWeeklyDigest.length +
-    pendingStreaksMonthly.length;
+    pendingStreaksMonthly.length +
+    pendingMollerz.length;
 
   const totalPages = Math.max(1, Math.ceil(postsTotal / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -898,6 +918,69 @@ export function SocialAdminPanel({
                                 postType="record"
                                 subjectKey={row.subjectKey}
                                 name={`${row.level} ${row.personName}`}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pendientes · MOLLERZ</CardTitle>
+              <CardDescription>
+                Nuevos miembros Mollerz y subidas de nivel sin publicar en
+                alguna plataforma.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingMollerz.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No hay MOLLERZ pendientes.
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Miembro</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingMollerz.map((row) => {
+                        return (
+                          <TableRow key={row.subjectKey}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">
+                                  {row.tier} · {row.personName}
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                  {row.stateName ? `${row.stateName} · ` : null}
+                                  {row.isNewMember
+                                    ? "Nuevo miembro"
+                                    : "Subida de nivel"}{" "}
+                                  · {row.personId}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{missingPlatformBadges(row)}</TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType="mollerz"
+                                subjectKey={row.subjectKey}
+                                name={`${row.tier} ${row.personName}`}
                                 disabled={busyKey !== null}
                                 onPreview={setPreviewTarget}
                               />
@@ -1186,12 +1269,13 @@ export function SocialAdminPanel({
                             "summary_unlock",
                             "weekly_digest",
                             "streaks_monthly",
+                            "mollerz",
                           ].includes(post.postType)
                             ? post.postType
                             : "resultados"
                         ) as SocialPostType;
                         const title =
-                          postType === "record"
+                          postType === "record" || postType === "mollerz"
                             ? post.subjectKey
                             : postType === "summary_unlock"
                               ? `Resumen anual ${post.subjectKey}`
