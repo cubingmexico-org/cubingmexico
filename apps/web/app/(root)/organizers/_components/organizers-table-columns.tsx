@@ -47,6 +47,7 @@ export function getColumns({
           <div className="flex space-x-2 whitespace-nowrap">
             <Badge variant="outline">{level}</Badge>
             <Link
+              prefetch={false}
               className="text-link hover:text-link/80"
               href={`/persons/${row.original.wcaId}`}
             >

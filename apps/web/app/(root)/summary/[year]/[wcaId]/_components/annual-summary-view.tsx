@@ -308,6 +308,7 @@ export function AnnualSummaryView({ summary }: Props) {
                     <AccentCell>{index + 1}</AccentCell>
                     <TableCell>
                       <Link
+                        prefetch={false}
                         href={`/competitions/${comp.competitionId}`}
                         className="text-link hover:text-link/80"
                       >
@@ -526,6 +527,7 @@ export function AnnualSummaryView({ summary }: Props) {
                   <TableRow key={row.wcaId}>
                     <TableCell>
                       <Link
+                        prefetch={false}
                         href={`/persons/${row.wcaId}`}
                         className="text-link hover:text-link/80"
                       >
@@ -559,6 +561,7 @@ export function AnnualSummaryView({ summary }: Props) {
                       <TableRow key={row.wcaId}>
                         <TableCell>
                           <Link
+                            prefetch={false}
                             href={`/persons/${row.wcaId}`}
                             className="text-link hover:text-link/80"
                           >
@@ -857,6 +860,7 @@ export function AnnualSummaryView({ summary }: Props) {
                 {staff.organized.map((comp) => (
                   <li key={comp.id}>
                     <Link
+                      prefetch={false}
                       href={`/competitions/${comp.id}`}
                       className="text-link hover:text-link/80"
                     >
@@ -877,6 +881,7 @@ export function AnnualSummaryView({ summary }: Props) {
                 {staff.delegated.map((comp) => (
                   <li key={comp.id}>
                     <Link
+                      prefetch={false}
                       href={`/competitions/${comp.id}`}
                       className="text-link hover:text-link/80"
                     >

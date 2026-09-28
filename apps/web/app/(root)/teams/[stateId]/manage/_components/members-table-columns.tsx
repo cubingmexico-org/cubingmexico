@@ -155,6 +155,7 @@ export function getColumns({
         return (
           <div className="flex items-center gap-2 space-x-2 w-72">
             <Link
+              prefetch={false}
               className="text-link hover:text-link/80"
               href={`/persons/${row.original.wcaId}`}
             >

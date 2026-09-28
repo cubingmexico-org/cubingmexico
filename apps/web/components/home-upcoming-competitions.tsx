@@ -62,6 +62,7 @@ export function HomeUpcomingCompetitions({
               return (
                 <li key={comp.id}>
                   <Link
+                    prefetch={false}
                     href={`/competitions/${comp.id}`}
                     className="group flex items-center gap-4 py-5 transition-colors hover:bg-muted/40 md:gap-6"
                   >

@@ -118,6 +118,7 @@ export function ResultsPodiumsView({ podiumGroups }: ResultsPodiumsViewProps) {
                               <TableCell className="font-medium">
                                 <div>
                                   <Link
+                                    prefetch={false}
                                     href={`/persons/${resultRow.personId}`}
                                     className="text-link hover:text-link/80"
                                   >
@@ -300,6 +301,7 @@ export function ResultsAllView({
                                 <TableCell className="font-medium">
                                   <div>
                                     <Link
+                                      prefetch={false}
                                       href={`/persons/${resultRow.personId}`}
                                       className="text-link hover:text-link/80"
                                     >
@@ -433,6 +435,7 @@ export function ResultsByPersonView({
               <div key={personGroup.personId} className="space-y-3">
                 <h3 className="text-base font-semibold">
                   <Link
+                    prefetch={false}
                     href={`/persons/${personGroup.personId}`}
                     className="text-link hover:text-link/80"
                   >

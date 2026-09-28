@@ -119,6 +119,7 @@ export function PersonChampionshipPodiumsTab({ podiums }: Props) {
                   <TableCell colSpan={4 + solveCount} className="py-2">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
                       <Link
+                        prefetch={false}
                         href={`/competitions/${group.competitionId}`}
                         className="font-semibold text-link hover:text-link/80"
                       >

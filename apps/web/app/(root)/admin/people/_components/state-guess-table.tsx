@@ -181,6 +181,7 @@ export function StateGuessTable({
                     <div>
                       <p className="font-medium">{guess.name ?? "—"}</p>
                       <Link
+                        prefetch={false}
                         href={`/persons/${guess.wcaId}`}
                         className="text-muted-foreground hover:text-foreground font-mono text-xs underline-offset-4 hover:underline"
                       >

@@ -43,6 +43,7 @@ export function getSingleColumns({
         return (
           <div className="flex space-x-2 whitespace-nowrap">
             <Link
+              prefetch={false}
               className="text-link hover:text-link/80"
               href={`/persons/${personId}`}
             >
@@ -129,6 +130,7 @@ export function getSingleColumns({
         return (
           <div className="flex space-x-2 whitespace-nowrap">
             <Link
+              prefetch={false}
               className="text-link hover:text-link/80"
               href={`/competitions/${competitionId}`}
             >
@@ -185,6 +187,7 @@ export function getAverageColumns({
         return (
           <div className="flex space-x-2 whitespace-nowrap">
             <Link
+              prefetch={false}
               className="text-link hover:text-link/80"
               href={`/persons/${personId}`}
             >
@@ -271,6 +274,7 @@ export function getAverageColumns({
         return (
           <div className="flex space-x-2 whitespace-nowrap">
             <Link
+              prefetch={false}
               className="text-link hover:text-link/80"
               href={`/competitions/${competitionId}`}
             >

@@ -47,6 +47,7 @@ export function Members({ members }: MembersProps) {
           <TableCell className="whitespace-nowrap">
             <div className="flex">
               <Link
+                prefetch={false}
                 href={`/persons/${member.wcaId}`}
                 className="font-medium text-link hover:text-link/80"
               >

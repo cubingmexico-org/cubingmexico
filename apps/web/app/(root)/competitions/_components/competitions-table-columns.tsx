@@ -80,6 +80,7 @@ export function getColumns({
               {label}
             </Badge>
             <Link
+              prefetch={false}
               className="truncate font-medium text-link hover:text-link/80"
               href={`/competitions/${row.original.id}`}
             >

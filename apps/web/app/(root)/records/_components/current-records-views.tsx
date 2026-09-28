@@ -41,6 +41,7 @@ function PersonLink({
   if (!name) return null;
   return (
     <Link
+      prefetch={false}
       className="text-link hover:text-link/80"
       href={`/persons/${personId}`}
     >
@@ -59,6 +60,7 @@ function CompetitionLink({
   if (!competitionId || !name) return null;
   return (
     <Link
+      prefetch={false}
       className="text-link hover:text-link/80"
       href={`/competitions/${competitionId}`}
     >

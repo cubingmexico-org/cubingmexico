@@ -144,6 +144,7 @@ export default async function Page(props: {
               <TableCell>{index + 1}</TableCell>
               <TableCell className="whitespace-nowrap">
                 <Link
+                  prefetch={false}
                   className="text-link hover:text-link/80"
                   href={`/persons/${person.id}`}
                 >

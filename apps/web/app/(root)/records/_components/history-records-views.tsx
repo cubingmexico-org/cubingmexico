@@ -68,6 +68,7 @@ function HistoryRow({
       <TableCell className="whitespace-nowrap">
         {entry.personName ? (
           <Link
+            prefetch={false}
             className="text-link hover:text-link/80"
             href={`/persons/${entry.personId}`}
           >
@@ -90,6 +91,7 @@ function HistoryRow({
       </TableCell>
       <TableCell className="whitespace-nowrap">
         <Link
+          prefetch={false}
           className="text-link hover:text-link/80"
           href={`/competitions/${entry.competitionId}`}
         >
