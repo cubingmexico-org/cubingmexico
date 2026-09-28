@@ -7,4 +7,5 @@ import type { auth } from "./auth";
 
 export const authClient = createAuthClient({
   plugins: [genericOAuthClient(), customSessionClient<typeof auth>()],
+  sessionOptions: { refetchOnWindowFocus: false },
 });

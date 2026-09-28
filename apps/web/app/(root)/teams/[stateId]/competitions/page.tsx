@@ -41,6 +41,7 @@ function CompetitionItem({
       <div className="grow space-y-2">
         <h3 className="font-semibold leading-snug">
           <Link
+            prefetch={false}
             href={`/competitions/${competition.id}`}
             className="text-link hover:text-link/80"
           >
@@ -91,6 +92,7 @@ function CompetitionItem({
         </div>
       </div>
       <Link
+        prefetch={false}
         href={`/competitions/${competition.id}`}
         className={buttonVariants({ variant: "outline", size: "sm" })}
       >

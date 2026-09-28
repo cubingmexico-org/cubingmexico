@@ -53,6 +53,7 @@ export function getColumns({
               </Badge>
             )}
             <Link
+              prefetch={false}
               className="text-link hover:text-link/80"
               href={`/persons/${row.original.wcaId}`}
             >

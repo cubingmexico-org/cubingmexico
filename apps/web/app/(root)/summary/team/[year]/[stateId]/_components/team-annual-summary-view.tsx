@@ -26,7 +26,11 @@ function formatDelta(n: number): string {
 
 function PersonLink({ wcaId, name }: { wcaId: string; name: string | null }) {
   return (
-    <Link href={`/persons/${wcaId}`} className="text-link hover:text-link/80">
+    <Link
+      prefetch={false}
+      href={`/persons/${wcaId}`}
+      className="text-link hover:text-link/80"
+    >
       {name ?? wcaId}
     </Link>
   );
@@ -568,6 +572,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
                     <TableRow key={row.stateId}>
                       <TableCell>
                         <Link
+                          prefetch={false}
                           href={`/teams/${row.stateId}`}
                           className="inline-flex items-center gap-2 text-link hover:text-link/80"
                         >
@@ -949,6 +954,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
                         </TableCell>
                         <TableCell>
                           <Link
+                            prefetch={false}
                             href={`/competitions/${row.firstCompetitionId}`}
                             className="text-link hover:text-link/80"
                           >

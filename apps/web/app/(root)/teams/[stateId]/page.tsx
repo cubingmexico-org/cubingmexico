@@ -374,6 +374,7 @@ export default async function Page({
                       <div className="min-w-0 grow space-y-1.5">
                         <h3 className="font-semibold leading-snug">
                           <Link
+                            prefetch={false}
                             href={`/competitions/${competition.id}`}
                             className="text-link hover:text-link/80"
                           >

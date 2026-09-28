@@ -75,6 +75,7 @@ export function HomeRecentRecords({ records }: HomeRecentRecordsProps) {
                       <p className="mt-1 truncate text-sm text-muted-foreground md:text-base">
                         {record.personName ? (
                           <Link
+                            prefetch={false}
                             href={`/persons/${record.personId}`}
                             className="font-medium text-foreground transition-colors hover:text-brand"
                           >
@@ -86,6 +87,7 @@ export function HomeRecentRecords({ records }: HomeRecentRecordsProps) {
                         {record.personState ? ` · ${record.personState}` : null}
                         {" · "}
                         <Link
+                          prefetch={false}
                           href={`/competitions/${record.competitionId}`}
                           className="transition-colors hover:text-brand"
                         >

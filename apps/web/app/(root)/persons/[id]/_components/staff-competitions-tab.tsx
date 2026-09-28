@@ -53,6 +53,7 @@ function StaffCompetitionTable({
               <TableCell>
                 <div className="flex flex-wrap items-center gap-2">
                   <Link
+                    prefetch={false}
                     className="font-medium text-link hover:text-link/80"
                     href={`/competitions/${competition.id}`}
                   >
