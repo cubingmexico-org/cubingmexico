@@ -675,6 +675,26 @@ def update_full_database():
                         mx_results_before = None
                         record_markers_before = None
 
+                    try:
+                        from social.mollerz import fetch_mollerz_members
+
+                        with get_connection() as conn:
+                            with conn.cursor(
+                                cursor_factory=psycopg2.extras.NamedTupleCursor
+                            ) as cur:
+                                mollerz_before = fetch_mollerz_members(cur)
+                        log.info(
+                            "Snapshot: %s Mollerz members before import.",
+                            len(mollerz_before),
+                        )
+                    except Exception as e:
+                        log.error(
+                            "Failed to snapshot Mollerz members before import: %s. "
+                            "Mollerz social posts will be skipped.",
+                            e,
+                        )
+                        mollerz_before = None
+
                     chunk_size = 10_000_000
                     total_chunks = -(-len(file_bytes) // chunk_size) if len(file_bytes) > 0 else 0
                     headers = None
@@ -942,6 +962,24 @@ def update_full_database():
                             except Exception as e:
                                 log.error(
                                     "Social RESULTADOS/RÉCORDS posting failed "
+                                    "(database import succeeded): %s",
+                                    e,
+                                )
+
+                        if mollerz_before is not None:
+                            try:
+                                from social.mollerz import fetch_mollerz_members
+                                from social.poster import post_new_mollerz
+
+                                with get_connection() as conn:
+                                    with conn.cursor(
+                                        cursor_factory=psycopg2.extras.NamedTupleCursor
+                                    ) as cur:
+                                        mollerz_after = fetch_mollerz_members(cur)
+                                post_new_mollerz(mollerz_before, mollerz_after)
+                            except Exception as e:
+                                log.error(
+                                    "Social MOLLERZ posting failed "
                                     "(database import succeeded): %s",
                                     e,
                                 )

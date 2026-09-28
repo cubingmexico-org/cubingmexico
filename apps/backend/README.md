@@ -110,6 +110,8 @@ The app will be available at `http://localhost:5000`.
   - RÉCORDS: `GET|POST /social/records/<subject_key>/{caption,image.png,publish,mark}` (`subject_key` = `{result_id}:single|average`)
   - PRÓXIMAS: `GET|POST /social/upcoming/<competition_id>/{caption,image.png,publish,mark}`
   - RESUMEN: `GET|POST /social/summary-unlock/<year>/{caption,image.png,publish,mark}`
+  - MOLLERZ: `GET|POST /social/mollerz/<subject_key>/{caption,image.png,publish,mark}` (`subject_key` = `{wca_id}:{tier}`, tier in `bronce|plata|oro|platino|opalo|diamante`)
+  - `POST /social/mollerz/seed` — One-time: record every current Mollerz member's current tier as posted (`external_id = backfill`, no Meta call) so only future changes show up as pending
   - All caption/image/publish/mark routes require cron auth; Superadmin UI proxies them.
 
 ### Competitions API
@@ -159,11 +161,11 @@ Main tables used:
 - ranks_single, ranks_average
 - sum_of_ranks, kinch_ranks, streak_ranks
 - states, teams, events, export_metadata
-- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock`)
+- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock` | `weekly_digest` | `streaks_monthly` | `mollerz`)
 
 ## Automatic typed social posts
 
-When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish four graphic types to Facebook and Instagram:
+When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish five graphic types to Facebook and Instagram:
 
 | Type           | Trigger                                                                      | Dedup key                                         |
 | -------------- | ---------------------------------------------------------------------------- | ------------------------------------------------- |
@@ -171,6 +173,9 @@ When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish four graphic ty
 | **RÉCORDS**    | New NR / NAR / WR marker on a Mexican person's result (incl. abroad)         | `(record, {result_id}:single\|average, platform)` |
 | **PRÓXIMAS**   | Newly inserted Mexican competition with `start_date > now` and not cancelled | `(upcoming, competition_id, platform)`            |
 | **RESUMEN**    | Current calendar year summaries unlocked (Dec 20 UTC onward)                 | `(summary_unlock, {year}, platform)`              |
+| **MOLLERZ**    | Person becomes a Mollerz member or moves up a tier during a results import   | `(mollerz, {wca_id}:{tier}, platform)`            |
+
+MOLLERZ compares a snapshot of members (people with results in every current WCA event) taken before the import with one taken after. Downgrades, which only happen when WCA adds a new event, are never posted. After the first deploy, run `POST /social/mollerz/seed` once so existing members don't show up as pending in the admin panel.
 
 `/update-all` also publishes **SEMANA** (weekly digest) after state records have been recomputed, so SR totals appear on the carousel. `/update-database` does not post SEMANA on its own (the WCA import wipes `state_*_record` flags). `POST /post-weekly-digest` is the manual/retry job; run it after `/update-state-records`. `POST /post-summary-unlock` runs the same Dec 20 due-check without a WCA import (useful for Cloud Scheduler on Dec 20). Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
 
