@@ -1,9 +1,10 @@
 import { TableRow, TableCell } from "@workspace/ui/components/table";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { MembersTableCard } from "./_components/members-table-card";
 
 export default function Loading() {
   return (
-    <>
+    <MembersTableCard>
       {Array.from({ length: 10 }).map((_, index) => (
         <TableRow key={index}>
           <TableCell className="whitespace-nowrap">
@@ -35,6 +36,6 @@ export default function Loading() {
           </TableCell>
         </TableRow>
       ))}
-    </>
+    </MembersTableCard>
   );
 }

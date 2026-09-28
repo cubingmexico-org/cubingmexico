@@ -6,13 +6,6 @@ import {
   CardDescription,
   CardContent,
 } from "@workspace/ui/components/card";
-import {
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  Table,
-} from "@workspace/ui/components/table";
 import { ExternalLink, Medal } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -129,38 +122,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Todos los miembros</CardTitle>
-            <CardDescription>
-              Lista completa de speedcubers mexicanos en el sistema Mollerz
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="grid">
-              <div className="w-full overflow-auto">
-                <div className="overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Nivel</TableHead>
-                        <TableHead>Todos los eventos</TableHead>
-                        <TableHead>Promedios Speedsolving</TableHead>
-                        <TableHead>Medias BLD/FMC</TableHead>
-                        <TableHead>Podio WC</TableHead>
-                        <TableHead>WR</TableHead>
-                        <TableHead>Eventos ganados</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>{children}</TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {children}
       </div>
     </main>
   );

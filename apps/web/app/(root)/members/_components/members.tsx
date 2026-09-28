@@ -15,13 +15,23 @@ interface Member {
   state: string | null;
   numberOfSpeedsolvingAverages: number;
   numberOfBLDFMCMeans: number;
-  hasWorldRecord: boolean;
-  hasWorldChampionshipPodium: boolean;
+  hasRecord: boolean;
+  hasChampionshipPodium: boolean;
   eventsWon: number;
 }
 
 interface MembersProps {
   members: Member[];
+}
+
+function getMemberTier(member: Member): Tier {
+  return (
+    getTier({
+      ...member,
+      hasWorldRecord: member.hasRecord,
+      hasWorldChampionshipPodium: member.hasChampionshipPodium,
+    }) ?? "Bronce"
+  );
 }
 
 export function Members({ members }: MembersProps) {
@@ -34,15 +44,13 @@ export function Members({ members }: MembersProps) {
     "Diamante",
   ];
 
-  const sortedMembers = [...members].sort((a, b) => {
-    const tierA = getTier(a) ?? "Bronce";
-    const tierB = getTier(b) ?? "Bronce";
-    return tierOrder.indexOf(tierB) - tierOrder.indexOf(tierA);
-  });
+  const sortedMembers = members
+    .map((member) => ({ member, tier: getMemberTier(member) }))
+    .sort((a, b) => tierOrder.indexOf(b.tier) - tierOrder.indexOf(a.tier));
 
   return (
     <>
-      {sortedMembers.map((member) => (
+      {sortedMembers.map(({ member, tier }) => (
         <TableRow key={member.wcaId}>
           <TableCell className="whitespace-nowrap">
             <div className="flex">
@@ -63,9 +71,7 @@ export function Members({ members }: MembersProps) {
             )}
           </TableCell>
           <TableCell>
-            <Badge className={getTierClass(getTier(member) || "Bronce")}>
-              {getTier(member)}
-            </Badge>
+            <Badge className={getTierClass(tier)}>{tier}</Badge>
           </TableCell>
           <TableCell className="text-green-500">✓</TableCell>
           <TableCell>
@@ -95,21 +101,17 @@ export function Members({ members }: MembersProps) {
           <TableCell>
             <span
               className={
-                member.hasWorldChampionshipPodium
-                  ? "text-green-500"
-                  : "text-red-500"
+                member.hasChampionshipPodium ? "text-green-500" : "text-red-500"
               }
             >
-              {member.hasWorldChampionshipPodium ? "✓" : "✗"}
+              {member.hasChampionshipPodium ? "✓" : "✗"}
             </span>
           </TableCell>
           <TableCell>
             <span
-              className={
-                member.hasWorldRecord ? "text-green-500" : "text-red-500"
-              }
+              className={member.hasRecord ? "text-green-500" : "text-red-500"}
             >
-              {member.hasWorldRecord ? "✓" : "✗"}
+              {member.hasRecord ? "✓" : "✗"}
             </span>
           </TableCell>
           <TableCell>
