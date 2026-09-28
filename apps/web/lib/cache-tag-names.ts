@@ -51,6 +51,7 @@ export function personStateRecordTags(personIds: string[]): string[] {
   return personIds.flatMap((wcaId) => [
     `person-page-${wcaId}`,
     `person-data-${wcaId}`,
+    `person-data-wca-${wcaId}`,
     `person-record-history-${wcaId}`,
   ]);
 }

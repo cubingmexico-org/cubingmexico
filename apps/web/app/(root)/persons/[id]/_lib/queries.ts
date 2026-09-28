@@ -678,13 +678,29 @@ export async function getPersonDataFromWCA(
     `https://www.worldcubeassociation.org/api/v0/persons/${wcaId}`,
   );
 
-  if (!response.ok) {
+  if (response.status === 404) {
     return null;
+  }
+
+  // Throw instead of returning null so transient failures (429, 5xx) are not cached.
+  if (!response.ok) {
+    throw new Error(`WCA API responded ${response.status} for person ${wcaId}`);
   }
 
   const data = await response.json();
 
   return data;
+}
+
+export async function getPersonAvatarFromWCA(
+  wcaId: string,
+): Promise<WcaPersonResponse | null> {
+  try {
+    return await getPersonDataFromWCA(wcaId);
+  } catch (error) {
+    console.error(`Failed to fetch WCA data for person ${wcaId}`, error);
+    return null;
+  }
 }
 
 export type PersonRecordHistoryEntry = {

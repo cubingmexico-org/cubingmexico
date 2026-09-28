@@ -40,9 +40,11 @@ describe("cache tags", () => {
     expect(personStateRecordTags(["2015EXAM01", "2016TEST02"])).toEqual([
       "person-page-2015EXAM01",
       "person-data-2015EXAM01",
+      "person-data-wca-2015EXAM01",
       "person-record-history-2015EXAM01",
       "person-page-2016TEST02",
       "person-data-2016TEST02",
+      "person-data-wca-2016TEST02",
       "person-record-history-2016TEST02",
     ]);
   });

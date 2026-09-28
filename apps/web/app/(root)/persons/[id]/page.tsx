@@ -28,12 +28,12 @@ import {
   getOrganizerStatus,
   getMembershipData,
   getPersonCompetitionEventOptions,
-  getPersonDataFromWCA,
+  getPersonAvatarFromWCA,
   hasPersonChampionshipPodiums,
   hasPersonStaffCompetitions,
 } from "./_lib/queries";
 import type { PersonalRecordWithStateRank } from "./_lib/queries";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { formatDelegateLevel } from "@/lib/delegate-level";
 import { PersonTabs } from "./_components/person-tabs";
@@ -43,7 +43,7 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const id = (await params).id;
+  const id = (await params).id.toUpperCase();
 
   const person = await getPerson(id);
 
@@ -74,13 +74,9 @@ async function PersonPageContent({ id }: { id: string }) {
   cacheTag(`person-page-${id}`);
 
   const events = await getEvents();
-  const wcaData = await getPersonDataFromWCA(id);
-
-  if (!wcaData) {
-    notFound();
-  }
 
   const [
+    wcaData,
     personData,
     organizerStatus,
     membershipData,
@@ -88,6 +84,7 @@ async function PersonPageContent({ id }: { id: string }) {
     showChampionshipPodiumsTab,
     showStaffCompetitionsTab,
   ] = await Promise.all([
+    getPersonAvatarFromWCA(id),
     getPersonData(id),
     getOrganizerStatus(id),
     getMembershipData(
@@ -170,15 +167,17 @@ async function PersonPageContent({ id }: { id: string }) {
           </Badge>
         )}
       </div>
-      <div className="w-full flex justify-center mb-6">
-        <Image
-          src={wcaData?.person.avatar.url}
-          alt="Avatar"
-          width={wcaData.person.avatar.is_default ? 100 : 300}
-          height={wcaData.person.avatar.is_default ? 100 : 300}
-          className="rounded"
-        />
-      </div>
+      {wcaData && (
+        <div className="w-full flex justify-center mb-6">
+          <Image
+            src={wcaData.person.avatar.url}
+            alt="Avatar"
+            width={wcaData.person.avatar.is_default ? 100 : 300}
+            height={wcaData.person.avatar.is_default ? 100 : 300}
+            className="rounded"
+          />
+        </div>
+      )}
       <Table>
         <TableHeader>
           <TableRow>
@@ -450,6 +449,11 @@ async function PersonPageContent({ id }: { id: string }) {
 
 export default async function Page({ params }: Props) {
   const id = (await params).id;
+  const wcaId = id.toUpperCase();
 
-  return <PersonPageContent id={id} />;
+  if (wcaId !== id) {
+    permanentRedirect(`/persons/${wcaId}`);
+  }
+
+  return <PersonPageContent id={wcaId} />;
 }
