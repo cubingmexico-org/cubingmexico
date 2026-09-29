@@ -85,7 +85,9 @@ export type SocialPostType =
 
 type CarouselPostType = "weekly_digest" | "year_recap";
 
-function isCarouselPostType(postType: SocialPostType): postType is CarouselPostType {
+function isCarouselPostType(
+  postType: SocialPostType,
+): postType is CarouselPostType {
   return postType === "weekly_digest" || postType === "year_recap";
 }
 

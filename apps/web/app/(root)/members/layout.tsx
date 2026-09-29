@@ -14,7 +14,14 @@ import { Fragment } from "react";
 import { getTierClass } from "@/lib/utils";
 import type { Tier } from "@/types";
 
-const tiers: Tier[] = ["Bronce", "Plata", "Oro", "Platino", "Ópalo", "Diamante"];
+const tiers: Tier[] = [
+  "Bronce",
+  "Plata",
+  "Oro",
+  "Platino",
+  "Ópalo",
+  "Diamante",
+];
 
 export const metadata: Metadata = {
   title: "Miembros | Cubing México",

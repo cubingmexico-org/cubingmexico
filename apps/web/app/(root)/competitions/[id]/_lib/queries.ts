@@ -78,6 +78,27 @@ export async function getWcaCompetitionData(
   return response.json();
 }
 
+/**
+ * WCA public WCIF (schedule with activity times). Throws on any failure,
+ * including 404, so a missing or transient WCIF is never cached.
+ */
+export async function getPublicWcif(competitionId: string): Promise<unknown> {
+  cacheTag(`wca-wcif-public-${competitionId}`);
+
+  const response = await fetch(
+    `https://www.worldcubeassociation.org/api/v0/competitions/${competitionId}/wcif/public`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch WCIF for ${competitionId}: ${response.status} ${response.statusText}`,
+    );
+  }
+
+  cacheLife("hours");
+  return response.json();
+}
+
 /** Cubing México Neon `competitions.logo` (UploadThing / imported URL). */
 export async function getCompetitionLogo(
   competitionId: string,
