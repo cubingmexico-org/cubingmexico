@@ -80,7 +80,14 @@ export type SocialPostType =
   | "summary_unlock"
   | "weekly_digest"
   | "streaks_monthly"
-  | "mollerz";
+  | "mollerz"
+  | "year_recap";
+
+type CarouselPostType = "weekly_digest" | "year_recap";
+
+function isCarouselPostType(postType: SocialPostType): postType is CarouselPostType {
+  return postType === "weekly_digest" || postType === "year_recap";
+}
 
 export type PendingResultadosRow = {
   id: string;
@@ -140,6 +147,13 @@ export type PendingStreaksMonthlyRow = {
   instagramPosted: boolean;
 };
 
+export type PendingYearRecapRow = {
+  subjectKey: string;
+  year: number;
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+};
+
 export type PendingMollerzRow = {
   subjectKey: string;
   personId: string;
@@ -175,6 +189,7 @@ export type SocialPostStats = {
   weeklyDigest: number;
   streaksMonthly: number;
   mollerz: number;
+  yearRecap: number;
 };
 
 function platformLabel(platform: string) {
@@ -203,6 +218,7 @@ function postTypeLabel(postType: string) {
   if (postType === "weekly_digest") return "SEMANA";
   if (postType === "streaks_monthly") return "RACHAS";
   if (postType === "mollerz") return "MOLLERZ";
+  if (postType === "year_recap") return "AÑO";
   return postType;
 }
 
@@ -214,6 +230,7 @@ function apiBase(postType: SocialPostType) {
   if (postType === "streaks_monthly")
     return "/api/admin/social/streaks-monthly";
   if (postType === "mollerz") return "/api/admin/social/mollerz";
+  if (postType === "year_recap") return "/api/admin/social/year-recap";
   return "/api/admin/social/upcoming";
 }
 
@@ -272,7 +289,9 @@ async function downloadImage(postType: SocialPostType, subjectKey: string) {
               ? "rachas"
               : postType === "mollerz"
                 ? "mollerz"
-                : "proxima";
+                : postType === "year_recap"
+                  ? "ano"
+                  : "proxima";
   a.download = `${prefix}-${subjectKey.replace(/[:/]/g, "-")}.png`;
   document.body.appendChild(a);
   a.click();
@@ -331,11 +350,12 @@ async function fetchImageObjectUrl(
   return URL.createObjectURL(blob);
 }
 
-async function fetchWeeklyDigestSlidesManifest(
-  week: string,
+async function fetchCarouselSlidesManifest(
+  postType: CarouselPostType,
+  subjectKey: string,
 ): Promise<Array<{ index: number; id: string; title: string }>> {
   const response = await fetch(
-    `/api/admin/social/weekly-digest/${encodeURIComponent(week)}/slides`,
+    `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/slides`,
   );
   const data = await response.json();
   if (!response.ok || !data.success || !Array.isArray(data.slides)) {
@@ -349,12 +369,13 @@ async function fetchWeeklyDigestSlidesManifest(
   return data.slides as Array<{ index: number; id: string; title: string }>;
 }
 
-async function fetchWeeklyDigestSlideObjectUrl(
-  week: string,
+async function fetchCarouselSlideObjectUrl(
+  postType: CarouselPostType,
+  subjectKey: string,
   index: number,
 ): Promise<string> {
   const response = await fetch(
-    `/api/admin/social/weekly-digest/${encodeURIComponent(week)}/slides/${index}/image`,
+    `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/slides/${index}/image`,
   );
   if (!response.ok) {
     let message = `Error HTTP ${response.status}`;
@@ -371,13 +392,14 @@ async function fetchWeeklyDigestSlideObjectUrl(
   return URL.createObjectURL(blob);
 }
 
-async function downloadWeeklyDigestSlide(
-  week: string,
+async function downloadCarouselSlide(
+  postType: CarouselPostType,
+  subjectKey: string,
   index: number,
   slideId: string,
 ) {
   const response = await fetch(
-    `/api/admin/social/weekly-digest/${encodeURIComponent(week)}/slides/${index}/image`,
+    `${apiBase(postType)}/${encodeURIComponent(subjectKey)}/slides/${index}/image`,
   );
   if (!response.ok) {
     let message = `Error HTTP ${response.status}`;
@@ -394,7 +416,8 @@ async function downloadWeeklyDigestSlide(
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `semana-${week.replace(/[:/]/g, "-")}-${slideId}.png`;
+  const prefix = postType === "year_recap" ? "ano" : "semana";
+  a.download = `${prefix}-${subjectKey.replace(/[:/]/g, "-")}-${slideId}.png`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -466,6 +489,7 @@ export function SocialAdminPanel({
   pendingSummaryUnlock,
   pendingWeeklyDigest,
   pendingStreaksMonthly,
+  pendingYearRecap = [],
   pendingMollerz,
   posts,
   postsTotal = 0,
@@ -481,6 +505,7 @@ export function SocialAdminPanel({
   pendingSummaryUnlock: PendingSummaryUnlockRow[];
   pendingWeeklyDigest: PendingWeeklyDigestRow[];
   pendingStreaksMonthly: PendingStreaksMonthlyRow[];
+  pendingYearRecap?: PendingYearRecapRow[];
   pendingMollerz: PendingMollerzRow[];
   posts: SocialPostRow[];
   postsTotal?: number;
@@ -523,18 +548,20 @@ export function SocialAdminPanel({
       setPreviewPlatform("facebook");
       setPreviewSlideIndex(0);
       try {
-        if (target.postType === "weekly_digest") {
+        if (isCarouselPostType(target.postType)) {
+          const carouselType = target.postType;
           const [manifest, captions] = await Promise.all([
-            fetchWeeklyDigestSlidesManifest(target.subjectKey),
-            fetchCaptions(target.postType, target.subjectKey),
+            fetchCarouselSlidesManifest(carouselType, target.subjectKey),
+            fetchCaptions(carouselType, target.subjectKey),
           ]);
           if (cancelled) return;
           if (manifest.length === 0) {
-            throw new Error("No hay slides para esta semana");
+            throw new Error("No hay slides para esta publicación");
           }
           const slides: PreviewSlide[] = [];
           for (const meta of manifest) {
-            const imageUrl = await fetchWeeklyDigestSlideObjectUrl(
+            const imageUrl = await fetchCarouselSlideObjectUrl(
+              carouselType,
               target.subjectKey,
               meta.index,
             );
@@ -621,13 +648,18 @@ export function SocialAdminPanel({
     try {
       if (action === "download") {
         if (
-          postType === "weekly_digest" &&
+          isCarouselPostType(postType) &&
           previewData?.slides &&
           previewData.slides.length > 0
         ) {
           const slide =
             previewData.slides[previewSlideIndex] ?? previewData.slides[0]!;
-          await downloadWeeklyDigestSlide(subjectKey, slide.index, slide.id);
+          await downloadCarouselSlide(
+            postType,
+            subjectKey,
+            slide.index,
+            slide.id,
+          );
         } else {
           await downloadImage(postType, subjectKey);
         }
@@ -704,6 +736,7 @@ export function SocialAdminPanel({
     pendingSummaryUnlock.length +
     pendingWeeklyDigest.length +
     pendingStreaksMonthly.length +
+    pendingYearRecap.length +
     pendingMollerz.length;
 
   const totalPages = Math.max(1, Math.ceil(postsTotal / pageSize));
@@ -1232,6 +1265,64 @@ export function SocialAdminPanel({
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pendientes · AÑO</CardTitle>
+              <CardDescription>
+                Carrusel con el año en números y felicitación de año nuevo. Se
+                publica el 31 de diciembre (México), con reintento hasta el 2 de
+                enero; vista previa desde el 20 de diciembre.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingYearRecap.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No hay AÑO pendiente (fuera de temporada o ya publicado).
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Año</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingYearRecap.map((row) => {
+                        return (
+                          <TableRow key={row.subjectKey}>
+                            <TableCell>
+                              <div className="space-y-0.5">
+                                <p className="font-medium">Año {row.year}</p>
+                                <p className="text-muted-foreground text-xs">
+                                  Recap nacional + ¡Feliz {row.year + 1}!
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{missingPlatformBadges(row)}</TableCell>
+                            <TableCell className="text-right">
+                              <PreviewButton
+                                postType="year_recap"
+                                subjectKey={row.subjectKey}
+                                name={`Año ${row.year}`}
+                                disabled={busyKey !== null}
+                                onPreview={setPreviewTarget}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </>
       ) : (
         <Card>
@@ -1270,6 +1361,7 @@ export function SocialAdminPanel({
                             "weekly_digest",
                             "streaks_monthly",
                             "mollerz",
+                            "year_recap",
                           ].includes(post.postType)
                             ? post.postType
                             : "resultados"
@@ -1283,7 +1375,9 @@ export function SocialAdminPanel({
                                 ? `Semana ${post.subjectKey}`
                                 : postType === "streaks_monthly"
                                   ? `Rachas ${post.subjectKey}`
-                                  : (post.competitionName ?? post.subjectKey);
+                                  : postType === "year_recap"
+                                    ? `Año ${post.subjectKey}`
+                                    : (post.competitionName ?? post.subjectKey);
                         return (
                           <TableRow key={post.id}>
                             <TableCell>

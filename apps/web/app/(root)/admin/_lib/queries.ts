@@ -1,6 +1,9 @@
 import "server-only";
 
-import { streaksMonthlyKeyIfDue } from "@/lib/social-calendar-mx";
+import {
+  streaksMonthlyKeyIfDue,
+  yearRecapKeyForAdmin,
+} from "@/lib/social-calendar-mx";
 
 import { db } from "@workspace/db";
 import {
@@ -119,6 +122,7 @@ export async function getSocialPostStats() {
       weeklyDigest: sql<number>`count(*) filter (where ${socialPost.postType} = 'weekly_digest')`,
       streaksMonthly: sql<number>`count(*) filter (where ${socialPost.postType} = 'streaks_monthly')`,
       mollerz: sql<number>`count(*) filter (where ${socialPost.postType} = 'mollerz')`,
+      yearRecap: sql<number>`count(*) filter (where ${socialPost.postType} = 'year_recap')`,
     })
     .from(socialPost);
 
@@ -134,6 +138,7 @@ export async function getSocialPostStats() {
     weeklyDigest: Number(totals?.weeklyDigest ?? 0),
     streaksMonthly: Number(totals?.streaksMonthly ?? 0),
     mollerz: Number(totals?.mollerz ?? 0),
+    yearRecap: Number(totals?.yearRecap ?? 0),
   };
 }
 
@@ -530,6 +535,47 @@ export async function getPendingStreaksMonthlyPosts(): Promise<
     {
       subjectKey,
       monthKey: subjectKey,
+      facebookPosted,
+      instagramPosted,
+    },
+  ];
+}
+
+export async function getPendingYearRecapPosts(): Promise<
+  Array<{
+    subjectKey: string;
+    year: number;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const year = yearRecapKeyForAdmin();
+  if (year === null) {
+    return [];
+  }
+  const subjectKey = String(year);
+  const rows = await db
+    .select({
+      platform: socialPost.platform,
+    })
+    .from(socialPost)
+    .where(
+      and(
+        eq(socialPost.postType, "year_recap"),
+        eq(socialPost.subjectKey, subjectKey),
+      ),
+    );
+
+  const facebookPosted = rows.some((row) => row.platform === "facebook");
+  const instagramPosted = rows.some((row) => row.platform === "instagram");
+  if (facebookPosted && instagramPosted) {
+    return [];
+  }
+
+  return [
+    {
+      subjectKey,
+      year,
       facebookPosted,
       instagramPosted,
     },

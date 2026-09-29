@@ -164,6 +164,27 @@ def is_streaks_monthly_due(month: str, now: datetime | None = None) -> bool:
     return streaks_monthly_publish_window(month, now)
 
 
+YEAR_RECAP_GRACE_DAYS = 2
+
+
+def is_year_recap_due(year: int, now: datetime | None = None) -> bool:
+    """True on Dec 31 of ``year`` (México), with a short grace into January."""
+    today = mexico_city_today(now)
+    if today == date(year, 12, 31):
+        return True
+    return today.year == year + 1 and today.month == 1 and (
+        today.day <= YEAR_RECAP_GRACE_DAYS
+    )
+
+
+def year_recap_key_if_due(now: datetime | None = None) -> int | None:
+    today = mexico_city_today(now)
+    for year in (today.year, today.year - 1):
+        if is_year_recap_due(year, now):
+            return year
+    return None
+
+
 def format_day_month_short(d: date) -> str:
     return f"{d.day} {_MONTHS_ES_SHORT[d.month - 1]}"
 

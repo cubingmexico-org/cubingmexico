@@ -54,6 +54,21 @@ export function streaksMonthlyPublishWindow(
   );
 }
 
+export const YEAR_RECAP_PREVIEW_FROM_DAY = 20;
+export const YEAR_RECAP_GRACE_DAYS = 2;
+
+/** Year whose AÑO recap should show in admin (Dec 20+ preview, Jan 1–2 grace). */
+export function yearRecapKeyForAdmin(now = new Date()): number | null {
+  const today = mexicoCityParts(now);
+  if (today.month === 12 && today.day >= YEAR_RECAP_PREVIEW_FROM_DAY) {
+    return today.year;
+  }
+  if (today.month === 1 && today.day <= YEAR_RECAP_GRACE_DAYS) {
+    return today.year - 1;
+  }
+  return null;
+}
+
 export function streaksMonthlyKeyIfDue(now = new Date()): string | null {
   const today = mexicoCityParts(now);
   if (today.day === lastDayOfMonth(today.year, today.month)) {

@@ -42,6 +42,7 @@ SLIDE_TITLES = {
     "cover": "Portada",
     "competencias": "Competencias",
     "numeros": "En números",
+    "debutantes": "Bienvenidos",
     "destacados": "Destacados",
     "proximas": "Próximas",
 }
@@ -97,6 +98,59 @@ def _panel_bottom_y() -> int:
     return PANEL_BOTTOM - FOOTER_RESERVE
 
 
+UPCOMING_FOOTER_ROW_H = 64
+UPCOMING_FOOTER_HEAD_H = 52
+
+
+def _upcoming_footer_height(payload: dict) -> int:
+    rows = (payload.get("upcoming_comps") or [])[:2]
+    if not rows:
+        return 0
+    return UPCOMING_FOOTER_HEAD_H + len(rows) * UPCOMING_FOOTER_ROW_H + 12
+
+
+def _content_bottom(payload: dict, slide_id: str) -> int:
+    """Lowest y for slide content, leaving room for the PRÓXIMAS footer strip."""
+    bottom = _panel_bottom_y()
+    if payload.get("_upcoming_footer_slide") == slide_id:
+        bottom -= _upcoming_footer_height(payload) + 24
+    return bottom
+
+
+def _draw_upcoming_footer(
+    draw: ImageDraw.ImageDraw, payload: dict, slide_id: str
+) -> None:
+    if payload.get("_upcoming_footer_slide") != slide_id:
+        return
+    rows = (payload.get("upcoming_comps") or [])[:2]
+    if not rows:
+        return
+    label_font = load_font(22)
+    name_font = load_font(26)
+    meta_font = load_font(20)
+    top = _panel_bottom_y() - _upcoming_footer_height(payload)
+    draw.line([(CONTENT_LEFT, top), (CONTENT_RIGHT, top)], fill=TILE_BG, width=2)
+    y = top + 16
+    draw.text((CONTENT_LEFT, y), "PRÓXIMAS", font=label_font, fill=RED)
+    y = top + UPCOMING_FOOTER_HEAD_H
+    for comp in rows:
+        draw.text(
+            (CONTENT_LEFT, y),
+            _fit_ellipsis(comp.get("name") or "", name_font, CONTENT_WIDTH),
+            font=name_font,
+            fill=BLACK,
+        )
+        meta = _comp_meta(comp)
+        if meta:
+            draw.text(
+                (CONTENT_LEFT, y + text_height("Ay", name_font) + 8),
+                _fit_ellipsis(meta, meta_font, CONTENT_WIDTH),
+                font=meta_font,
+                fill=GREEN,
+            )
+        y += UPCOMING_FOOTER_ROW_H
+
+
 def _estimate_comp_block_h(
     rows: list[tuple[dict, str | None]],
     *,
@@ -124,13 +178,15 @@ def _distribute_start_and_gap(
     min_gap: int = 16,
     max_gap: int = 120,
     top_pad: int = 28,
+    bottom: int | None = None,
 ) -> tuple[int, int]:
     """Return (y_start_after_header, gap) to vertically fill the cream panel.
 
     y_start_after_header is where content begins (caller draws section label
     starting at y_start_after_header - header_h).
     """
-    bottom = _panel_bottom_y()
+    if bottom is None:
+        bottom = _panel_bottom_y()
     available = bottom - (panel_top + top_pad) - header_h
     if available < 1:
         return panel_top + top_pad + header_h, min_gap
@@ -219,6 +275,116 @@ def _has_numeros(payload: dict) -> bool:
     return bool(_stat_tiles(payload, limit=6))
 
 
+RECORD_KICKERS = {
+    "WR": "RÉCORD MUNDIAL",
+    "NAR": "RÉCORD CONTINENTAL",
+    "NR": "RÉCORD NACIONAL",
+}
+
+KIND_ES = {"single": "single", "average": "promedio"}
+
+
+def _stats_line(payload: dict) -> str:
+    bits = []
+    for value, label in _stat_tiles(payload, limit=6):
+        shown = label if label in {"WR", "NAR", "NR", "SR"} else label.lower()
+        bits.append(f"{value} {shown}")
+    return " · ".join(bits)
+
+
+def _states_phrase(comps: list[dict]) -> str:
+    states = sorted({(c.get("state_name") or "").strip() for c in comps} - {""})
+    if len(states) == 1:
+        return f"en {states[0]}"
+    if len(states) > 1:
+        return f"en {len(states)} estados"
+    return ""
+
+
+def weekly_cover_story(payload: dict) -> dict | None:
+    """Pick the week's lead story for the cover and caption opener.
+
+    Returns {kind, kicker, headline, sub, caption} or None on thin/empty weeks.
+    """
+    if payload.get("is_thin") or payload.get("is_empty"):
+        return None
+
+    rows, _ = _comp_rows(payload)
+    single_comp = rows[0][0] if len(rows) == 1 else None
+
+    highlights = payload.get("record_highlights") or []
+    if highlights:
+        h = highlights[0]
+        level = str(h.get("level") or "").upper()
+        event = h.get("event_name") or ""
+        kind = KIND_ES.get(h.get("kind") or "", h.get("kind") or "")
+        person = h.get("person_name") or ""
+        sub_bits = [f"{event} {kind}".strip()]
+        if not single_comp and h.get("competition_name"):
+            sub_bits.append(h["competition_name"])
+        extra = len(highlights) - 1
+        caption = f"¡{level} en {event} {kind} para {person}!".replace("  ", " ")
+        if extra > 0:
+            caption += f" Y {extra} récord{'s' if extra != 1 else ''} más."
+        return {
+            "kind": "record",
+            "kicker": RECORD_KICKERS.get(level, level),
+            "headline": person,
+            "sub": " · ".join(b for b in sub_bits if b),
+            "caption": caption,
+        }
+
+    breakers = payload.get("sr_breakers") or []
+    if breakers and int(breakers[0].get("count") or 0) >= 3:
+        b = breakers[0]
+        count = int(b.get("count") or 0)
+        person = b.get("person_name") or ""
+        state = (b.get("state_name") or "").strip()
+        caption = f"{person} rompió {count} récords estatales"
+        caption += f" de {state}." if state and state != "Sin estado" else "."
+        return {
+            "kind": "sr",
+            "kicker": f"{count} RÉCORDS ESTATALES",
+            "headline": person,
+            "sub": state if state != "Sin estado" else "",
+            "caption": caption,
+        }
+
+    debut_count = int(payload.get("debut_count") or 0)
+    if debut_count:
+        noun = "nuevo cubero" if debut_count == 1 else "nuevos cuberos"
+        return {
+            "kind": "debut",
+            "kicker": "BIENVENIDOS",
+            "headline": f"{debut_count} {noun}",
+            "sub": "",
+            "caption": f"¡Bienvenida a {'nuestro' if debut_count == 1 else 'los'} "
+            f"{debut_count} {noun}!",
+        }
+
+    if single_comp:
+        return {
+            "kind": "comp",
+            "kicker": "COMPETENCIA",
+            "headline": single_comp.get("name") or "",
+            "sub": _comp_meta(single_comp),
+            "caption": f"Así se vivió {single_comp.get('name') or 'la competencia'}.",
+        }
+    if rows:
+        comps = [c for c, _ in rows]
+        where = _states_phrase(comps)
+        return {
+            "kind": "comp",
+            "kicker": "COMPETENCIAS",
+            "headline": f"{len(comps)} competencias {where}".strip(),
+            "sub": "",
+            "caption": f"{len(comps)} competencias {where} esta semana.".replace(
+                "  ", " "
+            ),
+        }
+    return None
+
+
 def _comp_rows(payload: dict) -> tuple[list[tuple[dict, str | None]], bool]:
     """Return (rows, late_only)."""
     primary = payload.get("primary_comps") or []
@@ -237,41 +403,54 @@ def _comp_rows(payload: dict) -> tuple[list[tuple[dict, str | None]], bool]:
     return rows, has_late and not has_primary
 
 
+MAX_SLIDES = 5
+UPCOMING_FOOTER_MAX = 2
+
+
+def _plan_ids(payload: dict) -> tuple[list[str], str | None]:
+    """Return (slide ids, inner slide id that carries the PRÓXIMAS footer)."""
+    if payload.get("is_empty"):
+        return [], None
+
+    upcoming = payload.get("upcoming_comps") or []
+    if payload.get("is_thin"):
+        return (["cover", "proximas"] if upcoming else ["cover"]), None
+
+    inner: list[str] = []
+    rows, _ = _comp_rows(payload)
+    # A single competition is already named on the cover.
+    if len(rows) > 1:
+        inner.append("competencias")
+    if _has_numeros(payload):
+        inner.append("numeros")
+    if payload.get("debuts"):
+        inner.append("debutantes")
+    if payload.get("record_highlights"):
+        inner.append("destacados")
+    inner = inner[: MAX_SLIDES - 1]
+
+    footer_slide = None
+    if upcoming:
+        fits_footer = len(upcoming) <= UPCOMING_FOOTER_MAX
+        no_room = len(inner) >= MAX_SLIDES - 1
+        if inner and (fits_footer or no_room):
+            footer_slide = inner[-1]
+        else:
+            inner.append("proximas")
+    return ["cover", *inner], footer_slide
+
+
 def plan_weekly_digest_slides(payload: dict) -> list[dict]:
     """Return ordered slide descriptors: {id, title}. Cap at 5."""
-    if payload.get("is_empty"):
-        return []
-
-    slides: list[dict] = []
-
-    def add(slide_id: str) -> None:
-        if len(slides) >= 5:
-            return
-        slides.append({"id": slide_id, "title": SLIDE_TITLES[slide_id]})
-
-    is_thin = bool(payload.get("is_thin"))
-    add("cover")
-
-    if is_thin:
-        if payload.get("upcoming_comps"):
-            add("proximas")
-        return slides
-
-    rows, _ = _comp_rows(payload)
-    if rows:
-        add("competencias")
-    if _has_numeros(payload):
-        add("numeros")
-    if payload.get("record_highlights"):
-        add("destacados")
-    if payload.get("upcoming_comps"):
-        add("proximas")
-    return slides
+    ids, _ = _plan_ids(payload)
+    return [{"id": slide_id, "title": SLIDE_TITLES[slide_id]} for slide_id in ids]
 
 
 def generate_weekly_digest_slides(*, payload: dict) -> list[dict]:
     """Generate all slides: [{id, title, png}]."""
-    plan = plan_weekly_digest_slides(payload)
+    ids, footer_slide = _plan_ids(payload)
+    payload = {**payload, "_upcoming_footer_slide": footer_slide}
+    plan = [{"id": slide_id, "title": SLIDE_TITLES[slide_id]} for slide_id in ids]
     out: list[dict] = []
     total = len(plan)
     for i, slide in enumerate(plan):
@@ -391,13 +570,15 @@ def _draw_full_header(
     canvas: Image.Image,
     draw: ImageDraw.ImageDraw,
     subtitle: str,
+    *,
+    title: str = "SEMANA",
 ) -> int:
     """Full SEMANA header. Returns panel_top."""
     logo_bottom = paste_logo(canvas, max_size=(110, 110), y=44)
     title_font = load_font(44)
     range_font = load_font(26)
     title_y = logo_bottom + 8
-    center_text(draw, "SEMANA", title_font, title_y, WHITE)
+    center_text(draw, title, title_font, title_y, WHITE)
     subtitle_y = title_y + text_height("Ay", title_font) + 6
     center_text(draw, subtitle, range_font, subtitle_y, WHITE)
     return max(
@@ -410,13 +591,15 @@ def _draw_compact_header(
     canvas: Image.Image,
     draw: ImageDraw.ImageDraw,
     eyebrow: str,
+    *,
+    title: str = "SEMANA",
 ) -> int:
     """Compact header band for inner slides. Returns panel_top."""
     logo_bottom = paste_logo(canvas, max_size=(72, 72), y=40)
     eyebrow_font = load_font(24)
     title_font = load_font(36)
     ey = logo_bottom + 4
-    center_text(draw, "SEMANA", eyebrow_font, ey, WHITE)
+    center_text(draw, title, eyebrow_font, ey, WHITE)
     ty = ey + text_height("Ay", eyebrow_font) + 4
     center_text(draw, eyebrow, title_font, ty, WHITE)
     return max(
@@ -444,6 +627,8 @@ def _render_slide(
         return _slide_competencias(payload, index=index, total=total)
     if slide_id == "numeros":
         return _slide_numeros(payload, index=index, total=total)
+    if slide_id == "debutantes":
+        return _slide_debutantes(payload, index=index, total=total)
     if slide_id == "destacados":
         return _slide_destacados(payload, index=index, total=total)
     if slide_id == "proximas":
@@ -462,11 +647,8 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
     )
 
     is_thin = bool(payload.get("is_thin"))
-    tiles = _stat_tiles(payload, limit=3)
     section_font = load_font(30)
-    body_font = load_font(28)
     meta_font = load_font(24)
-    bottom = _panel_bottom_y()
 
     if is_thin:
         y = panel_top + 56
@@ -507,88 +689,106 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
         _draw_slide_index(draw, index=index, total=total)
         return _png_bytes(canvas)
 
-    # Full cover: hero tiles + week snapshot lists (spread to fill panel).
-    primary = payload.get("primary_comps") or []
-    late = payload.get("late_comps") or []
-    upcoming = payload.get("upcoming_comps") or []
-    highlights = payload.get("record_highlights") or []
-    bottom = _panel_bottom_y()
+    story = weekly_cover_story(payload) or {
+        "kind": "comp",
+        "kicker": "EN RESUMEN",
+        "headline": "Semana con actividad cubera",
+        "sub": "",
+    }
+    rows, late_only = _comp_rows(payload)
+    comps = [c for c, _ in rows]
 
-    snap_font = load_font(26)
-    snap_meta = load_font(26)
-    blocks: list[tuple[str, list[str]]] = []
+    headline_font, headline_lines = _fit_headline(
+        story["headline"], CONTENT_WIDTH, sizes=(76, 72, 68, 64, 60, 56, 52, 48, 44)
+    )
+    sub_font = load_font(32)
+    ctx_name_font = load_font(34)
+    ctx_meta_font = load_font(26)
+    stats_font = load_font(32)
 
-    comp_names = [c.get("name") or "" for c in (primary + late)[:4]]
-    if comp_names:
-        blocks.append(("Competencias", comp_names))
-    if highlights:
-        h0 = highlights[0]
-        label = f"{h0.get('level') or ''} · {h0.get('person_name') or ''}".strip(
-            " ·"
-        )
-        more = f" +{len(highlights) - 1} más" if len(highlights) > 1 else ""
-        blocks.append(("Destacado", [label + more]))
-    if upcoming:
-        blocks.append(
-            ("Próximas", [c.get("name") or "" for c in upcoming[:2]])
-        )
+    context: list[tuple[str, ImageFont.ImageFont, tuple]] = []
+    if story["kind"] != "comp" and len(comps) == 1:
+        comp = comps[0]
+        for line in _wrap_text(comp.get("name") or "", ctx_name_font, CONTENT_WIDTH):
+            context.append((line, ctx_name_font, BLACK))
+        meta = _comp_meta(comp)
+        if not late_only and not comp.get("has_results"):
+            meta = f"{meta} · resultados pendientes".strip(" ·")
+        if meta:
+            context.append(
+                (_fit_ellipsis(meta, ctx_meta_font, CONTENT_WIDTH), ctx_meta_font, GREEN)
+            )
+    elif story["kind"] != "comp" and len(comps) > 1:
+        line = f"{len(comps)} competencias {_states_phrase(comps)}".strip()
+        context.append((line, ctx_name_font, BLACK))
 
-    # Measure tiles + blocks to distribute leftover space between sections.
-    tiles_h = 148 + 18 if tiles else 40
+    stats = _stats_line(payload)
+    band_h = 104 if stats else 0
+    band_bottom = _panel_bottom_y() - 8
+    band_top = band_bottom - band_h
+    content_bottom = band_top - 28 if stats else _panel_bottom_y()
+
     header_h = text_height("Ay", section_font) + 8 + 4 + 16
-    block_heights: list[int] = []
-    for title, lines in blocks:
-        h = text_height("Ay", snap_font) + 6
-        for raw in lines:
-            wrapped = _wrap_text(raw, snap_meta, CONTENT_WIDTH, max_lines=2) or [raw]
-            h += len(wrapped) * (text_height("Ay", snap_meta) + 4) + 6
-        block_heights.append(h)
-    blocks_h = sum(block_heights)
-    top_pad = 28
-    available = bottom - (panel_top + top_pad) - header_h - tiles_h - blocks_h
-    n_gaps = len(blocks)  # gap after tiles + between blocks
-    section_gap = max(18, min(56, available // max(1, n_gaps))) if n_gaps else 18
+    headline_line_h = text_height("Ay", headline_font) + 10
+    content_h = header_h + len(headline_lines) * headline_line_h
+    if story.get("sub"):
+        content_h += 8 + text_height("Ay", sub_font)
+    ctx_gap = 48
+    if context:
+        content_h += ctx_gap + sum(text_height("Ay", f) + 10 for _, f, _ in context)
 
-    y = panel_top + top_pad
-    y = _draw_section_label(draw, "EN RESUMEN", section_font, x=CONTENT_LEFT, y=y)
-
-    if tiles:
-        y = _draw_stat_tiles(
-            draw,
-            tiles,
-            x0=CONTENT_LEFT,
-            x1=CONTENT_RIGHT,
-            y=y,
-            tile_h=148,
-            num_size=56,
-        )
-    else:
+    area_top = panel_top + 36
+    y = area_top + max(0, (content_bottom - area_top - content_h) // 2)
+    y = _draw_section_label(draw, story["kicker"], section_font, x=CONTENT_LEFT, y=y)
+    for line in headline_lines:
+        draw.text((CONTENT_LEFT, y), line, font=headline_font, fill=BLACK)
+        y += headline_line_h
+    if story.get("sub"):
+        y += 8
         draw.text(
             (CONTENT_LEFT, y),
-            "Semana con actividad cubera",
-            font=body_font,
-            fill=BLACK,
+            _fit_ellipsis(story["sub"], sub_font, CONTENT_WIDTH),
+            font=sub_font,
+            fill=GREEN,
         )
-        y += text_height("Ay", body_font) + 20
+        y += text_height("Ay", sub_font)
+    if context:
+        y += ctx_gap
+        draw.rectangle([CONTENT_LEFT, y - 24, CONTENT_LEFT + 48, y - 20], fill=RULE)
+        for text, font, fill in context:
+            draw.text((CONTENT_LEFT, y), text, font=font, fill=fill)
+            y += text_height("Ay", font) + 10
 
-    for title, lines in blocks:
-        y += section_gap
-        if y > bottom - 60:
-            break
-        draw.text((CONTENT_LEFT, y), title.upper(), font=snap_font, fill=GREEN)
-        y += text_height("Ay", snap_font) + 8
-        for raw in lines:
-            for line in _wrap_text(raw, snap_meta, CONTENT_WIDTH, max_lines=2) or [
-                raw
-            ]:
-                if y > bottom - 28:
-                    break
-                draw.text((CONTENT_LEFT, y), line, font=snap_meta, fill=BLACK)
-                y += text_height("Ay", snap_meta) + 4
-            y += 8
+    if stats:
+        draw.rounded_rectangle(
+            [CONTENT_LEFT, band_top, CONTENT_RIGHT, band_bottom],
+            radius=20,
+            fill=TILE_BG,
+        )
+        draw.text(
+            ((CONTENT_LEFT + CONTENT_RIGHT) // 2, (band_top + band_bottom) // 2),
+            _fit_ellipsis(stats, stats_font, CONTENT_WIDTH - 40),
+            font=stats_font,
+            fill=CREAM,
+            anchor="mm",
+        )
 
     _draw_slide_index(draw, index=index, total=total)
     return _png_bytes(canvas)
+
+
+def _fit_headline(
+    text: str, max_width: int, *, sizes: tuple[int, ...]
+) -> tuple[ImageFont.ImageFont, list[str]]:
+    """Largest size that wraps into two lines without truncation (else 3 lines)."""
+    text = (text or "").strip() or "—"
+    for size in sizes:
+        font = load_font(size)
+        lines = _wrap_text(text, font, max_width, max_lines=2)
+        if lines and " ".join(lines) == " ".join(text.split()):
+            return font, lines
+    font = load_font(sizes[-1])
+    return font, _wrap_text(text, font, max_width, max_lines=3) or [text]
 
 
 def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
@@ -689,7 +889,9 @@ def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
     else:
         section_font, name_font, meta_font = load_font(26), load_font(30), load_font(22)
 
-    header_h = text_height("Ay", section_font) + 8 + 4 + 16
+    context = _states_phrase([c for c, _ in rows]).upper()
+    header_h = text_height("Ay", section_font) + 8 + 4 + 16 if context else 0
+    bottom = _content_bottom(payload, "competencias")
     content_h = _estimate_comp_block_h(rows, name_font=name_font, meta_font=meta_font)
     # Strip per-row trailing pad from estimate for gap calc.
     content_h = max(0, content_h - 8 * len(rows))
@@ -701,8 +903,12 @@ def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
         min_gap=20,
         max_gap=100,
         top_pad=24,
+        bottom=bottom,
     )
-    y = _draw_section_label(draw, eyebrow, section_font, x=CONTENT_LEFT, y=y - header_h)
+    if context:
+        y = _draw_section_label(
+            draw, context, section_font, x=CONTENT_LEFT, y=y - header_h
+        )
 
     for i, (comp, tag) in enumerate(rows):
         if y > bottom - 50:
@@ -742,6 +948,7 @@ def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
         if i < len(rows) - 1:
             y += gap
 
+    _draw_upcoming_footer(draw, payload, "competencias")
     _draw_slide_index(draw, index=index, total=total)
     return _png_bytes(canvas)
 
@@ -755,18 +962,32 @@ def _slide_numeros(payload: dict, *, index: int, total: int) -> bytes:
         fill=CREAM,
     )
 
-    section_font = load_font(28)
     state_font = load_font(28)
     breaker_font = load_font(26)
     meta_font = load_font(24)
     tiles = _stat_tiles(payload, limit=4)
     sr_by_state = payload.get("sr_by_state") or []
+    if len(sr_by_state) < 2:
+        sr_by_state = []
     sr_breakers = payload.get("sr_breakers") or []
     sr_total = int(payload.get("sr_total") or 0)
+    breaker_states = {(r.get("state_name") or "").strip() for r in sr_breakers}
+    show_breaker_state = len(breaker_states) > 1
 
-    y = panel_top + 28
-    y = _draw_section_label(draw, "EN NÚMEROS", section_font, x=CONTENT_LEFT, y=y)
-    bottom = _panel_bottom_y()
+    bottom = _content_bottom(payload, "numeros")
+    section_gap = 56
+    meta_h = text_height("Ay", meta_font)
+    tiles_h = 2 * (160 + 18) if len(tiles) == 4 else (180 if len(tiles) == 3 else 190) + 18
+    block_h = tiles_h
+    if sr_total and sr_by_state:
+        state_rows = (min(len(sr_by_state), 6) + 1) // 2
+        block_h += section_gap + meta_h + 14
+        block_h += state_rows * (text_height("Ay", state_font) + 18) + 12
+    if sr_breakers:
+        block_h += section_gap + meta_h + 14
+        block_h += min(len(sr_breakers), 4) * (text_height("Ay", breaker_font) + 16)
+    area_top = panel_top + 36
+    y = area_top + max(0, (bottom - area_top - block_h) // 2)
 
     if len(tiles) == 4:
         y = _draw_stat_tiles(
@@ -809,9 +1030,7 @@ def _slide_numeros(payload: dict, *, index: int, total: int) -> bytes:
         )
 
     if sr_total and sr_by_state and y < bottom - 100:
-        # Push lower sections toward mid/bottom of remaining space.
-        remaining = bottom - y
-        y += max(20, min(48, remaining // 8))
+        y += section_gap
         draw.text(
             (CONTENT_LEFT, y),
             "SR POR ESTADO",
@@ -845,11 +1064,13 @@ def _slide_numeros(payload: dict, *, index: int, total: int) -> bytes:
         y += max(len(left_states), len(right_states), 1) * row_h + 12
 
     if sr_breakers and y < bottom - 90:
-        remaining = bottom - y
-        y += max(16, min(40, remaining // 10))
+        y += section_gap
+        heading = "MÁS SR"
+        if not show_breaker_state and breaker_states - {"", "Sin estado"}:
+            heading = f"MÁS SR · {next(iter(breaker_states)).upper()}"
         draw.text(
             (CONTENT_LEFT, y),
-            "MÁS SR",
+            heading,
             font=meta_font,
             fill=GREEN,
         )
@@ -857,10 +1078,9 @@ def _slide_numeros(payload: dict, *, index: int, total: int) -> bytes:
         for row in sr_breakers[:4]:
             if y > bottom - 28:
                 break
-            line = (
-                f"{row.get('person_name') or ''} · "
-                f"{row.get('count')} SR · {row.get('state_name') or ''}"
-            )
+            line = f"{row.get('person_name') or ''} · {row.get('count')} SR"
+            if show_breaker_state:
+                line += f" · {row.get('state_name') or ''}"
             draw.text(
                 (CONTENT_LEFT, y),
                 _fit_ellipsis(line, breaker_font, CONTENT_WIDTH),
@@ -869,6 +1089,94 @@ def _slide_numeros(payload: dict, *, index: int, total: int) -> bytes:
             )
             y += text_height("Ay", breaker_font) + 16
 
+    _draw_upcoming_footer(draw, payload, "numeros")
+    _draw_slide_index(draw, index=index, total=total)
+    return _png_bytes(canvas)
+
+
+def _slide_debutantes(payload: dict, *, index: int, total: int) -> bytes:
+    canvas, draw = _new_canvas()
+    panel_top = _draw_compact_header(canvas, draw, "BIENVENIDOS")
+    draw.rounded_rectangle(
+        [PANEL_LEFT, panel_top, PANEL_RIGHT, PANEL_BOTTOM],
+        radius=28,
+        fill=CREAM,
+    )
+
+    debuts = list(payload.get("debuts") or [])[:8]
+    debut_count = max(int(payload.get("debut_count") or 0), len(debuts))
+    bottom = _content_bottom(payload, "debutantes")
+
+    count_font = load_font(96)
+    label_font = load_font(30)
+    two_cols = len(debuts) > 4
+    name_font = load_font(26 if two_cols else 32)
+    state_font = load_font(20 if two_cols else 24)
+    more_font = load_font(24)
+
+    col_gap = 28
+    col_w = (CONTENT_WIDTH - col_gap) // 2 if two_cols else CONTENT_WIDTH
+    per_col = (len(debuts) + 1) // 2 if two_cols else len(debuts)
+    name_h = text_height("Ay", name_font)
+    state_h = text_height("Ay", state_font)
+    entry_h = name_h + 8 + state_h
+    extra = debut_count - len(debuts)
+
+    count_h = count_font.getbbox(str(debut_count))[3] + 20
+    head_h = count_h + text_height("Ay", label_font)
+    list_h = per_col * entry_h
+    more_h = text_height("Ay", more_font) + 24 if extra > 0 else 0
+    n_gaps = max(0, per_col - 1)
+    area_top = panel_top + 40
+    head_gap = 48
+    free = bottom - area_top - head_h - head_gap - list_h - more_h
+    row_gap = max(14, min(40, free // max(1, n_gaps + 2))) if n_gaps else 0
+    used = head_h + head_gap + list_h + n_gaps * row_gap + more_h
+    y = area_top + max(0, (bottom - area_top - used) // 2)
+
+    draw.text((CONTENT_LEFT, y), str(debut_count), font=count_font, fill=GREEN)
+    y += count_h
+    noun = "nuevo cubero" if debut_count == 1 else "nuevos cuberos"
+    draw.text(
+        (CONTENT_LEFT, y),
+        f"{noun} en su primera competencia",
+        font=label_font,
+        fill=BLACK,
+    )
+    y += text_height("Ay", label_font)
+    y += head_gap - 20
+    draw.rectangle([CONTENT_LEFT, y, CONTENT_LEFT + 48, y + 4], fill=RULE)
+    y += 20
+
+    list_top = y
+    for i, debut in enumerate(debuts):
+        col = i // per_col if two_cols else 0
+        row = i % per_col if two_cols else i
+        x = CONTENT_LEFT + col * (col_w + col_gap)
+        ry = list_top + row * (entry_h + row_gap)
+        draw.text(
+            (x, ry),
+            _fit_ellipsis(debut.get("person_name") or "", name_font, col_w),
+            font=name_font,
+            fill=BLACK,
+        )
+        state = (debut.get("state_name") or "").strip()
+        if state:
+            draw.text(
+                (x, ry + name_h + 8),
+                _fit_ellipsis(state, state_font, col_w),
+                font=state_font,
+                fill=GREEN,
+            )
+    y = list_top + per_col * entry_h + n_gaps * row_gap
+
+    if extra > 0:
+        y += 24
+        draw.text(
+            (CONTENT_LEFT, y), f"+{extra} más", font=more_font, fill=RED
+        )
+
+    _draw_upcoming_footer(draw, payload, "debutantes")
     _draw_slide_index(draw, index=index, total=total)
     return _png_bytes(canvas)
 
@@ -927,6 +1235,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
         n <= 2 and bool(sr_breakers) and not _has_numeros(payload)
     )
 
+    bottom = _content_bottom(payload, "destacados")
     y, gap = _distribute_start_and_gap(
         panel_top=panel_top,
         header_h=header_h,
@@ -935,15 +1244,16 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
         min_gap=24,
         max_gap=80,
         top_pad=36,
+        bottom=bottom,
     )
     # Prefer highlights in the upper-mid band when breakers will follow.
     if show_breakers:
         y = min(y, panel_top + 48 + header_h)
 
+    record_label = f"{n} RÉCORD{'S' if n != 1 else ''} DE LA SEMANA"
     y = _draw_section_label(
-        draw, "DESTACADOS", section_font, x=CONTENT_LEFT, y=y - header_h
+        draw, record_label, section_font, x=CONTENT_LEFT, y=y - header_h
     )
-    bottom = _panel_bottom_y()
 
     for i, h in enumerate(show):
         if y > bottom - 60:
@@ -964,6 +1274,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
             draw.text((text_x, y), line, font=name_font, fill=BLACK)
             y += text_height("Ay", name_font) + 2
         kind = (h.get("kind") or "").strip()
+        kind = KIND_ES.get(kind, kind)
         event = h.get("event_name") or ""
         event_line = f"{event}" + (f" · {kind}" if kind else "")
         draw.text(
@@ -1011,6 +1322,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
             )
             y += text_height("Ay", meta_font) + 16
 
+    _draw_upcoming_footer(draw, payload, "destacados")
     _draw_slide_index(draw, index=index, total=total)
     return _png_bytes(canvas)
 
@@ -1049,10 +1361,11 @@ def _slide_proximas(payload: dict, *, index: int, total: int) -> bytes:
 
     header_h = text_height("Ay", section_font) + 8 + 4 + 16
     bottom = _panel_bottom_y()
+    window_label = _upcoming_window_label(payload).upper()
 
     if not rows:
         y = panel_top + (PANEL_BOTTOM - panel_top) // 3
-        y = _draw_section_label(draw, "PRÓXIMAS", section_font, x=CONTENT_LEFT, y=y)
+        y = _draw_section_label(draw, window_label, section_font, x=CONTENT_LEFT, y=y)
         empty = load_font(28)
         draw.text(
             (CONTENT_LEFT, y),
@@ -1082,7 +1395,7 @@ def _slide_proximas(payload: dict, *, index: int, total: int) -> bytes:
             top_pad=36,
         )
         y = _draw_section_label(
-            draw, "PRÓXIMAS", section_font, x=CONTENT_LEFT, y=y - header_h
+            draw, window_label, section_font, x=CONTENT_LEFT, y=y - header_h
         )
         for line in name_lines:
             draw.text((CONTENT_LEFT, y), line, font=name_font, fill=BLACK)
@@ -1116,7 +1429,7 @@ def _slide_proximas(payload: dict, *, index: int, total: int) -> bytes:
         top_pad=28,
     )
     y = _draw_section_label(
-        draw, "PRÓXIMAS", section_font, x=CONTENT_LEFT, y=y - header_h
+        draw, window_label, section_font, x=CONTENT_LEFT, y=y - header_h
     )
 
     for i, (lines, meta) in enumerate(wrapped):

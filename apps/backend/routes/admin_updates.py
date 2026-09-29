@@ -2289,6 +2289,44 @@ def post_streaks_monthly_route():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+@admin_bp.route("/post-year-recap", methods=["POST"])
+@require_cron_auth
+def post_year_recap_route():
+    """Publish the AÑO year recap + new year greeting on Dec 31 (México) if due."""
+    try:
+        from social.poster import post_year_recap_if_due
+
+        result = post_year_recap_if_due()
+        if result is None:
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Year recap not due or social posts disabled",
+                    "posted": False,
+                }
+            )
+        if "year_recap_empty" in result.get("errors", []):
+            return jsonify(
+                {
+                    "success": True,
+                    "message": "Year recap empty — skipped",
+                    "posted": False,
+                    **result,
+                }
+            )
+        success = not result.get("errors")
+        return jsonify(
+            {
+                "success": success,
+                "posted": True,
+                **result,
+            }
+        ), (200 if success else 502)
+    except Exception as e:
+        log.exception("post-year-recap failed: %s", e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 @admin_bp.route("/update-all", methods=["POST"])
 @require_cron_auth
 def update_all():
@@ -2332,13 +2370,15 @@ def update_all():
             from social.poster import (
                 post_streaks_monthly_if_due,
                 post_weekly_digest_if_due,
+                post_year_recap_if_due,
             )
 
             post_weekly_digest_if_due()
             post_streaks_monthly_if_due()
+            post_year_recap_if_due()
         except Exception as e:
             log.error(
-                "Social WEEKLY_DIGEST/STREAKS_MONTHLY posting failed "
+                "Social WEEKLY_DIGEST/STREAKS_MONTHLY/YEAR_RECAP posting failed "
                 "(update-all succeeded): %s",
                 e,
             )
