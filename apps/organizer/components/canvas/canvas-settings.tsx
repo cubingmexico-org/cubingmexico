@@ -120,16 +120,16 @@ export function CanvasSettings() {
     setBackgroundImageBack,
   } = useCanvasStore();
 
-  const [width, setWidth] = useState<number>(
-    Number(pxToMm(canvasWidth).toFixed(1)),
+  const [width, setWidth] = useState<string>(
+    String(Number(pxToMm(canvasWidth).toFixed(1))),
   );
-  const [height, setHeight] = useState<number>(
-    Number(pxToMm(canvasHeight).toFixed(1)),
+  const [height, setHeight] = useState<string>(
+    String(Number(pxToMm(canvasHeight).toFixed(1))),
   );
 
   useEffect(() => {
-    setWidth(Number(pxToMm(canvasWidth).toFixed(1)));
-    setHeight(Number(pxToMm(canvasHeight).toFixed(1)));
+    setWidth(String(Number(pxToMm(canvasWidth).toFixed(1))));
+    setHeight(String(Number(pxToMm(canvasHeight).toFixed(1))));
   }, [canvasWidth, canvasHeight]);
 
   useEffect(() => {
@@ -138,15 +138,31 @@ export function CanvasSettings() {
     }
   }, [enableBackSide, activeSide, setActiveSide]);
 
+  const minMm = Number(pxToMm(100).toFixed(1));
+  const maxMm = Number(pxToMm(5000).toFixed(1));
+
   const handleApplySize = () => {
-    const pxW = mmToPx(width);
-    const pxH = mmToPx(height);
-    setCanvasSize(pxW, pxH);
+    const widthMm = Number(width);
+    const heightMm = Number(height);
+    if (
+      width.trim() === "" ||
+      height.trim() === "" ||
+      !Number.isFinite(widthMm) ||
+      !Number.isFinite(heightMm) ||
+      widthMm < minMm ||
+      heightMm < minMm ||
+      widthMm > maxMm ||
+      heightMm > maxMm
+    ) {
+      toast.error(`Ingresa valores entre ${minMm} mm y ${maxMm} mm`);
+      return;
+    }
+    setCanvasSize(mmToPx(widthMm), mmToPx(heightMm));
   };
 
   const applySizePreset = (pxW: number, pxH: number) => {
-    setWidth(Number(pxToMm(pxW).toFixed(1)));
-    setHeight(Number(pxToMm(pxH).toFixed(1)));
+    setWidth(String(Number(pxToMm(pxW).toFixed(1))));
+    setHeight(String(Number(pxToMm(pxH).toFixed(1))));
     setCanvasSize(pxW, pxH);
   };
 
@@ -157,8 +173,8 @@ export function CanvasSettings() {
     setBackgroundImage(undefined);
     setBackgroundImageBack(undefined);
     setCanvasSize(size.width, size.height);
-    setWidth(Number(pxToMm(size.width).toFixed(1)));
-    setHeight(Number(pxToMm(size.height).toFixed(1)));
+    setWidth(String(Number(pxToMm(size.width).toFixed(1))));
+    setHeight(String(Number(pxToMm(size.height).toFixed(1))));
     setElements({
       front: createTentTemplateElements(size.width, size.height),
       back: [],
@@ -169,9 +185,6 @@ export function CanvasSettings() {
         : "Plantilla de carpa (vertical) aplicada",
     );
   };
-
-  const minMm = Number(pxToMm(100).toFixed(1));
-  const maxMm = Number(pxToMm(5000).toFixed(1));
 
   return (
     <Sheet>
@@ -199,7 +212,7 @@ export function CanvasSettings() {
                   id="width"
                   type="number"
                   value={width}
-                  onChange={(e) => setWidth(Number(e.target.value))}
+                  onChange={(e) => setWidth(e.target.value)}
                   min={minMm}
                   max={maxMm}
                   step={0.1}
@@ -211,7 +224,7 @@ export function CanvasSettings() {
                   id="height"
                   type="number"
                   value={height}
-                  onChange={(e) => setHeight(Number(e.target.value))}
+                  onChange={(e) => setHeight(e.target.value)}
                   min={minMm}
                   max={maxMm}
                   step={0.1}

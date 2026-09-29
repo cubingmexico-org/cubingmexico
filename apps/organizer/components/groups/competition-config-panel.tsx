@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Input } from "@workspace/ui/components/input";
+import { NumberInput } from "@/components/number-input";
 import { Label } from "@workspace/ui/components/label";
 import { Switch } from "@workspace/ui/components/switch";
 import {
@@ -189,20 +190,13 @@ export function CompetitionConfigPanel({
                     {venueName}
                   </span>
                 </Label>
-                <Input
-                  type="number"
+                <NumberInput
                   min={0}
                   max={64}
                   className="w-28"
                   value={roomConfig.stations}
-                  onChange={(e) => {
-                    onApply(
-                      setRoomStations(
-                        wcif,
-                        room.id,
-                        Number(e.target.value) || 0,
-                      ),
-                    );
+                  onValueChange={(value) => {
+                    onApply(setRoomStations(wcif, room.id, value));
                   }}
                 />
               </div>
@@ -647,14 +641,13 @@ function StaffRoleRow({
         </Label>
         {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
       </div>
-      <Input
-        type="number"
+      <NumberInput
         min={0}
         max={32}
         className="w-20"
         disabled={!checked}
         value={count}
-        onChange={(e) => onCountChange(Number(e.target.value) || 0)}
+        onValueChange={onCountChange}
         aria-label={`Cantidad de ${label.toLowerCase()}`}
       />
     </div>

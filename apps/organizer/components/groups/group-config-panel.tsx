@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import { Checkbox } from "@workspace/ui/components/checkbox";
-import { Input } from "@workspace/ui/components/input";
+import { NumberInput } from "@/components/number-input";
 import { Label } from "@workspace/ui/components/label";
 import { Switch } from "@workspace/ui/components/switch";
 import type { WCIF } from "@/types/wcif";
@@ -294,13 +294,12 @@ export function GroupConfigPanel({
       {spreadAcrossStages ? (
         <div className="space-y-2 max-w-xs">
           <Label htmlFor="group-count">Cantidad de grupos</Label>
-          <Input
+          <NumberInput
             id="group-count"
-            type="number"
             min={1}
             max={32}
             value={groupCount}
-            onChange={(e) => setGroupCount(Number(e.target.value) || 1)}
+            onValueChange={(value) => setGroupCount(value || 1)}
           />
           <p className="text-xs text-muted-foreground">
             {staffHelpers.peoplePerGroup} personas por grupo
@@ -316,15 +315,14 @@ export function GroupConfigPanel({
               <Label className="w-40 shrink-0 truncate" title={parent.roomName}>
                 {parent.roomName}
               </Label>
-              <Input
-                type="number"
+              <NumberInput
                 min={0}
                 max={32}
                 value={perRoomCounts[parent.roomId] ?? 0}
-                onChange={(e) =>
+                onValueChange={(value) =>
                   setPerRoomCounts((prev) => ({
                     ...prev,
-                    [parent.roomId]: Number(e.target.value) || 0,
+                    [parent.roomId]: value,
                   }))
                 }
               />
@@ -470,14 +468,13 @@ function StaffField({
         </Label>
         {helper && <p className="text-xs text-muted-foreground">{helper}</p>}
       </div>
-      <Input
-        type="number"
+      <NumberInput
         min={0}
         max={32}
         className="w-20"
         disabled={!enabled}
         value={count}
-        onChange={(e) => onCountChange(Number(e.target.value) || 0)}
+        onValueChange={onCountChange}
         aria-label={`Cantidad de ${label.toLowerCase()}`}
       />
     </div>

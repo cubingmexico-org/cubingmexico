@@ -20,11 +20,19 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@workspace/ui/components/radio-group";
-import { Input } from "@workspace/ui/components/input";
 import type { Margins, PageOrientation, PageSize } from "pdfmake/interfaces";
 import { FileText } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { MenubarItem } from "@workspace/ui/components/menubar";
+import { NumberInput } from "@/components/number-input";
+
+/** pdfmake margin order is [left, top, right, bottom]. */
+const MARGIN_FIELDS = [
+  { id: "top", label: "Superior", index: 1 },
+  { id: "bottom", label: "Inferior", index: 3 },
+  { id: "right", label: "Derecho", index: 2 },
+  { id: "left", label: "Izquierdo", index: 0 },
+] as const;
 
 interface DialogDocumentSettingsProps {
   pageOrientation: PageOrientation;
@@ -132,110 +140,38 @@ export function DialogDocumentSettings({
           <div className="grid gap-2">
             <Label htmlFor="pageMargins">Márgenes</Label>
             <div className="grid items-center grid-cols-2 gap-2">
-              <Label htmlFor="top">Superior</Label>
-              <Input
-                className="w-full"
-                id="top"
-                max={200}
-                min={0}
-                onChange={(e) => {
-                  if (
-                    Array.isArray(tempPageMargins) &&
-                    tempPageMargins.length === 4
-                  ) {
-                    setTempPageMargins([
-                      tempPageMargins[0],
-                      parseInt(e.target.value),
-                      tempPageMargins[2],
-                      tempPageMargins[3],
-                    ]);
-                  }
-                }}
-                type="number"
-                value={
-                  Array.isArray(tempPageMargins) && tempPageMargins.length === 4
-                    ? tempPageMargins[1]
-                    : 0
-                }
-              />
-              <Label htmlFor="bottom">Inferior</Label>
-              <Input
-                className="w-full"
-                id="bottom"
-                max={200}
-                min={0}
-                onChange={(e) => {
-                  if (
-                    Array.isArray(tempPageMargins) &&
-                    tempPageMargins.length === 4
-                  ) {
-                    setTempPageMargins([
-                      tempPageMargins[0],
-                      tempPageMargins[1],
-                      tempPageMargins[2],
-                      parseInt(e.target.value),
-                    ]);
-                  }
-                }}
-                type="number"
-                value={
-                  Array.isArray(tempPageMargins) && tempPageMargins.length === 4
-                    ? tempPageMargins[3]
-                    : 0
-                }
-              />
-              <Label htmlFor="right">Derecho</Label>
-              <Input
-                className="w-full"
-                id="right"
-                max={200}
-                min={0}
-                onChange={(e) => {
-                  if (
-                    Array.isArray(tempPageMargins) &&
-                    tempPageMargins.length === 4
-                  ) {
-                    setTempPageMargins([
-                      tempPageMargins[0],
-                      tempPageMargins[1],
-                      parseInt(e.target.value),
-                      tempPageMargins[3],
-                    ]);
-                  }
-                }}
-                type="number"
-                value={
-                  Array.isArray(tempPageMargins) && tempPageMargins.length === 4
-                    ? tempPageMargins[2]
-                    : 0
-                }
-              />
-              <Label htmlFor="left">Izquierdo</Label>
-              <Input
-                className="w-full"
-                id="left"
-                max={200}
-                min={0}
-                onChange={(e) => {
-                  if (
-                    Array.isArray(tempPageMargins) &&
-                    tempPageMargins.length === 4
-                  ) {
-                    setTempPageMargins([
-                      parseInt(e.target.value),
-                      tempPageMargins[1],
-                      tempPageMargins[2],
-                      tempPageMargins[3],
-                    ]);
-                  }
-                }}
-                type="number"
-                value={
-                  Array.isArray(tempPageMargins) && tempPageMargins.length === 4
-                    ? tempPageMargins[0]
-                    : 0
-                }
-              />
+              {MARGIN_FIELDS.map(({ id, label, index }) => (
+                <React.Fragment key={id}>
+                  <Label htmlFor={id}>{label}</Label>
+                  <NumberInput
+                    className="w-full"
+                    id={id}
+                    max={200}
+                    min={0}
+                    onValueChange={(value) => {
+                      if (
+                        Array.isArray(tempPageMargins) &&
+                        tempPageMargins.length === 4
+                      ) {
+                        const next = [...tempPageMargins] as [
+                          number,
+                          number,
+                          number,
+                          number,
+                        ];
+                        next[index] = value;
+                        setTempPageMargins(next);
+                      }
+                    }}
+                    value={
+                      Array.isArray(tempPageMargins) &&
+                      tempPageMargins.length === 4
+                        ? tempPageMargins[index]
+                        : 0
+                    }
+                  />
+                </React.Fragment>
+              ))}
             </div>
           </div>
         </div>
