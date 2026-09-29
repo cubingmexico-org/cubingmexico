@@ -34,6 +34,7 @@ import {
 import { CompetitionGroups, WcaMonochrome } from "@workspace/icons";
 import type { EventId } from "@/types/wcif";
 import { MentionTagsInput } from "./mention-tags-input";
+import { NumberInput } from "@/components/number-input";
 
 interface PropertiesPanelProps {
   eventIds: EventId[];
@@ -86,15 +87,10 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
               <Label htmlFor="x" className="text-xs">
                 X
               </Label>
-              <Input
+              <NumberInput
                 id="x"
-                type="number"
                 value={Math.round(selectedElement.x)}
-                onChange={(e) =>
-                  updateElement(selectedElement.id, {
-                    x: Number(e.target.value),
-                  })
-                }
+                onValueChange={(x) => updateElement(selectedElement.id, { x })}
                 className="h-8"
               />
             </div>
@@ -102,15 +98,10 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
               <Label htmlFor="y" className="text-xs">
                 Y
               </Label>
-              <Input
+              <NumberInput
                 id="y"
-                type="number"
                 value={Math.round(selectedElement.y)}
-                onChange={(e) =>
-                  updateElement(selectedElement.id, {
-                    y: Number(e.target.value),
-                  })
-                }
+                onValueChange={(y) => updateElement(selectedElement.id, { y })}
                 className="h-8"
               />
             </div>
@@ -124,12 +115,10 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
               <Label htmlFor="width" className="text-xs">
                 Ancho
               </Label>
-              <Input
+              <NumberInput
                 id="width"
-                type="number"
                 value={Math.round(selectedElement.width)}
-                onChange={(e) => {
-                  const newWidth = Number(e.target.value);
+                onValueChange={(newWidth) => {
                   const updates: Partial<typeof selectedElement> = {
                     width: newWidth,
                   };
@@ -163,12 +152,10 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
               <Label htmlFor="height" className="text-xs">
                 Altura
               </Label>
-              <Input
+              <NumberInput
                 id="height"
-                type="number"
                 value={Math.round(selectedElement.height)}
-                onChange={(e) => {
-                  const newHeight = Number(e.target.value);
+                onValueChange={(newHeight) => {
                   const updates: Partial<typeof selectedElement> = {
                     height: newHeight,
                   };
@@ -300,13 +287,10 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
               <Label htmlFor="fontSize" className="text-xs">
                 Tamaño de fuente
               </Label>
-              <Input
+              <NumberInput
                 id="fontSize"
-                type="number"
                 value={Number((selectedElement.fontSize || 24).toFixed(2))}
-                onChange={(e) => {
-                  const fontSize = Number(e.target.value);
-
+                onValueChange={(fontSize) => {
                   // Measure text dimensions
                   const canvas = document.createElement("canvas");
                   const ctx = canvas.getContext("2d");
@@ -492,16 +476,15 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                       <Label htmlFor="shadowOffsetX" className="text-xs">
                         X
                       </Label>
-                      <Input
+                      <NumberInput
                         id="shadowOffsetX"
-                        type="number"
                         value={selectedElement.dropShadow?.offsetX ?? 2}
-                        onChange={(e) =>
+                        onValueChange={(offsetX) =>
                           updateElement(selectedElement.id, {
                             dropShadow: {
                               ...selectedElement.dropShadow,
                               enabled: true,
-                              offsetX: Number(e.target.value),
+                              offsetX,
                               offsetY: selectedElement.dropShadow?.offsetY ?? 2,
                               blur: selectedElement.dropShadow?.blur ?? 4,
                               color:
@@ -516,17 +499,16 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                       <Label htmlFor="shadowOffsetY" className="text-xs">
                         Y
                       </Label>
-                      <Input
+                      <NumberInput
                         id="shadowOffsetY"
-                        type="number"
                         value={selectedElement.dropShadow?.offsetY ?? 2}
-                        onChange={(e) =>
+                        onValueChange={(offsetY) =>
                           updateElement(selectedElement.id, {
                             dropShadow: {
                               ...selectedElement.dropShadow,
                               enabled: true,
                               offsetX: selectedElement.dropShadow?.offsetX ?? 2,
-                              offsetY: Number(e.target.value),
+                              offsetY,
                               blur: selectedElement.dropShadow?.blur ?? 4,
                               color:
                                 selectedElement.dropShadow?.color ?? "#000000",
