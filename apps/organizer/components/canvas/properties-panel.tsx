@@ -291,7 +291,6 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                 id="fontSize"
                 value={Number((selectedElement.fontSize || 24).toFixed(2))}
                 onValueChange={(fontSize) => {
-
                   // Measure text dimensions
                   const canvas = document.createElement("canvas");
                   const ctx = canvas.getContext("2d");
