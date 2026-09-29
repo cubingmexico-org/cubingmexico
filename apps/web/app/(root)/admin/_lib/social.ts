@@ -7,7 +7,10 @@ export type SocialPostType =
   | "summary_unlock"
   | "weekly_digest"
   | "streaks_monthly"
-  | "mollerz";
+  | "mollerz"
+  | "year_recap";
+
+export type CarouselPostType = "weekly_digest" | "year_recap";
 
 function backendConfig() {
   const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
@@ -25,7 +28,12 @@ function typePath(postType: SocialPostType): string {
   if (postType === "weekly_digest") return "weekly-digest";
   if (postType === "streaks_monthly") return "streaks-monthly";
   if (postType === "mollerz") return "mollerz";
+  if (postType === "year_recap") return "year-recap";
   return "upcoming";
+}
+
+function carouselFilePrefix(postType: CarouselPostType): string {
+  return postType === "year_recap" ? "ano" : "semana";
 }
 
 async function parseJsonBody(response: Response): Promise<unknown> {
@@ -88,7 +96,9 @@ export async function fetchSocialImage(
               ? "rachas"
               : postType === "mollerz"
                 ? "mollerz"
-                : "proxima";
+                : postType === "year_recap"
+                  ? "ano"
+                  : "proxima";
   return {
     ok: true,
     bytes,
@@ -104,6 +114,7 @@ export type WeeklyDigestSlideMeta = {
 
 export async function fetchWeeklyDigestSlides(
   week: string,
+  postType: CarouselPostType = "weekly_digest",
 ): Promise<
   | { ok: true; slides: WeeklyDigestSlideMeta[]; count: number }
   | { ok: false; status: number; body: unknown }
@@ -121,7 +132,7 @@ export async function fetchWeeklyDigestSlides(
   }
 
   const response = await fetch(
-    `${config.backendUrl}/social/weekly-digest/${encodeURIComponent(week)}/slides`,
+    `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(week)}/slides`,
     {
       method: "GET",
       headers: {
@@ -162,6 +173,7 @@ export async function fetchWeeklyDigestSlides(
 export async function fetchWeeklyDigestSlideImage(
   week: string,
   index: number,
+  postType: CarouselPostType = "weekly_digest",
 ): Promise<
   | { ok: true; bytes: ArrayBuffer; filename: string; slideId: string }
   | { ok: false; status: number; body: unknown }
@@ -179,7 +191,7 @@ export async function fetchWeeklyDigestSlideImage(
   }
 
   const response = await fetch(
-    `${config.backendUrl}/social/weekly-digest/${encodeURIComponent(week)}/slides/${index}/image.png`,
+    `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(week)}/slides/${index}/image.png`,
     {
       method: "GET",
       headers: {
@@ -201,7 +213,7 @@ export async function fetchWeeklyDigestSlideImage(
   return {
     ok: true,
     bytes,
-    filename: `semana-${week.replace(/[:/]/g, "-")}-${slideId}.png`,
+    filename: `${carouselFilePrefix(postType)}-${week.replace(/[:/]/g, "-")}-${slideId}.png`,
     slideId,
   };
 }

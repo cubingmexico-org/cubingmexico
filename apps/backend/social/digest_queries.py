@@ -377,6 +377,263 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
     }
 
 
+def fetch_year_recap_payload(cur, year: int) -> dict:
+    """National Cubing México stats for Mexican competitions starting in ``year``."""
+    year_start = date(year, 1, 1)
+    year_end = date(year, 12, 31)
+
+    cur.execute(
+        """
+        SELECT
+            c.id,
+            c.city_name,
+            s.name AS state_name,
+            EXISTS (
+                SELECT 1 FROM results r WHERE r.competition_id = c.id
+            ) AS has_results
+        FROM competitions c
+        LEFT JOIN states s ON s.id = c.state_id
+        WHERE c.country_id = 'Mexico'
+          AND c.cancelled = false
+          AND c.start_date::date >= %s
+          AND c.start_date::date <= %s
+        """,
+        (year_start, year_end),
+    )
+    comps = cur.fetchall()
+    comp_count = len(comps)
+    state_counts: dict[str, int] = {}
+    cities: set[str] = set()
+    for row in comps:
+        state = (row.state_name or "").strip()
+        if state:
+            state_counts[state] = state_counts.get(state, 0) + 1
+        city = (row.city_name or "").strip().lower()
+        if city:
+            cities.add(city)
+    top_states = [
+        {"state_name": name, "count": count}
+        for name, count in sorted(
+            state_counts.items(), key=lambda item: (-item[1], item[0])
+        )[:5]
+    ]
+    ids = sorted(row.id for row in comps if row.has_results)
+
+    competitor_count = 0
+    debut_count = 0
+    record_counts = {"wr": 0, "nar": 0, "nr": 0}
+    record_highlights: list[dict] = []
+    sr_total = 0
+    sr_breakers: list[dict] = []
+    podium_count = 0
+    busiest: dict | None = None
+
+    if ids:
+        cur.execute(
+            """
+            SELECT COUNT(DISTINCT r.person_id)::int AS n
+            FROM results r
+            WHERE r.competition_id = ANY(%s)
+            """,
+            (ids,),
+        )
+        row = cur.fetchone()
+        competitor_count = int(row.n or 0) if row else 0
+
+        cur.execute(
+            """
+            WITH first_comp AS (
+                SELECT
+                    r.person_id,
+                    (ARRAY_AGG(c.id ORDER BY c.start_date, c.id))[1]
+                        AS first_competition_id
+                FROM results r
+                JOIN competitions c ON c.id = r.competition_id
+                GROUP BY r.person_id
+            )
+            SELECT COUNT(*)::int AS n
+            FROM first_comp fc
+            WHERE fc.first_competition_id = ANY(%s)
+            """,
+            (ids,),
+        )
+        row = cur.fetchone()
+        debut_count = int(row.n or 0) if row else 0
+
+        cur.execute(
+            """
+            SELECT
+                SUM(
+                    (r.regional_single_record = 'WR')::int
+                    + (r.regional_average_record = 'WR')::int
+                )::int AS wr,
+                SUM(
+                    (r.regional_single_record = 'NAR')::int
+                    + (r.regional_average_record = 'NAR')::int
+                )::int AS nar,
+                SUM(
+                    (r.regional_single_record = 'NR')::int
+                    + (r.regional_average_record = 'NR')::int
+                )::int AS nr
+            FROM results r
+            WHERE r.competition_id = ANY(%s)
+              AND (
+                r.regional_single_record IN ('NR', 'NAR', 'WR')
+                OR r.regional_average_record IN ('NR', 'NAR', 'WR')
+              )
+            """,
+            (ids,),
+        )
+        row = cur.fetchone()
+        if row:
+            record_counts = {
+                "wr": int(row.wr or 0),
+                "nar": int(row.nar or 0),
+                "nr": int(row.nr or 0),
+            }
+
+        cur.execute(
+            """
+            SELECT
+                p.name AS person_name,
+                e.name AS event_name,
+                CASE
+                    WHEN r.regional_single_record IN ('NR', 'NAR', 'WR')
+                        THEN r.regional_single_record
+                    ELSE r.regional_average_record
+                END AS level,
+                CASE
+                    WHEN r.regional_single_record IN ('NR', 'NAR', 'WR')
+                        THEN 'single'
+                    ELSE 'average'
+                END AS kind,
+                c.name AS competition_name
+            FROM results r
+            JOIN persons p ON p.wca_id = r.person_id
+            JOIN events e ON e.id = r.event_id
+            JOIN competitions c ON c.id = r.competition_id
+            WHERE r.competition_id = ANY(%s)
+              AND (
+                r.regional_single_record IN ('NR', 'NAR', 'WR')
+                OR r.regional_average_record IN ('NR', 'NAR', 'WR')
+              )
+            ORDER BY
+                CASE
+                    WHEN COALESCE(
+                        NULLIF(r.regional_single_record, ''),
+                        NULLIF(r.regional_average_record, '')
+                    ) = 'WR' THEN 0
+                    WHEN COALESCE(
+                        NULLIF(r.regional_single_record, ''),
+                        NULLIF(r.regional_average_record, '')
+                    ) = 'NAR' THEN 1
+                    ELSE 2
+                END,
+                e.rank,
+                c.start_date DESC,
+                p.name
+            LIMIT 5
+            """,
+            (ids,),
+        )
+        record_highlights = [
+            {
+                "person_name": r.person_name,
+                "event_name": r.event_name,
+                "level": r.level,
+                "kind": r.kind,
+                "competition_name": r.competition_name,
+            }
+            for r in cur.fetchall()
+        ]
+
+        cur.execute(
+            """
+            SELECT
+                p.name AS person_name,
+                COALESCE(s.name, 'Sin estado') AS state_name,
+                SUM(
+                    (COALESCE(r.state_single_record, '') = 'SR')::int
+                    + (COALESCE(r.state_average_record, '') = 'SR')::int
+                )::int AS sr_count
+            FROM results r
+            JOIN persons p ON p.wca_id = r.person_id
+            LEFT JOIN states s ON s.id = p.state_id
+            WHERE r.competition_id = ANY(%s)
+              AND (r.state_single_record = 'SR' OR r.state_average_record = 'SR')
+            GROUP BY p.wca_id, p.name, s.name
+            ORDER BY sr_count DESC, p.name
+            """,
+            (ids,),
+        )
+        sr_rows = cur.fetchall()
+        sr_total = sum(int(r.sr_count or 0) for r in sr_rows)
+        sr_breakers = [
+            {
+                "person_name": r.person_name,
+                "state_name": r.state_name,
+                "count": int(r.sr_count or 0),
+            }
+            for r in sr_rows[:3]
+        ]
+
+        cur.execute(
+            """
+            SELECT COUNT(*)::int AS podium_count
+            FROM results r
+            WHERE r.competition_id = ANY(%s)
+              AND r.round_type_id IN ('f', 'c')
+              AND r.pos IN (1, 2, 3)
+              AND r.best > 0
+            """,
+            (ids,),
+        )
+        row = cur.fetchone()
+        podium_count = int(row.podium_count or 0) if row else 0
+
+        cur.execute(
+            """
+            SELECT
+                p.name AS person_name,
+                s.name AS state_name,
+                COUNT(DISTINCT r.competition_id)::int AS comp_count
+            FROM results r
+            JOIN persons p ON p.wca_id = r.person_id
+            LEFT JOIN states s ON s.id = p.state_id
+            WHERE r.competition_id = ANY(%s)
+            GROUP BY p.wca_id, p.name, s.name
+            ORDER BY comp_count DESC, p.name
+            LIMIT 1
+            """,
+            (ids,),
+        )
+        row = cur.fetchone()
+        if row:
+            busiest = {
+                "person_name": row.person_name,
+                "state_name": row.state_name,
+                "count": int(row.comp_count or 0),
+            }
+
+    return {
+        "year": year,
+        "next_year": year + 1,
+        "comp_count": comp_count,
+        "state_count": len(state_counts),
+        "city_count": len(cities),
+        "top_states": top_states,
+        "competitor_count": competitor_count,
+        "debut_count": debut_count,
+        "record_counts": record_counts,
+        "record_highlights": record_highlights,
+        "sr_total": sr_total,
+        "sr_breakers": sr_breakers,
+        "podium_count": podium_count,
+        "busiest_competitor": busiest,
+        "is_empty": comp_count == 0,
+    }
+
+
 def fetch_streaks_monthly_payload(cur, month_key_str: str) -> dict | None:
     parsed = parse_month_key(month_key_str)
     if parsed is None:

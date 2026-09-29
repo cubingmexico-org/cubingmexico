@@ -100,9 +100,10 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-sum-of-ranks` — Update sum of ranks
   - `POST /update-kinch-ranks` — Update Kinch ranks
   - `POST /update-streak-ranks` — Update personal-record streak ranks
-  - `POST /update-all` — Run full database import plus all derived rank updates; then publish SEMANA (after state records) and RACHAS if due
+  - `POST /update-all` — Run full database import plus all derived rank updates; then publish SEMANA (after state records), RACHAS and AÑO if due
   - `POST /post-summary-unlock` — If Dec 20+ UTC, publish the annual summary unlock graphic (idempotent; respects `SOCIAL_POSTS_ENABLED`)
   - `POST /post-weekly-digest` — Publish the current Mexico City ISO-week SEMANA digest (idempotent; run after `/update-state-records`)
+  - `POST /post-year-recap` — On Dec 31 (Mexico City, retries through Jan 2), publish the AÑO year-recap carousel with the new-year greeting (idempotent)
 
 - **Social media (typed posts)**
   - `GET /social/media/<token>.jpg` — Short-lived public JPEG URL used by Instagram Content Publishing (unguessable token, ~10 min TTL; stored in Postgres so any Cloud Run replica can serve it)
@@ -110,6 +111,7 @@ The app will be available at `http://localhost:5000`.
   - RÉCORDS: `GET|POST /social/records/<subject_key>/{caption,image.png,publish,mark}` (`subject_key` = `{result_id}:single|average`)
   - PRÓXIMAS: `GET|POST /social/upcoming/<competition_id>/{caption,image.png,publish,mark}`
   - RESUMEN: `GET|POST /social/summary-unlock/<year>/{caption,image.png,publish,mark}`
+  - AÑO: `GET|POST /social/year-recap/<year>/{caption,slides,slides/<index>/image.png,publish,mark}` (caption and slides preview any year; publish/mark only Dec 31 – Jan 2)
   - MOLLERZ: `GET|POST /social/mollerz/<subject_key>/{caption,image.png,publish,mark}` (`subject_key` = `{wca_id}:{tier}`, tier in `bronce|plata|oro|platino|opalo|diamante`)
   - `POST /social/mollerz/seed` — One-time: record every current Mollerz member's current tier as posted (`external_id = backfill`, no Meta call) so only future changes show up as pending
   - All caption/image/publish/mark routes require cron auth; Superadmin UI proxies them.
@@ -161,7 +163,7 @@ Main tables used:
 - ranks_single, ranks_average
 - sum_of_ranks, kinch_ranks, streak_ranks
 - states, teams, events, export_metadata
-- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock` | `weekly_digest` | `streaks_monthly` | `mollerz`)
+- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock` | `weekly_digest` | `streaks_monthly` | `mollerz` | `year_recap`)
 
 ## Automatic typed social posts
 
@@ -177,7 +179,7 @@ When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish five graphic ty
 
 MOLLERZ compares a snapshot of members (people with results in every current WCA event) taken before the import with one taken after. Downgrades, which only happen when WCA adds a new event, are never posted. After the first deploy, run `POST /social/mollerz/seed` once so existing members don't show up as pending in the admin panel.
 
-`/update-all` also publishes **SEMANA** (weekly digest) after state records have been recomputed, so SR totals appear on the carousel. `/update-database` does not post SEMANA on its own (the WCA import wipes `state_*_record` flags). `POST /post-weekly-digest` is the manual/retry job; run it after `/update-state-records`. `POST /post-summary-unlock` runs the same Dec 20 due-check without a WCA import (useful for Cloud Scheduler on Dec 20). Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
+`/update-all` also publishes **SEMANA** (weekly digest) after state records have been recomputed, so SR totals appear on the carousel. `/update-database` does not post SEMANA on its own (the WCA import wipes `state_*_record` flags). `POST /post-weekly-digest` is the manual/retry job; run it after `/update-state-records`. `POST /post-summary-unlock` runs the same Dec 20 due-check without a WCA import (useful for Cloud Scheduler on Dec 20). **AÑO** (`year_recap`, dedup key `{year}`) is a year-in-numbers carousel for Mexican competitions starting that calendar year, closing with a "¡Feliz {year + 1}!" slide; `/update-all` and `POST /post-year-recap` publish it on Dec 31 Mexico City time, retrying through Jan 2. Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
 
 ### Meta setup (before enabling)
 

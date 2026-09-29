@@ -8,6 +8,7 @@ import {
   getPendingSummaryUnlockPosts,
   getPendingUpcomingCompetitions,
   getPendingWeeklyDigestPosts,
+  getPendingYearRecapPosts,
   getSocialPostStats,
   getSocialPosts,
 } from "../_lib/queries";
@@ -47,6 +48,7 @@ async function SocialPostsContent({
         pendingSummaryUnlock={[]}
         pendingWeeklyDigest={[]}
         pendingStreaksMonthly={[]}
+        pendingYearRecap={[]}
         pendingMollerz={[]}
       />
     );
@@ -59,6 +61,7 @@ async function SocialPostsContent({
     pendingSummaryUnlock,
     pendingWeeklyDigest,
     pendingStreaksMonthly,
+    pendingYearRecap,
     pendingMollerz,
   ] = await Promise.all([
     getPendingResultadosCompetitions(10, { includeOlder }),
@@ -67,6 +70,7 @@ async function SocialPostsContent({
     getPendingSummaryUnlockPosts(),
     getPendingWeeklyDigestPosts(),
     getPendingStreaksMonthlyPosts(),
+    getPendingYearRecapPosts(),
     getPendingMollerzPosts(10),
   ]);
 
@@ -80,6 +84,7 @@ async function SocialPostsContent({
       pendingSummaryUnlock={pendingSummaryUnlock}
       pendingWeeklyDigest={pendingWeeklyDigest}
       pendingStreaksMonthly={pendingStreaksMonthly}
+      pendingYearRecap={pendingYearRecap}
       pendingMollerz={pendingMollerz}
       posts={[]}
       postsTotal={0}

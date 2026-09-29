@@ -60,6 +60,12 @@ export const ADMIN_OPS_JOBS = [
       "Publica el spotlight mensual de rachas de PRs el último día del mes (México; idempotente; reintento hasta 3 días después).",
   },
   {
+    path: "/post-year-recap",
+    label: "Publicar año en números",
+    description:
+      "Publica el carrusel AÑO (recap nacional + felicitación de año nuevo) el 31 de diciembre (México; idempotente; reintento hasta el 2 de enero).",
+  },
+  {
     path: "/update-all",
     label: "Actualizar todo",
     description: "Ejecuta el pipeline completo (puede tardar varios minutos).",
