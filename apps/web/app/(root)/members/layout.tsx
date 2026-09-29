@@ -6,9 +6,22 @@ import {
   CardDescription,
   CardContent,
 } from "@workspace/ui/components/card";
-import { ExternalLink, Medal } from "lucide-react";
+import { Badge } from "@workspace/ui/components/badge";
+import { ChevronRight, ExternalLink } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Fragment } from "react";
+import { getTierClass } from "@/lib/utils";
+import type { Tier } from "@/types";
+
+const tiers: Tier[] = [
+  "Bronce",
+  "Plata",
+  "Oro",
+  "Platino",
+  "Ópalo",
+  "Diamante",
+];
 
 export const metadata: Metadata = {
   title: "Miembros | Cubing México",
@@ -94,15 +107,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <p className="mb-4">
               A partir de ahí, los niveles avanzan progresivamente:
             </p>
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="bg-amber-200 p-1 rounded-full">
-                  <Medal className="h-4 w-4 text-amber-600" />
-                </div>
-                <span className="font-semibold">
-                  Bronce → Plata → Oro → Platino → Ópalo → Diamante
-                </span>
-              </div>
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              {tiers.map((tier, index) => (
+                <Fragment key={tier}>
+                  {index > 0 && (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <Badge className={getTierClass(tier)}>{tier}</Badge>
+                </Fragment>
+              ))}
             </div>
             <p className="mb-4">
               Obtienes un nivel cada vez que completas cualquiera de los

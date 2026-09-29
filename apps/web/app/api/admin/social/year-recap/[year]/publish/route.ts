@@ -51,7 +51,9 @@ export async function POST(
       {
         success: false,
         message:
-          error instanceof Error ? error.message : "Error publishing YEAR_RECAP",
+          error instanceof Error
+            ? error.message
+            : "Error publishing YEAR_RECAP",
       },
       { status: 502 },
     );

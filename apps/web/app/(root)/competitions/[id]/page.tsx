@@ -43,6 +43,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import ReactMarkdown from "react-markdown";
 import { Map as CompetitionMap } from "./_components/map";
 import { RegistrationButton } from "./_components/registration-button";
+import { AddToCalendarButton } from "./_components/add-to-calendar-button";
 import { formatAverageResult, formatBestResult } from "./_lib/results";
 import { CompetitionLogo } from "@/components/competition-logo";
 
@@ -209,7 +210,7 @@ export default async function Page({
           </Card>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {competitionData.cancelled_at ? (
             <span
               className={cn(
@@ -220,11 +221,24 @@ export default async function Page({
               Cancelada
             </span>
           ) : (
-            <RegistrationButton
-              registrationOpen={competitionData.registration_open}
-              registrationClose={competitionData.registration_close}
-              registrationUrl={competitionData.url}
-            />
+            <>
+              <RegistrationButton
+                registrationOpen={competitionData.registration_open}
+                registrationClose={competitionData.registration_close}
+                registrationUrl={competitionData.url}
+              />
+              <AddToCalendarButton
+                competition={{
+                  id: competitionData.id,
+                  name: competitionData.name,
+                  start_date: competitionData.start_date,
+                  end_date: competitionData.end_date,
+                  venue: competitionData.venue,
+                  venue_address: competitionData.venue_address,
+                  url: competitionData.url,
+                }}
+              />
+            </>
           )}
           <Link
             className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
