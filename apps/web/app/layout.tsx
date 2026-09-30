@@ -2,7 +2,7 @@ import { Geist, Geist_Mono, Oswald } from "next/font/google";
 import "@workspace/ui/globals.css";
 import "@cubing/icons";
 import { Providers } from "@/components/providers";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Toaster } from "sonner";
@@ -10,8 +10,14 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.cubingmexico.net"),
   title: "Cubing México",
+  applicationName: "Cubing México",
   description:
     "Cubing México es un sitio web que recopila rankings y récords estatales mexicanos basado en los resultados de la WCA.",
+  appleWebApp: {
+    capable: true,
+    title: "Cubing México",
+    statusBarStyle: "default",
+  },
   openGraph: {
     title: "Cubing México",
     description:
@@ -29,9 +35,13 @@ export const metadata: Metadata = {
   },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
+  ],
 };
 
 const fontSans = Geist({
