@@ -30,8 +30,12 @@ import type {
   PersonStaffCompetition,
 } from "../_lib/queries";
 import type { PersonCompetitionLocation } from "../_lib/queries";
-import type { NemesisReport } from "../../_lib/nemesis-queries";
+import type {
+  NemesisReport,
+  NemesizedReport,
+} from "../../_lib/nemesis-queries";
 import { NemesesList } from "../../_components/nemeses-list";
+import { NemesizedList } from "../../_components/nemesized-list";
 import {
   loadPersonChampionshipPodiums,
   loadPersonCompetitionResults,
@@ -101,7 +105,10 @@ export function PersonTabs({
     organized: PersonStaffCompetition[];
     delegated: PersonStaffCompetition[];
   } | null>(null);
-  const [nemeses, setNemeses] = useState<NemesisReport | null>(null);
+  const [nemeses, setNemeses] = useState<{
+    report: NemesisReport;
+    nemesized: NemesizedReport;
+  } | null>(null);
   const [mapData, setMapData] = useState<{
     locations: PersonCompetitionLocation[];
     statesData: GeoJSONProps["data"] | undefined;
@@ -416,11 +423,18 @@ export function PersonTabs({
         {nemeses === null ? (
           <Skeleton className="h-64 w-full" />
         ) : (
-          <NemesesList
-            targetWcaId={wcaId}
-            targetName={personName}
-            report={nemeses}
-          />
+          <div className="flex flex-col gap-8">
+            <NemesesList
+              targetWcaId={wcaId}
+              targetName={personName}
+              report={nemeses.report}
+            />
+            <NemesizedList
+              targetWcaId={wcaId}
+              targetName={personName}
+              report={nemeses.nemesized}
+            />
+          </div>
         )}
       </TabsContent>
 
