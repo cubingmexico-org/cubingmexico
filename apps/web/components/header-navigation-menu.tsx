@@ -12,6 +12,7 @@ import {
   Hammer,
   Flame,
   BookOpen,
+  Swords,
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -148,6 +149,15 @@ export function HeaderNavigationMenu() {
                   <Link href="/persons" className="flex-row items-center gap-2">
                     <Users className="size-4" />
                     Competidores
+                  </Link>
+                </NavigationMenuLink>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/persons/compare"
+                    className="flex-row items-center gap-2"
+                  >
+                    <Swords className="size-4" />
+                    Comparar competidores
                   </Link>
                 </NavigationMenuLink>
                 <NavigationMenuLink asChild>

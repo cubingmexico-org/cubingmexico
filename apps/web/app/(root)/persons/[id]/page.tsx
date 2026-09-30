@@ -23,6 +23,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { WcaMonochrome } from "@workspace/icons";
+import { Swords } from "lucide-react";
 import {
   getPersonData,
   getOrganizerStatus,
@@ -166,6 +167,12 @@ async function PersonPageContent({ id }: { id: string }) {
             </Link>
           </Badge>
         )}
+        <Badge variant="outline" asChild>
+          <Link href={`/persons/compare?a=${id}`} className="gap-1.5">
+            <Swords className="size-3.5" />
+            Comparar
+          </Link>
+        </Badge>
       </div>
       {wcaData && (
         <div className="w-full flex justify-center mb-6">

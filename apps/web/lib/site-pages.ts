@@ -62,6 +62,11 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["personas", "cuberos"],
   },
   {
+    title: "Comparar competidores",
+    href: "/persons/compare",
+    keywords: ["head to head", "versus", "vs", "comparación"],
+  },
+  {
     title: "Organizadores",
     href: "/organizers",
     keywords: ["organizers"],
