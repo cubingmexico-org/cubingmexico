@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getPerson } from "@/db/queries";
 import { parseWcaId } from "@/lib/wca-id";
-import { getPersonNemeses } from "../_lib/nemesis-queries";
+import { getNemesisReport } from "../_lib/nemesis-queries";
 import { NemesesList } from "../_components/nemeses-list";
 import { NemesisPicker } from "./_components/nemesis-picker";
 
@@ -37,7 +37,7 @@ export async function generateMetadata({
 export default async function Page({ searchParams }: Props) {
   const params = await searchParams;
   const person = await resolvePerson(parseWcaId(params.id));
-  const nemeses = person ? await getPersonNemeses(person.wcaId) : null;
+  const report = person ? await getNemesisReport(person.wcaId) : null;
 
   return (
     <>
@@ -53,11 +53,11 @@ export default async function Page({ searchParams }: Props) {
         <p className="text-center text-muted-foreground">
           No encontramos al competidor seleccionado.
         </p>
-      ) : person && nemeses ? (
+      ) : person && report ? (
         <NemesesList
           targetWcaId={person.wcaId}
           targetName={person.name ?? person.wcaId}
-          nemeses={nemeses}
+          report={report}
         />
       ) : (
         <p className="text-center text-muted-foreground">
