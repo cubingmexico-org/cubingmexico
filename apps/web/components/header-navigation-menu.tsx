@@ -5,8 +5,15 @@ import {
   ChartNoAxesColumnIncreasing,
   Medal,
   ChartBarBig,
-  PlusCircle,
+  ChartColumnStacked,
+  Sigma,
+  SquareSigma,
+  MapPinned,
+  Map as MapIcon,
   Users,
+  ClipboardList,
+  ShieldCheck,
+  IdCard,
   CircleHelp,
   Info,
   Hammer,
@@ -82,7 +89,7 @@ export function HeaderNavigationMenu() {
                     href="/sor/single"
                     className="flex-row items-center gap-2"
                   >
-                    <PlusCircle className="size-4" />
+                    <Sigma className="size-4" />
                     Sum of Ranks
                   </Link>
                 </NavigationMenuLink>
@@ -91,7 +98,7 @@ export function HeaderNavigationMenu() {
                     href="/sor/single/teams"
                     className="flex-row items-center gap-2"
                   >
-                    <PlusCircle className="size-4" />
+                    <SquareSigma className="size-4" />
                     Sum of Ranks (Teams)
                   </Link>
                 </NavigationMenuLink>
@@ -100,7 +107,7 @@ export function HeaderNavigationMenu() {
                     href="/sosr/MEX/single"
                     className="flex-row items-center gap-2"
                   >
-                    <PlusCircle className="size-4" />
+                    <MapPinned className="size-4" />
                     Sum of State Ranks
                   </Link>
                 </NavigationMenuLink>
@@ -115,7 +122,7 @@ export function HeaderNavigationMenu() {
                     href="/kinch/MEX"
                     className="flex-row items-center gap-2"
                   >
-                    <ChartBarBig className="size-4" />
+                    <MapIcon className="size-4" />
                     Kinch Ranks estatales
                   </Link>
                 </NavigationMenuLink>
@@ -124,7 +131,7 @@ export function HeaderNavigationMenu() {
                     href="/kinch/teams"
                     className="flex-row items-center gap-2"
                   >
-                    <ChartBarBig className="size-4" />
+                    <ChartColumnStacked className="size-4" />
                     Kinch Ranks (Teams)
                   </Link>
                 </NavigationMenuLink>
@@ -175,7 +182,7 @@ export function HeaderNavigationMenu() {
                     href="/organizers"
                     className="flex-row items-center gap-2"
                   >
-                    <Users className="size-4" />
+                    <ClipboardList className="size-4" />
                     Organizadores
                   </Link>
                 </NavigationMenuLink>
@@ -184,13 +191,13 @@ export function HeaderNavigationMenu() {
                     href="/delegates"
                     className="flex-row items-center gap-2"
                   >
-                    <Users className="size-4" />
+                    <ShieldCheck className="size-4" />
                     Delegados
                   </Link>
                 </NavigationMenuLink>
                 <NavigationMenuLink asChild>
                   <Link href="/members" className="flex-row items-center gap-2">
-                    <Users className="size-4" />
+                    <IdCard className="size-4" />
                     Miembros (Sistema Mollerz)
                   </Link>
                 </NavigationMenuLink>
