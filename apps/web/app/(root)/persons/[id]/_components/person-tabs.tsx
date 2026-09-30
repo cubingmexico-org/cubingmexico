@@ -17,10 +17,12 @@ import { PersonResultsChartTab } from "./results-chart-tab";
 import { PersonRecordsTab } from "./records-tab";
 import { PersonChampionshipPodiumsTab } from "./championship-podiums-tab";
 import { PersonPrStreaksTab } from "./pr-streaks-tab";
+import { PersonPodiumsTab } from "./podiums-tab";
 import { PersonStaffCompetitionsTab } from "./staff-competitions-tab";
 import { MapContainer } from "./map-container";
 import type {
   PersonChampionshipPodium,
+  PersonPodiumsByEvent,
   PersonPrStreaks,
   PersonRecordHistoryEntry,
   PersonResultsByEventGroup,
@@ -32,6 +34,7 @@ import {
   loadPersonChampionshipPodiums,
   loadPersonCompetitionResults,
   loadPersonMapData,
+  loadPersonPodiumsByEvent,
   loadPersonPrStreaks,
   loadPersonRecordHistory,
   loadPersonStaffCompetitions,
@@ -42,6 +45,7 @@ const TAB_VALUES = [
   "results-chart",
   "records",
   "pr-streaks",
+  "podiums",
   "championship-podiums",
   "map",
   "staff-competitions",
@@ -81,6 +85,9 @@ export function PersonTabs({
     PersonRecordHistoryEntry[] | null
   >(null);
   const [prStreaks, setPrStreaks] = useState<PersonPrStreaks | null>(null);
+  const [podiumsByEvent, setPodiumsByEvent] = useState<
+    PersonPodiumsByEvent[] | null
+  >(null);
   const [championshipPodiums, setChampionshipPodiums] = useState<
     PersonChampionshipPodium[] | null
   >(null);
@@ -173,6 +180,25 @@ export function PersonTabs({
   }, [tab, wcaId, prStreaks]);
 
   useEffect(() => {
+    if (tab !== "podiums" || podiumsByEvent !== null) {
+      return;
+    }
+
+    let cancelled = false;
+    startTransition(() => {
+      void loadPersonPodiumsByEvent(wcaId).then((podiums) => {
+        if (!cancelled) {
+          setPodiumsByEvent(podiums);
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, wcaId, podiumsByEvent]);
+
+  useEffect(() => {
     if (
       tab !== "championship-podiums" ||
       !showChampionshipPodiumsTab ||
@@ -246,9 +272,9 @@ export function PersonTabs({
     (staffCompetitions.organized.length > 0 ||
       staffCompetitions.delegated.length > 0);
 
-  // Always: results, chart, pr-streaks, map
+  // Always: results, chart, pr-streaks, podiums, map
   const tabCount =
-    4 +
+    5 +
     (showRecordsTab ? 1 : 0) +
     (showChampionshipPodiumsTab ? 1 : 0) +
     (showStaffCompetitionsTab ? 1 : 0);
@@ -276,13 +302,15 @@ export function PersonTabs({
           tabCount === 4 && "md:grid-cols-4",
           tabCount === 5 && "md:grid-cols-5",
           tabCount === 6 && "md:grid-cols-6",
-          tabCount >= 7 && "md:grid-cols-7",
+          tabCount === 7 && "md:grid-cols-7",
+          tabCount >= 8 && "md:grid-cols-8",
         )}
       >
         <TabsTrigger value="results-by-event">Resultados</TabsTrigger>
         <TabsTrigger value="results-chart">Gráfica</TabsTrigger>
         {showRecordsTab && <TabsTrigger value="records">Récords</TabsTrigger>}
         <TabsTrigger value="pr-streaks">Rachas</TabsTrigger>
+        <TabsTrigger value="podiums">Podios</TabsTrigger>
         {showChampionshipPodiumsTab && (
           <TabsTrigger value="championship-podiums">
             Podios en Campeonatos
@@ -335,6 +363,14 @@ export function PersonTabs({
           <Skeleton className="h-64 w-full" />
         ) : (
           <PersonPrStreaksTab streaks={prStreaks} />
+        )}
+      </TabsContent>
+
+      <TabsContent value="podiums" className="mt-6">
+        {podiumsByEvent === null ? (
+          <Skeleton className="h-64 w-full" />
+        ) : (
+          <PersonPodiumsTab podiums={podiumsByEvent} />
         )}
       </TabsContent>
 
