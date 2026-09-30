@@ -6,7 +6,13 @@ import {
   type SelectedPerson,
 } from "@/components/person-search-select";
 
-export function NemesisPicker({ value }: { value: SelectedPerson }) {
+export function NemesisPicker({
+  value,
+  basePath = "/persons/nemesis",
+}: {
+  value: SelectedPerson;
+  basePath?: string;
+}) {
   const router = useRouter();
 
   return (
@@ -15,7 +21,7 @@ export function NemesisPicker({ value }: { value: SelectedPerson }) {
         value={value}
         placeholder="Busca un competidor"
         onSelect={(wcaId) =>
-          router.replace(`/persons/nemesis?id=${encodeURIComponent(wcaId)}`)
+          router.replace(`${basePath}?id=${encodeURIComponent(wcaId)}`)
         }
       />
     </div>

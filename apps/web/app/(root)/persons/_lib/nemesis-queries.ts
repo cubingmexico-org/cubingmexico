@@ -1,6 +1,6 @@
 import "server-only";
 import { db } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
 export type PersonNemesis = {
@@ -42,25 +42,86 @@ type ReportRow = {
   almostTotal: number | null;
 };
 
-/**
- * A slot is an (event, single|average) pair where `wcaId` has a result.
- * Nemeses beat `wcaId` strictly in every slot; almost-nemeses in all but one.
- * For each nemesis, `closest` is the slot with the smallest relative gap
- * (333mbf last, since its encoded values can't be compared as a gap). For
- * each almost-nemesis, `missing` is the slot they don't beat.
- */
+/** Best value per event id, WCA-encoded. */
+export type RecordValues = Record<string, number>;
+
+export type NemesisTargets = {
+  singles: RecordValues;
+  averages: RecordValues;
+};
+
+function targetValues({ singles, averages }: NemesisTargets): SQL[] {
+  const rows = (type: "single" | "average", values: RecordValues) =>
+    Object.entries(values)
+      .filter(([, best]) => best > 0)
+      .map(
+        ([eventId, best]) =>
+          sql`(${type}::text, ${eventId}::text, ${best}::int)`,
+      );
+  return [...rows("single", singles), ...rows("average", averages)];
+}
+
+export async function getPersonRecordValues(
+  wcaId: string,
+): Promise<NemesisTargets> {
+  "use cache";
+  cacheLife("weeks");
+  cacheTag(`person-nemeses-${wcaId}`);
+
+  const [singleRows, averageRows] = await Promise.all([
+    db.execute(sql`
+      SELECT event_id AS "eventId", best FROM ranks_single
+      WHERE person_id = ${wcaId} AND best > 0
+    `),
+    db.execute(sql`
+      SELECT event_id AS "eventId", best FROM ranks_average
+      WHERE person_id = ${wcaId} AND best > 0
+    `),
+  ]);
+
+  const toRecord = (rows: unknown): RecordValues =>
+    Object.fromEntries(
+      (rows as Array<{ eventId: string; best: number }>).map((row) => [
+        row.eventId,
+        Number(row.best),
+      ]),
+    );
+
+  return { singles: toRecord(singleRows), averages: toRecord(averageRows) };
+}
+
 export async function getNemesisReport(wcaId: string): Promise<NemesisReport> {
   "use cache";
   cacheLife("weeks");
   cacheTag(`person-nemeses-${wcaId}`);
 
+  const targets = await getPersonRecordValues(wcaId);
+  return findNemesisReport({ ...targets, excludeWcaId: wcaId });
+}
+
+/**
+ * A slot is an (event, single|average) pair in `singles` / `averages`.
+ * Nemeses beat the target strictly in every slot; almost-nemeses in all but
+ * one. For each nemesis, `closest` is the slot with the smallest relative gap
+ * (333mbf last, since its encoded values can't be compared as a gap). For
+ * each almost-nemesis, `missing` is the slot they don't beat.
+ */
+export async function findNemesisReport({
+  excludeWcaId: wcaId,
+  ...targets
+}: NemesisTargets & { excludeWcaId: string }): Promise<NemesisReport> {
+  "use cache";
+  cacheLife("hours");
+
+  const values = targetValues(targets);
+  if (values.length === 0) {
+    return { slotCount: 0, nemeses: [], almost: [], almostTotal: 0 };
+  }
+
   const rows = await db.execute(sql`
     WITH target AS (
-      SELECT 'single'::text AS type, event_id, best FROM ranks_single
-      WHERE person_id = ${wcaId} AND best > 0
-      UNION ALL
-      SELECT 'average'::text AS type, event_id, best FROM ranks_average
-      WHERE person_id = ${wcaId} AND best > 0
+      SELECT type, event_id, best
+      FROM (VALUES ${sql.join(values, sql`, `)}) AS v(type, event_id, best)
     ),
     total AS (
       SELECT COUNT(*)::int AS n FROM target

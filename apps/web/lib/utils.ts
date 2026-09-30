@@ -87,6 +87,21 @@ export function decodeMultiBlind(value: number): MultiBlindResult | null {
   };
 }
 
+/** Encode a multi-blind result in the new WCA format (0DDTTTTTMM). */
+export function encodeMultiBlind({
+  solved,
+  attempted,
+  timeInSeconds,
+}: {
+  solved: number;
+  attempted: number;
+  timeInSeconds: number;
+}): number {
+  const missed = attempted - solved;
+  const points = solved - missed;
+  return (99 - points) * 10_000_000 + timeInSeconds * 100 + missed;
+}
+
 export function formatTime333mbf(value: number): string {
   if (value === -1) {
     return "DNF";

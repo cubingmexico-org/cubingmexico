@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
+import { Button } from "@workspace/ui/components/button";
 import { getPerson } from "@/db/queries";
 import { parseWcaId } from "@/lib/wca-id";
 import { getNemesisReport } from "../_lib/nemesis-queries";
@@ -54,11 +57,21 @@ export default async function Page({ searchParams }: Props) {
           No encontramos al competidor seleccionado.
         </p>
       ) : person && report ? (
-        <NemesesList
-          targetWcaId={person.wcaId}
-          targetName={person.name ?? person.wcaId}
-          report={report}
-        />
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-center">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/persons/nemesis/what-if?id=${person.wcaId}`}>
+                <Sparkles className="size-4" />
+                ¿Y si...?
+              </Link>
+            </Button>
+          </div>
+          <NemesesList
+            targetWcaId={person.wcaId}
+            targetName={person.name ?? person.wcaId}
+            report={report}
+          />
+        </div>
       ) : (
         <p className="text-center text-muted-foreground">
           Selecciona un competidor para ver sus némesis.
