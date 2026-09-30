@@ -74,7 +74,7 @@ function PersonHeader({
       )}
       <Link
         href={`/persons/${person.wcaId}`}
-        className="font-semibold text-lg text-link hover:text-link/80 break-words"
+        className="font-semibold text-lg text-link hover:text-link/80 wrap-break-word"
       >
         {displayName(data)}
       </Link>
@@ -84,7 +84,19 @@ function PersonHeader({
       )}
       {team && (
         <Badge variant="outline" asChild>
-          <Link href={`/teams/${team.id}`}>{team.name}</Link>
+          <Link href={`/teams/${team.id}`} className="gap-1.5">
+            {team.image ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={team.image}
+                alt=""
+                width={14}
+                height={14}
+                className="size-3.5 rounded-sm object-cover"
+              />
+            ) : null}
+            {team.name}
+          </Link>
         </Badge>
       )}
     </div>
