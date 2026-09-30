@@ -445,6 +445,7 @@ async function PersonPageContent({ id }: { id: string }) {
       </div>
       <PersonTabs
         wcaId={id}
+        personName={person.name ?? id}
         eventOptions={eventOptions}
         showRecordsTab={showRecordsTab}
         showChampionshipPodiumsTab={showChampionshipPodiumsTab}

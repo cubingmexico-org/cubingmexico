@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
 import { getPerson } from "@/db/queries";
+import { parseWcaId } from "@/lib/wca-id";
 import { ComparePicker } from "./_components/compare-picker";
 import { CompareContent } from "./_components/compare-content";
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
-
-const WCA_ID_PATTERN = /^\d{4}[A-Z]{4}\d{2}$/;
-
-function parseWcaId(value: string | string[] | undefined): string | null {
-  if (typeof value !== "string") return null;
-  const id = value.trim().toUpperCase();
-  return WCA_ID_PATTERN.test(id) ? id : null;
-}
 
 async function resolvePerson(wcaId: string | null) {
   if (!wcaId) return null;

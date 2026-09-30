@@ -13,6 +13,7 @@ import {
   Flame,
   BookOpen,
   Swords,
+  Skull,
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -158,6 +159,15 @@ export function HeaderNavigationMenu() {
                   >
                     <Swords className="size-4" />
                     Comparar competidores
+                  </Link>
+                </NavigationMenuLink>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/persons/nemesis"
+                    className="flex-row items-center gap-2"
+                  >
+                    <Skull className="size-4" />
+                    Buscador de némesis
                   </Link>
                 </NavigationMenuLink>
                 <NavigationMenuLink asChild>

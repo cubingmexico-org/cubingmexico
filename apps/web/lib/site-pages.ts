@@ -67,6 +67,11 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["head to head", "versus", "vs", "comparación"],
   },
   {
+    title: "Buscador de némesis",
+    href: "/persons/nemesis",
+    keywords: ["nemesis", "nemesizer"],
+  },
+  {
     title: "Organizadores",
     href: "/organizers",
     keywords: ["organizers"],
