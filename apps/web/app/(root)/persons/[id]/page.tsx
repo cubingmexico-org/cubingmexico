@@ -23,7 +23,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { WcaMonochrome } from "@workspace/icons";
-import { Swords } from "lucide-react";
+import { Crown, Skull, Swords } from "lucide-react";
 import {
   getPersonData,
   getOrganizerStatus,
@@ -38,6 +38,9 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { formatDelegateLevel } from "@/lib/delegate-level";
 import { PersonTabs } from "./_components/person-tabs";
+import { getPersonNemesisStats } from "../_lib/nemesis-queries";
+
+const numberFormat = new Intl.NumberFormat("es-MX");
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -84,6 +87,7 @@ async function PersonPageContent({ id }: { id: string }) {
     eventOptions,
     showChampionshipPodiumsTab,
     showStaffCompetitionsTab,
+    nemesisStats,
   ] = await Promise.all([
     getPersonAvatarFromWCA(id),
     getPersonData(id),
@@ -95,6 +99,7 @@ async function PersonPageContent({ id }: { id: string }) {
     getPersonCompetitionEventOptions(id),
     hasPersonChampionshipPodiums(id),
     hasPersonStaffCompetitions(id),
+    getPersonNemesisStats(id),
   ]);
 
   if (!personData) {
@@ -173,6 +178,25 @@ async function PersonPageContent({ id }: { id: string }) {
             Comparar
           </Link>
         </Badge>
+        {nemesisStats && nemesisStats.slotCount > 0 && (
+          <Badge variant="outline" asChild>
+            <Link href={`/persons/${id}?tab=nemesis`} className="gap-1.5">
+              {nemesisStats.nemesisCount === 0 ? (
+                <>
+                  <Crown className="size-3.5" />
+                  Invict{person.gender === "f" ? "a" : "o"}
+                </>
+              ) : (
+                <>
+                  <Skull className="size-3.5" />
+                  {numberFormat.format(nemesisStats.nemesisCount)} némesis
+                </>
+              )}
+              {nemesisStats.nemesizedCount > 0 &&
+                ` · némesis de ${numberFormat.format(nemesisStats.nemesizedCount)}`}
+            </Link>
+          </Badge>
+        )}
       </div>
       {wcaData && (
         <div className="w-full flex justify-center mb-6">

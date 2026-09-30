@@ -4,8 +4,9 @@ import { ChartBar, Sparkles } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { getPerson } from "@/db/queries";
 import { parseWcaId } from "@/lib/wca-id";
-import { getNemesisReport } from "../_lib/nemesis-queries";
+import { getNemesisReport, getNemesizedReport } from "../_lib/nemesis-queries";
 import { NemesesList } from "../_components/nemeses-list";
+import { NemesizedList } from "../_components/nemesized-list";
 import { NemesisPicker } from "./_components/nemesis-picker";
 
 type Props = {
@@ -40,7 +41,12 @@ export async function generateMetadata({
 export default async function Page({ searchParams }: Props) {
   const params = await searchParams;
   const person = await resolvePerson(parseWcaId(params.id));
-  const report = person ? await getNemesisReport(person.wcaId) : null;
+  const [report, nemesized] = person
+    ? await Promise.all([
+        getNemesisReport(person.wcaId),
+        getNemesizedReport(person.wcaId),
+      ])
+    : [null, null];
 
   return (
     <>
@@ -64,8 +70,8 @@ export default async function Page({ searchParams }: Props) {
         <p className="text-center text-muted-foreground">
           No encontramos al competidor seleccionado.
         </p>
-      ) : person && report ? (
-        <div className="flex flex-col gap-4">
+      ) : person && report && nemesized ? (
+        <div className="flex flex-col gap-8">
           <div className="flex justify-center">
             <Button variant="outline" size="sm" asChild>
               <Link href={`/persons/nemesis/what-if?id=${person.wcaId}`}>
@@ -78,6 +84,11 @@ export default async function Page({ searchParams }: Props) {
             targetWcaId={person.wcaId}
             targetName={person.name ?? person.wcaId}
             report={report}
+          />
+          <NemesizedList
+            targetWcaId={person.wcaId}
+            targetName={person.name ?? person.wcaId}
+            report={nemesized}
           />
         </div>
       ) : (

@@ -10,7 +10,10 @@ import {
   getPersonStaffCompetitions,
 } from "./queries";
 import { getStatesGeoJSON } from "@/db/queries";
-import { getNemesisReport } from "../../_lib/nemesis-queries";
+import {
+  getNemesisReport,
+  getNemesizedReport,
+} from "../../_lib/nemesis-queries";
 
 export async function loadPersonCompetitionResults(
   wcaId: string,
@@ -40,7 +43,11 @@ export async function loadPersonStaffCompetitions(wcaId: string) {
 }
 
 export async function loadPersonNemeses(wcaId: string) {
-  return getNemesisReport(wcaId);
+  const [report, nemesized] = await Promise.all([
+    getNemesisReport(wcaId),
+    getNemesizedReport(wcaId),
+  ]);
+  return { report, nemesized };
 }
 
 export async function loadPersonMapData(wcaId: string) {

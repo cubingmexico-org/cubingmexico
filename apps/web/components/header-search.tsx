@@ -47,6 +47,16 @@ export function HeaderSearch() {
   const [results, setResults] =
     React.useState<SiteSearchResults>(EMPTY_RESULTS);
   const requestIdRef = React.useRef(0);
+  const [isMac, setIsMac] = React.useState<boolean | null>(null);
+
+  React.useEffect(() => {
+    const nav = navigator as Navigator & {
+      userAgentData?: { platform?: string };
+    };
+    const platform =
+      nav.userAgentData?.platform || nav.platform || nav.userAgent;
+    setIsMac(/mac|iphone|ipad|ipod/i.test(platform));
+  }, []);
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -149,8 +159,19 @@ export function HeaderSearch() {
       >
         <Search className="size-4" />
         <span className="hidden sm:inline">Buscar…</span>
-        <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-white/70 sm:inline-flex">
-          <span className="text-xs">⌘</span>K
+        <kbd
+          className={cn(
+            "pointer-events-none hidden h-5 select-none items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-white/70 sm:inline-flex",
+            isMac === null && "invisible",
+          )}
+        >
+          {isMac === false ? (
+            "Ctrl K"
+          ) : (
+            <>
+              <span className="text-xs">⌘</span>K
+            </>
+          )}
         </kbd>
       </Button>
 
