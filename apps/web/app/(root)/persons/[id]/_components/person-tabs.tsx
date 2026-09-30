@@ -30,7 +30,7 @@ import type {
   PersonStaffCompetition,
 } from "../_lib/queries";
 import type { PersonCompetitionLocation } from "../_lib/queries";
-import type { PersonNemesis } from "../../_lib/nemesis-queries";
+import type { NemesisReport } from "../../_lib/nemesis-queries";
 import { NemesesList } from "../../_components/nemeses-list";
 import {
   loadPersonChampionshipPodiums,
@@ -101,7 +101,7 @@ export function PersonTabs({
     organized: PersonStaffCompetition[];
     delegated: PersonStaffCompetition[];
   } | null>(null);
-  const [nemeses, setNemeses] = useState<PersonNemesis[] | null>(null);
+  const [nemeses, setNemeses] = useState<NemesisReport | null>(null);
   const [mapData, setMapData] = useState<{
     locations: PersonCompetitionLocation[];
     statesData: GeoJSONProps["data"] | undefined;
@@ -419,7 +419,7 @@ export function PersonTabs({
           <NemesesList
             targetWcaId={wcaId}
             targetName={personName}
-            nemeses={nemeses}
+            report={nemeses}
           />
         )}
       </TabsContent>

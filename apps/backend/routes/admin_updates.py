@@ -11,6 +11,7 @@ from flask import Blueprint, jsonify
 from psycopg2.extras import execute_values
 
 from common import EXCLUDED_EVENTS, SINGLE_EVENTS, get_connection, log, require_cron_auth
+from nemesis_stats import compute_nemesis_stats
 from utils import (
     extract_first_image_url,
     extract_round_end_dates_from_wcif,
@@ -2180,6 +2181,51 @@ def update_streak_ranks():
         return jsonify({"success": False, "message": "Error updating streak ranks"}), 500
 
 
+@admin_bp.route("/update-nemesis-stats", methods=["POST"])
+@require_cron_auth
+def update_nemesis_stats():
+    try:
+        log.info("Starting nemesis stats update")
+
+        query = """
+        SELECT person_id, 'single' AS slot_type, event_id, best
+        FROM ranks_single WHERE best > 0
+        UNION ALL
+        SELECT person_id, 'average' AS slot_type, event_id, best
+        FROM ranks_average WHERE best > 0
+        """
+
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(query)
+                entries = cur.fetchall()
+                log.info("Fetched %s rank row(s) for nemesis stats", len(entries))
+
+                rows_to_insert = compute_nemesis_stats(entries)
+
+                log.info("Deleting existing nemesis_stats records")
+                cur.execute("DELETE FROM nemesis_stats")
+
+                if rows_to_insert:
+                    execute_values(
+                        cur,
+                        """
+                        INSERT INTO nemesis_stats
+                        (person_id, nemesis_count, nemesized_count, event_count, slot_count)
+                        VALUES %s
+                        """,
+                        rows_to_insert,
+                    )
+
+                log.info("Inserted %s nemesis_stats record(s)", len(rows_to_insert))
+
+        log.info("Nemesis stats updated successfully")
+        return jsonify({"success": True, "message": "Nemesis stats updated successfully"})
+    except Exception as e:
+        log.error("Error updating nemesis stats: %s", e)
+        return jsonify({"success": False, "message": "Error updating nemesis stats"}), 500
+
+
 @admin_bp.route("/post-summary-unlock", methods=["POST"])
 @require_cron_auth
 def post_summary_unlock_route():
@@ -2340,6 +2386,7 @@ def update_all():
             ("update_sum_of_ranks", update_sum_of_ranks),
             ("update_kinch_ranks", update_kinch_ranks),
             ("update_streak_ranks", update_streak_ranks),
+            ("update_nemesis_stats", update_nemesis_stats),
         ]
         details = {}
         for name, func in updates:

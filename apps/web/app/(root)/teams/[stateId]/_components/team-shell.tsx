@@ -12,7 +12,7 @@ import {
 } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
-import { CalendarRange, MapPin, Settings, Users } from "lucide-react";
+import { CalendarRange, MapPin, Settings, Swords, Users } from "lucide-react";
 import type { getTeamInfo } from "../_lib/queries";
 import {
   canShowAnnualSummaryLinks,
@@ -150,6 +150,18 @@ export function TeamShell({
                   Administrar Team
                 </Link>
               ) : null}
+              <Link
+                className={cn(
+                  buttonVariants({
+                    variant: "ghost",
+                    size: "default",
+                  }),
+                  "bg-black/20 text-white hover:bg-black/30 hover:text-white",
+                )}
+                href={`/teams/compare?a=${stateId}`}
+              >
+                <Swords /> Comparar
+              </Link>
               <Link
                 className={cn(
                   buttonVariants({

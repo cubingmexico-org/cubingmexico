@@ -453,6 +453,26 @@ export const streakRanks = pgTable(
 
 export type StreakRanks = InferSelectModel<typeof streakRanks>;
 
+export const nemesisStats = pgTable(
+  "nemesis_stats",
+  {
+    personId: varchar("person_id", { length: 10 })
+      .notNull()
+      .references(() => person.wcaId, { onDelete: "cascade" }),
+    nemesisCount: integer("nemesis_count").notNull().default(0),
+    nemesizedCount: integer("nemesized_count").notNull().default(0),
+    eventCount: integer("event_count").notNull().default(0),
+    slotCount: integer("slot_count").notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.personId] }),
+    index("nemesis_stats_nemesis_count_idx").on(t.nemesisCount),
+    index("nemesis_stats_nemesized_count_idx").on(t.nemesizedCount),
+  ],
+);
+
+export type NemesisStats = InferSelectModel<typeof nemesisStats>;
+
 export const exportMetadata = pgTable("export_metadata", {
   key: text("key").primaryKey(),
   value: text("value"),

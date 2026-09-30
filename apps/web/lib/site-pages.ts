@@ -20,6 +20,11 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["equipos", "estados"],
   },
   {
+    title: "Comparar teams",
+    href: "/teams/compare",
+    keywords: ["head to head", "versus", "vs", "equipos", "comparación"],
+  },
+  {
     title: "Rankings",
     href: "/rankings/333/single",
     keywords: ["clasificación", "tiempos"],
@@ -70,6 +75,16 @@ export const SITE_PAGES: SitePage[] = [
     title: "Buscador de némesis",
     href: "/persons/nemesis",
     keywords: ["nemesis", "nemesizer"],
+  },
+  {
+    title: "Simulador de némesis",
+    href: "/persons/nemesis/what-if",
+    keywords: ["what if", "y si", "nemesis", "simulador"],
+  },
+  {
+    title: "Estadísticas de némesis",
+    href: "/persons/nemesis/stats",
+    keywords: ["estadisticas", "invictos", "nemesis", "stats"],
   },
   {
     title: "Organizadores",

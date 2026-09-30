@@ -100,6 +100,7 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-sum-of-ranks` — Update sum of ranks
   - `POST /update-kinch-ranks` — Update Kinch ranks
   - `POST /update-streak-ranks` — Update personal-record streak ranks
+  - `POST /update-nemesis-stats` — Recompute per-person nemesis counts (how many nemeses each competitor has and how many people they are the nemesis of)
   - `POST /update-all` — Run full database import plus all derived rank updates; then publish SEMANA (after state records), RACHAS and AÑO if due
   - `POST /post-summary-unlock` — If Dec 20+ UTC, publish the annual summary unlock graphic (idempotent; respects `SOCIAL_POSTS_ENABLED`)
   - `POST /post-weekly-digest` — Publish the current Mexico City ISO-week SEMANA digest (idempotent; run after `/update-state-records`)
@@ -161,7 +162,7 @@ Main tables used:
 
 - persons, competitions, results, result_attempts
 - ranks_single, ranks_average
-- sum_of_ranks, kinch_ranks, streak_ranks
+- sum_of_ranks, kinch_ranks, streak_ranks, nemesis_stats
 - states, teams, events, export_metadata
 - social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock` | `weekly_digest` | `streaks_monthly` | `mollerz` | `year_recap`)
 

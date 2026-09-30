@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ChartBar, Sparkles } from "lucide-react";
+import { Button } from "@workspace/ui/components/button";
 import { getPerson } from "@/db/queries";
 import { parseWcaId } from "@/lib/wca-id";
-import { getPersonNemeses } from "../_lib/nemesis-queries";
+import { getNemesisReport } from "../_lib/nemesis-queries";
 import { NemesesList } from "../_components/nemeses-list";
 import { NemesisPicker } from "./_components/nemesis-picker";
 
@@ -37,7 +40,7 @@ export async function generateMetadata({
 export default async function Page({ searchParams }: Props) {
   const params = await searchParams;
   const person = await resolvePerson(parseWcaId(params.id));
-  const nemeses = person ? await getPersonNemeses(person.wcaId) : null;
+  const report = person ? await getNemesisReport(person.wcaId) : null;
 
   return (
     <>
@@ -48,17 +51,35 @@ export default async function Page({ searchParams }: Props) {
         Tu némesis es alguien que te supera en single y en average en todos los
         eventos en los que has competido.
       </p>
+      <div className="flex justify-center mb-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/persons/nemesis/stats">
+            <ChartBar className="size-4" />
+            Ver estadísticas de némesis
+          </Link>
+        </Button>
+      </div>
       <NemesisPicker value={person} />
       {params.id && !person ? (
         <p className="text-center text-muted-foreground">
           No encontramos al competidor seleccionado.
         </p>
-      ) : person && nemeses ? (
-        <NemesesList
-          targetWcaId={person.wcaId}
-          targetName={person.name ?? person.wcaId}
-          nemeses={nemeses}
-        />
+      ) : person && report ? (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-center">
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/persons/nemesis/what-if?id=${person.wcaId}`}>
+                <Sparkles className="size-4" />
+                ¿Y si...?
+              </Link>
+            </Button>
+          </div>
+          <NemesesList
+            targetWcaId={person.wcaId}
+            targetName={person.name ?? person.wcaId}
+            report={report}
+          />
+        </div>
       ) : (
         <p className="text-center text-muted-foreground">
           Selecciona un competidor para ver sus némesis.
