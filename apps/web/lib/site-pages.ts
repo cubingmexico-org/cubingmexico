@@ -20,6 +20,11 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["equipos", "estados"],
   },
   {
+    title: "Comparar teams",
+    href: "/teams/compare",
+    keywords: ["head to head", "versus", "vs", "equipos", "comparación"],
+  },
+  {
     title: "Rankings",
     href: "/rankings/333/single",
     keywords: ["clasificación", "tiempos"],

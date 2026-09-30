@@ -53,7 +53,9 @@ export function NemesisStateBreakdown({
             </TableCell>
             <TableCell className="text-right tabular-nums hidden sm:table-cell">
               {numberFormat.format(
-                row.competitors > 0 ? (row.invictos / row.competitors) * 100 : 0,
+                row.competitors > 0
+                  ? (row.invictos / row.competitors) * 100
+                  : 0,
               )}
               %
             </TableCell>

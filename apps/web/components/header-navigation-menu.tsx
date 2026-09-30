@@ -137,6 +137,15 @@ export function HeaderNavigationMenu() {
                   </Link>
                 </NavigationMenuLink>
                 <NavigationMenuLink asChild>
+                  <Link
+                    href="/teams/compare"
+                    className="flex-row items-center gap-2"
+                  >
+                    <Swords className="size-4" />
+                    Comparar teams
+                  </Link>
+                </NavigationMenuLink>
+                <NavigationMenuLink asChild>
                   <Link href="/streaks" className="flex-row items-center gap-2">
                     <Flame className="size-4" />
                     Rachas de PRs

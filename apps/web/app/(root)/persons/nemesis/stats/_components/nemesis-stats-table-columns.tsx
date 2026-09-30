@@ -57,9 +57,7 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="Eventos" />
       ),
       cell: ({ row }) => (
-        <div className="flex justify-center">
-          {row.getValue("eventCount")}
-        </div>
+        <div className="flex justify-center">{row.getValue("eventCount")}</div>
       ),
       enableHiding: false,
     },

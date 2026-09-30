@@ -1,3 +1,12 @@
+export type HeadToHeadSide = {
+  pos: number | null;
+  best: number;
+  average: number;
+  /** Representative competitor when a side is a team. */
+  personId?: string;
+  personName?: string | null;
+};
+
 export type HeadToHeadRound = {
   competitionId: string;
   competitionName: string;
@@ -6,8 +15,8 @@ export type HeadToHeadRound = {
   eventName: string;
   eventRank: number;
   roundTypeId: string | null;
-  a: { pos: number | null; best: number; average: number };
-  b: { pos: number | null; best: number; average: number };
+  a: HeadToHeadSide;
+  b: HeadToHeadSide;
 };
 
 export type HeadToHeadWinner = "a" | "b" | "tie";

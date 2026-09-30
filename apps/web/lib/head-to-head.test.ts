@@ -41,6 +41,28 @@ describe("getRoundWinner", () => {
     expect(getRoundWinner(round({ aPos: 4, bPos: 0 }))).toBe("a");
     expect(getRoundWinner(round({ aPos: null, bPos: null }))).toBe("tie");
   });
+
+  it("ignores representative fields on team sides", () => {
+    const teamRound = round({
+      aPos: 3,
+      bPos: 1,
+      a: {
+        pos: 3,
+        best: 900,
+        average: 1000,
+        personId: "2020AAAA01",
+        personName: "Fast A",
+      },
+      b: {
+        pos: 1,
+        best: 1500,
+        average: 1600,
+        personId: "2020BBBB01",
+        personName: "Fast B",
+      },
+    });
+    expect(getRoundWinner(teamRound)).toBe("b");
+  });
 });
 
 describe("summarizeHeadToHead", () => {

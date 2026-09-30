@@ -98,9 +98,10 @@ export async function getNemesisSummary() {
   const [totals] = await db
     .select({
       competitors: count(),
-      invictos: sql<number>`count(*) filter (where ${nemesisStats.nemesisCount} = 0)`.mapWith(
-        Number,
-      ),
+      invictos:
+        sql<number>`count(*) filter (where ${nemesisStats.nemesisCount} = 0)`.mapWith(
+          Number,
+        ),
       averageNemeses:
         sql<number>`coalesce(avg(${nemesisStats.nemesisCount}), 0)`.mapWith(
           Number,
@@ -141,9 +142,10 @@ export async function getNemesisStateBreakdown() {
       stateId: state.id,
       state: state.name,
       competitors: count(),
-      invictos: sql<number>`count(*) filter (where ${nemesisStats.nemesisCount} = 0)`.mapWith(
-        Number,
-      ),
+      invictos:
+        sql<number>`count(*) filter (where ${nemesisStats.nemesisCount} = 0)`.mapWith(
+          Number,
+        ),
       averageNemeses: sql<number>`avg(${nemesisStats.nemesisCount})`.mapWith(
         Number,
       ),
