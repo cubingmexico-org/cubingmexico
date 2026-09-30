@@ -30,10 +30,13 @@ import type {
   PersonStaffCompetition,
 } from "../_lib/queries";
 import type { PersonCompetitionLocation } from "../_lib/queries";
+import type { PersonNemesis } from "../../_lib/nemesis-queries";
+import { NemesesList } from "../../_components/nemeses-list";
 import {
   loadPersonChampionshipPodiums,
   loadPersonCompetitionResults,
   loadPersonMapData,
+  loadPersonNemeses,
   loadPersonPodiumsByEvent,
   loadPersonPrStreaks,
   loadPersonRecordHistory,
@@ -47,6 +50,7 @@ const TAB_VALUES = [
   "pr-streaks",
   "podiums",
   "championship-podiums",
+  "nemesis",
   "map",
   "staff-competitions",
 ] as const;
@@ -55,6 +59,7 @@ type TabValue = (typeof TAB_VALUES)[number];
 
 type PersonTabsProps = {
   wcaId: string;
+  personName: string;
   eventOptions: PersonResultsEventOption[];
   showRecordsTab: boolean;
   showChampionshipPodiumsTab: boolean;
@@ -63,6 +68,7 @@ type PersonTabsProps = {
 
 export function PersonTabs({
   wcaId,
+  personName,
   eventOptions,
   showRecordsTab,
   showChampionshipPodiumsTab,
@@ -95,6 +101,7 @@ export function PersonTabs({
     organized: PersonStaffCompetition[];
     delegated: PersonStaffCompetition[];
   } | null>(null);
+  const [nemeses, setNemeses] = useState<PersonNemesis[] | null>(null);
   const [mapData, setMapData] = useState<{
     locations: PersonCompetitionLocation[];
     statesData: GeoJSONProps["data"] | undefined;
@@ -245,6 +252,25 @@ export function PersonTabs({
   }, [tab, wcaId, staffCompetitions, showStaffCompetitionsTab]);
 
   useEffect(() => {
+    if (tab !== "nemesis" || nemeses !== null) {
+      return;
+    }
+
+    let cancelled = false;
+    startTransition(() => {
+      void loadPersonNemeses(wcaId).then((data) => {
+        if (!cancelled) {
+          setNemeses(data);
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, wcaId, nemeses]);
+
+  useEffect(() => {
     if (tab !== "map" || mapData !== null) {
       return;
     }
@@ -272,9 +298,9 @@ export function PersonTabs({
     (staffCompetitions.organized.length > 0 ||
       staffCompetitions.delegated.length > 0);
 
-  // Always: results, chart, pr-streaks, podiums, map
+  // Always: results, chart, pr-streaks, podiums, nemesis, map
   const tabCount =
-    5 +
+    6 +
     (showRecordsTab ? 1 : 0) +
     (showChampionshipPodiumsTab ? 1 : 0) +
     (showStaffCompetitionsTab ? 1 : 0);
@@ -303,7 +329,8 @@ export function PersonTabs({
           tabCount === 5 && "md:grid-cols-5",
           tabCount === 6 && "md:grid-cols-6",
           tabCount === 7 && "md:grid-cols-7",
-          tabCount >= 8 && "md:grid-cols-8",
+          tabCount === 8 && "md:grid-cols-8",
+          tabCount >= 9 && "md:grid-cols-9",
         )}
       >
         <TabsTrigger value="results-by-event">Resultados</TabsTrigger>
@@ -316,6 +343,7 @@ export function PersonTabs({
             Podios en Campeonatos
           </TabsTrigger>
         )}
+        <TabsTrigger value="nemesis">Némesis</TabsTrigger>
         <TabsTrigger value="map">Mapa</TabsTrigger>
         {showStaffCompetitionsTab && (
           <TabsTrigger value="staff-competitions">Organización</TabsTrigger>
@@ -383,6 +411,18 @@ export function PersonTabs({
           )}
         </TabsContent>
       )}
+
+      <TabsContent value="nemesis" className="mt-6">
+        {nemeses === null ? (
+          <Skeleton className="h-64 w-full" />
+        ) : (
+          <NemesesList
+            targetWcaId={wcaId}
+            targetName={personName}
+            nemeses={nemeses}
+          />
+        )}
+      </TabsContent>
 
       <TabsContent value="map" className="mt-6">
         {mapData === null ? (

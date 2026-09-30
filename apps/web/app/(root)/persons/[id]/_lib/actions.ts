@@ -10,6 +10,7 @@ import {
   getPersonStaffCompetitions,
 } from "./queries";
 import { getStatesGeoJSON } from "@/db/queries";
+import { getPersonNemeses } from "../../_lib/nemesis-queries";
 
 export async function loadPersonCompetitionResults(
   wcaId: string,
@@ -36,6 +37,10 @@ export async function loadPersonPodiumsByEvent(wcaId: string) {
 
 export async function loadPersonStaffCompetitions(wcaId: string) {
   return getPersonStaffCompetitions(wcaId);
+}
+
+export async function loadPersonNemeses(wcaId: string) {
+  return getPersonNemeses(wcaId);
 }
 
 export async function loadPersonMapData(wcaId: string) {
