@@ -4,6 +4,7 @@ import {
   getPersonChampionshipPodiums,
   getPersonCompetitionLocations,
   getPersonCompetitionResults,
+  getPersonPodiumsByEvent,
   getPersonPrStreaks,
   getPersonRecordHistory,
   getPersonStaffCompetitions,
@@ -27,6 +28,10 @@ export async function loadPersonChampionshipPodiums(wcaId: string) {
 
 export async function loadPersonPrStreaks(wcaId: string) {
   return getPersonPrStreaks(wcaId);
+}
+
+export async function loadPersonPodiumsByEvent(wcaId: string) {
+  return getPersonPodiumsByEvent(wcaId);
 }
 
 export async function loadPersonStaffCompetitions(wcaId: string) {
