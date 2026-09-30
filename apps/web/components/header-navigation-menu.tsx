@@ -21,6 +21,7 @@ import {
   BookOpen,
   Swords,
   Skull,
+  ChartBar,
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -175,6 +176,15 @@ export function HeaderNavigationMenu() {
                   >
                     <Skull className="size-4" />
                     Buscador de némesis
+                  </Link>
+                </NavigationMenuLink>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/persons/nemesis/stats"
+                    className="flex-row items-center gap-2"
+                  >
+                    <ChartBar className="size-4" />
+                    Estadísticas de némesis
                   </Link>
                 </NavigationMenuLink>
                 <NavigationMenuLink asChild>

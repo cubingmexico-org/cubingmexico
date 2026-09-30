@@ -77,6 +77,11 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["what if", "y si", "nemesis", "simulador"],
   },
   {
+    title: "Estadísticas de némesis",
+    href: "/persons/nemesis/stats",
+    keywords: ["estadisticas", "invictos", "nemesis", "stats"],
+  },
+  {
     title: "Organizadores",
     href: "/organizers",
     keywords: ["organizers"],

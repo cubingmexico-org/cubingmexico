@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { ChartBar, Sparkles } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { getPerson } from "@/db/queries";
 import { parseWcaId } from "@/lib/wca-id";
@@ -51,6 +51,14 @@ export default async function Page({ searchParams }: Props) {
         Tu némesis es alguien que te supera en single y en average en todos los
         eventos en los que has competido.
       </p>
+      <div className="flex justify-center mb-4">
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/persons/nemesis/stats">
+            <ChartBar className="size-4" />
+            Ver estadísticas de némesis
+          </Link>
+        </Button>
+      </div>
       <NemesisPicker value={person} />
       {params.id && !person ? (
         <p className="text-center text-muted-foreground">

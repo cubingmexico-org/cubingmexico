@@ -42,6 +42,12 @@ export const ADMIN_OPS_JOBS = [
     description: "Recalcula rachas de PRs.",
   },
   {
+    path: "/update-nemesis-stats",
+    label: "Actualizar estadísticas de némesis",
+    description:
+      "Recalcula cuántos némesis tiene cada competidor y de cuántos es némesis.",
+  },
+  {
     path: "/post-summary-unlock",
     label: "Publicar resumen anual",
     description:

@@ -11,6 +11,7 @@ export const COARSE_RANK_TAGS = [
   "sor-single",
   "sor-average",
   "streak-ranks",
+  "nemesis-stats",
 ] as const;
 
 export function stateMemberTags(stateId: string): string[] {
