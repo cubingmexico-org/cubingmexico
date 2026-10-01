@@ -93,7 +93,6 @@ def _comp_meta(comp: dict) -> str:
     return " · ".join(p for p in (date_bit, place) if p)
 
 
-
 def _panel_bottom_y() -> int:
     return PANEL_BOTTOM - FOOTER_RESERVE
 
@@ -117,9 +116,7 @@ def _content_bottom(payload: dict, slide_id: str) -> int:
     return bottom
 
 
-def _draw_upcoming_footer(
-    draw: ImageDraw.ImageDraw, payload: dict, slide_id: str
-) -> None:
+def _draw_upcoming_footer(draw: ImageDraw.ImageDraw, payload: dict, slide_id: str) -> None:
     if payload.get("_upcoming_footer_slide") != slide_id:
         return
     rows = (payload.get("upcoming_comps") or [])[:2]
@@ -159,9 +156,7 @@ def _estimate_comp_block_h(
 ) -> int:
     h = 0
     for comp, _tag in rows:
-        lines = _wrap_text(
-            comp.get("name") or "", name_font, CONTENT_WIDTH - 110, max_lines=2
-        ) or ["—"]
+        lines = _wrap_text(comp.get("name") or "", name_font, CONTENT_WIDTH - 110, max_lines=2) or ["—"]
         h += len(lines) * (text_height("Ay", name_font) + 2)
         if _comp_meta(comp):
             h += text_height("Ay", meta_font) + 4
@@ -201,10 +196,7 @@ def _distribute_start_and_gap(
     return y, gap
 
 
-
-def _wrap_text(
-    text: str, font: ImageFont.ImageFont, max_width: int, *, max_lines: int = 2
-) -> list[str]:
+def _wrap_text(text: str, font: ImageFont.ImageFont, max_width: int, *, max_lines: int = 2) -> list[str]:
     text = (text or "").strip()
     if not text:
         return []
@@ -358,8 +350,7 @@ def weekly_cover_story(payload: dict) -> dict | None:
             "kicker": "BIENVENIDOS",
             "headline": f"{debut_count} {noun}",
             "sub": "",
-            "caption": f"¡Bienvenida a {'nuestro' if debut_count == 1 else 'los'} "
-            f"{debut_count} {noun}!",
+            "caption": f"¡Bienvenida a {'nuestro' if debut_count == 1 else 'los'} {debut_count} {noun}!",
         }
 
     if single_comp:
@@ -378,9 +369,7 @@ def weekly_cover_story(payload: dict) -> dict | None:
             "kicker": "COMPETENCIAS",
             "headline": f"{len(comps)} competencias {where}".strip(),
             "sub": "",
-            "caption": f"{len(comps)} competencias {where} esta semana.".replace(
-                "  ", " "
-            ),
+            "caption": f"{len(comps)} competencias {where} esta semana.".replace("  ", " "),
         }
     return None
 
@@ -543,9 +532,7 @@ def _draw_level_badge(
     return x0 + box_w
 
 
-def _draw_slide_index(
-    draw: ImageDraw.ImageDraw, *, index: int, total: int
-) -> None:
+def _draw_slide_index(draw: ImageDraw.ImageDraw, *, index: int, total: int) -> None:
     if total <= 1:
         return
     font = load_font(22)
@@ -652,9 +639,7 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
 
     if is_thin:
         y = panel_top + 56
-        y = _draw_section_label(
-            draw, "SEMANA TRANQUILA", section_font, x=CONTENT_LEFT, y=y
-        )
+        y = _draw_section_label(draw, "SEMANA TRANQUILA", section_font, x=CONTENT_LEFT, y=y)
         note_font = load_font(32)
         note = "Sin competencias con resultados esta semana"
         for line in _wrap_text(note, note_font, CONTENT_WIDTH, max_lines=3) or [note]:
@@ -678,9 +663,7 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
             # Preview first upcoming on cover.
             first = upcoming[0]
             name_font = load_font(34)
-            for line in _wrap_text(
-                first.get("name") or "", name_font, CONTENT_WIDTH, max_lines=2
-            ) or ["—"]:
+            for line in _wrap_text(first.get("name") or "", name_font, CONTENT_WIDTH, max_lines=2) or ["—"]:
                 draw.text((CONTENT_LEFT, y), line, font=name_font, fill=BLACK)
                 y += text_height("Ay", name_font) + 4
             meta = _comp_meta(first)
@@ -715,9 +698,7 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
         if not late_only and not comp.get("has_results"):
             meta = f"{meta} · resultados pendientes".strip(" ·")
         if meta:
-            context.append(
-                (_fit_ellipsis(meta, ctx_meta_font, CONTENT_WIDTH), ctx_meta_font, GREEN)
-            )
+            context.append((_fit_ellipsis(meta, ctx_meta_font, CONTENT_WIDTH), ctx_meta_font, GREEN))
     elif story["kind"] != "comp" and len(comps) > 1:
         line = f"{len(comps)} competencias {_states_phrase(comps)}".strip()
         context.append((line, ctx_name_font, BLACK))
@@ -777,9 +758,7 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
     return _png_bytes(canvas)
 
 
-def _fit_headline(
-    text: str, max_width: int, *, sizes: tuple[int, ...]
-) -> tuple[ImageFont.ImageFont, list[str]]:
+def _fit_headline(text: str, max_width: int, *, sizes: tuple[int, ...]) -> tuple[ImageFont.ImageFont, list[str]]:
     """Largest size that wraps into two lines without truncation (else 3 lines)."""
     text = (text or "").strip() or "—"
     for size in sizes:
@@ -830,9 +809,7 @@ def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
         )
         header_h = text_height("Ay", section_font) + 8 + 4 + 16
         name_w = CONTENT_WIDTH - (120 if tag else 0)
-        name_lines = _wrap_text(
-            comp.get("name") or "", name_font, name_w, max_lines=3
-        ) or ["—"]
+        name_lines = _wrap_text(comp.get("name") or "", name_font, name_w, max_lines=3) or ["—"]
         meta = _comp_meta(comp)
         status = ""
         if not tag and not late_only:
@@ -847,9 +824,7 @@ def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
             n_gaps=0,
             top_pad=36,
         )
-        y = _draw_section_label(
-            draw, eyebrow, section_font, x=CONTENT_LEFT, y=y - header_h
-        )
+        y = _draw_section_label(draw, eyebrow, section_font, x=CONTENT_LEFT, y=y - header_h)
         name_top = y
         for line in name_lines:
             draw.text((CONTENT_LEFT, y), line, font=name_font, fill=BLACK)
@@ -906,17 +881,13 @@ def _slide_competencias(payload: dict, *, index: int, total: int) -> bytes:
         bottom=bottom,
     )
     if context:
-        y = _draw_section_label(
-            draw, context, section_font, x=CONTENT_LEFT, y=y - header_h
-        )
+        y = _draw_section_label(draw, context, section_font, x=CONTENT_LEFT, y=y - header_h)
 
     for i, (comp, tag) in enumerate(rows):
         if y > bottom - 50:
             break
         name_w = CONTENT_WIDTH - (110 if tag else 0)
-        name_lines = _wrap_text(
-            comp.get("name") or "", name_font, name_w, max_lines=2
-        ) or ["—"]
+        name_lines = _wrap_text(comp.get("name") or "", name_font, name_w, max_lines=2) or ["—"]
         name_top = y
         for line in name_lines:
             draw.text((CONTENT_LEFT, y), line, font=name_font, fill=BLACK)
@@ -1172,9 +1143,7 @@ def _slide_debutantes(payload: dict, *, index: int, total: int) -> bytes:
 
     if extra > 0:
         y += 24
-        draw.text(
-            (CONTENT_LEFT, y), f"+{extra} más", font=more_font, fill=RED
-        )
+        draw.text((CONTENT_LEFT, y), f"+{extra} más", font=more_font, fill=RED)
 
     _draw_upcoming_footer(draw, payload, "debutantes")
     _draw_slide_index(draw, index=index, total=total)
@@ -1231,9 +1200,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
         content_h += text_height("Ay", meta_font) + 4  # event
         if (h.get("competition_name") or "").strip():
             content_h += text_height("Ay", meta_font) + 4
-    show_breakers = (
-        n <= 2 and bool(sr_breakers) and not _has_numeros(payload)
-    )
+    show_breakers = n <= 2 and bool(sr_breakers) and not _has_numeros(payload)
 
     bottom = _content_bottom(payload, "destacados")
     y, gap = _distribute_start_and_gap(
@@ -1251,17 +1218,13 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
         y = min(y, panel_top + 48 + header_h)
 
     record_label = f"{n} RÉCORD{'S' if n != 1 else ''} DE LA SEMANA"
-    y = _draw_section_label(
-        draw, record_label, section_font, x=CONTENT_LEFT, y=y - header_h
-    )
+    y = _draw_section_label(draw, record_label, section_font, x=CONTENT_LEFT, y=y - header_h)
 
     for i, h in enumerate(show):
         if y > bottom - 60:
             break
         level = str(h.get("level") or "")
-        badge_right = _draw_level_badge(
-            draw, level, badge_font, x=CONTENT_LEFT, cy=y + 16
-        )
+        badge_right = _draw_level_badge(draw, level, badge_font, x=CONTENT_LEFT, cy=y + 16)
         text_x = badge_right + 14
         person_w = CONTENT_RIGHT - text_x
         person_lines = _wrap_text(
@@ -1298,11 +1261,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
 
     if show_breakers and y < bottom - 80:
         breakers = sr_breakers[:4]
-        breaker_h = (
-            text_height("Ay", meta_font)
-            + 14
-            + len(breakers) * (text_height("Ay", meta_font) + 16)
-        )
+        breaker_h = text_height("Ay", meta_font) + 14 + len(breakers) * (text_height("Ay", meta_font) + 16)
         remaining = bottom - y - breaker_h
         y += max(36, remaining // 2) if remaining > 36 else 28
         draw.text((CONTENT_LEFT, y), "SR DESTACADOS", font=meta_font, fill=GREEN)
@@ -1310,10 +1269,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
         for row in breakers:
             if y > bottom - 28:
                 break
-            line = (
-                f"{row.get('person_name') or ''} · "
-                f"{row.get('count')} SR · {row.get('state_name') or ''}"
-            )
+            line = f"{row.get('person_name') or ''} · {row.get('count')} SR · {row.get('state_name') or ''}"
             draw.text(
                 (CONTENT_LEFT, y),
                 _fit_ellipsis(line, meta_font, CONTENT_WIDTH),
@@ -1379,13 +1335,10 @@ def _slide_proximas(payload: dict, *, index: int, total: int) -> bytes:
     # Single upcoming → hero card feel, vertically centered.
     if n == 1:
         comp = rows[0]
-        name_lines = _wrap_text(
-            comp.get("name") or "", name_font, CONTENT_WIDTH, max_lines=3
-        ) or ["—"]
+        name_lines = _wrap_text(comp.get("name") or "", name_font, CONTENT_WIDTH, max_lines=3) or ["—"]
         meta = _comp_meta(comp)
-        content_h = (
-            len(name_lines) * (text_height("Ay", name_font) + 6)
-            + (text_height("Ay", meta_font) + 8 if meta else 0)
+        content_h = len(name_lines) * (text_height("Ay", name_font) + 6) + (
+            text_height("Ay", meta_font) + 8 if meta else 0
         )
         y, _ = _distribute_start_and_gap(
             panel_top=panel_top,
@@ -1394,9 +1347,7 @@ def _slide_proximas(payload: dict, *, index: int, total: int) -> bytes:
             n_gaps=0,
             top_pad=36,
         )
-        y = _draw_section_label(
-            draw, window_label, section_font, x=CONTENT_LEFT, y=y - header_h
-        )
+        y = _draw_section_label(draw, window_label, section_font, x=CONTENT_LEFT, y=y - header_h)
         for line in name_lines:
             draw.text((CONTENT_LEFT, y), line, font=name_font, fill=BLACK)
             y += text_height("Ay", name_font) + 6
@@ -1410,9 +1361,7 @@ def _slide_proximas(payload: dict, *, index: int, total: int) -> bytes:
     content_h = 0
     wrapped: list[tuple[list[str], str]] = []
     for comp in rows:
-        lines = _wrap_text(
-            comp.get("name") or "", name_font, CONTENT_WIDTH, max_lines=2
-        ) or ["—"]
+        lines = _wrap_text(comp.get("name") or "", name_font, CONTENT_WIDTH, max_lines=2) or ["—"]
         meta = _comp_meta(comp)
         wrapped.append((lines, meta))
         content_h += len(lines) * (text_height("Ay", name_font) + 2)
@@ -1428,9 +1377,7 @@ def _slide_proximas(payload: dict, *, index: int, total: int) -> bytes:
         max_gap=100,
         top_pad=28,
     )
-    y = _draw_section_label(
-        draw, window_label, section_font, x=CONTENT_LEFT, y=y - header_h
-    )
+    y = _draw_section_label(draw, window_label, section_font, x=CONTENT_LEFT, y=y - header_h)
 
     for i, (lines, meta) in enumerate(wrapped):
         if y > bottom - 40:
@@ -1482,12 +1429,7 @@ def _draw_thin_upcoming(
 
     empty_font = load_font(28)
     note = "Sin competencias con resultados esta semana"
-    header_h = (
-        text_height("Ay", section_font)
-        + 10
-        + text_height("Ay", note_font)
-        + 28
-    )
+    header_h = text_height("Ay", section_font) + 10 + text_height("Ay", note_font) + 28
     name_h = text_height("Ay", name_font)
     meta_h = text_height("Ay", meta_font)
     row_h = name_h + 8 + meta_h

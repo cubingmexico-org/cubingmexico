@@ -41,9 +41,7 @@ def get_state_from_coordinates(latitude, longitude):
     global _skip_logged
     if SKIP_GEOCODING:
         if not _skip_logged:
-            log.info(
-                "SKIP_GEOCODING enabled — Mexican competition state_id will be left null"
-            )
+            log.info("SKIP_GEOCODING enabled — Mexican competition state_id will be left null")
             _skip_logged = True
         return None
 
@@ -63,8 +61,9 @@ def get_state_from_coordinates(latitude, longitude):
 
 
 def to_camel_case(snake_str):
-    components = snake_str.split('_')
-    return components[0] + ''.join(x.title() for x in components[1:])
+    components = snake_str.split("_")
+    return components[0] + "".join(x.title() for x in components[1:])
+
 
 def convert_keys_to_camel_case(data):
     if isinstance(data, dict):
@@ -154,8 +153,8 @@ def parse_int_query_param(param_name, default_value, min_value=1, max_value=None
     raw_value = request.args.get(param_name, default_value)
     try:
         value = int(raw_value)
-    except (TypeError, ValueError):
-        raise ValueError(f"Invalid '{param_name}'. Must be an integer.")
+    except (TypeError, ValueError) as err:
+        raise ValueError(f"Invalid '{param_name}'. Must be an integer.") from err
 
     if value < min_value:
         raise ValueError(f"Invalid '{param_name}'. Must be greater than or equal to {min_value}.")
@@ -189,8 +188,8 @@ def parse_date_query_param(param_name):
 
     try:
         return datetime.strptime(raw_value, "%Y-%m-%d").date()
-    except ValueError:
-        raise ValueError(f"Invalid '{param_name}'. Expected format: YYYY-MM-DD.")
+    except ValueError as err:
+        raise ValueError(f"Invalid '{param_name}'. Expected format: YYYY-MM-DD.") from err
 
 
 def parse_bool_query_param(param_name):
@@ -229,8 +228,8 @@ def build_competitions_filter_query_parts():
     if year:
         try:
             year_int = int(year)
-        except ValueError:
-            raise ValueError("Invalid 'year'. Must be an integer.")
+        except ValueError as err:
+            raise ValueError("Invalid 'year'. Must be an integer.") from err
         where_clauses.append("EXTRACT(YEAR FROM c.start_date) = %s")
         query_params.append(year_int)
 
@@ -338,9 +337,7 @@ def extract_round_end_dates_from_wcif(wcif) -> list[dict]:
             parsed = parse_round_activity_code(round_obj.get("id") or "")
             round_number = parsed[1] if parsed else i + 1
             has_cutoff = round_obj.get("cutoff") is not None
-            round_type_by_key[(event_id, round_number)] = round_type_id_from_wcif(
-                round_number, total, has_cutoff
-            )
+            round_type_by_key[(event_id, round_number)] = round_type_id_from_wcif(round_number, total, has_cutoff)
 
     end_date_by_key: dict[tuple[str, int], str] = {}
     for venue in venues:

@@ -5,7 +5,7 @@ Este documento explica cómo Cubing México determina los **registros estatales 
 Código relevante:
 
 - Web: [`apps/web/lib/update-state-records.ts`](../apps/web/lib/update-state-records.ts)
-- Backend (recompute global / cron): [`apps/backend/routes/admin_updates.py`](../apps/backend/routes/admin_updates.py) (`update_state_records`)
+- Backend (recompute global / cron): [`apps/backend/routes/admin/state.py`](../apps/backend/routes/admin/state.py) (`update_state_records`)
 - Fechas de ronda (WCIF / manual): tabla `competition_round_dates`; extractor [`apps/web/lib/competition-round-dates.ts`](../apps/web/lib/competition-round-dates.ts)
 - Historial (lectura): [`apps/web/app/(root)/records/_lib/queries.ts`](<../apps/web/app/(root)/records/_lib/queries.ts>) (`getRecordHistory`)
 

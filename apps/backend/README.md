@@ -20,8 +20,9 @@ Flask backend that imports World Cube Association (WCA) export data, maintains c
 
 Environment variables (see `.env.example`):
 
-- `DB_URL` — PostgreSQL connection string (defaults to local database: `postgresql://postgres:postgres@localhost:5432/cubing_mexico`)
-- `CRON_SECRET` — Auth secret for admin update endpoints
+- `DB_URL` — PostgreSQL connection string (env or Secret Manager `db_url`; falls back to `postgresql://postgres:postgres@localhost:5432/cubing_mexico` only when `FLASK_ENV=development`)
+- `CRON_SECRET` — Auth secret for admin update endpoints (env or Secret Manager `cron-secret`; the local dev token is only used when `FLASK_ENV=development`). Outside development the app refuses to start if `DB_URL` or `CRON_SECRET` can't be resolved.
+- `DB_POOL_MAX` — Max pooled PostgreSQL connections per process (default: `10`)
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
 - `SOCIAL_POSTS_ENABLED` — `true` to allow Meta publishes (auto + manual admin). Keep `false` in development/staging (default: off)
@@ -66,7 +67,8 @@ pip install -r requirements.txt
 # 3. Copy environment file
 cp .env.example .env
 
-# 4. Run Flask backend
+# 4. Load env and run Flask backend
+set -a; source .env; set +a
 python app.py
 ```
 

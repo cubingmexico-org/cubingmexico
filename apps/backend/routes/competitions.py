@@ -1,5 +1,5 @@
-import requests
 import psycopg2.extras
+import requests
 from flask import Blueprint, jsonify
 
 from common import get_connection, log
@@ -47,10 +47,7 @@ def get_competitions():
                 )
                 competitions = cur.fetchall()
 
-        items = [
-            convert_keys_to_camel_case(dict(competition._asdict()))
-            for competition in competitions
-        ]
+        items = [convert_keys_to_camel_case(dict(competition._asdict())) for competition in competitions]
 
         log.info(
             "Fetched %s competition(s) for page=%s size=%s with total=%s",
@@ -64,7 +61,7 @@ def get_competitions():
     except ValueError as e:
         return jsonify({"success": False, "message": str(e)}), 400
     except Exception as e:
-        log.error("Error fetching competitions: %s", e)
+        log.exception("Error fetching competitions: %s", e)
         return jsonify({"success": False, "message": "Error fetching competitions"}), 500
 
 
@@ -145,9 +142,7 @@ def get_competition_by_id(competition_id):
                 championship_rows = cur.fetchall()
 
         competition_data = convert_keys_to_camel_case(dict(competition._asdict()))
-        competition_data["events"] = [
-            convert_keys_to_camel_case(dict(event._asdict())) for event in event_rows
-        ]
+        competition_data["events"] = [convert_keys_to_camel_case(dict(event._asdict())) for event in event_rows]
         competition_data["organizers"] = [
             convert_keys_to_camel_case(dict(organizer._asdict())) for organizer in organizer_rows
         ]
@@ -160,25 +155,21 @@ def get_competition_by_id(competition_id):
 
         return jsonify(competition_data)
     except Exception as e:
-        log.error("Error fetching competition by ID: %s", e)
+        log.exception("Error fetching competition by ID: %s", e)
         return jsonify({"success": False, "message": "Error fetching competition"}), 500
 
 
 @competitions_bp.route("/competitor-states/<competition_id>", methods=["GET"])
 def get_competitor_states(competition_id):
     try:
-        wcif_url = (
-            f"https://www.worldcubeassociation.org/api/v0/competitions/{competition_id}/wcif/latest"
-        )
+        wcif_url = f"https://www.worldcubeassociation.org/api/v0/competitions/{competition_id}/wcif/latest"
         log.info("Fetching WCIF data from %s", wcif_url)
 
-        response = requests.get(wcif_url)
+        response = requests.get(wcif_url, timeout=30)
         response.raise_for_status()
         wcif_data = response.json()
 
-        wca_ids = [
-            person.get("wcaId") for person in wcif_data.get("persons", []) if person.get("wcaId") is not None
-        ]
+        wca_ids = [person.get("wcaId") for person in wcif_data.get("persons", []) if person.get("wcaId") is not None]
 
         if not wca_ids:
             log.warning("No WCA IDs found for competition: %s", competition_id)
@@ -200,9 +191,9 @@ def get_competitor_states(competition_id):
 
         return jsonify(competitors_data)
 
-    except requests.HTTPError as e:
-        log.error("Error fetching WCIF data: %s", e)
+    except requests.RequestException as e:
+        log.exception("Error fetching WCIF data: %s", e)
         return jsonify({"success": False, "message": f"Error fetching competition data: {e}"}), 500
     except Exception as e:
-        log.error("Error fetching competitor states: %s", e)
+        log.exception("Error fetching competitor states: %s", e)
         return jsonify({"success": False, "message": "Error fetching competitor states"}), 500

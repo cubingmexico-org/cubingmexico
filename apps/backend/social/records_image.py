@@ -12,7 +12,6 @@ from social.image_common import (
     GREEN,
     RED,
     SIZE,
-    WHITE,
     center_text,
     draw_centered_badge,
     format_result_time,

@@ -49,7 +49,7 @@ def compute_nemesis_stats(entries):
         group_starts = np.flatnonzero(np.r_[True, bests[1:] != bests[:-1]])
         group_ends = np.r_[group_starts[1:], len(bests)]
 
-        for start, end in zip(group_starts, group_ends):
+        for start, end in zip(group_starts, group_ends, strict=True):
             members = idxs[start:end]
             acc[members] &= running
             np.bitwise_or.at(

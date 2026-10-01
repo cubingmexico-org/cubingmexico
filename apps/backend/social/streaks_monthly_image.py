@@ -97,9 +97,7 @@ def generate_streaks_monthly_png(*, payload: dict) -> bytes:
     for i, row in enumerate(rows, start=1):
         prefix = f"{i}. "
         prefix_w = text_width(prefix, row_font)
-        name = _fit_ellipsis(
-            row.get("person_name") or "", row_font, name_max_w - prefix_w
-        )
+        name = _fit_ellipsis(row.get("person_name") or "", row_font, name_max_w - prefix_w)
         state = (row.get("state_name") or "").strip()
         streak = int(row.get("current_streak") or 0)
         name_h = text_height("Ay", row_font)

@@ -7,6 +7,7 @@ import re
 
 from PIL import Image, ImageDraw
 
+# Re-export for callers that imported from this module.
 from social.image_common import (
     BLACK,
     CREAM,
@@ -19,11 +20,9 @@ from social.image_common import (
     layout_wrapped_name,
     load_font,
     paste_logo,
+    png_bytes_to_jpeg,  # noqa: F401
     text_height,
 )
-
-# Re-export for callers that imported from this module.
-from social.image_common import png_bytes_to_jpeg  # noqa: F401
 
 _TRAILING_YEAR = re.compile(r"\s+(19|20)\d{2}$")
 
@@ -76,9 +75,7 @@ def generate_resultados_png(
     place = format_place_line(city_name, state_name)
 
     inner_w = SIZE - CARD_MARGIN * 2 - 64
-    logo_bottom = paste_logo(
-        canvas, max_size=(170, 170), y=card[1] + 36, logo_url=logo_url
-    )
+    logo_bottom = paste_logo(canvas, max_size=(170, 170), y=card[1] + 36, logo_url=logo_url)
 
     badge_font = load_font(28)
     badge_cy = logo_bottom + 48

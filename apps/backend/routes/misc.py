@@ -19,7 +19,7 @@ def get_teams():
                 log.info("Fetched %s team(s)", len(teams_list))
         return jsonify(teams_list)
     except Exception as e:
-        log.error("Error fetching teams: %s", e)
+        log.exception("Error fetching teams: %s", e)
         return jsonify({"success": False, "message": "Error fetching teams"}), 500
 
 
@@ -38,7 +38,7 @@ def get_team_by_id(state_id):
                 log.warning("No team found with ID: %s", state_id)
                 return jsonify({"success": False, "message": "Team not found"}), 404
     except Exception as e:
-        log.error("Error fetching team by ID: %s", e)
+        log.exception("Error fetching team by ID: %s", e)
         return jsonify({"success": False, "message": "Error fetching team"}), 500
 
 
@@ -54,7 +54,7 @@ def get_states():
                 log.info("Fetched %s state(s)", len(states_list))
         return jsonify(states_list)
     except Exception as e:
-        log.error("Error fetching states: %s", e)
+        log.exception("Error fetching states: %s", e)
         return jsonify({"success": False, "message": "Error fetching states"}), 500
 
 
@@ -115,7 +115,7 @@ def get_national_rank(type, event_id):
                 log.warning("No national ranks found for type: %s, event: %s", type, event_id)
                 return jsonify({"success": False, "message": "Ranks not found"}), 404
     except Exception as e:
-        log.error("Error fetching national ranks: %s", e)
+        log.exception("Error fetching national ranks: %s", e)
         return jsonify({"success": False, "message": "Error fetching ranks"}), 500
 
 
@@ -170,7 +170,7 @@ def get_rank(state_id, type, event_id):
                 log.warning("No ranks found for state: %s, type: %s, event: %s", state_id, type, event_id)
                 return jsonify({"success": False, "message": "Ranks not found"}), 404
     except Exception as e:
-        log.error("Error fetching ranks: %s", e)
+        log.exception("Error fetching ranks: %s", e)
         return jsonify({"success": False, "message": "Error fetching ranks"}), 500
 
 
@@ -278,5 +278,5 @@ def get_records(state_id):
                 return jsonify(records_data)
 
     except Exception as e:
-        log.error("Error fetching records: %s", e)
+        log.exception("Error fetching records: %s", e)
         return jsonify({"success": False, "message": "Error fetching records"}), 500

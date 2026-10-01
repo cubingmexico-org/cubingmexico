@@ -97,24 +97,18 @@ def _render_slide(payload: dict, *, slide_id: str, index: int, total: int) -> by
 
 
 def _cream_panel(draw: ImageDraw.ImageDraw, panel_top: int) -> None:
-    draw.rounded_rectangle(
-        [PANEL_LEFT, panel_top, PANEL_RIGHT, PANEL_BOTTOM], radius=28, fill=CREAM
-    )
+    draw.rounded_rectangle([PANEL_LEFT, panel_top, PANEL_RIGHT, PANEL_BOTTOM], radius=28, fill=CREAM)
 
 
 def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
     year = int(payload["year"])
     canvas, draw = _new_canvas()
-    panel_top = _draw_full_header(
-        canvas, draw, "Resumen Cubing México", title=f"AÑO {year}"
-    )
+    panel_top = _draw_full_header(canvas, draw, "Resumen Cubing México", title=f"AÑO {year}")
     _cream_panel(draw, panel_top)
 
     section_font = load_font(30)
     sub_font = load_font(30)
-    headline_font, headline_lines = _fit_headline(
-        f"{year} en el cubo", CONTENT_WIDTH, sizes=(96, 88, 80, 72)
-    )
+    headline_font, headline_lines = _fit_headline(f"{year} en el cubo", CONTENT_WIDTH, sizes=(96, 88, 80, 72))
 
     tiles: list[tuple[str, str]] = [
         (_fmt(int(payload.get("comp_count") or 0)), "Competencias"),
@@ -132,14 +126,7 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
     header_h = text_height("Ay", section_font) + 28
     line_h = text_height("Ay", headline_font) + 12
     tile_h = 190
-    content_h = (
-        header_h
-        + len(headline_lines) * line_h
-        + 12
-        + text_height("Ay", sub_font)
-        + 60
-        + tile_h
-    )
+    content_h = header_h + len(headline_lines) * line_h + 12 + text_height("Ay", sub_font) + 60 + tile_h
     bottom = _panel_bottom_y()
     y = panel_top + 36 + max(0, (bottom - panel_top - 36 - content_h) // 2)
 
@@ -150,9 +137,7 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
     y += 12
     draw.text((CONTENT_LEFT, y), sub, font=sub_font, fill=GREEN)
     y += text_height("Ay", sub_font) + 60
-    _draw_stat_tiles(
-        draw, tiles, x0=CONTENT_LEFT, x1=CONTENT_RIGHT, y=y, tile_h=tile_h, num_size=60
-    )
+    _draw_stat_tiles(draw, tiles, x0=CONTENT_LEFT, x1=CONTENT_RIGHT, y=y, tile_h=tile_h, num_size=60)
 
     _draw_slide_index(draw, index=index, total=total)
     return _png_bytes(canvas)
@@ -160,9 +145,7 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
 
 def _slide_numeros(payload: dict, *, index: int, total: int) -> bytes:
     canvas, draw = _new_canvas()
-    panel_top = _draw_compact_header(
-        canvas, draw, "EN NÚMEROS", title=f"AÑO {payload['year']}"
-    )
+    panel_top = _draw_compact_header(canvas, draw, "EN NÚMEROS", title=f"AÑO {payload['year']}")
     _cream_panel(draw, panel_top)
 
     counts = payload.get("record_counts") or {}
@@ -187,9 +170,7 @@ def _slide_numeros(payload: dict, *, index: int, total: int) -> bytes:
     for row in rows:
         if not row:
             continue
-        _draw_stat_tiles(
-            draw, row, x0=CONTENT_LEFT, x1=CONTENT_RIGHT, y=y, tile_h=tile_h, num_size=60
-        )
+        _draw_stat_tiles(draw, row, x0=CONTENT_LEFT, x1=CONTENT_RIGHT, y=y, tile_h=tile_h, num_size=60)
         y += tile_h + row_gap
 
     _draw_slide_index(draw, index=index, total=total)
@@ -198,9 +179,7 @@ def _slide_numeros(payload: dict, *, index: int, total: int) -> bytes:
 
 def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
     canvas, draw = _new_canvas()
-    panel_top = _draw_compact_header(
-        canvas, draw, "DESTACADOS", title=f"AÑO {payload['year']}"
-    )
+    panel_top = _draw_compact_header(canvas, draw, "DESTACADOS", title=f"AÑO {payload['year']}")
     _cream_panel(draw, panel_top)
 
     section_font = load_font(28)
@@ -225,9 +204,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
         for h in show:
             if y > bottom - entry_h:
                 break
-            badge_right = _draw_level_badge(
-                draw, str(h.get("level") or ""), badge_font, x=CONTENT_LEFT, cy=y + 18
-            )
+            badge_right = _draw_level_badge(draw, str(h.get("level") or ""), badge_font, x=CONTENT_LEFT, cy=y + 18)
             text_x = badge_right + 14
             draw.text(
                 (text_x, y),
@@ -259,9 +236,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
         area_top = panel_top + 40
         block_h = header_h + len(breakers) * row_h
         y = area_top + max(0, (bottom - area_top - block_h) // 2)
-        y = _draw_section_label(
-            draw, "MÁS RÉCORDS ESTATALES", section_font, x=CONTENT_LEFT, y=y
-        )
+        y = _draw_section_label(draw, "MÁS RÉCORDS ESTATALES", section_font, x=CONTENT_LEFT, y=y)
         for b in breakers:
             y += 24
             count = str(b.get("count") or 0)
@@ -287,9 +262,7 @@ def _slide_destacados(payload: dict, *, index: int, total: int) -> bytes:
 
 def _slide_estados(payload: dict, *, index: int, total: int) -> bytes:
     canvas, draw = _new_canvas()
-    panel_top = _draw_compact_header(
-        canvas, draw, "ESTADOS", title=f"AÑO {payload['year']}"
-    )
+    panel_top = _draw_compact_header(canvas, draw, "ESTADOS", title=f"AÑO {payload['year']}")
     _cream_panel(draw, panel_top)
 
     section_font = load_font(28)
@@ -318,13 +291,9 @@ def _slide_estados(payload: dict, *, index: int, total: int) -> bytes:
         )
         draw.text((CONTENT_RIGHT - cw, y), count_label, font=count_font, fill=GREEN)
         by = y + text_height("Ay", state_font) + 12
-        draw.rounded_rectangle(
-            [CONTENT_LEFT, by, CONTENT_RIGHT, by + bar_h], radius=9, fill=BAR_BG
-        )
+        draw.rounded_rectangle([CONTENT_LEFT, by, CONTENT_RIGHT, by + bar_h], radius=9, fill=BAR_BG)
         fill_w = max(bar_h, int(CONTENT_WIDTH * s["count"] / max_count))
-        draw.rounded_rectangle(
-            [CONTENT_LEFT, by, CONTENT_LEFT + fill_w, by + bar_h], radius=9, fill=TILE_BG
-        )
+        draw.rounded_rectangle([CONTENT_LEFT, by, CONTENT_LEFT + fill_w, by + bar_h], radius=9, fill=TILE_BG)
         y += row_h
 
     if busiest and busiest.get("count") and y < bottom - 150:

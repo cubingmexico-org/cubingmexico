@@ -131,19 +131,13 @@ def streaks_monthly_publish_window(month: str, now: datetime | None = None) -> b
         return False
     year, mon = parsed
     today = mexico_city_today(now)
-    if today.year == year and today.month == mon and today == last_day_of_month(
-        year, mon
-    ):
+    if today.year == year and today.month == mon and today == last_day_of_month(year, mon):
         return True
     if mon == 12:
         next_year, next_mon = year + 1, 1
     else:
         next_year, next_mon = year, mon + 1
-    return (
-        today.year == next_year
-        and today.month == next_mon
-        and today.day <= STREAKS_MONTHLY_GRACE_DAYS
-    )
+    return today.year == next_year and today.month == next_mon and today.day <= STREAKS_MONTHLY_GRACE_DAYS
 
 
 def streaks_monthly_key_if_due(now: datetime | None = None) -> str | None:
@@ -172,9 +166,7 @@ def is_year_recap_due(year: int, now: datetime | None = None) -> bool:
     today = mexico_city_today(now)
     if today == date(year, 12, 31):
         return True
-    return today.year == year + 1 and today.month == 1 and (
-        today.day <= YEAR_RECAP_GRACE_DAYS
-    )
+    return today.year == year + 1 and today.month == 1 and (today.day <= YEAR_RECAP_GRACE_DAYS)
 
 
 def year_recap_key_if_due(now: datetime | None = None) -> int | None:
@@ -193,14 +185,8 @@ def format_date_range_short(start: date, end: date) -> str:
     if start.year == end.year and start.month == end.month:
         return f"{start.day}–{end.day} {_MONTHS_ES_SHORT[start.month - 1]} {start.year}"
     if start.year == end.year:
-        return (
-            f"{format_day_month_short(start)} – "
-            f"{format_day_month_short(end)} {start.year}"
-        )
-    return (
-        f"{format_day_month_short(start)} {start.year} – "
-        f"{format_day_month_short(end)} {end.year}"
-    )
+        return f"{format_day_month_short(start)} – {format_day_month_short(end)} {start.year}"
+    return f"{format_day_month_short(start)} {start.year} – {format_day_month_short(end)} {end.year}"
 
 
 def format_month_label(year: int, month: int) -> str:

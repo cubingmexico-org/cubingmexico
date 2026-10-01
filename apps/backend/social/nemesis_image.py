@@ -99,11 +99,7 @@ def generate_nemesis_png(
     number_font = load_font(96)
     number_top = rule_y + 48
     center_text(draw, _fmt(nemesized_count), number_font, number_top, GREEN)
-    label = (
-        "competidor lo tiene como némesis"
-        if nemesized_count == 1
-        else "competidores lo tienen como némesis"
-    )
+    label = "competidor lo tiene como némesis" if nemesized_count == 1 else "competidores lo tienen como némesis"
     center_text(
         draw,
         label,
