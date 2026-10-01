@@ -21,5 +21,5 @@ EXPOSE 8080
 CMD sh -c "if [ \"$FLASK_ENV\" = \"development\" ]; then \
     gunicorn --bind 0.0.0.0:${PORT:-8080} --reload --workers 1 --threads 8 --timeout 0 app:app; \
   else \
-    gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 4 --threads 8 --timeout 0 app:app; \
+    gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 4 --threads 8 --timeout 300 --graceful-timeout 30 app:app; \
   fi"

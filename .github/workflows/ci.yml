@@ -33,6 +33,57 @@ jobs:
       - name: Test
         run: pnpm test
 
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cubing_mexico
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cubing_mexico"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cubing_mexico
+      BETTER_AUTH_SECRET: ci-placeholder-secret-ci-placeholder-secret
+      BETTER_AUTH_URL: http://localhost:3000
+      WCA_CLIENT_ID: ci-placeholder
+      WCA_CLIENT_SECRET: ci-placeholder
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.4.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Migrate and seed database
+        run: |
+          pnpm --filter @workspace/db migrate
+          pnpm --filter @workspace/db seed
+
+      # Events normally come from the WCA import; with Cache Components,
+      # generateStaticParams for /rankings fails the build if it returns nothing.
+      - name: Insert placeholder event
+        run: psql "$DATABASE_URL" -c "INSERT INTO events (id, format, name, rank) VALUES ('333', 'time', '3x3x3 Cube', 10) ON CONFLICT DO NOTHING;"
+
+      - name: Build
+        run: pnpm build
+
   backend:
     runs-on: ubuntu-latest
     timeout-minutes: 15

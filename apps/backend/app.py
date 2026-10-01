@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 from werkzeug.exceptions import HTTPException
 
 from common import log
-from routes.admin_updates import admin_bp
+from routes.admin import admin_bp
 from routes.competitions import competitions_bp
 from routes.misc import misc_bp
 from routes.persons import persons_bp
