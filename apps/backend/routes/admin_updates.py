@@ -2195,6 +2195,16 @@ def update_nemesis_stats():
         FROM ranks_average WHERE best > 0
         """
 
+        try:
+            from social.nemesis import fetch_nemesis_free_ids
+
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    nemesis_free_before = fetch_nemesis_free_ids(cur)
+        except Exception as e:
+            log.warning("Could not snapshot nemesis-free competitors: %s", e)
+            nemesis_free_before = None
+
         with get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(query)
@@ -2218,6 +2228,21 @@ def update_nemesis_stats():
                     )
 
                 log.info("Inserted %s nemesis_stats record(s)", len(rows_to_insert))
+
+        if nemesis_free_before is not None:
+            try:
+                from social.nemesis import fetch_nemesis_free
+                from social.poster import post_new_nemesis_free
+
+                with get_connection() as conn:
+                    with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+                        nemesis_free_after = fetch_nemesis_free(cur)
+                post_new_nemesis_free(nemesis_free_before, nemesis_free_after)
+            except Exception as e:
+                log.error(
+                    "Social NÉMESIS posting failed (nemesis stats update succeeded): %s",
+                    e,
+                )
 
         log.info("Nemesis stats updated successfully")
         return jsonify({"success": True, "message": "Nemesis stats updated successfully"})

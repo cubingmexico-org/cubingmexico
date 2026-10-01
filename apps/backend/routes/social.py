@@ -14,6 +14,7 @@ from social.calendar_mx import (
 from social.media_store import get_media
 from social.poster import (
     POST_TYPE_MOLLERZ,
+    POST_TYPE_NEMESIS,
     POST_TYPE_RECORD,
     POST_TYPE_RESULTADOS,
     POST_TYPE_STREAKS_MONTHLY,
@@ -27,6 +28,7 @@ from social.poster import (
     plan_year_recap_slides_for_year,
     post_year_recap,
     generate_mollerz_png_for_subject,
+    generate_nemesis_png_for_subject,
     generate_record_png_for_subject,
     generate_streaks_monthly_png_for_month,
     generate_summary_unlock_png_for_year,
@@ -36,6 +38,7 @@ from social.poster import (
     plan_weekly_digest_slides_for_week,
     get_competition_resultados_captions,
     get_mollerz_captions,
+    get_nemesis_captions,
     get_record_captions,
     get_streaks_monthly_captions,
     get_summary_unlock_captions,
@@ -47,12 +50,14 @@ from social.poster import (
     parse_summary_unlock_year,
     post_competition_resultados,
     post_mollerz,
+    post_nemesis,
     post_record,
     post_streaks_monthly,
     post_summary_unlock,
     post_upcoming_competition,
     post_weekly_digest,
     seed_mollerz_posted,
+    seed_nemesis_posted,
 )
 
 social_bp = Blueprint("social", __name__)
@@ -1033,6 +1038,104 @@ def seed_mollerz():
         result = seed_mollerz_posted()
     except Exception as e:
         log.exception("MOLLERZ seed failed: %s", e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    return jsonify({"success": True, **result})
+
+
+# --- NÉMESIS (nemesis-free competitors) ----------------------------------------
+
+
+@social_bp.route("/social/nemesis/<wca_id>/caption", methods=["GET"])
+@require_cron_auth
+def nemesis_caption(wca_id: str):
+    try:
+        captions = get_nemesis_captions(wca_id)
+    except Exception as e:
+        log.exception("Failed to build NÉMESIS caption for %s: %s", wca_id, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if captions is None:
+        return jsonify({"success": False, "message": "Nemesis-free competitor not found"}), 404
+
+    return jsonify(
+        {
+            "success": True,
+            "caption": captions["facebook"],
+            "facebook_caption": captions["facebook"],
+            "instagram_caption": captions["instagram"],
+            "post_type": POST_TYPE_NEMESIS,
+            "subject_key": wca_id,
+        }
+    )
+
+
+@social_bp.route("/social/nemesis/<wca_id>/image.png", methods=["GET"])
+@require_cron_auth
+def nemesis_image(wca_id: str):
+    try:
+        generated = generate_nemesis_png_for_subject(wca_id)
+    except Exception as e:
+        log.exception("Failed to generate NÉMESIS image for %s: %s", wca_id, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if not generated:
+        return jsonify({"success": False, "message": "Nemesis-free competitor not found"}), 404
+
+    png, _details = generated
+    return Response(
+        png,
+        mimetype="image/png",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": f'attachment; filename="nemesis-{wca_id}.png"',
+        },
+    )
+
+
+@social_bp.route("/social/nemesis/<wca_id>/publish", methods=["POST"])
+@require_cron_auth
+def publish_nemesis(wca_id: str):
+    try:
+        result = post_nemesis(wca_id)
+    except Exception as e:
+        log.exception("Manual NÉMESIS publish failed for %s: %s", wca_id, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "nemesis_free_not_found" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+
+    success = not result.get("errors")
+    return jsonify({"success": success, **result}), (200 if success else 502)
+
+
+@social_bp.route("/social/nemesis/<wca_id>/mark", methods=["POST"])
+@require_cron_auth
+def mark_nemesis_posted(wca_id: str):
+    platforms = None
+    if request.is_json and isinstance(request.json, dict):
+        platforms = request.json.get("platforms")
+
+    try:
+        result = mark_typed_posted(POST_TYPE_NEMESIS, wca_id, platforms)
+    except Exception as e:
+        log.exception("Mark NÉMESIS posted failed for %s: %s", wca_id, e)
+        return jsonify({"success": False, "message": str(e)}), 500
+
+    if "nemesis_free_not_found" in result.get("errors", []):
+        return jsonify({"success": False, **result}), 404
+
+    return jsonify({"success": True, **result})
+
+
+@social_bp.route("/social/nemesis/seed", methods=["POST"])
+@require_cron_auth
+def seed_nemesis():
+    """One-time: mark all current nemesis-free competitors as posted."""
+    try:
+        result = seed_nemesis_posted()
+    except Exception as e:
+        log.exception("NÉMESIS seed failed: %s", e)
         return jsonify({"success": False, "message": str(e)}), 500
 
     return jsonify({"success": True, **result})

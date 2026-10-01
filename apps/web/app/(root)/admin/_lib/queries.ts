@@ -122,6 +122,7 @@ export async function getSocialPostStats() {
       weeklyDigest: sql<number>`count(*) filter (where ${socialPost.postType} = 'weekly_digest')`,
       streaksMonthly: sql<number>`count(*) filter (where ${socialPost.postType} = 'streaks_monthly')`,
       mollerz: sql<number>`count(*) filter (where ${socialPost.postType} = 'mollerz')`,
+      nemesis: sql<number>`count(*) filter (where ${socialPost.postType} = 'nemesis')`,
       yearRecap: sql<number>`count(*) filter (where ${socialPost.postType} = 'year_recap')`,
     })
     .from(socialPost);
@@ -138,6 +139,7 @@ export async function getSocialPostStats() {
     weeklyDigest: Number(totals?.weeklyDigest ?? 0),
     streaksMonthly: Number(totals?.streaksMonthly ?? 0),
     mollerz: Number(totals?.mollerz ?? 0),
+    nemesis: Number(totals?.nemesis ?? 0),
     yearRecap: Number(totals?.yearRecap ?? 0),
   };
 }
@@ -716,6 +718,66 @@ export async function getPendingMollerzPosts(limit = 50): Promise<
   return pending
     .sort((a, b) => a.personName.localeCompare(b.personName, "es"))
     .slice(0, limit);
+}
+
+/** Must match NEMESIS_FREE_MIN_EVENTS in apps/backend/social/nemesis.py. */
+const NEMESIS_FREE_MIN_EVENTS = 3;
+
+export async function getPendingNemesisPosts(limit = 50): Promise<
+  Array<{
+    subjectKey: string;
+    personId: string;
+    personName: string;
+    stateName: string | null;
+    eventCount: number;
+    nemesizedCount: number;
+    facebookPosted: boolean;
+    instagramPosted: boolean;
+  }>
+> {
+  const rows = (await db.execute(sql`
+    SELECT
+      ns.person_id AS "personId",
+      p.name AS "personName",
+      s.name AS "stateName",
+      ns.event_count AS "eventCount",
+      ns.nemesized_count AS "nemesizedCount",
+      BOOL_OR(sp.platform = 'facebook') AS "facebookPosted",
+      BOOL_OR(sp.platform = 'instagram') AS "instagramPosted"
+    FROM nemesis_stats ns
+    JOIN persons p ON p.wca_id = ns.person_id
+    LEFT JOIN states s ON s.id = p.state_id
+    LEFT JOIN social_posts sp
+      ON sp.post_type = 'nemesis' AND sp.subject_key = ns.person_id
+    WHERE ns.nemesis_count = 0
+      AND ns.event_count >= ${NEMESIS_FREE_MIN_EVENTS}
+    GROUP BY ns.person_id, p.name, s.name, ns.event_count, ns.nemesized_count
+    HAVING NOT (
+      COALESCE(BOOL_OR(sp.platform = 'facebook'), false)
+      AND COALESCE(BOOL_OR(sp.platform = 'instagram'), false)
+    )
+    ORDER BY p.name
+    LIMIT ${limit}
+  `)) as unknown as Array<{
+    personId: string;
+    personName: string;
+    stateName: string | null;
+    eventCount: number | string;
+    nemesizedCount: number | string;
+    facebookPosted: boolean | null;
+    instagramPosted: boolean | null;
+  }>;
+
+  return rows.map((row) => ({
+    subjectKey: row.personId,
+    personId: row.personId,
+    personName: row.personName,
+    stateName: row.stateName,
+    eventCount: Number(row.eventCount),
+    nemesizedCount: Number(row.nemesizedCount),
+    facebookPosted: Boolean(row.facebookPosted),
+    instagramPosted: Boolean(row.instagramPosted),
+  }));
 }
 
 export async function searchPersons(search: string, limit = 20) {

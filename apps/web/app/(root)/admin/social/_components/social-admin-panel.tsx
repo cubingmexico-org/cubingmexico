@@ -81,6 +81,7 @@ export type SocialPostType =
   | "weekly_digest"
   | "streaks_monthly"
   | "mollerz"
+  | "nemesis"
   | "year_recap";
 
 type CarouselPostType = "weekly_digest" | "year_recap";
@@ -167,6 +168,17 @@ export type PendingMollerzRow = {
   instagramPosted: boolean;
 };
 
+export type PendingNemesisRow = {
+  subjectKey: string;
+  personId: string;
+  personName: string;
+  stateName: string | null;
+  eventCount: number;
+  nemesizedCount: number;
+  facebookPosted: boolean;
+  instagramPosted: boolean;
+};
+
 export type SocialPostRow = {
   id: string;
   postType: string;
@@ -191,6 +203,7 @@ export type SocialPostStats = {
   weeklyDigest: number;
   streaksMonthly: number;
   mollerz: number;
+  nemesis: number;
   yearRecap: number;
 };
 
@@ -220,6 +233,7 @@ function postTypeLabel(postType: string) {
   if (postType === "weekly_digest") return "SEMANA";
   if (postType === "streaks_monthly") return "RACHAS";
   if (postType === "mollerz") return "MOLLERZ";
+  if (postType === "nemesis") return "NÉMESIS";
   if (postType === "year_recap") return "AÑO";
   return postType;
 }
@@ -232,6 +246,7 @@ function apiBase(postType: SocialPostType) {
   if (postType === "streaks_monthly")
     return "/api/admin/social/streaks-monthly";
   if (postType === "mollerz") return "/api/admin/social/mollerz";
+  if (postType === "nemesis") return "/api/admin/social/nemesis";
   if (postType === "year_recap") return "/api/admin/social/year-recap";
   return "/api/admin/social/upcoming";
 }
@@ -291,9 +306,11 @@ async function downloadImage(postType: SocialPostType, subjectKey: string) {
               ? "rachas"
               : postType === "mollerz"
                 ? "mollerz"
-                : postType === "year_recap"
-                  ? "ano"
-                  : "proxima";
+                : postType === "nemesis"
+                  ? "nemesis"
+                  : postType === "year_recap"
+                    ? "ano"
+                    : "proxima";
   a.download = `${prefix}-${subjectKey.replace(/[:/]/g, "-")}.png`;
   document.body.appendChild(a);
   a.click();
@@ -493,6 +510,7 @@ export function SocialAdminPanel({
   pendingStreaksMonthly,
   pendingYearRecap = [],
   pendingMollerz,
+  pendingNemesis = [],
   posts,
   postsTotal = 0,
   page = 1,
@@ -509,6 +527,7 @@ export function SocialAdminPanel({
   pendingStreaksMonthly: PendingStreaksMonthlyRow[];
   pendingYearRecap?: PendingYearRecapRow[];
   pendingMollerz: PendingMollerzRow[];
+  pendingNemesis?: PendingNemesisRow[];
   posts: SocialPostRow[];
   postsTotal?: number;
   page?: number;
@@ -739,7 +758,8 @@ export function SocialAdminPanel({
     pendingWeeklyDigest.length +
     pendingStreaksMonthly.length +
     pendingYearRecap.length +
-    pendingMollerz.length;
+    pendingMollerz.length +
+    pendingNemesis.length;
 
   const totalPages = Math.max(1, Math.ceil(postsTotal / pageSize));
   const currentPage = Math.min(page, totalPages);
@@ -1023,6 +1043,64 @@ export function SocialAdminPanel({
                           </TableRow>
                         );
                       })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pendientes · NÉMESIS</CardTitle>
+              <CardDescription>
+                Competidores que se quedaron sin némesis y aún no se publican en
+                alguna plataforma.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {pendingNemesis.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  No hay NÉMESIS pendientes.
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Competidor</TableHead>
+                        <TableHead>Falta</TableHead>
+                        <TableHead className="text-right">
+                          Vista previa
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pendingNemesis.map((row) => (
+                        <TableRow key={row.subjectKey}>
+                          <TableCell>
+                            <div className="space-y-0.5">
+                              <p className="font-medium">{row.personName}</p>
+                              <p className="text-muted-foreground text-xs">
+                                {row.stateName ? `${row.stateName} · ` : null}
+                                {row.eventCount} eventos · némesis de{" "}
+                                {row.nemesizedCount.toLocaleString("es-MX")} ·{" "}
+                                {row.personId}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>{missingPlatformBadges(row)}</TableCell>
+                          <TableCell className="text-right">
+                            <PreviewButton
+                              postType="nemesis"
+                              subjectKey={row.subjectKey}
+                              name={`Sin némesis ${row.personName}`}
+                              disabled={busyKey !== null}
+                              onPreview={setPreviewTarget}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
                     </TableBody>
                   </Table>
                 </div>
@@ -1363,13 +1441,16 @@ export function SocialAdminPanel({
                             "weekly_digest",
                             "streaks_monthly",
                             "mollerz",
+                            "nemesis",
                             "year_recap",
                           ].includes(post.postType)
                             ? post.postType
                             : "resultados"
                         ) as SocialPostType;
                         const title =
-                          postType === "record" || postType === "mollerz"
+                          postType === "record" ||
+                          postType === "mollerz" ||
+                          postType === "nemesis"
                             ? post.subjectKey
                             : postType === "summary_unlock"
                               ? `Resumen anual ${post.subjectKey}`

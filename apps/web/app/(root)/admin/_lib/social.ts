@@ -8,6 +8,7 @@ export type SocialPostType =
   | "weekly_digest"
   | "streaks_monthly"
   | "mollerz"
+  | "nemesis"
   | "year_recap";
 
 export type CarouselPostType = "weekly_digest" | "year_recap";
@@ -28,6 +29,7 @@ function typePath(postType: SocialPostType): string {
   if (postType === "weekly_digest") return "weekly-digest";
   if (postType === "streaks_monthly") return "streaks-monthly";
   if (postType === "mollerz") return "mollerz";
+  if (postType === "nemesis") return "nemesis";
   if (postType === "year_recap") return "year-recap";
   return "upcoming";
 }
@@ -96,9 +98,11 @@ export async function fetchSocialImage(
               ? "rachas"
               : postType === "mollerz"
                 ? "mollerz"
-                : postType === "year_recap"
-                  ? "ano"
-                  : "proxima";
+                : postType === "nemesis"
+                  ? "nemesis"
+                  : postType === "year_recap"
+                    ? "ano"
+                    : "proxima";
   return {
     ok: true,
     bytes,

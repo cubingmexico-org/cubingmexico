@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import {
   getPendingMollerzPosts,
+  getPendingNemesisPosts,
   getPendingRecordPosts,
   getPendingResultadosCompetitions,
   getPendingStreaksMonthlyPosts,
@@ -50,6 +51,7 @@ async function SocialPostsContent({
         pendingStreaksMonthly={[]}
         pendingYearRecap={[]}
         pendingMollerz={[]}
+        pendingNemesis={[]}
       />
     );
   }
@@ -63,6 +65,7 @@ async function SocialPostsContent({
     pendingStreaksMonthly,
     pendingYearRecap,
     pendingMollerz,
+    pendingNemesis,
   ] = await Promise.all([
     getPendingResultadosCompetitions(10, { includeOlder }),
     getPendingRecordPosts(10, { includeOlder }),
@@ -72,6 +75,7 @@ async function SocialPostsContent({
     getPendingStreaksMonthlyPosts(),
     getPendingYearRecapPosts(),
     getPendingMollerzPosts(10),
+    getPendingNemesisPosts(10),
   ]);
 
   return (
@@ -86,6 +90,7 @@ async function SocialPostsContent({
       pendingStreaksMonthly={pendingStreaksMonthly}
       pendingYearRecap={pendingYearRecap}
       pendingMollerz={pendingMollerz}
+      pendingNemesis={pendingNemesis}
       posts={[]}
       postsTotal={0}
       page={1}
