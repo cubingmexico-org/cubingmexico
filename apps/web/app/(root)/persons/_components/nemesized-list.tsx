@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Table,
   TableBody,
@@ -6,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { LoadMoreButton, useLoadMore } from "@/components/load-more";
 import type { NemesisSlot, NemesizedReport } from "../_lib/nemesis-queries";
 import {
   CompareCell,
@@ -46,6 +49,8 @@ export function NemesizedList({
   report: NemesizedReport;
 }) {
   const { victims, victimsTotal, almost, almostTotal } = report;
+  const visibleVictims = useLoadMore(victims);
+  const visibleAlmost = useLoadMore(almost);
 
   return (
     <div className="flex flex-col gap-8">
@@ -76,7 +81,7 @@ export function NemesizedList({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {victims.map((person) => (
+                {visibleVictims.visible.map((person) => (
                   <TableRow key={person.wcaId}>
                     <PersonCells person={person} />
                     <SlotComparisonCell slot={person.closest} />
@@ -88,7 +93,14 @@ export function NemesizedList({
                 ))}
               </TableBody>
             </Table>
-            <ShowingCount shown={victims.length} total={victimsTotal} />
+            <LoadMoreButton
+              onClick={visibleVictims.loadMore}
+              shown={visibleVictims.visible.length}
+              total={victims.length}
+            />
+            {visibleVictims.visible.length === victims.length && (
+              <ShowingCount shown={victims.length} total={victimsTotal} />
+            )}
           </>
         )}
       </section>
@@ -117,7 +129,7 @@ export function NemesizedList({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {almost.map((person) => (
+                {visibleAlmost.visible.map((person) => (
                   <TableRow key={person.wcaId}>
                     <PersonCells person={person} />
                     <SlotComparisonCell slot={person.missing} />
@@ -129,7 +141,14 @@ export function NemesizedList({
                 ))}
               </TableBody>
             </Table>
-            <ShowingCount shown={almost.length} total={almostTotal} />
+            <LoadMoreButton
+              onClick={visibleAlmost.loadMore}
+              shown={visibleAlmost.visible.length}
+              total={almost.length}
+            />
+            {visibleAlmost.visible.length === almost.length && (
+              <ShowingCount shown={almost.length} total={almostTotal} />
+            )}
           </>
         )}
       </section>

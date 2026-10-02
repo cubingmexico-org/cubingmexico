@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -8,17 +7,16 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { cn } from "@workspace/ui/lib/utils";
-import { formatAttemptValue, roundTypeLabel } from "@/lib/utils";
+import { DirectMatchupRounds } from "@/components/head-to-head-rounds";
 import {
-  getRoundWinner,
   summarizeHeadToHead,
+  WINNER_CLASS,
   type HeadToHeadRound,
-  type HeadToHeadSide,
 } from "@/lib/head-to-head";
 
-export type Side = "a" | "b";
+export { WINNER_CLASS };
 
-export const WINNER_CLASS = "font-semibold text-blue-700";
+export type Side = "a" | "b";
 
 export function betterSide(
   a: number | null | undefined,
@@ -81,38 +79,6 @@ export function SummaryComparisonTable({
   );
 }
 
-function RoundResult({
-  eventId,
-  side,
-  isWinner,
-}: {
-  eventId: string;
-  side: HeadToHeadSide;
-  isWinner: boolean;
-}) {
-  const single = formatAttemptValue(eventId, side.best, "single");
-  const average = formatAttemptValue(eventId, side.average, "average");
-
-  return (
-    <TableCell className="text-center">
-      <div className={cn(isWinner && WINNER_CLASS)}>
-        {side.pos ? `#${side.pos}` : "-"}
-      </div>
-      {side.personId && (
-        <Link
-          href={`/persons/${side.personId}`}
-          className="block text-xs text-link hover:text-link/80 truncate"
-        >
-          {side.personName ?? side.personId}
-        </Link>
-      )}
-      <div className="text-xs text-muted-foreground">
-        {[single, average].filter(Boolean).join(" / ")}
-      </div>
-    </TableCell>
-  );
-}
-
 export function DirectMatchups({
   aName,
   bName,
@@ -132,7 +98,7 @@ export function DirectMatchups({
   }
 
   const summary = summarizeHeadToHead(rounds);
-  const visibleRounds =
+  const listedRounds =
     roundLimit != null ? rounds.slice(0, roundLimit) : rounds;
 
   return (
@@ -156,6 +122,7 @@ export function DirectMatchups({
               {summary.ties} empate{summary.ties === 1 ? "" : "s"}
             </div>
           )}
+          {summary.noResult > 0 && <div>{summary.noResult} sin resultado</div>}
         </div>
         <div>
           <div
@@ -210,60 +177,13 @@ export function DirectMatchups({
         </TableBody>
       </Table>
 
-      {visibleRounds.length < rounds.length && (
-        <p className="text-center text-sm text-muted-foreground -mb-4">
-          Mostrando las {visibleRounds.length} rondas más recientes de{" "}
+      {listedRounds.length < rounds.length && (
+        <p className="text-center text-sm text-muted-foreground -mb-2">
+          Se listan las {listedRounds.length} rondas más recientes de{" "}
           {rounds.length}.
         </p>
       )}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Competencia</TableHead>
-            <TableHead>Evento</TableHead>
-            <TableHead className="text-center">{aName}</TableHead>
-            <TableHead className="text-center">{bName}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {visibleRounds.map((round) => {
-            const winner = getRoundWinner(round);
-            return (
-              <TableRow
-                key={`${round.competitionId}-${round.eventId}-${round.roundTypeId}`}
-              >
-                <TableCell>
-                  <Link
-                    href={`/competitions/${round.competitionId}`}
-                    className="text-link hover:text-link/80"
-                  >
-                    {round.competitionName}
-                  </Link>
-                  <div className="text-xs text-muted-foreground">
-                    {round.date}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <span className={`cubing-icon event-${round.eventId}`} />
-                  <span className="ml-2 text-sm">
-                    {roundTypeLabel(round.roundTypeId)}
-                  </span>
-                </TableCell>
-                <RoundResult
-                  eventId={round.eventId}
-                  side={round.a}
-                  isWinner={winner === "a"}
-                />
-                <RoundResult
-                  eventId={round.eventId}
-                  side={round.b}
-                  isWinner={winner === "b"}
-                />
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+      <DirectMatchupRounds aName={aName} bName={bName} rounds={listedRounds} />
     </div>
   );
 }

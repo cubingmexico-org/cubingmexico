@@ -1,3 +1,5 @@
+export const WINNER_CLASS = "font-semibold text-blue-700";
+
 export type HeadToHeadSide = {
   pos: number | null;
   best: number;
@@ -19,7 +21,8 @@ export type HeadToHeadRound = {
   b: HeadToHeadSide;
 };
 
-export type HeadToHeadWinner = "a" | "b" | "tie";
+/** "none" means neither side has a valid result (DNF/DNS). */
+export type HeadToHeadWinner = "a" | "b" | "tie" | "none";
 
 export type HeadToHeadEventSummary = {
   eventId: string;
@@ -28,12 +31,14 @@ export type HeadToHeadEventSummary = {
   aWins: number;
   bWins: number;
   ties: number;
+  noResult: number;
 };
 
 export type HeadToHeadSummary = {
   aWins: number;
   bWins: number;
   ties: number;
+  noResult: number;
   total: number;
   byEvent: HeadToHeadEventSummary[];
   lastMeeting: HeadToHeadRound | null;
@@ -44,6 +49,8 @@ function validPos(pos: number | null): number | null {
 }
 
 export function getRoundWinner(round: HeadToHeadRound): HeadToHeadWinner {
+  if (round.a.best <= 0 && round.b.best <= 0) return "none";
+
   const aPos = validPos(round.a.pos);
   const bPos = validPos(round.b.pos);
 
@@ -62,6 +69,7 @@ export function summarizeHeadToHead(
   let aWins = 0;
   let bWins = 0;
   let ties = 0;
+  let noResult = 0;
   const byEvent = new Map<string, HeadToHeadEventSummary>();
 
   for (const round of rounds) {
@@ -73,6 +81,7 @@ export function summarizeHeadToHead(
       aWins: 0,
       bWins: 0,
       ties: 0,
+      noResult: 0,
     };
 
     if (winner === "a") {
@@ -81,9 +90,12 @@ export function summarizeHeadToHead(
     } else if (winner === "b") {
       bWins++;
       eventSummary.bWins++;
-    } else {
+    } else if (winner === "tie") {
       ties++;
       eventSummary.ties++;
+    } else {
+      noResult++;
+      eventSummary.noResult++;
     }
 
     byEvent.set(round.eventId, eventSummary);
@@ -93,6 +105,7 @@ export function summarizeHeadToHead(
     aWins,
     bWins,
     ties,
+    noResult,
     total: rounds.length,
     byEvent: Array.from(byEvent.values()).sort(
       (left, right) => left.eventRank - right.eventRank,
