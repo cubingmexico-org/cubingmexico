@@ -1,0 +1,12 @@
+node_modules
+**/node_modules/**
+**/.next/**
+**/.turbo/**
+.turbo
+**/dist/**
+**/coverage/**
+**/public/**
+pnpm-lock.yaml
+packages/db/drizzle/**
+apps/backend/**
+**/next-env.d.ts

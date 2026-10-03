@@ -1,0 +1,70 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    "group:monorepos"
+  ],
+  "timezone": "America/Mexico_City",
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 5,
+  "rangeStrategy": "bump",
+  "pip_requirements": {
+    "managerFilePatterns": ["/(^|/)requirements(-dev)?\\.txt$/"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "packageRules": [
+    {
+      "description": "Weekly batch of non-major npm updates",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm non-major"
+    },
+    {
+      "description": "Next.js and React move together",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["next", "react", "react-dom", "@types/react", "@types/react-dom", "eslint-config-next", "@next/{/,}**"],
+      "groupName": "next and react"
+    },
+    {
+      "description": "Drizzle ORM and kit must stay compatible",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["drizzle-orm", "drizzle-kit"],
+      "groupName": "drizzle"
+    },
+    {
+      "description": "Keep TypeScript on one version across the workspace",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "groupName": "typescript"
+    },
+    {
+      "description": "Node types follow the runtime pinned in .nvmrc",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["@types/node"],
+      "allowedVersions": "<25"
+    },
+    {
+      "description": "Backend Python pins, non-major",
+      "matchManagers": ["pip_requirements"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "backend python non-major"
+    },
+    {
+      "description": "GitHub Actions, non-major",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "github actions"
+    },
+    {
+      "description": "Docker base images stay on the pinned Node and Python majors",
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["node", "python"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}

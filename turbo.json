@@ -31,17 +31,14 @@
         "!.next/cache/**"
       ]
     },
-    "lint": {
-      "dependsOn": [
-        "^lint"
-      ]
+    "lint": {},
+    "check-types": {},
+    "test": {
+      "inputs": [
+        "$TURBO_DEFAULT$"
+      ],
+      "outputs": []
     },
-    "check-types": {
-      "dependsOn": [
-        "^check-types"
-      ]
-    },
-    "test": {},
     "dev": {
       "cache": false,
       "persistent": true

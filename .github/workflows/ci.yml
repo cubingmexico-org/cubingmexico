@@ -19,10 +19,13 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Format
+        run: pnpm format:check
 
       - name: Lint
         run: pnpm lint
@@ -32,6 +35,15 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      # drizzle-kit generate never connects; the URL only satisfies drizzle.config.ts.
+      - name: Migration drift
+        env:
+          DATABASE_URL: postgresql://unused@localhost/unused
+        run: |
+          pnpm --filter @workspace/db generate
+          git diff --exit-code -- packages/db/drizzle
+          test -z "$(git status --porcelain -- packages/db/drizzle)"
 
   build:
     runs-on: ubuntu-latest
@@ -66,7 +78,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
