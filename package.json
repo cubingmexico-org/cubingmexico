@@ -10,6 +10,7 @@
     "lint": "turbo lint",
     "check-types": "turbo check-types",
     "test": "turbo test",
+    "test:integration": "turbo test:integration",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
     "clean": "rm -rf .turbo node_modules apps/*/node_modules apps/*/.next apps/*/.turbo packages/*/node_modules packages/*/dist packages/*/.turbo",

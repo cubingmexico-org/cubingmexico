@@ -8,6 +8,14 @@ from common import EXCLUDED_EVENTS, get_connection, log, require_cron_auth
 from routes.admin.blueprint import admin_bp
 
 
+def _assign_sequential_ranks(rows):
+    """Assign 1-based state ranks in the given order (already sorted by country rank)."""
+    return [
+        {"person_id": row.person_id, "event_id": row.event_id, "state_rank": index}
+        for index, row in enumerate(rows, start=1)
+    ]
+
+
 @admin_bp.route("/update-state-ranks", methods=["POST"])
 @require_cron_auth
 def update_state_ranks():
@@ -51,18 +59,7 @@ def update_state_ranks():
                             """,
                             (event_row.id, state_name),
                         )
-                        single_data = cur.fetchall()
-
-                        single_state_rank = 1
-                        for record in single_data:
-                            single_updates.append(
-                                {
-                                    "person_id": record.person_id,
-                                    "event_id": record.event_id,
-                                    "state_rank": single_state_rank,
-                                }
-                            )
-                            single_state_rank += 1
+                        single_updates.extend(_assign_sequential_ranks(cur.fetchall()))
 
                         cur.execute(
                             """
@@ -77,18 +74,7 @@ def update_state_ranks():
                             """,
                             (event_row.id, state_name),
                         )
-                        average_data = cur.fetchall()
-
-                        average_state_rank = 1
-                        for record in average_data:
-                            average_updates.append(
-                                {
-                                    "person_id": record.person_id,
-                                    "event_id": record.event_id,
-                                    "state_rank": average_state_rank,
-                                }
-                            )
-                            average_state_rank += 1
+                        average_updates.extend(_assign_sequential_ranks(cur.fetchall()))
 
                 log.info(
                     "Computed %s single_updates and %s average_updates",

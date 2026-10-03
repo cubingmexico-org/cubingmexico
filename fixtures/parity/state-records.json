@@ -1,0 +1,93 @@
+{
+  "description": "Expected SR result ids for one state/event/value type. Rows are in query order (record date, competition, round rank, value, id). Shared by apps/web (markStateRecords) and apps/backend (_mark_state_records).",
+  "cases": [
+    {
+      "name": "empty input",
+      "rows": [],
+      "expected": []
+    },
+    {
+      "name": "chronological running best",
+      "rows": [
+        { "id": "a", "value": 1000, "recordDate": "2024-01-01", "regionalRecord": null },
+        { "id": "b", "value": 1200, "recordDate": "2024-02-01", "regionalRecord": null },
+        { "id": "c", "value": 900, "recordDate": "2024-03-01", "regionalRecord": null }
+      ],
+      "expected": ["a", "c"]
+    },
+    {
+      "name": "same-day improvements tag only the best of the day",
+      "rows": [
+        { "id": "r1", "value": 1000, "recordDate": "2024-01-01", "regionalRecord": null },
+        { "id": "rf", "value": 950, "recordDate": "2024-01-01", "regionalRecord": null }
+      ],
+      "expected": ["rf"]
+    },
+    {
+      "name": "same-day tie tags both results",
+      "rows": [
+        { "id": "x", "value": 950, "recordDate": "2024-01-01", "regionalRecord": null },
+        { "id": "y", "value": 950, "recordDate": "2024-01-01", "regionalRecord": null }
+      ],
+      "expected": ["x", "y"]
+    },
+    {
+      "name": "same-day improvement followed by a worse result",
+      "rows": [
+        { "id": "r1", "value": 950, "recordDate": "2024-01-01", "regionalRecord": null },
+        { "id": "rf", "value": 1000, "recordDate": "2024-01-01", "regionalRecord": null }
+      ],
+      "expected": ["r1"]
+    },
+    {
+      "name": "NR is not tagged but advances the running best",
+      "rows": [
+        { "id": "nr", "value": 1000, "recordDate": "2024-01-01", "regionalRecord": "NR" },
+        { "id": "slower", "value": 1050, "recordDate": "2024-02-01", "regionalRecord": null },
+        { "id": "faster", "value": 990, "recordDate": "2024-03-01", "regionalRecord": null }
+      ],
+      "expected": ["faster"]
+    },
+    {
+      "name": "same-day NR beats a non-record result, so nothing is tagged that day",
+      "rows": [
+        { "id": "a", "value": 1000, "recordDate": "2024-01-01", "regionalRecord": null },
+        { "id": "b", "value": 900, "recordDate": "2024-01-01", "regionalRecord": "WR" },
+        { "id": "c", "value": 950, "recordDate": "2024-01-02", "regionalRecord": null }
+      ],
+      "expected": []
+    },
+    {
+      "name": "regional markers are trimmed",
+      "rows": [
+        { "id": "a", "value": 1000, "recordDate": "2024-01-01", "regionalRecord": "NAR " }
+      ],
+      "expected": []
+    },
+    {
+      "name": "DNF and DNS rows are ignored",
+      "rows": [
+        { "id": "dnf", "value": -1, "recordDate": "2024-01-01", "regionalRecord": null },
+        { "id": "dns", "value": -2, "recordDate": "2024-01-01", "regionalRecord": null },
+        { "id": "ok", "value": 1000, "recordDate": "2024-02-01", "regionalRecord": null }
+      ],
+      "expected": ["ok"]
+    },
+    {
+      "name": "equalling the best on a later day is tagged",
+      "rows": [
+        { "id": "a", "value": 1000, "recordDate": "2024-01-01", "regionalRecord": null },
+        { "id": "b", "value": 1000, "recordDate": "2024-02-01", "regionalRecord": null }
+      ],
+      "expected": ["a", "b"]
+    },
+    {
+      "name": "timestamps are bucketed by calendar day",
+      "rows": [
+        { "id": "a", "value": 1000, "recordDate": "2024-01-01T00:00:00", "regionalRecord": null },
+        { "id": "b", "value": 950, "recordDate": "2024-01-01T18:30:00", "regionalRecord": null }
+      ],
+      "expected": ["b"]
+    }
+  ]
+}

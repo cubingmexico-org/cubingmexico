@@ -1,0 +1,41 @@
+{
+  "description": "Expected state ranks for rows already sorted by country rank (one state, one event, one rank type). Shared by apps/web (assignSequentialRanks) and apps/backend (_assign_sequential_ranks).",
+  "cases": [
+    {
+      "name": "empty input",
+      "input": [],
+      "expected": []
+    },
+    {
+      "name": "single person",
+      "input": [{ "personId": "2020AAAA01", "eventId": "333" }],
+      "expected": [{ "personId": "2020AAAA01", "eventId": "333", "stateRank": 1 }]
+    },
+    {
+      "name": "ranks follow input order",
+      "input": [
+        { "personId": "2020CCCC01", "eventId": "333" },
+        { "personId": "2020AAAA01", "eventId": "333" },
+        { "personId": "2020BBBB01", "eventId": "333" }
+      ],
+      "expected": [
+        { "personId": "2020CCCC01", "eventId": "333", "stateRank": 1 },
+        { "personId": "2020AAAA01", "eventId": "333", "stateRank": 2 },
+        { "personId": "2020BBBB01", "eventId": "333", "stateRank": 3 }
+      ]
+    },
+    {
+      "name": "tied country ranks still get sequential state ranks",
+      "input": [
+        { "personId": "2020AAAA01", "eventId": "333bf" },
+        { "personId": "2020BBBB01", "eventId": "333bf" },
+        { "personId": "2020CCCC01", "eventId": "333bf" }
+      ],
+      "expected": [
+        { "personId": "2020AAAA01", "eventId": "333bf", "stateRank": 1 },
+        { "personId": "2020BBBB01", "eventId": "333bf", "stateRank": 2 },
+        { "personId": "2020CCCC01", "eventId": "333bf", "stateRank": 3 }
+      ]
+    }
+  ]
+}
