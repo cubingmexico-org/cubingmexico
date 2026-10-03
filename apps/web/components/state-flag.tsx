@@ -22,7 +22,7 @@ export function StateFlag({
 
   return (
     // Decorative when next to visible state text; empty alt avoids redundant announcements.
-    // eslint-disable-next-line @next/next/no-img-element
+    // eslint-disable-next-line @next/next/no-img-element -- small static SVG; images are unoptimized app-wide
     <img
       src={src}
       alt=""

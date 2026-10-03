@@ -93,7 +93,7 @@ export function CanvasEditor({
         imageCache.current.delete(url);
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- prune the image cache only when elements change
   }, [currentElements]);
 
   useEffect(() => {
@@ -116,7 +116,7 @@ export function CanvasEditor({
       targetRef.current = null;
       drawCanvas();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- drawCanvas is recreated every render; reload only when the background changes
   }, [backgroundImage, backgroundImageBack, activeSide]);
 
   const measureText = (
@@ -440,7 +440,7 @@ export function CanvasEditor({
 
   useEffect(() => {
     drawCanvas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- drawCanvas is recreated every render; deps list the state it reads
   }, [
     currentElements,
     selectedElementId,
@@ -450,8 +450,11 @@ export function CanvasEditor({
     guides,
   ]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getResizeHandle = (x: number, y: number, element: any) => {
+  const getResizeHandle = (
+    x: number,
+    y: number,
+    element: { x: number; y: number; width: number; height: number },
+  ) => {
     const handleSize = 8;
     const handles = [
       {

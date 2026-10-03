@@ -15,10 +15,7 @@ import { Separator } from "@workspace/ui/components/separator";
 import { exportTableToCSV } from "@/lib/export";
 import { deleteMembers } from "../_lib/actions";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const actions = ["export", "delete"] as const;
-
-type Action = (typeof actions)[number];
+type Action = "export" | "delete";
 
 interface MembersTableActionBarProps {
   table: Table<Member>;

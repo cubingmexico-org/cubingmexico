@@ -507,8 +507,7 @@ export function generatePodiumPdf(
     } else {
       pdf.download(`Certificados Podio - ${competition.name}.pdf`);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
+  } catch {
     toast.error("Error al generar el PDF", {
       description: "Por favor, inténtalo de nuevo más tarde.",
     });
@@ -599,8 +598,7 @@ export function generateParticipantPdf(
     } else {
       pdf.download(`Certificados Participacion - ${competition.name}.pdf`);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
+  } catch {
     toast.error("Error al generar el PDF", {
       description: "Por favor, inténtalo de nuevo más tarde.",
     });

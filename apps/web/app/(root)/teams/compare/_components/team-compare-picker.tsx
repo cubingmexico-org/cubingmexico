@@ -45,7 +45,7 @@ function TeamSelect({
         {teams.map((team) => (
           <SelectItem key={team.id} value={team.id}>
             {team.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
               <img
                 src={team.image}
                 alt=""

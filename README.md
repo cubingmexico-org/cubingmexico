@@ -207,4 +207,5 @@ import { Button } from "@workspace/ui/components/ui/button";
 - [Backend local setup](./apps/backend/README.md)
 - [Web app details](./apps/web/README.md)
 - [Web hosting constraints (Vercel free tier)](./docs/web-hosting-constraints.md)
-- [Registros estatales / WCA alignment](./docs/registros-estatales.md)
+- [Architecture: which app owns what](./docs/architecture.md)
+- [State records (SR) and WCA alignment](./docs/state-records.md)

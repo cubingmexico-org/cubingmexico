@@ -168,7 +168,7 @@ export async function renderOgImage({
         >
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             {logoSrc ? (
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element -- next/og (Satori) only renders plain img
               <img
                 src={logoSrc}
                 width={64}
@@ -273,7 +273,7 @@ export async function renderOgImage({
               }}
             >
               {imageSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                // eslint-disable-next-line @next/next/no-img-element -- next/og (Satori) only renders plain img
                 <img
                   src={imageSrc}
                   width={200}

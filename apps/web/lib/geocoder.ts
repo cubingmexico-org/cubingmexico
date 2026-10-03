@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- . */
-
 import type { Options } from "node-geocoder";
 import NodeGeocoder from "node-geocoder";
 
 const options: Options = {
   provider: "openstreetmap",
-  fetch: fetch as any,
+  fetch: fetch as unknown as Options["fetch"],
 };
 
 const geocoder = NodeGeocoder(options);
@@ -20,8 +18,7 @@ export async function getStateFromCoordinates(
       return res[0]?.state ?? "Ciudad de México";
     }
     return null;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
+  } catch {
     return null;
   }
 }

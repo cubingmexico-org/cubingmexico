@@ -69,7 +69,7 @@ function PersonHeader({
         <Badge variant="outline" asChild>
           <Link href={`/teams/${team.id}`} className="gap-1.5">
             {team.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
               <img
                 src={team.image}
                 alt=""

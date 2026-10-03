@@ -363,8 +363,7 @@ export function createBadgeExporters({
         const usableHeight = LETTER_HEIGHT_MM - MARGIN_MM * 2;
 
         const drawDotted = (
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          pdf: any,
+          pdf: jsPDF,
           x1: number,
           y1: number,
           x2: number,

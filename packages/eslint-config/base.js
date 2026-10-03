@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import eslintComments from "@eslint-community/eslint-plugin-eslint-comments";
 import eslintConfigPrettier from "eslint-config-prettier";
 import turboPlugin from "eslint-plugin-turbo";
 import tseslint from "typescript-eslint";
@@ -19,6 +20,14 @@ export const config = [
     },
     rules: {
       "turbo/no-undeclared-env-vars": "warn",
+    },
+  },
+  {
+    plugins: {
+      "@eslint-community/eslint-comments": eslintComments,
+    },
+    rules: {
+      "@eslint-community/eslint-comments/require-description": "error",
     },
   },
   {

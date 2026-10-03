@@ -93,7 +93,7 @@ export function BadgeManager({
     } else {
       setBackgroundImage(undefined);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-read when the uploaded files change
   }, [files]);
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export function BadgeManager({
     } else {
       setBackgroundImageBack(undefined);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only re-read when the uploaded files change
   }, [backFiles]);
 
   if (!competition) {
@@ -250,7 +250,7 @@ export function BadgeManager({
       <div className="space-y-2">
         <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tighter sm:text-4xl">
           {competitionLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            // eslint-disable-next-line @next/next/no-img-element -- external WCA / UploadThing URL
             <img
               src={competitionLogoUrl}
               alt=""

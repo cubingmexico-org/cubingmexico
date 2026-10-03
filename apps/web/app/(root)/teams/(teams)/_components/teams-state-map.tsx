@@ -189,7 +189,7 @@ export function TeamsStateMap({
                 <div className="p-3 max-w-xs">
                   <div className="flex flex-col items-center gap-3 text-center">
                     {team.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
+                      // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
                       <img
                         src={team.image}
                         alt={team.name}

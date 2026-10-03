@@ -40,7 +40,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   const [open, setOpen] = React.useState(false);
 
   const columnFilterValue = column?.getFilterValue();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuilt each render from the column's current filter value
   const selectedValues = new Set(
     Array.isArray(columnFilterValue) ? columnFilterValue : [],
   );

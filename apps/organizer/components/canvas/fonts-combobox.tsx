@@ -52,7 +52,7 @@ export function DynamicFontsCombobox({
   >([]);
 
   // Debounce search - only search when user types
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- debounced function is created once; deps inside debounce() are not trackable
   const debouncedSearch = React.useCallback(
     debounce(async (searchTerm: string) => {
       if (!searchTerm.trim()) {
