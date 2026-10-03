@@ -162,7 +162,7 @@ function SortableRoot<T>(props: SortableRootProps<T>) {
 
       setActiveId(event.active.id);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depends on the specific sortableProps callback, not the whole props object
     [sortableProps.onDragStart],
   );
 
@@ -189,7 +189,7 @@ function SortableRoot<T>(props: SortableRootProps<T>) {
       }
       setActiveId(null);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depends on the specific sortableProps callback, not the whole props object
     [value, onValueChange, onMove, getItemValue, sortableProps.onDragEnd],
   );
 
@@ -201,7 +201,7 @@ function SortableRoot<T>(props: SortableRootProps<T>) {
 
       setActiveId(null);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- depends on the specific sortableProps callback, not the whole props object
     [sortableProps.onDragCancel],
   );
 

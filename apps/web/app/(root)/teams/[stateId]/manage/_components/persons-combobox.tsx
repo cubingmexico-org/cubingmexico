@@ -39,7 +39,7 @@ export function PersonsCombobox({
   >([]);
 
   // Debounce search with loading simulation
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- debounced function is created once; deps inside debounce() are not trackable
   const debouncedSearch = React.useCallback(
     debounce(async (searchTerm: string) => {
       setIsLoading(true);

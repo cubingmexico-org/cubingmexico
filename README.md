@@ -154,11 +154,19 @@ pnpm services:up
 | `pnpm lint`                    | Lint all apps and packages                       |
 | `pnpm check-types`             | Typecheck apps and shared packages               |
 | `pnpm test`                    | Run unit tests (web + organizer)                 |
+| `pnpm test:integration`        | Run web integration tests against Postgres       |
 | `pnpm format`                  | Format with Prettier                             |
 | `pnpm clean`                   | Remove Turbo cache, build outputs, node_modules  |
 | `pnpm --filter web db:migrate` | Apply Drizzle migrations                         |
 | `pnpm --filter web db:seed`    | Seed Mexican states                              |
 | `pnpm --filter web db:studio`  | Open Drizzle Studio                              |
+
+## Testing
+
+- **Unit tests:** `pnpm test` runs the Vitest suites for web and organizer. No database needed.
+- **Integration tests:** `pnpm db:up && pnpm test:integration` runs `apps/web/**/*.integration.test.ts` against real Postgres. The suite creates and migrates a separate `cubing_mexico_test` database and truncates its tables before every test, so your dev data is never touched. Point it elsewhere with `TEST_DATABASE_URL`; the database name must end in `_test`. Insert test data with the helpers in `apps/web/test/factories.ts`.
+- **Backend:** `cd apps/backend && pytest`.
+- **TypeScript/Python parity:** state ranks and state records (SR) are computed in both `apps/web/lib` and `apps/backend/routes/admin/state.py`. Both test suites run the cases in `fixtures/parity/*.json`. If you change either rule, update those fixtures so both implementations stay in sync.
 
 ## Tech Stack
 
@@ -199,4 +207,5 @@ import { Button } from "@workspace/ui/components/ui/button";
 - [Backend local setup](./apps/backend/README.md)
 - [Web app details](./apps/web/README.md)
 - [Web hosting constraints (Vercel free tier)](./docs/web-hosting-constraints.md)
-- [Registros estatales / WCA alignment](./docs/registros-estatales.md)
+- [Architecture: which app owns what](./docs/architecture.md)
+- [State records (SR) and WCA alignment](./docs/state-records.md)

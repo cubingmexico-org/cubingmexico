@@ -122,7 +122,7 @@ export function GroupsManager({
         <div>
           <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight">
             {competitionLogoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element -- external WCA / UploadThing URL
               <img
                 src={competitionLogoUrl}
                 alt=""

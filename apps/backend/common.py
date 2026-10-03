@@ -168,7 +168,7 @@ def require_cron_auth(f):
 
         if not auth_header:
             log.warning("Missing Authorization header for %s", request.path)
-            abort(403, description="Access forbidden: Missing authorization")
+            abort(401, description="Unauthorized: Missing authorization")
 
         try:
             scheme, token = auth_header.split()
@@ -176,7 +176,7 @@ def require_cron_auth(f):
                 raise ValueError("Invalid scheme")
         except ValueError:
             log.warning("Invalid Authorization header format for %s", request.path)
-            abort(403, description="Access forbidden: Invalid authorization format")
+            abort(401, description="Unauthorized: Invalid authorization format")
 
         if not hmac.compare_digest(token.encode(), CRON_SECRET.encode()):
             log.warning("Invalid cron token for %s", request.path)

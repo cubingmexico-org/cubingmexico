@@ -242,7 +242,7 @@ function FacetedItem(props: FacetedItemProps) {
         context.onItemSelect(currentValue);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only context.onItemSelect is used, not the whole context
     [onSelect, context.onItemSelect],
   );
 

@@ -98,7 +98,7 @@ export function PreviewDialog({
           <div className="mx-auto w-full min-w-0 max-w-sm space-y-4">
             <div className="relative">
               {/* blob: object URLs from the preview API — next/image cannot optimize these */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- blob: preview URL */}
               <img
                 src={
                   previewData.slides?.[previewSlideIndex]?.imageUrl ??

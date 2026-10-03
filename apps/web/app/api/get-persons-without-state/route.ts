@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { connection } from "next/server";
 import { getPersonsWithoutState } from "@/db/queries";
 import { getSessionUserId, hasTeamPermission } from "@/lib/team-auth";
+import { unauthorizedResponse } from "@/lib/api-auth";
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   await connection();
@@ -23,10 +24,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       !userId ||
       !(await hasTeamPermission(stateId, userId, "team.members"))
     ) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return unauthorizedResponse(userId);
     }
 
     const results = await getPersonsWithoutState({

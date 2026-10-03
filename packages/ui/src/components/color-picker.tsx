@@ -737,7 +737,7 @@ function ColorPickerRootImpl(props: ColorPickerRootImplProps) {
       store.setOpen(newOpen);
       onOpenChange?.(newOpen);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only store.setOpen is used, not the whole store
     [store.setOpen, onOpenChange],
   );
 

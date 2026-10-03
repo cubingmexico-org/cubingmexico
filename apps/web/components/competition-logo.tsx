@@ -21,7 +21,7 @@ export function CompetitionLogo({
   if (!url) return null;
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
+    // eslint-disable-next-line @next/next/no-img-element -- external WCA / UploadThing URL
     <img
       src={url}
       alt={alt}

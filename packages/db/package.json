@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
-    "./relations": "./src/relations.ts"
+    "./relations": "./src/relations.ts",
+    "./states": "./src/states.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",

@@ -54,6 +54,25 @@ That tells crawlers those trees are gone and reduces wasted server work from obs
 
 ---
 
+## Rate limiting: Vercel Firewall rules
+
+There is no rate limiting in application code. An in-memory limiter only counts per serverless instance, so it gives little protection on Vercel. Public and expensive endpoints are protected by **Vercel Firewall rate-limit rules** configured in the dashboard instead (Project → Firewall → Rules → New rule → Rate Limit).
+
+Rules to keep in place (all keyed by **IP**, action **Deny / 429**):
+
+| Project                       | Path condition                                   | Limit               | Why                                                                             |
+| ----------------------------- | ------------------------------------------------ | ------------------- | ------------------------------------------------------------------------------- |
+| `web`                         | path equals `/api/search`                        | 30 requests / 10 s  | Public, unauthenticated, hits Postgres on every request                         |
+| `web`                         | path starts with `/api/auth/`                    | 20 requests / 60 s  | Slows down sign-in / OAuth callback abuse                                       |
+| `organizer`                   | path equals `/api/image-proxy`                   | 120 requests / 60 s | Badge and certificate exports fetch many avatars in a burst; keep this generous |
+| `web`, `organizer` (optional) | path starts with `/api/admin/` or `/api/designs` | 300 requests / 60 s | Backstop for authenticated endpoints                                            |
+
+**Policy:** keep the limits in the dashboard rather than in code. The free plan has a small number of rate-limit rules; if a rule has to be dropped, keep `/api/search` and `/api/image-proxy` first.
+
+**Tuning:** check Firewall analytics after a large competition (badge exports) and after search-heavy traffic. Raise limits that block real users before adding new rules. If you change a limit, update this table.
+
+---
+
 ## Related free-tier choices (elsewhere)
 
 - Prefer Server Components, `"use cache"`, and cache tags over paid observability.

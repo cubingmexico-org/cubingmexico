@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-
 import {
   Table,
   TableHeader,
@@ -159,7 +157,7 @@ async function PersonPageContent({ id }: { id: string }) {
           <Badge variant="outline" asChild>
             <Link href={`/teams/${team.id}`} className="gap-1.5">
               {team.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
+                // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
                 <img
                   src={team.image}
                   alt=""
@@ -343,10 +341,10 @@ async function PersonPageContent({ id }: { id: string }) {
               </TableCell>
               <TableCell className="text-center font-semibold">
                 {record.event === "333mbf"
-                  ? formatTime333mbf(record?.record?.single.best!)
+                  ? formatTime333mbf(record.record.single.best)
                   : record.event === "333fm"
-                    ? record?.record?.single.best
-                    : formatTime(record?.record?.single.best!)}
+                    ? record.record.single.best
+                    : formatTime(record.record.single.best)}
               </TableCell>
               <TableCell className="text-center font-semibold">
                 {record?.record?.average?.best

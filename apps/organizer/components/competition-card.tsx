@@ -68,7 +68,7 @@ export function CompetitionCard({
         <div className="flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-start gap-3">
             {logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element -- external WCA / UploadThing URL
               <img
                 src={logoUrl}
                 alt=""

@@ -35,8 +35,7 @@ export function UpdateMemberSheet({
   const [state, formAction, pending] = useActionState(updateMember, {
     defaultValues: {
       stateId,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-      personId: member?.wcaId!,
+      personId: member?.wcaId ?? "",
       specialties: member?.specialties ?? null,
     },
     success: false,
@@ -48,7 +47,7 @@ export function UpdateMemberSheet({
       props.onOpenChange?.(false);
       toast.success("Miembro actualizado correctamente");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- react only to new action results; onOpenChange is not stable
   }, [state]);
 
   return (

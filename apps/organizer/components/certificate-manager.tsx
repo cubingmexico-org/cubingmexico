@@ -387,7 +387,7 @@ export function CertificateManager({
       <div className="space-y-2">
         <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tighter sm:text-4xl">
           {competitionLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            // eslint-disable-next-line @next/next/no-img-element -- external WCA / UploadThing URL
             <img
               src={competitionLogoUrl}
               alt=""

@@ -315,7 +315,7 @@ export function CompetitionLogoCell({
           title="Gestionar logo"
         >
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
+            // eslint-disable-next-line @next/next/no-img-element -- external WCA / UploadThing URL
             <img src={logo} alt="" className="size-full object-contain p-0.5" />
           ) : (
             <ImagePlus className="text-muted-foreground size-4" />
@@ -339,7 +339,7 @@ export function CompetitionLogoCell({
             }}
           >
             {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
+              // eslint-disable-next-line @next/next/no-img-element -- may be a blob: URL from the file picker
               <img
                 src={previewUrl}
                 alt={`Logo ${competitionName}`}
