@@ -1,12 +1,7 @@
 import "server-only";
 
 import { db } from "@workspace/db";
-import {
-  championship,
-  competition,
-  event,
-  result,
-} from "@workspace/db/schema";
+import { championship, competition, event, result } from "@workspace/db/schema";
 import {
   BLD_FMC_MEANS_EVENTS,
   SPEEDSOLVING_AVERAGES_EVENTS,
