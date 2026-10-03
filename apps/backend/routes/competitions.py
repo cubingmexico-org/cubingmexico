@@ -173,7 +173,7 @@ def get_competitor_states(competition_id):
 
         if not wca_ids:
             log.warning("No WCA IDs found for competition: %s", competition_id)
-            return jsonify({"success": True, "competitors": []})
+            return jsonify([])
 
         log.info("Found %s competitors with WCA IDs", len(wca_ids))
 
