@@ -1,13 +1,7 @@
 import "server-only";
 
 import { db } from "@workspace/db";
-import {
-  championship,
-  competition,
-  event,
-  person,
-  result,
-} from "@workspace/db/schema";
+import { championship, competition, event, result } from "@workspace/db/schema";
 import {
   BLD_FMC_MEANS_EVENTS,
   SPEEDSOLVING_AVERAGES_EVENTS,
@@ -28,54 +22,47 @@ async function getAsOfPersonRanks(
     { eventName: string; eventRank: number; nr: number; sr: number | null }
   >
 > {
-  const valueCol = kind === "single" ? result.best : result.average;
-  const asOfCond = lte(competition.startDate, asOf);
+  const valueCol = sql.raw(kind === "single" ? "best" : "average");
+  const asOfIso = asOf.toISOString();
 
-  const pbs = db.$with("pbs").as(
-    db
-      .select({
-        personId: result.personId,
-        eventId: result.eventId,
-        best: sql<number>`min(${valueCol})`.as("best"),
-        stateId: person.stateId,
-      })
-      .from(result)
-      .innerJoin(competition, eq(result.competitionId, competition.id))
-      .innerJoin(person, eq(result.personId, person.wcaId))
-      .where(and(gt(valueCol, 0), asOfCond))
-      .groupBy(result.personId, result.eventId, person.stateId),
-  );
-
-  const ranked = db.$with("ranked").as(
-    db
-      .select({
-        personId: pbs.personId,
-        eventId: pbs.eventId,
-        stateId: pbs.stateId,
-        nr: sql<number>`rank() over (partition by ${pbs.eventId} order by ${pbs.best})`.as(
-          "nr",
-        ),
-        sr: sql<
-          number | null
-        >`CASE WHEN ${pbs.stateId} IS NULL THEN NULL ELSE rank() over (partition by ${pbs.eventId}, ${pbs.stateId} order by ${pbs.best}) END`.as(
-          "sr",
-        ),
-      })
-      .from(pbs),
-  );
-
-  const rows = await db
-    .with(pbs, ranked)
-    .select({
-      eventId: ranked.eventId,
-      eventName: event.name,
-      eventRank: event.rank,
-      nr: ranked.nr,
-      sr: ranked.sr,
-    })
-    .from(ranked)
-    .innerJoin(event, eq(ranked.eventId, event.id))
-    .where(eq(ranked.personId, wcaId));
+  // rank() over all PBs equals 1 + the number of people with a strictly
+  // better result, which avoids aggregating every person's PB.
+  const rows = (await db.execute(sql`
+    WITH mine AS (
+      SELECT r.event_id, MIN(r.${valueCol}) AS best
+      FROM results r
+      INNER JOIN competitions c ON c.id = r.competition_id
+      WHERE r.person_id = ${wcaId}
+        AND r.${valueCol} > 0
+        AND c.start_date <= ${asOfIso}
+      GROUP BY r.event_id
+    ),
+    better AS (
+      SELECT DISTINCT r.event_id, r.person_id, p.state_id
+      FROM results r
+      INNER JOIN mine m ON m.event_id = r.event_id AND r.${valueCol} < m.best
+      INNER JOIN competitions c ON c.id = r.competition_id
+      INNER JOIN persons p ON p.wca_id = r.person_id
+      WHERE r.${valueCol} > 0
+        AND c.start_date <= ${asOfIso}
+    )
+    SELECT
+      m.event_id AS "eventId",
+      e.name AS "eventName",
+      e.rank AS "eventRank",
+      1 + COUNT(b.person_id) AS nr,
+      1 + COUNT(b.person_id) FILTER (WHERE b.state_id = ${stateId}) AS sr
+    FROM mine m
+    INNER JOIN events e ON e.id = m.event_id
+    LEFT JOIN better b ON b.event_id = m.event_id
+    GROUP BY m.event_id, e.name, e.rank
+  `)) as unknown as {
+    eventId: string;
+    eventName: string;
+    eventRank: number;
+    nr: number | string;
+    sr: number | string | null;
+  }[];
 
   const map = new Map<
     string,
