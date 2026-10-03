@@ -73,9 +73,7 @@ def upload_facebook_unpublished_photo(
     payload = _raise_for_meta(resp, "facebook unpublished photo upload")
     photo_id = payload.get("id")
     if not photo_id:
-        raise MetaApiError(
-            f"Meta facebook unpublished photo upload returned no id: {payload}"
-        )
+        raise MetaApiError(f"Meta facebook unpublished photo upload returned no id: {payload}")
     return str(photo_id)
 
 
@@ -232,9 +230,7 @@ def post_instagram_carousel(
         create_payload = _raise_for_meta(create_resp, "instagram carousel item create")
         child_id = create_payload.get("id")
         if not child_id:
-            raise MetaApiError(
-                f"Meta instagram carousel item create returned no id: {create_payload}"
-            )
+            raise MetaApiError(f"Meta instagram carousel item create returned no id: {create_payload}")
         child_ids.append(str(child_id))
         _wait_for_ig_container(creation_id=str(child_id), access_token=access_token)
 
@@ -251,9 +247,7 @@ def post_instagram_carousel(
     parent_payload = _raise_for_meta(parent_resp, "instagram carousel create")
     parent_id = parent_payload.get("id")
     if not parent_id:
-        raise MetaApiError(
-            f"Meta instagram carousel create returned no id: {parent_payload}"
-        )
+        raise MetaApiError(f"Meta instagram carousel create returned no id: {parent_payload}")
 
     _wait_for_ig_container(creation_id=str(parent_id), access_token=access_token)
 
@@ -269,9 +263,7 @@ def post_instagram_carousel(
     publish_payload = _raise_for_meta(publish_resp, "instagram carousel publish")
     media_id = publish_payload.get("id")
     if not media_id:
-        raise MetaApiError(
-            f"Meta instagram carousel publish returned no id: {publish_payload}"
-        )
+        raise MetaApiError(f"Meta instagram carousel publish returned no id: {publish_payload}")
     log.info(
         "Published Instagram carousel %s (%s children, parent %s)",
         media_id,

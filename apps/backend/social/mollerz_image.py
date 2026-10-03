@@ -35,9 +35,7 @@ TIER_COLORS: dict[str, tuple[tuple, tuple]] = {
 MUTED = (140, 140, 140, 255)
 
 
-def _horizontal_gradient(
-    draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], left: tuple, right: tuple
-) -> None:
+def _horizontal_gradient(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], left: tuple, right: tuple) -> None:
     x0, y0, x1, y1 = box
     width = max(1, x1 - x0)
     for i in range(width):
@@ -51,12 +49,10 @@ def _condition_lines(conditions: dict) -> list[tuple[str, bool]]:
         (
             f"Averages de speedsolving: {conditions.get('speedsolving_averages', 0)}"
             f"/{len(SPEEDSOLVING_AVERAGES_EVENTS)}",
-            int(conditions.get("speedsolving_averages") or 0)
-            == len(SPEEDSOLVING_AVERAGES_EVENTS),
+            int(conditions.get("speedsolving_averages") or 0) == len(SPEEDSOLVING_AVERAGES_EVENTS),
         ),
         (
-            f"Medias de BLD y FMC: {conditions.get('bld_fmc_means', 0)}"
-            f"/{len(BLD_FMC_MEANS_EVENTS)}",
+            f"Medias de BLD y FMC: {conditions.get('bld_fmc_means', 0)}/{len(BLD_FMC_MEANS_EVENTS)}",
             int(conditions.get("bld_fmc_means") or 0) == len(BLD_FMC_MEANS_EVENTS),
         ),
         (
@@ -128,11 +124,7 @@ def generate_mollerz_png(
     else:
         below += 8
 
-    subtitle = (
-        "Compitió en todos los eventos oficiales de la WCA"
-        if is_new_member
-        else f"Alcanzó el nivel {tier}"
-    )
+    subtitle = "Compitió en todos los eventos oficiales de la WCA" if is_new_member else f"Alcanzó el nivel {tier}"
     center_text(draw, subtitle, load_font(28), below + 14, BLACK)
 
     rule_y = below + 80

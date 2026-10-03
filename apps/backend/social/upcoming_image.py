@@ -79,18 +79,10 @@ def format_competition_date_range(
     start_month = _MONTHS_ES[start_d.month - 1]
     end_month = _MONTHS_ES[end_d.month - 1]
     if start_d.year == end_d.year and start_d.month == end_d.month:
-        return (
-            f"del {start_d.day} al {end_d.day} de {start_month} de {start_d.year}"
-        )
+        return f"del {start_d.day} al {end_d.day} de {start_month} de {start_d.year}"
     if start_d.year == end_d.year:
-        return (
-            f"del {start_d.day} de {start_month} "
-            f"al {end_d.day} de {end_month} de {start_d.year}"
-        )
-    return (
-        f"del {start_d.day} de {start_month} de {start_d.year} "
-        f"al {end_d.day} de {end_month} de {end_d.year}"
-    )
+        return f"del {start_d.day} de {start_month} al {end_d.day} de {end_month} de {start_d.year}"
+    return f"del {start_d.day} de {start_month} de {start_d.year} al {end_d.day} de {end_month} de {end_d.year}"
 
 
 def format_competition_datetime(value: date | datetime | None) -> str:
@@ -125,9 +117,7 @@ def _day_font_for(label: str):
     return load_font(48)
 
 
-def _poster_date_labels(
-    start: date, end: date | None
-) -> tuple[str, str, str]:
+def _poster_date_labels(start: date, end: date | None) -> tuple[str, str, str]:
     if end is None or end <= start:
         return (
             str(start.day),
@@ -139,12 +129,8 @@ def _poster_date_labels(
         month_label = _MONTHS_ES_SHORT[start.month - 1]
         year_label = str(start.year)
     else:
-        month_label = (
-            f"{_MONTHS_ES_SHORT[start.month - 1]}–{_MONTHS_ES_SHORT[end.month - 1]}"
-        )
-        year_label = (
-            str(start.year) if start.year == end.year else f"{start.year}–{end.year}"
-        )
+        month_label = f"{_MONTHS_ES_SHORT[start.month - 1]}–{_MONTHS_ES_SHORT[end.month - 1]}"
+        year_label = str(start.year) if start.year == end.year else f"{start.year}–{end.year}"
     return day_label, month_label, year_label
 
 
@@ -178,9 +164,7 @@ def generate_upcoming_png(
         WHITE,
     )
 
-    logo_bottom = paste_logo(
-        canvas, max_size=(150, 150), y=TOP_BAR + 40, logo_url=logo_url
-    )
+    logo_bottom = paste_logo(canvas, max_size=(150, 150), y=TOP_BAR + 40, logo_url=logo_url)
 
     badge_font = load_font(26)
     badge_cy = logo_bottom + 48
@@ -235,12 +219,7 @@ def generate_upcoming_png(
             meta_y + text_height("Ay", month_font) + 8,
             BLACK,
         )
-        place_y = (
-            meta_y
-            + text_height("Ay", month_font)
-            + text_height("Ay", year_font)
-            + 40
-        )
+        place_y = meta_y + text_height("Ay", month_font) + text_height("Ay", year_font) + 40
     else:
         place_y = date_block_top + 20
 

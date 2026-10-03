@@ -83,7 +83,6 @@ def draw_centered_badge(
     return x0, y0, x1, y1
 
 
-
 def format_place_line(city_name: str | None, state_name: str | None = None) -> str:
     """Build a city/state line without duplicating state when city already includes it.
 
@@ -126,9 +125,7 @@ def dash_split(text: str) -> list[str] | None:
     return None
 
 
-def best_two_line_wrap(
-    text: str, font: ImageFont.ImageFont, max_width: int
-) -> list[str] | None:
+def best_two_line_wrap(text: str, font: ImageFont.ImageFont, max_width: int) -> list[str] | None:
     dash_lines = dash_split(text)
     if dash_lines:
         w1 = text_width(dash_lines[0], font)

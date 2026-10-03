@@ -42,6 +42,32 @@ describe("getRoundWinner", () => {
     expect(getRoundWinner(round({ aPos: null, bPos: null }))).toBe("tie");
   });
 
+  it("returns none when both sides DNF or DNS", () => {
+    expect(
+      getRoundWinner(
+        round({
+          aPos: 5,
+          bPos: 5,
+          a: { pos: 5, best: -1, average: -1 },
+          b: { pos: 5, best: -2, average: -2 },
+        }),
+      ),
+    ).toBe("none");
+  });
+
+  it("uses positions when only one side DNFs", () => {
+    expect(
+      getRoundWinner(
+        round({
+          aPos: 6,
+          bPos: 3,
+          a: { pos: 6, best: -1, average: -1 },
+          b: { pos: 3, best: 1100, average: 1300 },
+        }),
+      ),
+    ).toBe("b");
+  });
+
   it("ignores representative fields on team sides", () => {
     const teamRound = round({
       aPos: 3,
@@ -71,6 +97,7 @@ describe("summarizeHeadToHead", () => {
       aWins: 0,
       bWins: 0,
       ties: 0,
+      noResult: 0,
       total: 0,
       byEvent: [],
       lastMeeting: null,
@@ -90,12 +117,19 @@ describe("summarizeHeadToHead", () => {
       }),
       round({ aPos: 2, bPos: 2 }),
       round({ aPos: 4, bPos: 6 }),
+      round({
+        aPos: 7,
+        bPos: 7,
+        a: { pos: 7, best: -1, average: -1 },
+        b: { pos: 7, best: -1, average: -1 },
+      }),
     ]);
 
     expect(summary.aWins).toBe(2);
     expect(summary.bWins).toBe(1);
     expect(summary.ties).toBe(1);
-    expect(summary.total).toBe(4);
+    expect(summary.noResult).toBe(1);
+    expect(summary.total).toBe(5);
     expect(summary.lastMeeting).toBe(newest);
     expect(summary.byEvent).toEqual([
       {
@@ -105,6 +139,7 @@ describe("summarizeHeadToHead", () => {
         aWins: 2,
         bWins: 0,
         ties: 1,
+        noResult: 1,
       },
       {
         eventId: "222",
@@ -113,6 +148,7 @@ describe("summarizeHeadToHead", () => {
         aWins: 0,
         bWins: 1,
         ties: 0,
+        noResult: 0,
       },
     ]);
   });

@@ -89,3 +89,45 @@ export async function getMollerzMembers(scope: MollerzScope) {
       : hasWorldChampionshipPodium,
   }));
 }
+
+export async function getAlmostBronzeMembers() {
+  cacheLife("days");
+  cacheTag("mollerz-members");
+
+  const events = await getEvents();
+
+  const rows = await db
+    .select({
+      wcaId: person.wcaId,
+      name: person.name,
+      state: state.name,
+      completedEvents: sql<string>`STRING_AGG(DISTINCT ${result.eventId}, ',')`,
+    })
+    .from(person)
+    .innerJoin(result, eq(person.wcaId, result.personId))
+    .leftJoin(state, eq(person.stateId, state.id))
+    .where(
+      and(
+        inArray(
+          result.eventId,
+          events.map((event) => event.id),
+        ),
+        gt(result.best, 0),
+      ),
+    )
+    .groupBy(person.wcaId, person.name, state.name)
+    .having(eq(countDistinct(result.eventId), events.length - 1));
+
+  return rows
+    .map(({ completedEvents, ...member }) => {
+      const completed = new Set(completedEvents.split(","));
+      const missingEvent = events.find((event) => !completed.has(event.id));
+      return {
+        ...member,
+        completedCount: completed.size,
+        totalEvents: events.length,
+        missingEvent: missingEvent ?? null,
+      };
+    })
+    .sort((a, b) => (a.name ?? "").localeCompare(b.name ?? "", "es"));
+}

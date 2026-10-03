@@ -54,6 +54,7 @@ services:
       - ./apps/backend/app.py:/app/app.py
       - ./apps/backend/common.py:/app/common.py
       - ./apps/backend/utils.py:/app/utils.py
+      - ./apps/backend/nemesis_stats.py:/app/nemesis_stats.py
       - ./apps/backend/routes:/app/routes
       - ./apps/backend/social:/app/social
       - ./apps/backend/assets:/app/assets

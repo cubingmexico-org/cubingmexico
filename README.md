@@ -24,7 +24,7 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 
 ### Prerequisites
 
-- **Node.js** >= 20
+- **Node.js** >= 24 (see `.nvmrc`)
 - **pnpm** 10.4.1 (defined in `packageManager`)
 - **Docker** and Docker Compose (Postgres, migrator, and Flask backend)
 

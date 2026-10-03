@@ -7,6 +7,19 @@ from utils import parse_int_query_param_or_default
 persons_bp = Blueprint("persons", __name__)
 
 
+def _rank_entry(r):
+    return {
+        "eventId": r.event_id,
+        "best": r.best,
+        "rank": {
+            "world": r.world_rank,
+            "continent": r.continent_rank,
+            "country": r.country_rank,
+            "state": r.state_rank,
+        },
+    }
+
+
 @persons_bp.route("/persons", methods=["GET"])
 def get_persons():
     try:
@@ -33,62 +46,42 @@ def get_persons():
                     (*filter_params, size, offset),
                 )
                 persons = cur.fetchall()
+                ids = [person.wca_id for person in persons]
 
-                cur.execute("SELECT person_id, competition_id FROM results GROUP BY person_id, competition_id")
-                comp_rows = cur.fetchall()
                 person_competitions = {}
-                for row in comp_rows:
-                    person_competitions.setdefault(row.person_id, set()).add(row.competition_id)
-
-                cur.execute(
-                    "SELECT p.wca_id AS person_id, ch.id AS championship_id FROM persons p "
-                    "JOIN championships ch ON ch.competition_id IN ("
-                    "SELECT competition_id FROM results WHERE person_id = p.wca_id)"
-                )
-                champ_rows = cur.fetchall()
                 person_championships = {}
-                for row in champ_rows:
-                    person_championships.setdefault(row.person_id, set()).add(row.championship_id)
-
-                cur.execute(
-                    "SELECT person_id, event_id, best, world_rank, continent_rank, country_rank, state_rank "
-                    "FROM ranks_single"
-                )
-                single_ranks = cur.fetchall()
                 person_single_ranks = {}
-                for r in single_ranks:
-                    person_single_ranks.setdefault(r.person_id, []).append(
-                        {
-                            "eventId": r.event_id,
-                            "best": r.best,
-                            "rank": {
-                                "world": r.world_rank,
-                                "continent": r.continent_rank,
-                                "country": r.country_rank,
-                                "state": r.state_rank,
-                            },
-                        }
-                    )
-
-                cur.execute(
-                    "SELECT person_id, event_id, best, world_rank, continent_rank, country_rank, state_rank "
-                    "FROM ranks_average"
-                )
-                average_ranks = cur.fetchall()
                 person_average_ranks = {}
-                for r in average_ranks:
-                    person_average_ranks.setdefault(r.person_id, []).append(
-                        {
-                            "eventId": r.event_id,
-                            "best": r.best,
-                            "rank": {
-                                "world": r.world_rank,
-                                "continent": r.continent_rank,
-                                "country": r.country_rank,
-                                "state": r.state_rank,
-                            },
-                        }
+
+                if ids:
+                    cur.execute(
+                        "SELECT person_id, competition_id FROM results "
+                        "WHERE person_id = ANY(%s) GROUP BY person_id, competition_id",
+                        (ids,),
                     )
+                    for row in cur.fetchall():
+                        person_competitions.setdefault(row.person_id, set()).add(row.competition_id)
+
+                    cur.execute(
+                        "SELECT DISTINCT r.person_id, ch.id AS championship_id FROM results r "
+                        "JOIN championships ch ON ch.competition_id = r.competition_id "
+                        "WHERE r.person_id = ANY(%s)",
+                        (ids,),
+                    )
+                    for row in cur.fetchall():
+                        person_championships.setdefault(row.person_id, set()).add(row.championship_id)
+
+                    for table, target in (
+                        ("ranks_single", person_single_ranks),
+                        ("ranks_average", person_average_ranks),
+                    ):
+                        cur.execute(
+                            "SELECT person_id, event_id, best, world_rank, continent_rank, country_rank, state_rank "
+                            f"FROM {table} WHERE person_id = ANY(%s)",
+                            (ids,),
+                        )
+                        for r in cur.fetchall():
+                            target.setdefault(r.person_id, []).append(_rank_entry(r))
 
                 items = []
                 for person in persons:
@@ -113,7 +106,7 @@ def get_persons():
                 log.info("Fetched %s person(s) for page %s size %s", len(items), page, size)
         return jsonify({"pagination": {"page": page, "size": size}, "total": total, "items": items})
     except Exception as e:
-        log.error("Error fetching persons: %s", e)
+        log.exception("Error fetching persons: %s", e)
         return jsonify({"success": False, "message": "Error fetching persons"}), 500
 
 
@@ -145,38 +138,14 @@ def get_person(wca_id):
                     "FROM ranks_single WHERE person_id = %s",
                     (wca_id,),
                 )
-                singles = [
-                    {
-                        "eventId": r.event_id,
-                        "best": r.best,
-                        "rank": {
-                            "world": r.world_rank,
-                            "continent": r.continent_rank,
-                            "country": r.country_rank,
-                            "state": r.state_rank,
-                        },
-                    }
-                    for r in cur.fetchall()
-                ]
+                singles = [_rank_entry(r) for r in cur.fetchall()]
 
                 cur.execute(
                     "SELECT event_id, best, world_rank, continent_rank, country_rank, state_rank "
                     "FROM ranks_average WHERE person_id = %s",
                     (wca_id,),
                 )
-                averages = [
-                    {
-                        "eventId": r.event_id,
-                        "best": r.best,
-                        "rank": {
-                            "world": r.world_rank,
-                            "continent": r.continent_rank,
-                            "country": r.country_rank,
-                            "state": r.state_rank,
-                        },
-                    }
-                    for r in cur.fetchall()
-                ]
+                averages = [_rank_entry(r) for r in cur.fetchall()]
 
                 item = {
                     "id": person.wca_id,
@@ -190,5 +159,5 @@ def get_person(wca_id):
                 }
         return jsonify(item)
     except Exception as e:
-        log.error("Error fetching person: %s", e)
+        log.exception("Error fetching person: %s", e)
         return jsonify({"success": False, "message": "Error fetching person"}), 500

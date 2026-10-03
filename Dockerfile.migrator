@@ -1,14 +1,13 @@
-FROM node:22-alpine
+FROM node:24-alpine
 
-WORKDIR /migrator
+WORKDIR /repo
 
-# Install only runtime deps (avoid pnpm workspace: protocol from package.json).
-# "type": "module" is required — migrate/seed use top-level await.
-RUN npm init -y \
-  && npm pkg set type=module \
-  && npm install dotenv@16.4.7 drizzle-orm@0.44.7 postgres@3.4.7 tsx@4.20.6
+RUN corepack enable
 
-COPY packages/db/src ./src
-COPY packages/db/drizzle ./drizzle
+# Versions come from pnpm-lock.yaml; only @workspace/db and its workspace deps are installed.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/typescript-config ./packages/typescript-config
+COPY packages/db ./packages/db
+RUN pnpm install --frozen-lockfile --filter @workspace/db...
 
-CMD ["sh", "-c", "npx tsx src/migrate.ts && npx tsx src/seed.ts"]
+CMD ["sh", "-c", "pnpm --filter @workspace/db migrate && pnpm --filter @workspace/db seed"]

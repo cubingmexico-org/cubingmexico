@@ -1,0 +1,21 @@
+[project]
+name = "cubingmexico-backend"
+version = "0.0.1"
+requires-python = ">=3.12"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = [".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+# Line length is enforced by `ruff format`; long SQL literals are left intact.
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app", "common", "utils", "nemesis_stats", "routes", "social"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

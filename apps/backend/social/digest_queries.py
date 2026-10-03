@@ -96,9 +96,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
         """,
         (late_start, late_end, primary_start),
     )
-    late_comps = [
-        _comp_row(row) for row in cur.fetchall() if row.id not in primary_ids
-    ]
+    late_comps = [_comp_row(row) for row in cur.fetchall() if row.id not in primary_ids]
 
     cur.execute(
         """
@@ -123,8 +121,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
     upcoming_comps = [_comp_row(row) for row in cur.fetchall()]
 
     union_ids = sorted(
-        {c["id"] for c in primary_comps if c["has_results"]}
-        | {c["id"] for c in late_comps if c["has_results"]}
+        {c["id"] for c in primary_comps if c["has_results"]} | {c["id"] for c in late_comps if c["has_results"]}
     )
 
     record_counts = {"wr": 0, "nar": 0, "nr": 0}
@@ -258,10 +255,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             """,
             (union_ids,),
         )
-        sr_by_state = [
-            {"state_name": r.state_name, "count": int(r.sr_count or 0)}
-            for r in cur.fetchall()
-        ]
+        sr_by_state = [{"state_name": r.state_name, "count": int(r.sr_count or 0)} for r in cur.fetchall()]
 
         cur.execute(
             """
@@ -345,18 +339,14 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
         ]
         debut_count = len(debuts)
 
-    is_empty = (
-        not primary_comps and not late_comps and not upcoming_comps
-    )
+    is_empty = not primary_comps and not late_comps and not upcoming_comps
 
     return {
         "week_key": week_key,
         "publish_monday": publish_monday,
         "primary_start": primary_start,
         "primary_end": primary_end,
-        "competition_week_label": format_date_range_short(
-            primary_start, primary_end
-        ),
+        "competition_week_label": format_date_range_short(primary_start, primary_end),
         "primary_comps": primary_comps,
         "late_comps": late_comps,
         "upcoming_comps": upcoming_comps,
@@ -369,11 +359,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
         "debut_count": debut_count,
         "debuts": debuts[:8],
         "is_empty": is_empty,
-        "is_thin": (
-            not primary_comps
-            and not late_comps
-            and bool(upcoming_comps)
-        ),
+        "is_thin": (not primary_comps and not late_comps and bool(upcoming_comps)),
     }
 
 
@@ -413,9 +399,7 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
             cities.add(city)
     top_states = [
         {"state_name": name, "count": count}
-        for name, count in sorted(
-            state_counts.items(), key=lambda item: (-item[1], item[0])
-        )[:5]
+        for name, count in sorted(state_counts.items(), key=lambda item: (-item[1], item[0]))[:5]
     ]
     ids = sorted(row.id for row in comps if row.has_results)
 
@@ -697,9 +681,7 @@ def fetch_streaks_monthly_payload(cur, month_key_str: str) -> dict | None:
         }
 
     longest_callout = None
-    if longest and (
-        not top_current or longest["person_id"] != top_current[0]["person_id"]
-    ):
+    if longest and (not top_current or longest["person_id"] != top_current[0]["person_id"]):
         longest_callout = longest
 
     return {

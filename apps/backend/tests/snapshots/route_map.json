@@ -1,0 +1,554 @@
+[
+  {
+    "rule": "/competitions",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "competitions.get_competitions",
+    "cron_auth": false
+  },
+  {
+    "rule": "/competitions/<competition_id>",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "competitions.get_competition_by_id",
+    "cron_auth": false
+  },
+  {
+    "rule": "/competitor-states/<competition_id>",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "competitions.get_competitor_states",
+    "cron_auth": false
+  },
+  {
+    "rule": "/persons",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "persons.get_persons",
+    "cron_auth": false
+  },
+  {
+    "rule": "/persons/<wca_id>",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "persons.get_person",
+    "cron_auth": false
+  },
+  {
+    "rule": "/post-streaks-monthly",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.post_streaks_monthly_route",
+    "cron_auth": true
+  },
+  {
+    "rule": "/post-summary-unlock",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.post_summary_unlock_route",
+    "cron_auth": true
+  },
+  {
+    "rule": "/post-weekly-digest",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.post_weekly_digest_route",
+    "cron_auth": true
+  },
+  {
+    "rule": "/post-year-recap",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.post_year_recap_route",
+    "cron_auth": true
+  },
+  {
+    "rule": "/rank/<state_id>/<type>/<event_id>",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "misc.get_rank",
+    "cron_auth": false
+  },
+  {
+    "rule": "/rank/<type>/<event_id>",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "misc.get_national_rank",
+    "cron_auth": false
+  },
+  {
+    "rule": "/records/<state_id>",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "misc.get_records",
+    "cron_auth": false
+  },
+  {
+    "rule": "/social/media/<token>.jpeg",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.serve_temp_media",
+    "cron_auth": false
+  },
+  {
+    "rule": "/social/media/<token>.jpg",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.serve_temp_media",
+    "cron_auth": false
+  },
+  {
+    "rule": "/social/media/<token>.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.serve_temp_media",
+    "cron_auth": false
+  },
+  {
+    "rule": "/social/mollerz/<path:subject_key>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.mollerz_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/mollerz/<path:subject_key>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.mollerz_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/mollerz/<path:subject_key>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_mollerz_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/mollerz/<path:subject_key>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_mollerz",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/mollerz/seed",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.seed_mollerz",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/nemesis/<wca_id>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.nemesis_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/nemesis/<wca_id>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.nemesis_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/nemesis/<wca_id>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_nemesis_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/nemesis/<wca_id>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_nemesis",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/nemesis/seed",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.seed_nemesis",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/records/<path:subject_key>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.record_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/records/<path:subject_key>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.record_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/records/<path:subject_key>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_record_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/records/<path:subject_key>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_record",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/resultados/<competition_id>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.resultados_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/resultados/<competition_id>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.resultados_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/resultados/<competition_id>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_resultados_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/resultados/<competition_id>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_resultados",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/streaks-monthly/<month>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.streaks_monthly_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/streaks-monthly/<month>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.streaks_monthly_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/streaks-monthly/<month>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_streaks_monthly_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/streaks-monthly/<month>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_streaks_monthly",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/summary-unlock/<year>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.summary_unlock_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/summary-unlock/<year>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.summary_unlock_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/summary-unlock/<year>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_summary_unlock_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/summary-unlock/<year>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_summary_unlock",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/upcoming/<competition_id>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.upcoming_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/upcoming/<competition_id>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.upcoming_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/upcoming/<competition_id>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_upcoming_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/upcoming/<competition_id>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_upcoming",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/weekly-digest/<week>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.weekly_digest_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/weekly-digest/<week>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.weekly_digest_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/weekly-digest/<week>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_weekly_digest_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/weekly-digest/<week>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_weekly_digest",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/weekly-digest/<week>/slides",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.weekly_digest_slides",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/weekly-digest/<week>/slides/<int:index>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.weekly_digest_slide_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/year-recap/<year>/caption",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.year_recap_caption",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/year-recap/<year>/mark",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.mark_year_recap_posted",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/year-recap/<year>/publish",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "social.publish_year_recap",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/year-recap/<year>/slides",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.year_recap_slides",
+    "cron_auth": true
+  },
+  {
+    "rule": "/social/year-recap/<year>/slides/<int:index>/image.png",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "social.year_recap_slide_image",
+    "cron_auth": true
+  },
+  {
+    "rule": "/states",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "misc.get_states",
+    "cron_auth": false
+  },
+  {
+    "rule": "/teams",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "misc.get_teams",
+    "cron_auth": false
+  },
+  {
+    "rule": "/teams/<state_id>",
+    "methods": [
+      "GET"
+    ],
+    "endpoint": "misc.get_team_by_id",
+    "cron_auth": false
+  },
+  {
+    "rule": "/update-all",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_all",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-competition-schedules",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_competition_schedules",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-database",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_full_database",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-existing-mexican-competitions",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_existing_mexican_competitions",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-kinch-ranks",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_kinch_ranks",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-nemesis-stats",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_nemesis_stats",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-state-ranks",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_state_ranks",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-state-records",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_state_records",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-streak-ranks",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_streak_ranks",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-sum-of-ranks",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_sum_of_ranks",
+    "cron_auth": true
+  }
+]

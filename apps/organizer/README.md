@@ -21,7 +21,7 @@ Product roadmap: [`docs/organizacion-roadmap.md`](../../docs/organizacion-roadma
 
 ### Prerequisites
 
-- Node.js >= 20
+- Node.js >= 24
 - pnpm 10.4.1 or higher
 - Neon Postgres `DATABASE_URL` (same database as `apps/web` / `@workspace/db`)
 

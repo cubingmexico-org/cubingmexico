@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Swords } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
@@ -10,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { LoadMoreButton, useLoadMore } from "@/components/load-more";
 import { StateLabel } from "@/components/state-flag";
 import type {
   NemesisReport,
@@ -26,59 +29,68 @@ function NemesisTable({
   nemeses: PersonNemesis[];
   newIds?: Set<string>;
 }) {
+  const { visible, loadMore } = useLoadMore(nemeses);
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Nombre</TableHead>
-          <TableHead className="hidden sm:table-cell">WCA ID</TableHead>
-          <TableHead>Estado</TableHead>
-          <TableHead className="text-right" />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {nemeses.map((nemesis) => (
-          <TableRow key={nemesis.wcaId}>
-            <TableCell>
-              <Link
-                href={`/persons/${nemesis.wcaId}`}
-                className="text-link hover:text-link/80"
-              >
-                {nemesis.name ?? nemesis.wcaId}
-              </Link>
-              {newIds?.has(nemesis.wcaId) && (
-                <Badge variant="destructive" className="ml-2">
-                  Nuevo
-                </Badge>
-              )}
-            </TableCell>
-            <TableCell className="hidden sm:table-cell text-muted-foreground">
-              {nemesis.wcaId}
-            </TableCell>
-            <TableCell>
-              {nemesis.stateName ? (
-                <StateLabel
-                  stateId={nemesis.stateId}
-                  stateName={nemesis.stateName}
-                />
-              ) : (
-                <span className="text-muted-foreground font-thin">N/A</span>
-              )}
-            </TableCell>
-            <TableCell className="text-right">
-              <Button variant="outline" size="sm" asChild>
-                <Link
-                  href={`/persons/compare?a=${targetWcaId}&b=${nemesis.wcaId}`}
-                >
-                  <Swords className="size-4" />
-                  Comparar
-                </Link>
-              </Button>
-            </TableCell>
+    <div className="flex flex-col gap-4">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Nombre</TableHead>
+            <TableHead className="hidden sm:table-cell">WCA ID</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead className="text-right" />
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {visible.map((nemesis) => (
+            <TableRow key={nemesis.wcaId}>
+              <TableCell>
+                <Link
+                  href={`/persons/${nemesis.wcaId}`}
+                  className="text-link hover:text-link/80"
+                >
+                  {nemesis.name ?? nemesis.wcaId}
+                </Link>
+                {newIds?.has(nemesis.wcaId) && (
+                  <Badge variant="destructive" className="ml-2">
+                    Nuevo
+                  </Badge>
+                )}
+              </TableCell>
+              <TableCell className="hidden sm:table-cell text-muted-foreground">
+                {nemesis.wcaId}
+              </TableCell>
+              <TableCell>
+                {nemesis.stateName ? (
+                  <StateLabel
+                    stateId={nemesis.stateId}
+                    stateName={nemesis.stateName}
+                  />
+                ) : (
+                  <span className="text-muted-foreground font-thin">N/A</span>
+                )}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    href={`/persons/compare?a=${targetWcaId}&b=${nemesis.wcaId}`}
+                  >
+                    <Swords className="size-4" />
+                    Comparar
+                  </Link>
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <LoadMoreButton
+        onClick={loadMore}
+        shown={visible.length}
+        total={nemeses.length}
+      />
+    </div>
   );
 }
 

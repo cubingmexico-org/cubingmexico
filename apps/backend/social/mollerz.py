@@ -79,8 +79,7 @@ def get_tier(conditions: dict | None) -> str | None:
         [
             bool(conditions.get("has_world_record")),
             bool(conditions.get("has_world_championship_podium")),
-            int(conditions.get("speedsolving_averages") or 0)
-            == len(SPEEDSOLVING_AVERAGES_EVENTS),
+            int(conditions.get("speedsolving_averages") or 0) == len(SPEEDSOLVING_AVERAGES_EVENTS),
             int(conditions.get("bld_fmc_means") or 0) == len(BLD_FMC_MEANS_EVENTS),
             int(conditions.get("events_won") or 0) == 17,
         ]

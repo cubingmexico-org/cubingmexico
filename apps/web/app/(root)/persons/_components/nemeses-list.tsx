@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Table,
   TableBody,
@@ -6,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { LoadMoreButton, useLoadMore } from "@/components/load-more";
 import type { NemesisReport, NemesisSlot } from "../_lib/nemesis-queries";
 import {
   CompareCell,
@@ -69,6 +72,8 @@ export function NemesesList({
   report: NemesisReport;
 }) {
   const { nemeses, almost, almostTotal, slotCount } = report;
+  const visibleNemeses = useLoadMore(nemeses);
+  const visibleAlmost = useLoadMore(almost);
 
   return (
     <div className="flex flex-col gap-8">
@@ -93,7 +98,7 @@ export function NemesesList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {nemeses.map((nemesis) => (
+              {visibleNemeses.visible.map((nemesis) => (
                 <TableRow key={nemesis.wcaId}>
                   <PersonCells person={nemesis} />
                   <ClosestSlotCell slot={nemesis.closest} />
@@ -105,6 +110,11 @@ export function NemesesList({
               ))}
             </TableBody>
           </Table>
+          <LoadMoreButton
+            onClick={visibleNemeses.loadMore}
+            shown={visibleNemeses.visible.length}
+            total={nemeses.length}
+          />
         </section>
       )}
 
@@ -135,7 +145,7 @@ export function NemesesList({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {almost.map((person) => (
+                  {visibleAlmost.visible.map((person) => (
                     <TableRow key={person.wcaId}>
                       <PersonCells person={person} />
                       <MissingSlotCell slot={person.missing} />
@@ -147,7 +157,14 @@ export function NemesesList({
                   ))}
                 </TableBody>
               </Table>
-              <ShowingCount shown={almost.length} total={almostTotal} />
+              <LoadMoreButton
+                onClick={visibleAlmost.loadMore}
+                shown={visibleAlmost.visible.length}
+                total={almost.length}
+              />
+              {visibleAlmost.visible.length === almost.length && (
+                <ShowingCount shown={almost.length} total={almostTotal} />
+              )}
             </>
           )}
         </section>

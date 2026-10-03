@@ -1,8 +1,12 @@
+import hmac
 import logging
 import os
+import threading
+from contextlib import contextmanager
 from functools import wraps
 
 import psycopg2
+import psycopg2.pool
 from flask import abort, request
 from google.cloud import secretmanager
 
@@ -29,29 +33,33 @@ def get_secret(secret_id, project_id, version_id="latest"):
 
 
 GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "cubing-mexico")
+IS_DEV = os.environ.get("FLASK_ENV") == "development"
 
-# For local development, allow DB_URL to be set via environment variable.
-# Otherwise, fetch from GCP Secret Manager.
-DB_URL = os.environ.get("DB_URL")
-if not DB_URL:
-    log.info("DB_URL not found in environment, fetching from Secret Manager")
-    DB_URL = get_secret("db_url", GCP_PROJECT_ID)
-    if not DB_URL:
-        DB_URL = "postgresql://postgres:postgres@localhost:5432/cubing_mexico"
-        log.info("Defaulting DB_URL to local PostgreSQL: %s", DB_URL)
-else:
-    log.info("Using DB_URL from environment variable")
+LOCAL_DEV_DB_URL = "postgresql://postgres:postgres@localhost:5432/cubing_mexico"
+LOCAL_DEV_CRON_SECRET = "local-dev-cron-secret-12345"
 
 
-CRON_SECRET = os.environ.get("CRON_SECRET")
-if not CRON_SECRET:
-    log.info("CRON_SECRET not found in environment, fetching from Secret Manager")
-    CRON_SECRET = get_secret("cron-secret", GCP_PROJECT_ID)
-    if not CRON_SECRET:
-        CRON_SECRET = "local-dev-cron-secret-12345"
-        log.info("Defaulting CRON_SECRET to local development token")
-else:
-    log.info("Using CRON_SECRET from environment variable")
+def _resolve_required(env_key: str, secret_id: str, dev_default: str) -> str:
+    """Env var, then Secret Manager; the hard-coded default is only allowed when FLASK_ENV=development."""
+    value = os.environ.get(env_key)
+    if value:
+        log.info("Using %s from environment variable", env_key)
+        return value
+    log.info("%s not found in environment, fetching from Secret Manager", env_key)
+    value = get_secret(secret_id, GCP_PROJECT_ID)
+    if value:
+        return value
+    if IS_DEV:
+        log.info("Defaulting %s to local development value", env_key)
+        return dev_default
+    raise RuntimeError(
+        f"{env_key} is not configured (env var or Secret Manager '{secret_id}'). "
+        "Set FLASK_ENV=development to use local defaults."
+    )
+
+
+DB_URL = _resolve_required("DB_URL", "db_url", LOCAL_DEV_DB_URL)
+CRON_SECRET = _resolve_required("CRON_SECRET", "cron-secret", LOCAL_DEV_CRON_SECRET)
 
 
 def _env_or_secret(env_key: str, secret_id: str | None = None) -> str | None:
@@ -81,9 +89,7 @@ _instagram_business_account_id = _UNSET
 def get_meta_page_access_token() -> str | None:
     global _meta_page_access_token
     if _meta_page_access_token is _UNSET:
-        _meta_page_access_token = _env_or_secret(
-            "META_PAGE_ACCESS_TOKEN", "meta-page-access-token"
-        )
+        _meta_page_access_token = _env_or_secret("META_PAGE_ACCESS_TOKEN", "meta-page-access-token")
     return _meta_page_access_token  # type: ignore[return-value]
 
 
@@ -103,8 +109,54 @@ def get_instagram_business_account_id() -> str | None:
     return _instagram_business_account_id  # type: ignore[return-value]
 
 
+DB_POOL_MAX = max(1, int(os.environ.get("DB_POOL_MAX", "10")))
+_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+_pool_lock = threading.Lock()
+
+
+def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+    global _pool
+    if _pool is None:
+        with _pool_lock:
+            if _pool is None:
+                _pool = psycopg2.pool.ThreadedConnectionPool(1, DB_POOL_MAX, DB_URL)
+    return _pool
+
+
+def _checkout():
+    """Returns (conn, pooled). Falls back to a one-off connection when the pool is exhausted."""
+    pool = _get_pool()
+    try:
+        conn = pool.getconn()
+    except psycopg2.pool.PoolError:
+        log.warning("DB pool exhausted (max %s); opening a one-off connection", DB_POOL_MAX)
+        return psycopg2.connect(DB_URL), False
+    if conn.closed:
+        pool.putconn(conn, close=True)
+        conn = pool.getconn()
+    return conn, True
+
+
+@contextmanager
 def get_connection():
-    return psycopg2.connect(DB_URL)
+    """Yields a pooled connection; commits on success, rolls back on error (same as `with psycopg2.connect()`)."""
+    conn, pooled = _checkout()
+    try:
+        yield conn
+        conn.commit()
+    except BaseException:
+        if not conn.closed:
+            try:
+                conn.rollback()
+            except psycopg2.Error:
+                log.warning("Rollback failed; discarding connection", exc_info=True)
+                conn.close()
+        raise
+    finally:
+        if pooled:
+            _get_pool().putconn(conn, close=bool(conn.closed))
+        else:
+            conn.close()
 
 
 def require_cron_auth(f):
@@ -126,7 +178,7 @@ def require_cron_auth(f):
             log.warning("Invalid Authorization header format for %s", request.path)
             abort(403, description="Access forbidden: Invalid authorization format")
 
-        if token != CRON_SECRET:
+        if not hmac.compare_digest(token.encode(), CRON_SECRET.encode()):
             log.warning("Invalid cron token for %s", request.path)
             abort(403, description="Access forbidden: Invalid credentials")
 

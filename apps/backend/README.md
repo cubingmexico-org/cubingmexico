@@ -20,8 +20,9 @@ Flask backend that imports World Cube Association (WCA) export data, maintains c
 
 Environment variables (see `.env.example`):
 
-- `DB_URL` — PostgreSQL connection string (defaults to local database: `postgresql://postgres:postgres@localhost:5432/cubing_mexico`)
-- `CRON_SECRET` — Auth secret for admin update endpoints
+- `DB_URL` — PostgreSQL connection string (env or Secret Manager `db_url`; falls back to `postgresql://postgres:postgres@localhost:5432/cubing_mexico` only when `FLASK_ENV=development`)
+- `CRON_SECRET` — Auth secret for admin update endpoints (env or Secret Manager `cron-secret`; the local dev token is only used when `FLASK_ENV=development`). Outside development the app refuses to start if `DB_URL` or `CRON_SECRET` can't be resolved.
+- `DB_POOL_MAX` — Max pooled PostgreSQL connections per process (default: `10`)
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
 - `SOCIAL_POSTS_ENABLED` — `true` to allow Meta publishes (auto + manual admin). Keep `false` in development/staging (default: off)
@@ -66,7 +67,8 @@ pip install -r requirements.txt
 # 3. Copy environment file
 cp .env.example .env
 
-# 4. Run Flask backend
+# 4. Load env and run Flask backend
+set -a; source .env; set +a
 python app.py
 ```
 
@@ -115,6 +117,8 @@ The app will be available at `http://localhost:5000`.
   - AÑO: `GET|POST /social/year-recap/<year>/{caption,slides,slides/<index>/image.png,publish,mark}` (caption and slides preview any year; publish/mark only Dec 31 – Jan 2)
   - MOLLERZ: `GET|POST /social/mollerz/<subject_key>/{caption,image.png,publish,mark}` (`subject_key` = `{wca_id}:{tier}`, tier in `bronce|plata|oro|platino|opalo|diamante`)
   - `POST /social/mollerz/seed` — One-time: record every current Mollerz member's current tier as posted (`external_id = backfill`, no Meta call) so only future changes show up as pending
+  - NÉMESIS: `GET|POST /social/nemesis/<wca_id>/{caption,image.png,publish,mark}`
+  - `POST /social/nemesis/seed` — One-time: record every current nemesis-free competitor as posted (`external_id = backfill`, no Meta call) so only people who become nemesis-free later show up as pending
   - All caption/image/publish/mark routes require cron auth; Superadmin UI proxies them.
 
 ### Competitions API
@@ -164,7 +168,7 @@ Main tables used:
 - ranks_single, ranks_average
 - sum_of_ranks, kinch_ranks, streak_ranks, nemesis_stats
 - states, teams, events, export_metadata
-- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock` | `weekly_digest` | `streaks_monthly` | `mollerz` | `year_recap`)
+- social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock` | `weekly_digest` | `streaks_monthly` | `mollerz` | `nemesis` | `year_recap`)
 
 ## Automatic typed social posts
 
@@ -177,8 +181,11 @@ When `SOCIAL_POSTS_ENABLED=true`, `/update-database` can publish five graphic ty
 | **PRÓXIMAS**   | Newly inserted Mexican competition with `start_date > now` and not cancelled | `(upcoming, competition_id, platform)`            |
 | **RESUMEN**    | Current calendar year summaries unlocked (Dec 20 UTC onward)                 | `(summary_unlock, {year}, platform)`              |
 | **MOLLERZ**    | Person becomes a Mollerz member or moves up a tier during a results import   | `(mollerz, {wca_id}:{tier}, platform)`            |
+| **NÉMESIS**    | Person ends up with no nemesis during `/update-nemesis-stats` (3+ events)    | `(nemesis, {wca_id}, platform)`                   |
 
 MOLLERZ compares a snapshot of members (people with results in every current WCA event) taken before the import with one taken after. Downgrades, which only happen when WCA adds a new event, are never posted. After the first deploy, run `POST /social/mollerz/seed` once so existing members don't show up as pending in the admin panel.
+
+NÉMESIS compares the set of people with `nemesis_count = 0` and at least 3 events in `nemesis_stats` before and after `/update-nemesis-stats` (also run by `/update-all`). Each person is posted at most once. After the first deploy, run `POST /social/nemesis/seed` once so the current nemesis-free competitors don't show up as pending.
 
 `/update-all` also publishes **SEMANA** (weekly digest) after state records have been recomputed, so SR totals appear on the carousel. `/update-database` does not post SEMANA on its own (the WCA import wipes `state_*_record` flags). `POST /post-weekly-digest` is the manual/retry job; run it after `/update-state-records`. `POST /post-summary-unlock` runs the same Dec 20 due-check without a WCA import (useful for Cloud Scheduler on Dec 20). **AÑO** (`year_recap`, dedup key `{year}`) is a year-in-numbers carousel for Mexican competitions starting that calendar year, closing with a "¡Feliz {year + 1}!" slide; `/update-all` and `POST /post-year-recap` publish it on Dec 31 Mexico City time, retrying through Jan 2. Each type uses a distinct 1080×1080 PIL layout (shared logo + Montserrat). Captions omit URLs on Instagram. Successes are written to `social_posts`; social failures are logged and **do not** fail the database import.
 
