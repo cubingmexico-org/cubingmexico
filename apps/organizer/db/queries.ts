@@ -157,9 +157,14 @@ export async function getTeams(): Promise<Team[]> {
       next: { revalidate: 3600 },
     });
 
+    if (!res.ok) {
+      console.error(`Error fetching teams: ${res.status} ${res.statusText}`);
+      return [];
+    }
+
     const data = await res.json();
 
-    return data;
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error fetching teams:", error);
     return [];
@@ -177,9 +182,14 @@ export async function getStates(): Promise<State[]> {
       next: { revalidate: false },
     });
 
+    if (!res.ok) {
+      console.error(`Error fetching states: ${res.status} ${res.statusText}`);
+      return [];
+    }
+
     const data = await res.json();
 
-    return data;
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error fetching states:", error);
     return [];
@@ -200,9 +210,16 @@ export async function getCompetitorStates(competitionId: string): Promise<
       },
     );
 
+    if (!res.ok) {
+      console.error(
+        `Error fetching competitor states: ${res.status} ${res.statusText}`,
+      );
+      return [];
+    }
+
     const data = await res.json();
 
-    return data;
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Error fetching competitors:", error);
     return [];
