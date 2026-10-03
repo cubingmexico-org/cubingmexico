@@ -29,7 +29,10 @@ async function ensureDatabaseExists(url: string) {
   const maintenance = new URL(url);
   maintenance.pathname = "/postgres";
 
-  const admin = postgres(maintenance.toString(), { max: 1, onnotice: () => {} });
+  const admin = postgres(maintenance.toString(), {
+    max: 1,
+    onnotice: () => {},
+  });
   try {
     const rows =
       await admin`SELECT 1 FROM pg_database WHERE datname = ${dbName}`;

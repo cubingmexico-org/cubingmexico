@@ -1,9 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  insertEvent,
-  insertPerson,
-  insertRankSingle,
-} from "@/test/factories";
+import { insertEvent, insertPerson, insertRankSingle } from "@/test/factories";
 import { getSOSR, getSOSRGenderCounts, getSOSRState } from "./queries";
 import type { GetSOSRSinglesSchema } from "./validations";
 
@@ -27,17 +23,62 @@ beforeEach(async () => {
   await insertEvent({ id: "222", rank: 20 });
   await insertEvent({ id: "333ft", rank: 30 });
 
-  await insertPerson({ wcaId: "2020AAAA01", name: "Ana", stateId: "JAL", gender: "f" });
-  await insertPerson({ wcaId: "2020BBBB01", name: "Beto", stateId: "JAL", gender: "m" });
-  await insertPerson({ wcaId: "2020CCCC01", name: "Carlos", stateId: "JAL", gender: "m" });
-  await insertPerson({ wcaId: "2020DDDD01", name: "Dora", stateId: "CMX", gender: "f" });
+  await insertPerson({
+    wcaId: "2020AAAA01",
+    name: "Ana",
+    stateId: "JAL",
+    gender: "f",
+  });
+  await insertPerson({
+    wcaId: "2020BBBB01",
+    name: "Beto",
+    stateId: "JAL",
+    gender: "m",
+  });
+  await insertPerson({
+    wcaId: "2020CCCC01",
+    name: "Carlos",
+    stateId: "JAL",
+    gender: "m",
+  });
+  await insertPerson({
+    wcaId: "2020DDDD01",
+    name: "Dora",
+    stateId: "CMX",
+    gender: "f",
+  });
 
   // 333: Ana 1, Beto 2. 222: Ana 1 only. Carlos has no state ranks at all.
-  await insertRankSingle({ personId: "2020AAAA01", eventId: "333", best: 600, stateRank: 1 });
-  await insertRankSingle({ personId: "2020BBBB01", eventId: "333", best: 700, stateRank: 2 });
-  await insertRankSingle({ personId: "2020AAAA01", eventId: "222", best: 200, stateRank: 1 });
-  await insertRankSingle({ personId: "2020BBBB01", eventId: "333ft", best: 2000, stateRank: 1 });
-  await insertRankSingle({ personId: "2020DDDD01", eventId: "333", best: 500, stateRank: 1 });
+  await insertRankSingle({
+    personId: "2020AAAA01",
+    eventId: "333",
+    best: 600,
+    stateRank: 1,
+  });
+  await insertRankSingle({
+    personId: "2020BBBB01",
+    eventId: "333",
+    best: 700,
+    stateRank: 2,
+  });
+  await insertRankSingle({
+    personId: "2020AAAA01",
+    eventId: "222",
+    best: 200,
+    stateRank: 1,
+  });
+  await insertRankSingle({
+    personId: "2020BBBB01",
+    eventId: "333ft",
+    best: 2000,
+    stateRank: 1,
+  });
+  await insertRankSingle({
+    personId: "2020DDDD01",
+    eventId: "333",
+    best: 500,
+    stateRank: 1,
+  });
 });
 
 describe("getSOSR", () => {
@@ -65,7 +106,11 @@ describe("getSOSR", () => {
   });
 
   it("filters by gender", async () => {
-    const { data } = await getSOSR(sosrInput({ gender: ["m"] }), "JAL", "single");
+    const { data } = await getSOSR(
+      sosrInput({ gender: ["m"] }),
+      "JAL",
+      "single",
+    );
     expect(data.map((row) => row.personId)).toEqual(["2020BBBB01"]);
   });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserId, hasTeamPermission } from "@/lib/team-auth";
+import { unauthorizedResponse } from "@/lib/api-auth";
 import { invalidateAfterStateRecordsChange } from "@/lib/cache-tags";
 import { updateStateRecords } from "@/lib/update-state-records";
 
@@ -16,10 +17,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     const userId = await getSessionUserId();
     if (!userId || !(await hasTeamPermission(stateId, userId, "team.ranks"))) {
-      return NextResponse.json(
-        { success: false, message: "Unauthorized" },
-        { status: 401 },
-      );
+      return unauthorizedResponse(userId);
     }
 
     const result = await updateStateRecords(stateId);

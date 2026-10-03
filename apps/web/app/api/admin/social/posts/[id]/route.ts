@@ -1,5 +1,6 @@
 import { connection, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/team-auth";
+import { unauthorizedResponse } from "@/lib/api-auth";
 import { isSuperadmin } from "@/lib/superadmin";
 import { deleteSocialPost } from "@/app/(root)/admin/_lib/queries";
 
@@ -13,10 +14,7 @@ export async function DELETE(
 
   const userId = await getSessionUserId();
   if (!userId || !isSuperadmin(userId)) {
-    return NextResponse.json(
-      { success: false, message: "Unauthorized" },
-      { status: 401 },
-    );
+    return unauthorizedResponse(userId);
   }
 
   const { id } = await params;

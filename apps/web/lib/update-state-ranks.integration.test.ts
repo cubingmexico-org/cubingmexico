@@ -33,10 +33,30 @@ describe("updateStateRanks", () => {
     await insertPerson({ wcaId: "2020CCCC01", stateId: "CMX" });
     await insertPerson({ wcaId: "2020DDDD01", stateId: "JAL" });
 
-    await insertRankSingle({ personId: "2020CCCC01", eventId: "333", best: 500, countryRank: 1 });
-    await insertRankSingle({ personId: "2020BBBB01", eventId: "333", best: 600, countryRank: 2 });
-    await insertRankSingle({ personId: "2020DDDD01", eventId: "333", best: 700, countryRank: 3 });
-    await insertRankSingle({ personId: "2020AAAA01", eventId: "333", best: 800, countryRank: 4 });
+    await insertRankSingle({
+      personId: "2020CCCC01",
+      eventId: "333",
+      best: 500,
+      countryRank: 1,
+    });
+    await insertRankSingle({
+      personId: "2020BBBB01",
+      eventId: "333",
+      best: 600,
+      countryRank: 2,
+    });
+    await insertRankSingle({
+      personId: "2020DDDD01",
+      eventId: "333",
+      best: 700,
+      countryRank: 3,
+    });
+    await insertRankSingle({
+      personId: "2020AAAA01",
+      eventId: "333",
+      best: 800,
+      countryRank: 4,
+    });
 
     await updateStateRanks("JAL");
 
@@ -54,9 +74,24 @@ describe("updateStateRanks", () => {
     await insertPerson({ wcaId: "2020AAAA01", stateId: "JAL" });
     await insertPerson({ wcaId: "2020BBBB01", stateId: "JAL" });
 
-    await insertRankSingle({ personId: "2020AAAA01", eventId: "333", best: 500, countryRank: 0 });
-    await insertRankSingle({ personId: "2020BBBB01", eventId: "333", best: 600, countryRank: 5 });
-    await insertRankSingle({ personId: "2020AAAA01", eventId: "333ft", best: 900, countryRank: 1 });
+    await insertRankSingle({
+      personId: "2020AAAA01",
+      eventId: "333",
+      best: 500,
+      countryRank: 0,
+    });
+    await insertRankSingle({
+      personId: "2020BBBB01",
+      eventId: "333",
+      best: 600,
+      countryRank: 5,
+    });
+    await insertRankSingle({
+      personId: "2020AAAA01",
+      eventId: "333ft",
+      best: 900,
+      countryRank: 1,
+    });
 
     await updateStateRanks("JAL");
 
@@ -89,10 +124,30 @@ describe("updateStateRanks", () => {
     await insertPerson({ wcaId: "2020AAAA01", stateId: "JAL" });
     await insertPerson({ wcaId: "2020BBBB01", stateId: "JAL" });
 
-    await insertRankSingle({ personId: "2020AAAA01", eventId: "333", best: 500, countryRank: 1 });
-    await insertRankSingle({ personId: "2020BBBB01", eventId: "333", best: 600, countryRank: 2 });
-    await insertRankAverage({ personId: "2020BBBB01", eventId: "333", best: 650, countryRank: 1 });
-    await insertRankAverage({ personId: "2020AAAA01", eventId: "333", best: 700, countryRank: 2 });
+    await insertRankSingle({
+      personId: "2020AAAA01",
+      eventId: "333",
+      best: 500,
+      countryRank: 1,
+    });
+    await insertRankSingle({
+      personId: "2020BBBB01",
+      eventId: "333",
+      best: 600,
+      countryRank: 2,
+    });
+    await insertRankAverage({
+      personId: "2020BBBB01",
+      eventId: "333",
+      best: 650,
+      countryRank: 1,
+    });
+    await insertRankAverage({
+      personId: "2020AAAA01",
+      eventId: "333",
+      best: 700,
+      countryRank: 2,
+    });
 
     await updateStateRanks("JAL");
 
@@ -117,9 +172,24 @@ describe("clearPersonStateRanks", () => {
     await insertPerson({ wcaId: "2020AAAA01", stateId: "JAL" });
     await insertPerson({ wcaId: "2020BBBB01", stateId: "JAL" });
 
-    await insertRankSingle({ personId: "2020AAAA01", eventId: "333", best: 500, stateRank: 1 });
-    await insertRankSingle({ personId: "2020BBBB01", eventId: "333", best: 600, stateRank: 2 });
-    await insertRankAverage({ personId: "2020AAAA01", eventId: "333", best: 550, stateRank: 1 });
+    await insertRankSingle({
+      personId: "2020AAAA01",
+      eventId: "333",
+      best: 500,
+      stateRank: 1,
+    });
+    await insertRankSingle({
+      personId: "2020BBBB01",
+      eventId: "333",
+      best: 600,
+      stateRank: 2,
+    });
+    await insertRankAverage({
+      personId: "2020AAAA01",
+      eventId: "333",
+      best: 550,
+      stateRank: 1,
+    });
 
     await clearPersonStateRanks(["2020AAAA01"]);
 

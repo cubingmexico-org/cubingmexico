@@ -14,20 +14,23 @@ PROTECTED_URL = "/social/summary-unlock/2025/caption"
         {"Authorization": "test-secret"},
         {"Authorization": "Basic test-secret"},
         {"Authorization": "Bearer"},
-        {"Authorization": "Bearer wrong-secret"},
         {"Authorization": "Bearer test-secret extra"},
     ],
 )
-def test_rejects_missing_or_invalid_token(client, headers):
-    assert client.get(PROTECTED_URL, headers=headers).status_code == 403
+def test_rejects_missing_or_malformed_header(client, headers):
+    assert client.get(PROTECTED_URL, headers=headers).status_code == 401
+
+
+def test_rejects_wrong_token(client):
+    assert client.get(PROTECTED_URL, headers={"Authorization": "Bearer wrong-secret"}).status_code == 403
 
 
 def test_accepts_valid_token(client):
-    assert client.get(PROTECTED_URL, headers={"Authorization": "Bearer test-secret"}).status_code != 403
+    assert client.get(PROTECTED_URL, headers={"Authorization": "Bearer test-secret"}).status_code not in (401, 403)
 
 
 def test_accepts_lowercase_scheme(client):
-    assert client.get(PROTECTED_URL, headers={"Authorization": "bearer test-secret"}).status_code != 403
+    assert client.get(PROTECTED_URL, headers={"Authorization": "bearer test-secret"}).status_code not in (401, 403)
 
 
 def _no_secret_manager():

@@ -58,10 +58,34 @@ describe("updateStateRecords", () => {
     await competitionOn("CompB2024", "2024-02-01");
     await competitionOn("CompC2024", "2024-03-01");
 
-    await insertResult({ id: "a", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, best: 1000 });
-    await insertResult({ id: "b", competitionId: "CompB2024", eventId: "333", personId: JAL_PERSON_2, best: 1200 });
-    await insertResult({ id: "c", competitionId: "CompC2024", eventId: "333", personId: JAL_PERSON_2, best: 900 });
-    await insertResult({ id: "x", competitionId: "CompC2024", eventId: "333", personId: CMX_PERSON, best: 500 });
+    await insertResult({
+      id: "a",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: 1000,
+    });
+    await insertResult({
+      id: "b",
+      competitionId: "CompB2024",
+      eventId: "333",
+      personId: JAL_PERSON_2,
+      best: 1200,
+    });
+    await insertResult({
+      id: "c",
+      competitionId: "CompC2024",
+      eventId: "333",
+      personId: JAL_PERSON_2,
+      best: 900,
+    });
+    await insertResult({
+      id: "x",
+      competitionId: "CompC2024",
+      eventId: "333",
+      personId: CMX_PERSON,
+      best: 500,
+    });
 
     const summary = await updateStateRecords("JAL");
 
@@ -73,8 +97,22 @@ describe("updateStateRecords", () => {
   it("tags only the best improvement when several happen on the same day", async () => {
     await competitionOn("CompA2024", "2024-01-01");
 
-    await insertResult({ id: "r1", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, roundTypeId: "1", best: 1000 });
-    await insertResult({ id: "rf", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, roundTypeId: "f", best: 950 });
+    await insertResult({
+      id: "r1",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      roundTypeId: "1",
+      best: 1000,
+    });
+    await insertResult({
+      id: "rf",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      roundTypeId: "f",
+      best: 950,
+    });
 
     await updateStateRecords("JAL");
 
@@ -83,11 +121,35 @@ describe("updateStateRecords", () => {
 
   it("uses the round end date from competition_round_dates when present", async () => {
     await competitionOn("CompA2024", "2024-01-01");
-    await insertCompetitionRoundDate({ competitionId: "CompA2024", eventId: "333", roundTypeId: "1", endDate: "2024-01-01" });
-    await insertCompetitionRoundDate({ competitionId: "CompA2024", eventId: "333", roundTypeId: "f", endDate: "2024-01-02" });
+    await insertCompetitionRoundDate({
+      competitionId: "CompA2024",
+      eventId: "333",
+      roundTypeId: "1",
+      endDate: "2024-01-01",
+    });
+    await insertCompetitionRoundDate({
+      competitionId: "CompA2024",
+      eventId: "333",
+      roundTypeId: "f",
+      endDate: "2024-01-02",
+    });
 
-    await insertResult({ id: "r1", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, roundTypeId: "1", best: 1000 });
-    await insertResult({ id: "rf", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, roundTypeId: "f", best: 950 });
+    await insertResult({
+      id: "r1",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      roundTypeId: "1",
+      best: 1000,
+    });
+    await insertResult({
+      id: "rf",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      roundTypeId: "f",
+      best: 950,
+    });
 
     await updateStateRecords("JAL");
 
@@ -99,9 +161,28 @@ describe("updateStateRecords", () => {
     await competitionOn("CompB2024", "2024-02-01");
     await competitionOn("CompC2024", "2024-03-01");
 
-    await insertResult({ id: "nr", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, best: 1000, regionalSingleRecord: "NR" });
-    await insertResult({ id: "slower", competitionId: "CompB2024", eventId: "333", personId: JAL_PERSON_2, best: 1050 });
-    await insertResult({ id: "faster", competitionId: "CompC2024", eventId: "333", personId: JAL_PERSON_2, best: 990 });
+    await insertResult({
+      id: "nr",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: 1000,
+      regionalSingleRecord: "NR",
+    });
+    await insertResult({
+      id: "slower",
+      competitionId: "CompB2024",
+      eventId: "333",
+      personId: JAL_PERSON_2,
+      best: 1050,
+    });
+    await insertResult({
+      id: "faster",
+      competitionId: "CompC2024",
+      eventId: "333",
+      personId: JAL_PERSON_2,
+      best: 990,
+    });
 
     await updateStateRecords("JAL");
 
@@ -112,8 +193,20 @@ describe("updateStateRecords", () => {
     await competitionOn("CompA2024", "2024-01-01");
     await competitionOn("CompB2024", "2024-02-01");
 
-    await insertResult({ id: "dnf", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, best: -1 });
-    await insertResult({ id: "ok", competitionId: "CompB2024", eventId: "333", personId: JAL_PERSON, best: 1000 });
+    await insertResult({
+      id: "dnf",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: -1,
+    });
+    await insertResult({
+      id: "ok",
+      competitionId: "CompB2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: 1000,
+    });
 
     await updateStateRecords("JAL");
 
@@ -124,9 +217,29 @@ describe("updateStateRecords", () => {
     await competitionOn("CompA2024", "2024-01-01");
     await competitionOn("CompB2024", "2024-02-01");
 
-    await insertResult({ id: "first", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, best: 900 });
-    await insertResult({ id: "stale", competitionId: "CompB2024", eventId: "333", personId: JAL_PERSON, best: 1000, stateSingleRecord: "SR" });
-    await insertResult({ id: "other", competitionId: "CompB2024", eventId: "333", personId: CMX_PERSON, best: 2000, stateSingleRecord: "SR" });
+    await insertResult({
+      id: "first",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: 900,
+    });
+    await insertResult({
+      id: "stale",
+      competitionId: "CompB2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: 1000,
+      stateSingleRecord: "SR",
+    });
+    await insertResult({
+      id: "other",
+      competitionId: "CompB2024",
+      eventId: "333",
+      personId: CMX_PERSON,
+      best: 2000,
+      stateSingleRecord: "SR",
+    });
 
     await updateStateRecords("JAL");
 
@@ -137,8 +250,22 @@ describe("updateStateRecords", () => {
     await competitionOn("CompA2024", "2024-01-01");
     await competitionOn("CompB2024", "2024-02-01");
 
-    await insertResult({ id: "a", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, best: 900, average: 1100 });
-    await insertResult({ id: "b", competitionId: "CompB2024", eventId: "333", personId: JAL_PERSON, best: 950, average: 1000 });
+    await insertResult({
+      id: "a",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: 900,
+      average: 1100,
+    });
+    await insertResult({
+      id: "b",
+      competitionId: "CompB2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: 950,
+      average: 1000,
+    });
 
     const summary = await updateStateRecords("JAL");
 
@@ -166,8 +293,23 @@ describe("clearPersonStateRecords", () => {
   it("clears markers only for the given people", async () => {
     await competitionOn("CompA2024", "2024-01-01");
 
-    await insertResult({ id: "mine", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON, best: 900, stateSingleRecord: "SR", stateAverageRecord: "SR" });
-    await insertResult({ id: "theirs", competitionId: "CompA2024", eventId: "333", personId: JAL_PERSON_2, best: 950, stateSingleRecord: "SR" });
+    await insertResult({
+      id: "mine",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON,
+      best: 900,
+      stateSingleRecord: "SR",
+      stateAverageRecord: "SR",
+    });
+    await insertResult({
+      id: "theirs",
+      competitionId: "CompA2024",
+      eventId: "333",
+      personId: JAL_PERSON_2,
+      best: 950,
+      stateSingleRecord: "SR",
+    });
 
     await clearPersonStateRecords([JAL_PERSON]);
 
