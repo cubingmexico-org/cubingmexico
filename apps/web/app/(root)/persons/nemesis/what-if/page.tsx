@@ -114,7 +114,7 @@ async function WhatIfContent({
     <div className="flex flex-col gap-8">
       <div className="flex justify-center">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/persons/nemesis?id=${wcaId}`}>
+          <Link href={`/persons/nemesis?id=${wcaId}`} prefetch={false}>
             <ArrowLeft className="size-4" />
             Ver némesis reales
           </Link>

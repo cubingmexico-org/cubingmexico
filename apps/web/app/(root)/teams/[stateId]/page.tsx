@@ -163,6 +163,7 @@ export default async function Page({
           </div>
           <Link
             href={`/teams/${stateId}/statistics`}
+            prefetch={false}
             className={cn(
               buttonVariants({ variant: "outline", size: "sm" }),
               "gap-1.5",
@@ -264,6 +265,7 @@ export default async function Page({
               <CardTitle>Miembros destacados</CardTitle>
               <Link
                 href={`/teams/${stateId}/members`}
+                prefetch={false}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   "gap-1",
@@ -310,6 +312,7 @@ export default async function Page({
               <CardTitle>Récords nacionales</CardTitle>
               <Link
                 href={`/teams/${stateId}/statistics`}
+                prefetch={false}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   "gap-1",
@@ -344,6 +347,7 @@ export default async function Page({
               <CardTitle>Próximas competencias</CardTitle>
               <Link
                 href={`/teams/${stateId}/competitions`}
+                prefetch={false}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   "gap-1",

@@ -57,6 +57,7 @@ function PersonHeader({
       )}
       <Link
         href={`/persons/${person.wcaId}`}
+        prefetch={false}
         className="font-semibold text-lg text-link hover:text-link/80 wrap-break-word"
       >
         {displayName(data)}
@@ -67,7 +68,7 @@ function PersonHeader({
       )}
       {team && (
         <Badge variant="outline" asChild>
-          <Link href={`/teams/${team.id}`} className="gap-1.5">
+          <Link href={`/teams/${team.id}`} prefetch={false} className="gap-1.5">
             {team.image ? (
               // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
               <img

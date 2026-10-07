@@ -74,7 +74,10 @@ export default async function Page({ searchParams }: Props) {
         <div className="flex flex-col gap-8">
           <div className="flex justify-center">
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/persons/nemesis/what-if?id=${person.wcaId}`}>
+              <Link
+                href={`/persons/nemesis/what-if?id=${person.wcaId}`}
+                prefetch={false}
+              >
                 <Sparkles className="size-4" />
                 ¿Y si...?
               </Link>

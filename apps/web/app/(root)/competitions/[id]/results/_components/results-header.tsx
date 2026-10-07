@@ -76,6 +76,7 @@ export function ResultsHeader({
           </div>
           <Link
             href={`/competitions/${competitionId}`}
+            prefetch={false}
             className={cn(buttonVariants({ variant: "outline" }))}
           >
             <ArrowLeft className="size-4" />

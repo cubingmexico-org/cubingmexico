@@ -155,7 +155,11 @@ async function PersonPageContent({ id }: { id: string }) {
         )}
         {team && (
           <Badge variant="outline" asChild>
-            <Link href={`/teams/${team.id}`} className="gap-1.5">
+            <Link
+              href={`/teams/${team.id}`}
+              prefetch={false}
+              className="gap-1.5"
+            >
               {team.image ? (
                 // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
                 <img
@@ -171,14 +175,22 @@ async function PersonPageContent({ id }: { id: string }) {
           </Badge>
         )}
         <Badge variant="outline" asChild>
-          <Link href={`/persons/compare?a=${id}`} className="gap-1.5">
+          <Link
+            href={`/persons/compare?a=${id}`}
+            prefetch={false}
+            className="gap-1.5"
+          >
             <Swords className="size-3.5" />
             Comparar
           </Link>
         </Badge>
         {nemesisStats && nemesisStats.slotCount > 0 && (
           <Badge variant="outline" asChild>
-            <Link href={`/persons/${id}?tab=nemesis`} className="gap-1.5">
+            <Link
+              href={`/persons/${id}?tab=nemesis`}
+              prefetch={false}
+              className="gap-1.5"
+            >
               {nemesisStats.nemesisCount === 0 ? (
                 <>
                   <Crown className="size-3.5" />

@@ -42,6 +42,7 @@ export function PersonCells({ person }: { person: PersonNemesis }) {
       <TableCell>
         <Link
           href={`/persons/${person.wcaId}`}
+          prefetch={false}
           className="text-link hover:text-link/80"
         >
           {person.name ?? person.wcaId}
@@ -68,7 +69,10 @@ export function CompareCell({
   return (
     <TableCell className="text-right">
       <Button variant="outline" size="sm" asChild>
-        <Link href={`/persons/compare?a=${targetWcaId}&b=${wcaId}`}>
+        <Link
+          href={`/persons/compare?a=${targetWcaId}&b=${wcaId}`}
+          prefetch={false}
+        >
           <Swords className="size-4" />
           <span className="hidden sm:inline">Comparar</span>
         </Link>

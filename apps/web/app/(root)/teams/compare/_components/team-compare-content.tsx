@@ -102,6 +102,7 @@ function TeamHeader({ data }: { data: TeamData }) {
       </Avatar>
       <Link
         href={`/teams/${stateId}`}
+        prefetch={false}
         className="font-semibold text-lg text-link hover:text-link/80 wrap-break-word"
       >
         {info.name}
@@ -174,6 +175,7 @@ function BestRecordCell({
       <div className={cn(isWinner && WINNER_CLASS)}>{formatted}</div>
       <Link
         href={`/persons/${record.personId}`}
+        prefetch={false}
         className="text-xs text-muted-foreground hover:text-link"
       >
         {record.personName ?? record.personId}

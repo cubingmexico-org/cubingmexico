@@ -71,7 +71,11 @@ export function UserDropdown({
         {user.wcaId ? (
           <DropdownMenuItem>
             <UserCheck />
-            <Link href={`/persons/${user.wcaId}`} className="w-full">
+            <Link
+              href={`/persons/${user.wcaId}`}
+              prefetch={false}
+              className="w-full"
+            >
               Mis resultados
             </Link>
           </DropdownMenuItem>
@@ -81,6 +85,7 @@ export function UserDropdown({
             <CalendarDays />
             <Link
               href={`/summary/${summaryYear}/${user.wcaId}`}
+              prefetch={false}
               className="w-full"
             >
               Resumen anual
@@ -90,7 +95,11 @@ export function UserDropdown({
         {team && (
           <DropdownMenuItem>
             <Users />
-            <Link href={`/teams/${team.id}`} className="w-full">
+            <Link
+              href={`/teams/${team.id}`}
+              prefetch={false}
+              className="w-full"
+            >
               Mi Team
             </Link>
           </DropdownMenuItem>
@@ -100,6 +109,7 @@ export function UserDropdown({
             <CalendarRange />
             <Link
               href={`/summary/team/${summaryYear}/${team.id}`}
+              prefetch={false}
               className="w-full"
             >
               Resumen del Team

@@ -61,6 +61,7 @@ export default async function Page(props: {
           <Link
             className="text-muted-foreground hover:underline"
             href={`/records/${stateId}`}
+            prefetch={false}
           >
             récords estatales (SR)
           </Link>{" "}

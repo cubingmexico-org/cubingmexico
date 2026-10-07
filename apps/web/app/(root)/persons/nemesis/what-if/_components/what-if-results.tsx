@@ -48,6 +48,7 @@ function NemesisTable({
               <TableCell>
                 <Link
                   href={`/persons/${nemesis.wcaId}`}
+                  prefetch={false}
                   className="text-link hover:text-link/80"
                 >
                   {nemesis.name ?? nemesis.wcaId}
@@ -75,6 +76,7 @@ function NemesisTable({
                 <Button variant="outline" size="sm" asChild>
                   <Link
                     href={`/persons/compare?a=${targetWcaId}&b=${nemesis.wcaId}`}
+                    prefetch={false}
                   >
                     <Swords className="size-4" />
                     Comparar

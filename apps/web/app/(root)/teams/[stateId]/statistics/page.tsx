@@ -131,6 +131,7 @@ export default async function Page(props: {
         {showAnnualSummary ? (
           <Link
             href={`/summary/team/${summaryYear}/${stateId}`}
+            prefetch={false}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
             <CalendarRange />
