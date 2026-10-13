@@ -5,13 +5,12 @@ import Link from "next/link";
 import { Button } from "@workspace/ui/components/button";
 import { Home, RefreshCw, AlertTriangle, Send } from "lucide-react";
 
-export function RouteError({
-  error,
-  reset,
-}: {
+export type RouteErrorProps = {
   error: Error & { digest?: string };
-  reset: () => void;
-}) {
+  retry: () => void;
+};
+
+export function RouteError({ error, retry }: RouteErrorProps) {
   useEffect(() => {
     console.error("Application error:", error);
   }, [error]);
@@ -60,7 +59,7 @@ export function RouteError({
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-          <Button onClick={() => reset()} size="lg">
+          <Button onClick={() => retry()} size="lg">
             <RefreshCw />
             Intentar de nuevo
           </Button>

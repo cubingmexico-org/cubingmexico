@@ -50,6 +50,8 @@ export const nextJsConfig = [
     settings: { react: { version: "detect" } },
     rules: {
       ...pluginReactHooks.configs.recommended.rules,
+      // ~25 existing effects (mounted flags, media queries, form resets) still sync state this way.
+      "react-hooks/set-state-in-effect": "off",
       // React scope no longer necessary with new JSX transform.
       "react/react-in-jsx-scope": "off",
       // TypeScript already validates props.

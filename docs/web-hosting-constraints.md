@@ -61,6 +61,8 @@ Every `<Link>` that scrolls into view prefetches its target. Each prefetch count
 
 **Policy:** links with a dynamic `href` (a template literal like `` `/persons/${id}` ``) use `prefetch={false}`. Opt back in with `prefetch="auto"` only for a small set of navigation links where instant switching matters, such as the team tabs in `teams/[stateId]/_components/team-shell.tsx`.
 
+**Partial Prefetching:** `partialPrefetching: false` in [`apps/web/next.config.mjs`](../apps/web/next.config.mjs) is explicit on purpose. Next.js 16.4 warns when `cacheComponents` is on without it. Turning it on prefetches per-route shells for every visible link, so measure CDN requests and Active CPU before enabling it.
+
 **Enforcement:** a `no-restricted-syntax` rule in [`apps/web/eslint.config.js`](../apps/web/eslint.config.js) flags any internal `<Link>` with a template-literal `href` and no `prefetch` prop.
 
 **Why:** the nemesis and head-to-head features (Sep 30 – Oct 2, 2026) added per-row links that prefetched by default, and the project went over the free-tier CDN Requests and Fluid Active CPU limits.

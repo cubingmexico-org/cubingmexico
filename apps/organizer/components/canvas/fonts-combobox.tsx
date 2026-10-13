@@ -52,43 +52,43 @@ export function DynamicFontsCombobox({
   >([]);
 
   // Debounce search - only search when user types
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- debounced function is created once; deps inside debounce() are not trackable
-  const debouncedSearch = React.useCallback(
-    debounce(async (searchTerm: string) => {
-      if (!searchTerm.trim()) {
-        setFilteredItems([]);
-        return;
-      }
-
-      setIsLoading(true);
-      setProgress(0);
-
-      const progressSteps = [15, 35, 65, 85, 95] as const;
-      let currentStepIndex = 0;
-
-      const interval = setInterval(() => {
-        if (currentStepIndex < progressSteps.length) {
-          setProgress(progressSteps[currentStepIndex] ?? 0);
-          currentStepIndex++;
+  const debouncedSearch = React.useMemo(
+    () =>
+      debounce(async (searchTerm: string) => {
+        if (!searchTerm.trim()) {
+          setFilteredItems([]);
+          return;
         }
-      }, 150);
 
-      try {
-        // const fonts = await searchGoogleFonts(searchTerm);
-        const results = SYSTEM_FONTS.map((font) => ({
-          value: font,
-          label: font,
-        }));
-        setFilteredItems(results);
-        setProgress(100);
-      } catch (error) {
-        console.error("Error searching fonts:", error);
-        setFilteredItems([]);
-      } finally {
-        setIsLoading(false);
-        clearInterval(interval);
-      }
-    }, 300),
+        setIsLoading(true);
+        setProgress(0);
+
+        const progressSteps = [15, 35, 65, 85, 95] as const;
+        let currentStepIndex = 0;
+
+        const interval = setInterval(() => {
+          if (currentStepIndex < progressSteps.length) {
+            setProgress(progressSteps[currentStepIndex] ?? 0);
+            currentStepIndex++;
+          }
+        }, 150);
+
+        try {
+          // const fonts = await searchGoogleFonts(searchTerm);
+          const results = SYSTEM_FONTS.map((font) => ({
+            value: font,
+            label: font,
+          }));
+          setFilteredItems(results);
+          setProgress(100);
+        } catch (error) {
+          console.error("Error searching fonts:", error);
+          setFilteredItems([]);
+        } finally {
+          setIsLoading(false);
+          clearInterval(interval);
+        }
+      }, 300),
     [],
   );
 

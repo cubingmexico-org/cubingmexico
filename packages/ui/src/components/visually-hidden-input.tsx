@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react-hooks/refs -- previous-value ref pattern from the Dice UI registry; the ref is only mutated when the tracked value changes */
+
 import * as React from "react";
 
 type InputValue = string[] | string;

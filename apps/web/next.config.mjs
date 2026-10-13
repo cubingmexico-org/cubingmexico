@@ -2,6 +2,8 @@
 const nextConfig = {
   transpilePackages: ["@workspace/ui", "@workspace/db"],
   cacheComponents: true,
+  // Off for Vercel free-tier prefetch costs; see docs/web-hosting-constraints.md.
+  partialPrefetching: false,
   serverExternalPackages: ["@imgly/background-removal", "onnxruntime-web"],
 
   async redirects() {
