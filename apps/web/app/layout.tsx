@@ -2,6 +2,7 @@ import { Geist, Geist_Mono, Oswald } from "next/font/google";
 import "@workspace/ui/globals.css";
 import "@cubing/icons";
 import { Providers } from "@/components/providers";
+import { PreviewBanner } from "@/components/preview-banner";
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -69,7 +70,10 @@ export default function RootLayout({
       <body
         className={`${fontSans.variable} ${fontMono.variable} ${fontDisplay.variable} font-sans antialiased `}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          <PreviewBanner />
+          {children}
+        </Providers>
         <Analytics />
         <SpeedInsights />
         <Toaster />
