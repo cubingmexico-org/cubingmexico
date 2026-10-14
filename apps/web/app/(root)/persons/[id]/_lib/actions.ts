@@ -14,6 +14,7 @@ import {
   getNemesisReport,
   getNemesizedReport,
 } from "../../_lib/nemesis-queries";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 export async function loadPersonCompetitionResults(
   wcaId: string,
@@ -42,12 +43,16 @@ export async function loadPersonStaffCompetitions(wcaId: string) {
   return getPersonStaffCompetitions(wcaId);
 }
 
-export async function loadPersonNemeses(wcaId: string) {
+export async function loadPersonNemeses(
+  wcaId: string,
+  includeDeprecated: boolean,
+) {
+  const scope = eventScopeFromDeprecated(includeDeprecated === true);
   const [report, nemesized] = await Promise.all([
-    getNemesisReport(wcaId),
-    getNemesizedReport(wcaId),
+    getNemesisReport(wcaId, scope),
+    getNemesizedReport(wcaId, scope),
   ]);
-  return { report, nemesized };
+  return { report, nemesized, includeDeprecated: scope === "all" };
 }
 
 export async function loadPersonMapData(wcaId: string) {

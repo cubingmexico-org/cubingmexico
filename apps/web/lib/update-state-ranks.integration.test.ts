@@ -68,9 +68,10 @@ describe("updateStateRanks", () => {
     });
   });
 
-  it("skips rows with countryRank 0 and unofficial events", async () => {
+  it("skips rows with countryRank 0 and fto, but ranks deprecated events", async () => {
     await insertEvent({ id: "333" });
     await insertEvent({ id: "333ft", rank: 996 });
+    await insertEvent({ id: "fto", rank: 810 });
     await insertPerson({ wcaId: "2020AAAA01", stateId: "JAL" });
     await insertPerson({ wcaId: "2020BBBB01", stateId: "JAL" });
 
@@ -92,13 +93,20 @@ describe("updateStateRanks", () => {
       best: 900,
       countryRank: 1,
     });
+    await insertRankSingle({
+      personId: "2020AAAA01",
+      eventId: "fto",
+      best: 3000,
+      countryRank: 1,
+    });
 
     await updateStateRanks("JAL");
 
     expect(await stateRanks(rankSingle)).toEqual({
       "2020AAAA01:333": null,
       "2020BBBB01:333": 1,
-      "2020AAAA01:333ft": null,
+      "2020AAAA01:333ft": 1,
+      "2020AAAA01:fto": null,
     });
   });
 

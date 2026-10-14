@@ -18,6 +18,8 @@ import { NemesisSummary } from "./_components/nemesis-summary";
 import { NemesisStatsControls } from "./_components/nemesis-stats-controls";
 import { NemesisStatsTable } from "./_components/nemesis-stats-table";
 import { NemesisStateBreakdown } from "./_components/nemesis-state-breakdown";
+import type { EventScope } from "@/lib/constants";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 export const metadata: Metadata = {
   title: "Estadísticas de némesis | Cubing México",
@@ -32,11 +34,12 @@ interface PageProps {
 export default async function Page(props: PageProps) {
   const searchParams = await props.searchParams;
   const search = searchParamsCache.parse(searchParams);
+  const scope = eventScopeFromDeprecated(search.deprecated);
 
   const promises = Promise.all([
     getNemesisStatsTable(search),
-    getNemesisStatsStateCounts(),
-    getNemesisStatsGenderCounts(),
+    getNemesisStatsStateCounts(scope),
+    getNemesisStatsGenderCounts(scope),
   ]);
 
   return (
@@ -68,13 +71,13 @@ export default async function Page(props: PageProps) {
           </div>
         }
       >
-        <SummarySection />
+        <SummarySection scope={scope} />
       </React.Suspense>
 
       <section className="flex flex-col gap-4">
         <NemesisStatsControls />
         <React.Suspense
-          key={`${search.view}-${search.minEvents}`}
+          key={`${search.view}-${search.minEvents}-${scope}`}
           fallback={
             <DataTableSkeleton
               columnCount={5}
@@ -91,19 +94,19 @@ export default async function Page(props: PageProps) {
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Por estado</h2>
         <React.Suspense fallback={<Skeleton className="h-96 w-full" />}>
-          <StateBreakdownSection />
+          <StateBreakdownSection scope={scope} />
         </React.Suspense>
       </section>
     </div>
   );
 }
 
-async function SummarySection() {
-  const summary = await getNemesisSummary();
+async function SummarySection({ scope }: { scope: EventScope }) {
+  const summary = await getNemesisSummary(scope);
   return <NemesisSummary summary={summary} />;
 }
 
-async function StateBreakdownSection() {
-  const rows = await getNemesisStateBreakdown();
+async function StateBreakdownSection({ scope }: { scope: EventScope }) {
+  const rows = await getNemesisStateBreakdown(scope);
   return <NemesisStateBreakdown rows={rows} />;
 }

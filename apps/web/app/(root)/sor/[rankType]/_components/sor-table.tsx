@@ -10,6 +10,7 @@ import type {
   getSORStateCounts,
 } from "../_lib/queries";
 import { getColumns } from "./sor-table-columns";
+import type { EventScope } from "@/lib/constants";
 
 interface SORTableProps {
   promises: Promise<
@@ -20,9 +21,10 @@ interface SORTableProps {
     ]
   >;
   rankType: "single" | "average";
+  scope: EventScope;
 }
 
-export function SORTable({ promises, rankType }: SORTableProps) {
+export function SORTable({ promises, rankType, scope }: SORTableProps) {
   const [{ data, pageCount }, stateCounts, genderCounts] = React.use(promises);
 
   const columns = React.useMemo(
@@ -31,8 +33,9 @@ export function SORTable({ promises, rankType }: SORTableProps) {
         rankType,
         stateCounts,
         genderCounts,
+        scope,
       }),
-    [rankType, stateCounts, genderCounts],
+    [rankType, stateCounts, genderCounts, scope],
   );
 
   const { table } = useDataTable({

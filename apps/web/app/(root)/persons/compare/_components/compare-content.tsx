@@ -20,6 +20,7 @@ import {
   WINNER_CLASS,
 } from "@/components/head-to-head";
 import { getEvents } from "@/db/queries";
+import type { EventScope } from "@/lib/constants";
 import { formatAttemptValue } from "@/lib/utils";
 import {
   getPersonAvatarFromWCA,
@@ -245,18 +246,26 @@ function PersonalRecordsTable({
   );
 }
 
-export async function CompareContent({ a, b }: { a: string; b: string }) {
+export async function CompareContent({
+  a,
+  b,
+  scope,
+}: {
+  a: string;
+  b: string;
+  scope: EventScope;
+}) {
   "use cache";
   cacheLife("days");
   cacheTag(`person-page-${a}`, `person-page-${b}`);
 
   const [events, aData, bData, aWca, bWca, rounds] = await Promise.all([
-    getEvents(),
-    getPersonData(a),
-    getPersonData(b),
+    getEvents(scope),
+    getPersonData(a, scope),
+    getPersonData(b, scope),
     getPersonAvatarFromWCA(a),
     getPersonAvatarFromWCA(b),
-    getHeadToHeadResults(a, b),
+    getHeadToHeadResults(a, b, scope),
   ]);
 
   if (!aData || !bData) {

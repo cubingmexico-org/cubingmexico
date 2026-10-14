@@ -1,25 +1,39 @@
 ---
-description: Which WCA events count in rankings, records, nemesis, Kinch, streaks and other derived stats
+description: Which WCA events count in rankings, records, nemesis, Kinch, streaks and other derived stats, and the deprecated-events scope
 alwaysApply: true
 ---
 
-# Official events
+# Official events and event scopes
 
-An event counts only if `events.rank < 800`, matching the WCA's `Event.official` scope.
+An event is official if `events.rank < 800`, matching the WCA's `Event.official` scope.
 
-- Ranks 800-989 are announced but not yet official (e.g. `fto` at 810).
+- Ranks 800-989 are announced but not yet official (e.g. `fto` at 810). They never count, in any scope.
 - Ranks 990-999 are deprecated (`333ft`, `magic`, `mmagic`, `333mbo`).
+
+Every counting query has two scopes (`EventScope` in `apps/web/lib/constants.ts`, `EVENT_SCOPES` in `apps/backend/common.py`):
+
+- `official` is the default and uses only official events.
+- `all` adds the deprecated events (rank 990-999) on top of the official ones.
+
+Pages expose the scope through the `?deprecated=true` URL param (`deprecatedParser` in `lib/search-params.ts`), and render `DeprecatedEventsSwitch` next to the data it changes. Links between such pages should preserve the param (`useDeprecatedQuery`). Home page, social posts and digests always use `official`.
 
 Never hardcode a list of event ids to exclude. Use the shared helpers:
 
 - Web (`apps/web/lib/official-events.ts`):
-  - `isOfficialEvent` for Drizzle queries that join `events`
-  - `inOfficialEvents(column)` for Drizzle queries on an `event_id` column
-  - `officialEventIdsSql` inside raw `sql` templates: `event_id IN ${officialEventIdsSql}`
-- Backend (`apps/backend/common.py`): `OFFICIAL_EVENTS_SUBQUERY` in f-string SQL, or `OFFICIAL_EVENT_MAX_RANK` as a bound parameter.
+  - `isOfficialEvent` / `eventScopeFilter(scope)` for Drizzle queries that join `events`
+  - `inOfficialEvents(column)` / `inScopeEvents(column, scope)` for Drizzle queries on an `event_id` column
+  - `officialEventIdsSql` / `eventIdsSql(scope)` inside raw `sql` templates
+  - `crossEventIdsSql(scope)` and `crossEventIds(scope)` for tables with one column per event (Kinch); they skip `333mbo`, which has no comparable records
+  - `eventScopeFromDeprecated(boolean)` to map the URL param to a scope
+- Backend (`apps/backend/common.py`): `events_subquery(scope)` / `OFFICIAL_EVENTS_SUBQUERY` in f-string SQL, `KINCH_SKIPPED_EVENTS` for Kinch.
 
-Every query that counts, ranks or compares events or results must apply the filter. That covers nemesis, Kinch, sum of ranks, state ranks and records, records pages, PR streaks, Mollerz, year summaries and social posts. Display-only lists (a person's results, a competition's results) may show every event.
+Every query that counts, ranks or compares events or results must apply a scope filter. That covers nemesis, Kinch, sum of ranks, state ranks and records, records pages, PR streaks, Mollerz, year summaries and social posts. Display-only lists (a person's results, a competition's results) may show every event.
+
+Stored data:
+
+- Per-event data (`state_rank`, SR markers) is computed for the `all` scope, so readers that count it must still filter by their scope.
+- Aggregate tables (`sum_of_ranks`, `kinch_ranks`, `streak_ranks`, `nemesis_stats`) have a `scope` column in their primary key. The backend jobs compute every scope, and every reader must filter on `scope`.
 
 When the same computation exists in both Python and TypeScript (for example `nemesis_stats.py` and `nemesis-queries.ts`, or `routes/admin/state.py` and `lib/update-state-*.ts`), both must filter identically.
 
-In test fixtures, give unofficial events a realistic rank (e.g. `insertEvent({ id: "333ft", rank: 996 })`); the factory default of 0 counts as official.
+In test fixtures, give unofficial events a realistic rank (e.g. `insertEvent({ id: "333ft", rank: 996 })`, `insertEvent({ id: "fto", rank: 810 })`); the factory default of 0 counts as official.

@@ -15,9 +15,13 @@ import { cacheLife, cacheTag } from "next/cache";
 import { roundRank } from "@/lib/utils";
 import { recordDateSql, toDateKey } from "@/lib/record-date";
 import { getTeamStatisticsData } from "../../_lib/queries";
+import type { EventScope } from "@/lib/constants";
 
-export async function getStatisticsPageData(stateId: string) {
-  return getTeamStatisticsData(stateId);
+export async function getStatisticsPageData(
+  stateId: string,
+  scope: EventScope = "official",
+) {
+  return getTeamStatisticsData(stateId, scope);
 }
 
 export type TeamResultsEventOption = {

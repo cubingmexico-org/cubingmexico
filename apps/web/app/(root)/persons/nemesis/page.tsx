@@ -8,6 +8,14 @@ import { getNemesisReport, getNemesizedReport } from "../_lib/nemesis-queries";
 import { NemesesList } from "../_components/nemeses-list";
 import { NemesizedList } from "../_components/nemesized-list";
 import { NemesisPicker } from "./_components/nemesis-picker";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
+import { deprecatedParser } from "@/lib/search-params";
+import { createSearchParamsCache } from "nuqs/server";
+
+const searchParamsCache = createSearchParamsCache({
+  deprecated: deprecatedParser,
+});
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -41,10 +49,12 @@ export async function generateMetadata({
 export default async function Page({ searchParams }: Props) {
   const params = await searchParams;
   const person = await resolvePerson(parseWcaId(params.id));
+  const { deprecated } = searchParamsCache.parse(params);
+  const scope = eventScopeFromDeprecated(deprecated);
   const [report, nemesized] = person
     ? await Promise.all([
-        getNemesisReport(person.wcaId),
-        getNemesizedReport(person.wcaId),
+        getNemesisReport(person.wcaId, scope),
+        getNemesizedReport(person.wcaId, scope),
       ])
     : [null, null];
 
@@ -66,6 +76,9 @@ export default async function Page({ searchParams }: Props) {
         </Button>
       </div>
       <NemesisPicker value={person} />
+      <div className="flex justify-center mb-6">
+        <DeprecatedEventsSwitch />
+      </div>
       {params.id && !person ? (
         <p className="text-center text-muted-foreground">
           No encontramos al competidor seleccionado.
@@ -75,7 +88,7 @@ export default async function Page({ searchParams }: Props) {
           <div className="flex justify-center">
             <Button variant="outline" size="sm" asChild>
               <Link
-                href={`/persons/nemesis/what-if?id=${person.wcaId}`}
+                href={`/persons/nemesis/what-if?id=${person.wcaId}${deprecated ? "&deprecated=true" : ""}`}
                 prefetch={false}
               >
                 <Sparkles className="size-4" />

@@ -12,7 +12,8 @@ import {
 } from "@workspace/db/schema";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
-import { inOfficialEvents } from "@/lib/official-events";
+import { inScopeEvents } from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
 import { recordDateSql, toDateKey } from "@/lib/record-date";
 import type { HeadToHeadRound } from "@/lib/head-to-head";
 
@@ -30,6 +31,7 @@ export type TeamBestRecords = Record<
 async function getStateRankLeaders(
   stateId: string,
   table: typeof rankSingle | typeof rankAverage,
+  scope: EventScope,
 ) {
   return db
     .select({
@@ -44,7 +46,7 @@ async function getStateRankLeaders(
       and(
         eq(person.stateId, stateId),
         eq(table.stateRank, 1),
-        inOfficialEvents(table.eventId),
+        inScopeEvents(table.eventId, scope),
       ),
     )
     .orderBy(asc(table.eventId), asc(person.name));
@@ -52,14 +54,15 @@ async function getStateRankLeaders(
 
 export async function getTeamBestRecords(
   stateId: string,
+  scope: EventScope = "official",
 ): Promise<TeamBestRecords> {
   "use cache";
   cacheLife("days");
   cacheTag(`team-best-records-${stateId}`);
 
   const [singles, averages] = await Promise.all([
-    getStateRankLeaders(stateId, rankSingle),
-    getStateRankLeaders(stateId, rankAverage),
+    getStateRankLeaders(stateId, rankSingle, scope),
+    getStateRankLeaders(stateId, rankAverage, scope),
   ]);
 
   const records: TeamBestRecords = {};
@@ -106,6 +109,7 @@ function isBestMember(alias: string) {
 export async function getTeamHeadToHeadResults(
   a: string,
   b: string,
+  scope: EventScope = "official",
 ): Promise<HeadToHeadRound[]> {
   "use cache";
   cacheLife("weeks");
@@ -155,7 +159,7 @@ export async function getTeamHeadToHeadResults(
       ),
     )
     .leftJoin(roundType, eq(teamA.roundTypeId, roundType.id))
-    .where(isBestMember("team_a"))
+    .where(and(isBestMember("team_a"), inScopeEvents(teamA.eventId, scope)))
     .orderBy(desc(recordDateSql), asc(event.rank), desc(roundType.rank));
 
   return rows.map((row) => ({

@@ -5,9 +5,80 @@ import psycopg2.extras
 from flask import jsonify
 from psycopg2.extras import execute_values
 
-from common import OFFICIAL_EVENTS_SUBQUERY, SINGLE_EVENTS, get_connection, log, require_cron_auth
+from common import (
+    EVENT_SCOPES,
+    KINCH_SKIPPED_EVENTS,
+    SINGLE_EVENTS,
+    events_subquery,
+    get_connection,
+    log,
+    require_cron_auth,
+)
 from nemesis_stats import compute_nemesis_stats
 from routes.admin.blueprint import admin_bp
+
+
+def _sum_of_ranks_query(ranks_table, scope):
+    return f"""
+        WITH all_events AS (
+          SELECT DISTINCT event_id FROM {ranks_table}
+          WHERE event_id IN {events_subquery(scope)}
+        ),
+        all_people AS (
+          SELECT DISTINCT wca_id, name FROM persons
+        ),
+        people_events AS (
+          SELECT all_people.wca_id, all_people.name, all_events.event_id
+          FROM all_people CROSS JOIN all_events
+        )
+        SELECT
+          pe.wca_id,
+          pe.name,
+          json_agg(
+            json_build_object(
+              'eventId', pe.event_id,
+              'countryRank', COALESCE(NULLIF(r.country_rank, 0), wr.worst_rank),
+              'completed', CASE WHEN r.country_rank IS NULL OR r.country_rank = 0 THEN false ELSE true END
+            )
+          ) AS events,
+          SUM(COALESCE(NULLIF(r.country_rank, 0), wr.worst_rank)) AS overall
+        FROM people_events pe
+        LEFT JOIN {ranks_table} r
+            ON pe.wca_id = r.person_id AND pe.event_id = r.event_id
+        LEFT JOIN (
+          SELECT event_id, MAX(country_rank) + 1 AS worst_rank
+          FROM {ranks_table}
+          GROUP BY event_id
+        ) AS wr
+            ON wr.event_id = pe.event_id
+        GROUP BY pe.wca_id, pe.name
+        ORDER BY overall
+        """
+
+
+def _compute_sum_of_ranks(cur, result_type, scope):
+    ranks_table = "ranks_single" if result_type == "single" else "ranks_average"
+    log.info("Deleting existing sum_of_ranks records (%s, %s)", result_type, scope)
+    cur.execute(
+        "DELETE FROM sum_of_ranks WHERE result_type = %s AND scope = %s",
+        (result_type, scope),
+    )
+    cur.execute(_sum_of_ranks_query(ranks_table, scope))
+    persons = cur.fetchall()
+    log.info("Fetched %s record(s) for %s results (%s)", len(persons), result_type, scope)
+    rows_to_insert = [
+        (rank, row.wca_id, result_type, scope, row.overall, psycopg2.extras.Json(row.events))
+        for rank, row in enumerate(persons, start=1)
+    ]
+    if rows_to_insert:
+        execute_values(
+            cur,
+            """
+            INSERT INTO sum_of_ranks (rank, person_id, result_type, scope, overall, events)
+            VALUES %s
+            """,
+            rows_to_insert,
+        )
 
 
 @admin_bp.route("/update-sum-of-ranks", methods=["POST"])
@@ -16,117 +87,12 @@ def update_sum_of_ranks():
     try:
         log.info("Starting sum of ranks update")
 
-        single_query = f"""
-        WITH all_events AS (
-          SELECT DISTINCT event_id FROM ranks_single
-          WHERE event_id IN {OFFICIAL_EVENTS_SUBQUERY}
-        ),
-        all_people AS (
-          SELECT DISTINCT wca_id, name FROM persons
-        ),
-        people_events AS (
-          SELECT all_people.wca_id, all_people.name, all_events.event_id
-          FROM all_people CROSS JOIN all_events
-        )
-        SELECT
-          pe.wca_id,
-          pe.name,
-          json_agg(
-            json_build_object(
-              'eventId', pe.event_id,
-              'countryRank', COALESCE(NULLIF(rs.country_rank, 0), wr.worst_rank),
-              'completed', CASE WHEN rs.country_rank IS NULL OR rs.country_rank = 0 THEN false ELSE true END
-            )
-          ) AS events,
-          SUM(COALESCE(NULLIF(rs.country_rank, 0), wr.worst_rank)) AS overall
-        FROM people_events pe
-        LEFT JOIN ranks_single rs
-            ON pe.wca_id = rs.person_id AND pe.event_id = rs.event_id
-        LEFT JOIN (
-          SELECT event_id, MAX(country_rank) + 1 AS worst_rank
-          FROM ranks_single
-          GROUP BY event_id
-        ) AS wr
-            ON wr.event_id = pe.event_id
-        GROUP BY pe.wca_id, pe.name
-        ORDER BY overall
-        """
-
-        average_query = f"""
-        WITH all_events AS (
-          SELECT DISTINCT event_id FROM ranks_average
-          WHERE event_id IN {OFFICIAL_EVENTS_SUBQUERY}
-        ),
-        all_people AS (
-          SELECT DISTINCT wca_id, name FROM persons
-        ),
-        people_events AS (
-          SELECT all_people.wca_id, all_people.name, all_events.event_id
-          FROM all_people CROSS JOIN all_events
-        )
-        SELECT
-          pe.wca_id,
-          pe.name,
-          json_agg(
-            json_build_object(
-              'eventId', pe.event_id,
-              'countryRank', COALESCE(NULLIF(ra.country_rank, 0), wr.worst_rank),
-              'completed', CASE WHEN ra.country_rank IS NULL OR ra.country_rank = 0 THEN false ELSE true END
-            )
-          ) AS events,
-          SUM(COALESCE(NULLIF(ra.country_rank, 0), wr.worst_rank)) AS overall
-        FROM people_events pe
-        LEFT JOIN ranks_average ra
-            ON pe.wca_id = ra.person_id AND pe.event_id = ra.event_id
-        LEFT JOIN (
-          SELECT event_id, MAX(country_rank) + 1 AS worst_rank
-          FROM ranks_average
-          GROUP BY event_id
-        ) AS wr
-            ON wr.event_id = pe.event_id
-        GROUP BY pe.wca_id, pe.name
-        ORDER BY overall
-        """
-
-        with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                log.info("Deleting existing sum_of_ranks records for single results")
-                cur.execute("DELETE FROM sum_of_ranks WHERE result_type = %s", ("single",))
-                log.info("Executing single query")
-                cur.execute(single_query)
-                persons = cur.fetchall()
-                log.info("Fetched %s record(s) for single results", len(persons))
-                rank = 1
-                for row in persons:
-                    cur.execute(
-                        """
-                        INSERT INTO sum_of_ranks (rank, person_id, result_type, overall, events)
-                        VALUES (%s, %s, %s, %s, %s)
-                        """,
-                        (rank, row.wca_id, "single", row.overall, psycopg2.extras.Json(row.events)),
-                    )
-                    rank += 1
-                conn.commit()
-
-        with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                log.info("Deleting existing sum_of_ranks records for average results")
-                cur.execute("DELETE FROM sum_of_ranks WHERE result_type = %s", ("average",))
-                log.info("Executing average query")
-                cur.execute(average_query)
-                persons = cur.fetchall()
-                log.info("Fetched %s record(s) for average results", len(persons))
-                rank = 1
-                for row in persons:
-                    cur.execute(
-                        """
-                        INSERT INTO sum_of_ranks (rank, person_id, result_type, overall, events)
-                        VALUES (%s, %s, %s, %s, %s)
-                        """,
-                        (rank, row.wca_id, "average", row.overall, psycopg2.extras.Json(row.events)),
-                    )
-                    rank += 1
-                conn.commit()
+        for scope in EVENT_SCOPES:
+            for result_type in ("single", "average"):
+                with get_connection() as conn:
+                    with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+                        _compute_sum_of_ranks(cur, result_type, scope)
+                    conn.commit()
 
         log.info("Sum of ranks updated successfully")
         return jsonify({"success": True, "message": "Sum of ranks updated successfully"})
@@ -135,15 +101,11 @@ def update_sum_of_ranks():
         return jsonify({"success": False, "message": "Error updating sum of ranks"}), 500
 
 
-@admin_bp.route("/update-kinch-ranks", methods=["POST"])
-@require_cron_auth
-def update_kinch_ranks():
-    try:
-        log.info("Starting kinch ranks update")
-
-        single_events = ",".join(f"'{e}'" for e in SINGLE_EVENTS)
-
-        query = f"""
+def _kinch_query(scope):
+    single_events = ",".join(f"'{e}'" for e in SINGLE_EVENTS)
+    skipped_events = ",".join(f"'{e}'" for e in KINCH_SKIPPED_EVENTS)
+    scope_events = events_subquery(scope)
+    return f"""
         WITH PersonalRecords AS (
           SELECT
             person_id,
@@ -151,7 +113,7 @@ def update_kinch_ranks():
             MIN(best) AS personal_best,
             'average' AS type
           FROM ranks_average
-          WHERE event_id IN {OFFICIAL_EVENTS_SUBQUERY}
+          WHERE event_id IN {scope_events}
           GROUP BY person_id, event_id
           UNION ALL
           SELECT
@@ -169,7 +131,7 @@ def update_kinch_ranks():
             MIN(best) AS national_best,
             'average' AS type
           FROM ranks_average
-          WHERE country_rank = 1 AND event_id IN {OFFICIAL_EVENTS_SUBQUERY}
+          WHERE country_rank = 1 AND event_id IN {scope_events}
           GROUP BY event_id
           UNION ALL
           SELECT
@@ -184,7 +146,7 @@ def update_kinch_ranks():
           SELECT DISTINCT person_id FROM ranks_single
         ),
         Events AS (
-          SELECT id FROM events WHERE id IN {OFFICIAL_EVENTS_SUBQUERY}
+          SELECT id FROM events WHERE id IN {scope_events} AND id NOT IN ({skipped_events})
         ),
         Ratios AS (
           SELECT
@@ -226,24 +188,39 @@ def update_kinch_ranks():
         ORDER BY overall DESC;
         """
 
-        with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                log.info("Deleting existing kinch_ranks records")
-                cur.execute("DELETE FROM kinch_ranks")
 
-                log.info("Executing kinch ranks query")
-                cur.execute(query)
-                persons = cur.fetchall()
-                log.info("Fetched %s record(s) for updating kinch ranks", len(persons))
+def _compute_kinch_ranks(cur, scope):
+    log.info("Deleting existing kinch_ranks records (%s)", scope)
+    cur.execute("DELETE FROM kinch_ranks WHERE scope = %s", (scope,))
+    cur.execute(_kinch_query(scope))
+    persons = cur.fetchall()
+    log.info("Fetched %s record(s) for kinch ranks (%s)", len(persons), scope)
+    rows_to_insert = [
+        (rank, row.id, scope, row.overall, psycopg2.extras.Json(row.events))
+        for rank, row in enumerate(persons, start=1)
+    ]
+    if rows_to_insert:
+        execute_values(
+            cur,
+            """
+            INSERT INTO kinch_ranks (rank, person_id, scope, overall, events)
+            VALUES %s
+            """,
+            rows_to_insert,
+        )
 
-                for index, row in enumerate(persons):
-                    cur.execute(
-                        """
-                        INSERT INTO kinch_ranks (rank, person_id, overall, events)
-                        VALUES (%s, %s, %s, %s)
-                        """,
-                        (index + 1, row.id, row.overall, psycopg2.extras.Json(row.events)),
-                    )
+
+@admin_bp.route("/update-kinch-ranks", methods=["POST"])
+@require_cron_auth
+def update_kinch_ranks():
+    try:
+        log.info("Starting kinch ranks update")
+
+        for scope in EVENT_SCOPES:
+            with get_connection() as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+                    _compute_kinch_ranks(cur, scope)
+                conn.commit()
 
         log.info("Kinch ranks updated successfully")
         return jsonify({"success": True, "message": "Kinch ranks updated successfully"})
@@ -306,70 +283,75 @@ def _compute_person_streaks(rows):
     return current_streak, longest_streak
 
 
+def _compute_streak_ranks(cur, scope):
+    cur.execute(
+        f"""
+        SELECT r.person_id, r.competition_id, r.event_id, r.best, r.average
+        FROM results r
+        JOIN competitions c ON c.id = r.competition_id
+        WHERE r.event_id IN {events_subquery(scope)}
+        ORDER BY r.person_id, c.start_date ASC, r.competition_id ASC
+        """
+    )
+    rows = cur.fetchall()
+    log.info("Fetched %s result row(s) for streak ranks (%s)", len(rows), scope)
+
+    streaks = []
+    current_person_id = None
+    person_rows = []
+
+    def flush_person(person_id, person_result_rows):
+        if person_id is None:
+            return
+        current, longest = _compute_person_streaks(person_result_rows)
+        streaks.append((person_id, current, longest))
+
+    for row in rows:
+        if current_person_id is None:
+            current_person_id = row.person_id
+        if row.person_id != current_person_id:
+            flush_person(current_person_id, person_rows)
+            current_person_id = row.person_id
+            person_rows = []
+        person_rows.append((row.competition_id, row.event_id, row.best, row.average))
+
+    flush_person(current_person_id, person_rows)
+
+    # Rank by longest DESC, then current DESC, then person_id ASC
+    streaks.sort(key=lambda item: (-item[2], -item[1], item[0]))
+
+    log.info("Deleting existing streak_ranks records (%s)", scope)
+    cur.execute("DELETE FROM streak_ranks WHERE scope = %s", (scope,))
+
+    rows_to_insert = [
+        (rank, person_id, scope, current, longest)
+        for rank, (person_id, current, longest) in enumerate(streaks, start=1)
+    ]
+    if rows_to_insert:
+        execute_values(
+            cur,
+            """
+            INSERT INTO streak_ranks
+            (rank, person_id, scope, current_streak, longest_streak)
+            VALUES %s
+            """,
+            rows_to_insert,
+        )
+
+    log.info("Inserted %s streak_ranks record(s) (%s)", len(rows_to_insert), scope)
+
+
 @admin_bp.route("/update-streak-ranks", methods=["POST"])
 @require_cron_auth
 def update_streak_ranks():
     try:
         log.info("Starting streak ranks update")
 
-        query = f"""
-        SELECT r.person_id, r.competition_id, r.event_id, r.best, r.average
-        FROM results r
-        JOIN competitions c ON c.id = r.competition_id
-        WHERE r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
-        ORDER BY r.person_id, c.start_date ASC, r.competition_id ASC
-        """
-
-        with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                log.info("Fetching results for streak computation")
-                cur.execute(query)
-                rows = cur.fetchall()
-                log.info("Fetched %s result row(s) for streak ranks", len(rows))
-
-                streaks = []
-                current_person_id = None
-                person_rows = []
-
-                def flush_person(person_id, person_result_rows):
-                    if person_id is None:
-                        return
-                    current, longest = _compute_person_streaks(person_result_rows)
-                    streaks.append((person_id, current, longest))
-
-                for row in rows:
-                    if current_person_id is None:
-                        current_person_id = row.person_id
-                    if row.person_id != current_person_id:
-                        flush_person(current_person_id, person_rows)
-                        current_person_id = row.person_id
-                        person_rows = []
-                    person_rows.append((row.competition_id, row.event_id, row.best, row.average))
-
-                flush_person(current_person_id, person_rows)
-
-                # Rank by longest DESC, then current DESC, then person_id ASC
-                streaks.sort(key=lambda item: (-item[2], -item[1], item[0]))
-
-                log.info("Deleting existing streak_ranks records")
-                cur.execute("DELETE FROM streak_ranks")
-
-                rows_to_insert = [
-                    (rank, person_id, current, longest)
-                    for rank, (person_id, current, longest) in enumerate(streaks, start=1)
-                ]
-                if rows_to_insert:
-                    execute_values(
-                        cur,
-                        """
-                        INSERT INTO streak_ranks
-                        (rank, person_id, current_streak, longest_streak)
-                        VALUES %s
-                        """,
-                        rows_to_insert,
-                    )
-
-                log.info("Inserted %s streak_ranks record(s)", len(rows_to_insert))
+        for scope in EVENT_SCOPES:
+            with get_connection() as conn:
+                with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+                    _compute_streak_ranks(cur, scope)
+                conn.commit()
 
         log.info("Streak ranks updated successfully")
         return jsonify({"success": True, "message": "Streak ranks updated successfully"})
@@ -378,19 +360,44 @@ def update_streak_ranks():
         return jsonify({"success": False, "message": "Error updating streak ranks"}), 500
 
 
+def _compute_nemesis_stats(cur, scope):
+    scope_events = events_subquery(scope)
+    cur.execute(
+        f"""
+        SELECT person_id, 'single' AS slot_type, event_id, best
+        FROM ranks_single WHERE best > 0 AND event_id IN {scope_events}
+        UNION ALL
+        SELECT person_id, 'average' AS slot_type, event_id, best
+        FROM ranks_average WHERE best > 0 AND event_id IN {scope_events}
+        """
+    )
+    entries = cur.fetchall()
+    log.info("Fetched %s rank row(s) for nemesis stats (%s)", len(entries), scope)
+
+    rows_to_insert = [(row[0], scope, *row[1:]) for row in compute_nemesis_stats(entries)]
+
+    log.info("Deleting existing nemesis_stats records (%s)", scope)
+    cur.execute("DELETE FROM nemesis_stats WHERE scope = %s", (scope,))
+
+    if rows_to_insert:
+        execute_values(
+            cur,
+            """
+            INSERT INTO nemesis_stats
+            (person_id, scope, nemesis_count, nemesized_count, event_count, slot_count)
+            VALUES %s
+            """,
+            rows_to_insert,
+        )
+
+    log.info("Inserted %s nemesis_stats record(s) (%s)", len(rows_to_insert), scope)
+
+
 @admin_bp.route("/update-nemesis-stats", methods=["POST"])
 @require_cron_auth
 def update_nemesis_stats():
     try:
         log.info("Starting nemesis stats update")
-
-        query = f"""
-        SELECT person_id, 'single' AS slot_type, event_id, best
-        FROM ranks_single WHERE best > 0 AND event_id IN {OFFICIAL_EVENTS_SUBQUERY}
-        UNION ALL
-        SELECT person_id, 'average' AS slot_type, event_id, best
-        FROM ranks_average WHERE best > 0 AND event_id IN {OFFICIAL_EVENTS_SUBQUERY}
-        """
 
         try:
             from social.nemesis import fetch_nemesis_free_ids
@@ -402,29 +409,11 @@ def update_nemesis_stats():
             log.warning("Could not snapshot nemesis-free competitors: %s", e)
             nemesis_free_before = None
 
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(query)
-                entries = cur.fetchall()
-                log.info("Fetched %s rank row(s) for nemesis stats", len(entries))
-
-                rows_to_insert = compute_nemesis_stats(entries)
-
-                log.info("Deleting existing nemesis_stats records")
-                cur.execute("DELETE FROM nemesis_stats")
-
-                if rows_to_insert:
-                    execute_values(
-                        cur,
-                        """
-                        INSERT INTO nemesis_stats
-                        (person_id, nemesis_count, nemesized_count, event_count, slot_count)
-                        VALUES %s
-                        """,
-                        rows_to_insert,
-                    )
-
-                log.info("Inserted %s nemesis_stats record(s)", len(rows_to_insert))
+        for scope in EVENT_SCOPES:
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    _compute_nemesis_stats(cur, scope)
+                conn.commit()
 
         if nemesis_free_before is not None:
             try:

@@ -2,8 +2,8 @@
 
 import "server-only";
 import { db } from "@workspace/db";
-import { SINGLE_EVENTS } from "@/lib/constants";
-import { officialEventIdsSql } from "@/lib/official-events";
+import { SINGLE_EVENTS, type EventScope } from "@/lib/constants";
+import { crossEventIdsSql } from "@/lib/official-events";
 import { sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -16,9 +16,12 @@ interface KinchRanksState {
 
 export async function getKinchRanksState(
   stateId: string,
+  scope: EventScope = "official",
 ): Promise<KinchRanksState[]> {
   cacheLife("days");
   cacheTag("kinch-ranks-state");
+
+  const scopeEventIds = crossEventIdsSql(scope);
 
   const data = await db.execute(sql`
             WITH PersonalRecords AS (
@@ -28,7 +31,7 @@ export async function getKinchRanksState(
                 MIN(best) AS personal_best,
                 'average' AS type
               FROM ranks_average
-              WHERE event_id IN ${officialEventIdsSql}
+              WHERE event_id IN ${scopeEventIds}
               GROUP BY person_id, event_id
               UNION ALL
               SELECT
@@ -49,7 +52,7 @@ export async function getKinchRanksState(
               JOIN persons p ON r.person_id = p.wca_id
               WHERE r.state_rank = 1
                 AND p.state_id = ${stateId}
-                AND r.event_id IN ${officialEventIdsSql}
+                AND r.event_id IN ${scopeEventIds}
               GROUP BY r.event_id
               UNION ALL
               SELECT
@@ -73,7 +76,7 @@ export async function getKinchRanksState(
             Events AS (
               SELECT id, rank
               FROM events
-              WHERE id IN ${officialEventIdsSql}
+              WHERE id IN ${scopeEventIds}
             ),
             Ratios AS (
               SELECT  

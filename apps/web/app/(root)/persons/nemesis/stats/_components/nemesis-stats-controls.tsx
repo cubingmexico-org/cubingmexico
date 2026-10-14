@@ -21,6 +21,7 @@ import {
   NEMESIS_STATS_VIEW_LABELS,
   type NemesisStatsView,
 } from "../_lib/views";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 
 const controlParams = {
   view: parseAsStringEnum([...NEMESIS_STATS_VIEWS]).withDefault("invictos"),
@@ -84,6 +85,7 @@ export function NemesisStatsControls() {
       <p className="text-sm text-muted-foreground">
         {NEMESIS_STATS_VIEW_DESCRIPTIONS[view]}
       </p>
+      <DeprecatedEventsSwitch />
     </div>
   );
 }

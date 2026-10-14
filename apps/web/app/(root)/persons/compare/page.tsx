@@ -3,6 +3,14 @@ import { getPerson } from "@/db/queries";
 import { parseWcaId } from "@/lib/wca-id";
 import { ComparePicker } from "./_components/compare-picker";
 import { CompareContent } from "./_components/compare-content";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
+import { deprecatedParser } from "@/lib/search-params";
+import { createSearchParamsCache } from "nuqs/server";
+
+const searchParamsCache = createSearchParamsCache({
+  deprecated: deprecatedParser,
+});
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -43,6 +51,7 @@ export default async function Page({ searchParams }: Props) {
   const params = await searchParams;
   const aId = parseWcaId(params.a);
   const bId = parseWcaId(params.b);
+  const { deprecated } = searchParamsCache.parse(params);
 
   const [a, b] = await Promise.all([resolvePerson(aId), resolvePerson(bId)]);
 
@@ -64,7 +73,16 @@ export default async function Page({ searchParams }: Props) {
       {message || !a || !b ? (
         <p className="text-center text-muted-foreground mt-8">{message}</p>
       ) : (
-        <CompareContent a={a.wcaId} b={b.wcaId} />
+        <>
+          <div className="flex justify-center mb-6">
+            <DeprecatedEventsSwitch />
+          </div>
+          <CompareContent
+            a={a.wcaId}
+            b={b.wcaId}
+            scope={eventScopeFromDeprecated(deprecated)}
+          />
+        </>
       )}
     </>
   );

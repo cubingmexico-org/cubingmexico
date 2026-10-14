@@ -15,7 +15,8 @@ import {
 } from "@workspace/db/schema";
 import { and, count, gt, eq, inArray, asc, desc, sql, or } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
-import { inOfficialEvents } from "@/lib/official-events";
+import { inScopeEvents } from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
 import { type GetMembersSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -82,7 +83,10 @@ export type TeamTopMember = {
   podiums: number;
 };
 
-export async function getTeamOverviewData(stateId: string) {
+export async function getTeamOverviewData(
+  stateId: string,
+  scope: EventScope = "official",
+) {
   const [
     team,
     competitions,
@@ -94,8 +98,8 @@ export async function getTeamOverviewData(stateId: string) {
     getTeamInfo(stateId),
     getTeamCompetitions(stateId),
     getTeamMedals(stateId),
-    getSingleNationalRecords(stateId),
-    getAverageNationalRecords(stateId),
+    getSingleNationalRecords(stateId, scope),
+    getAverageNationalRecords(stateId, scope),
     getTopMembersByPodiums(stateId, OVERVIEW_TOP_MEMBERS_LIMIT),
   ]);
 
@@ -129,7 +133,10 @@ export async function getTeamOverviewData(stateId: string) {
   };
 }
 
-export async function getTeamStatisticsData(stateId: string) {
+export async function getTeamStatisticsData(
+  stateId: string,
+  scope: EventScope = "official",
+) {
   const [
     team,
     competitions,
@@ -140,8 +147,8 @@ export async function getTeamStatisticsData(stateId: string) {
     getTeamInfo(stateId),
     getTeamCompetitions(stateId),
     getTeamMedals(stateId),
-    getSingleNationalRecords(stateId),
-    getAverageNationalRecords(stateId),
+    getSingleNationalRecords(stateId, scope),
+    getAverageNationalRecords(stateId, scope),
   ]);
 
   if (!team) {
@@ -252,7 +259,10 @@ export async function getTeamMedals(stateId: string): Promise<TeamMedals> {
   };
 }
 
-export async function getSingleNationalRecords(stateId: string) {
+export async function getSingleNationalRecords(
+  stateId: string,
+  scope: EventScope = "official",
+) {
   cacheLife("days");
   cacheTag(`single-national-records-${stateId}`);
 
@@ -269,13 +279,16 @@ export async function getSingleNationalRecords(stateId: string) {
       and(
         eq(person.stateId, stateId),
         eq(rankSingle.countryRank, 1),
-        inOfficialEvents(rankSingle.eventId),
+        inScopeEvents(rankSingle.eventId, scope),
       ),
     )
     .orderBy(asc(rankSingle.eventId), asc(person.name));
 }
 
-export async function getAverageNationalRecords(stateId: string) {
+export async function getAverageNationalRecords(
+  stateId: string,
+  scope: EventScope = "official",
+) {
   cacheLife("days");
   cacheTag(`average-national-records-${stateId}`);
 
@@ -292,7 +305,7 @@ export async function getAverageNationalRecords(stateId: string) {
       and(
         eq(person.stateId, stateId),
         eq(rankAverage.countryRank, 1),
-        inOfficialEvents(rankAverage.eventId),
+        inScopeEvents(rankAverage.eventId, scope),
       ),
     )
     .orderBy(asc(rankAverage.eventId), asc(person.name));

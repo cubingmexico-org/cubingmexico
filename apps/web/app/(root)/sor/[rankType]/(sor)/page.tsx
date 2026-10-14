@@ -8,6 +8,8 @@ import { searchParamsCache } from "../_lib/validations";
 import { RankTypeSelector } from "../_components/rank-type-selector";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 export const metadata: Metadata = {
   title: "Sum Of Ranks | Cubing México",
@@ -27,6 +29,7 @@ export default async function Page(props: PageProps) {
   const search = searchParamsCache.parse(searchParams);
 
   const validFilters = getValidFilters(search.filters);
+  const scope = eventScopeFromDeprecated(search.deprecated);
 
   const promises = Promise.all([
     getSOR(
@@ -36,8 +39,8 @@ export default async function Page(props: PageProps) {
       },
       rankType,
     ),
-    getSORStateCounts(rankType),
-    getSORGenderCounts(rankType),
+    getSORStateCounts(rankType, scope),
+    getSORGenderCounts(rankType, scope),
   ]);
 
   return (
@@ -67,6 +70,7 @@ export default async function Page(props: PageProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <RankTypeSelector selectedRankType={rankType} />
         </div>
+        <DeprecatedEventsSwitch />
       </div>
       <div className="grid gap-6">
         <React.Suspense
@@ -87,7 +91,7 @@ export default async function Page(props: PageProps) {
             />
           }
         >
-          <SORTable promises={promises} rankType={rankType} />
+          <SORTable promises={promises} rankType={rankType} scope={scope} />
         </React.Suspense>
       </div>
     </>

@@ -1,5 +1,6 @@
 "use client";
 
+import { parseAsBoolean, useQueryState } from "nuqs";
 import { useRouter } from "next/navigation";
 import { ArrowLeftRight } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
@@ -17,10 +18,15 @@ export type TeamOption = {
   image: string | null;
 };
 
-function buildCompareHref(a: string | null, b: string | null) {
+function buildCompareHref(
+  a: string | null,
+  b: string | null,
+  deprecated: boolean,
+) {
   const params = new URLSearchParams();
   if (a) params.set("a", a);
   if (b) params.set("b", b);
+  if (deprecated) params.set("deprecated", "true");
   const query = params.toString();
   return query ? `/teams/compare?${query}` : "/teams/compare";
 }
@@ -72,6 +78,10 @@ export function TeamComparePicker({
   b: string | null;
 }) {
   const router = useRouter();
+  const [deprecated] = useQueryState(
+    "deprecated",
+    parseAsBoolean.withDefault(false),
+  );
 
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 mb-8">
@@ -79,7 +89,7 @@ export function TeamComparePicker({
         teams={teams}
         value={a}
         placeholder="Primer team"
-        onSelect={(id) => router.replace(buildCompareHref(id, b))}
+        onSelect={(id) => router.replace(buildCompareHref(id, b, deprecated))}
       />
       <Button
         type="button"
@@ -87,7 +97,7 @@ export function TeamComparePicker({
         size="icon"
         aria-label="Intercambiar teams"
         disabled={!a && !b}
-        onClick={() => router.replace(buildCompareHref(b, a))}
+        onClick={() => router.replace(buildCompareHref(b, a, deprecated))}
       >
         <ArrowLeftRight className="size-4" />
       </Button>
@@ -95,7 +105,7 @@ export function TeamComparePicker({
         teams={teams}
         value={b}
         placeholder="Segundo team"
-        onSelect={(id) => router.replace(buildCompareHref(a, id))}
+        onSelect={(id) => router.replace(buildCompareHref(a, id, deprecated))}
       />
     </div>
   );

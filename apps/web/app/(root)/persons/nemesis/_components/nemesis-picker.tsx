@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { parseAsBoolean, useQueryState } from "nuqs";
 import {
   PersonSearchSelect,
   type SelectedPerson,
@@ -14,6 +15,10 @@ export function NemesisPicker({
   basePath?: string;
 }) {
   const router = useRouter();
+  const [deprecated] = useQueryState(
+    "deprecated",
+    parseAsBoolean.withDefault(false),
+  );
 
   return (
     <div className="w-full max-w-md mx-auto mb-8">
@@ -21,7 +26,9 @@ export function NemesisPicker({
         value={value}
         placeholder="Busca un competidor"
         onSelect={(wcaId) =>
-          router.replace(`${basePath}?id=${encodeURIComponent(wcaId)}`)
+          router.replace(
+            `${basePath}?id=${encodeURIComponent(wcaId)}${deprecated ? "&deprecated=true" : ""}`,
+          )
         }
       />
     </div>

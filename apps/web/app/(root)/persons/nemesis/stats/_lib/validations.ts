@@ -9,6 +9,7 @@ import { getSortingStateParser } from "@/lib/parsers";
 import { person } from "@workspace/db/schema";
 import type { NemesisStatsRow } from "../_types";
 import { NEMESIS_STATS_VIEWS } from "./views";
+import { deprecatedParser } from "@/lib/search-params";
 
 export const SORTABLE_COLUMNS = [
   "name",
@@ -30,6 +31,7 @@ export const searchParamsCache = createSearchParamsCache({
   ).withDefault([]),
   view: parseAsStringEnum([...NEMESIS_STATS_VIEWS]).withDefault("invictos"),
   minEvents: parseAsInteger.withDefault(1),
+  deprecated: deprecatedParser,
 });
 
 export type GetNemesisStatsSchema = Awaited<

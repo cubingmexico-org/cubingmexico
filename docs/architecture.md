@@ -75,6 +75,15 @@ Nemesis counts are also computed twice: [`nemesis_stats.py`](../apps/backend/nem
 
 Both sides must apply the same rules: tie handling, official events, the 9i2 effective date, and the marker hierarchy described in [state-records.md](./state-records.md). An event is official when `events.rank < 800`, matching the WCA's `Event.official`. Use the shared helpers (`apps/web/lib/official-events.ts`, `OFFICIAL_EVENTS_SUBQUERY` in `apps/backend/common.py`) rather than event id lists. When you change ranking or record logic, update both implementations.
 
+## Event scopes
+
+Pages that count events accept `?deprecated=true`, which switches from the `official` scope to `all` (official plus the deprecated events with rank 990-999). Unofficial events such as `fto` never count.
+
+- State ranks and SR markers are stored for the `all` scope, and readers filter them to their scope.
+- `sum_of_ranks`, `kinch_ranks`, `streak_ranks` and `nemesis_stats` store one set of rows per scope (`scope` is part of the primary key). The backend jobs in `routes/admin/rankings.py` compute both scopes on every run.
+
+See `.cursor/rules/official-events.mdc` for the helpers to use.
+
 ## Related docs
 
 - [state-records.md](./state-records.md): how state records are determined

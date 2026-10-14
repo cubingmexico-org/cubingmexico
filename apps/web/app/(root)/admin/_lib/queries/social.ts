@@ -705,7 +705,8 @@ export async function getPendingNemesisPosts(limit = 50): Promise<
     LEFT JOIN states s ON s.id = p.state_id
     LEFT JOIN social_posts sp
       ON sp.post_type = 'nemesis' AND sp.subject_key = ns.person_id
-    WHERE ns.nemesis_count = 0
+    WHERE ns.scope = 'official'
+      AND ns.nemesis_count = 0
       AND ns.event_count >= ${NEMESIS_FREE_MIN_EVENTS}
     GROUP BY ns.person_id, p.name, s.name, ns.event_count, ns.nemesized_count
     HAVING NOT (

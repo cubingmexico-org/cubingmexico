@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import { Label } from "@workspace/ui/components/label";
-import { eventNames } from "@/lib/constants";
+import { eventNames, SPECIALTY_EVENT_IDS } from "@/lib/constants";
 
-const events = Object.keys(eventNames);
+const events: string[] = [...SPECIALTY_EVENT_IDS];
 
 export function EventsCheckboxes({
   defaultValue,

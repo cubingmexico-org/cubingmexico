@@ -23,6 +23,7 @@ import {
   WINNER_CLASS,
 } from "@/components/head-to-head";
 import { getEvents } from "@/db/queries";
+import type { EventScope } from "@/lib/constants";
 import { formatAttemptValue } from "@/lib/utils";
 import {
   getAverageNationalRecords,
@@ -41,7 +42,7 @@ import {
 
 const ROUND_LIST_LIMIT = 100;
 
-async function getTeamCompareData(stateId: string) {
+async function getTeamCompareData(stateId: string, scope: EventScope) {
   const [
     info,
     members,
@@ -55,9 +56,9 @@ async function getTeamCompareData(stateId: string) {
     getTotalMembers(stateId),
     getTeamCompetitions(stateId),
     getTeamMedals(stateId),
-    getSingleNationalRecords(stateId),
-    getAverageNationalRecords(stateId),
-    getTeamBestRecords(stateId),
+    getSingleNationalRecords(stateId, scope),
+    getAverageNationalRecords(stateId, scope),
+    getTeamBestRecords(stateId, scope),
   ]);
 
   if (!info) return null;
@@ -269,16 +270,24 @@ function BestRecordsTable({
   );
 }
 
-export async function TeamCompareContent({ a, b }: { a: string; b: string }) {
+export async function TeamCompareContent({
+  a,
+  b,
+  scope,
+}: {
+  a: string;
+  b: string;
+  scope: EventScope;
+}) {
   "use cache";
   cacheLife("days");
   cacheTag(`team-compare-${a}`, `team-compare-${b}`);
 
   const [events, aData, bData, rounds] = await Promise.all([
-    getEvents(),
-    getTeamCompareData(a),
-    getTeamCompareData(b),
-    getTeamHeadToHeadResults(a, b),
+    getEvents(scope),
+    getTeamCompareData(a, scope),
+    getTeamCompareData(b, scope),
+    getTeamHeadToHeadResults(a, b, scope),
   ]);
 
   if (!aData || !bData) {

@@ -7,7 +7,7 @@ import {
   rankSingle,
   state,
 } from "@workspace/db/schema";
-import { isOfficialEvent } from "@/lib/official-events";
+import { eventScopeFilter } from "@/lib/official-events";
 import {
   assignSequentialRanks,
   type RankRecord,
@@ -45,7 +45,7 @@ export async function updateStateRanks(stateId: string) {
   }
 
   await db.transaction(async (tx) => {
-    const events = await tx.select().from(event).where(isOfficialEvent);
+    const events = await tx.select().from(event).where(eventScopeFilter("all"));
 
     const statePersons = await tx
       .select({ wcaId: person.wcaId })

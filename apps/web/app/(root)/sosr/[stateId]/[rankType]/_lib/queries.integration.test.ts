@@ -14,6 +14,7 @@ function sosrInput(
     gender: [],
     filters: [],
     joinOperator: "and",
+    deprecated: false,
     ...overrides,
   } as GetSOSRSinglesSchema;
 }
@@ -22,6 +23,7 @@ beforeEach(async () => {
   await insertEvent({ id: "333", rank: 10 });
   await insertEvent({ id: "222", rank: 20 });
   await insertEvent({ id: "333ft", rank: 996 });
+  await insertEvent({ id: "fto", rank: 810 });
 
   await insertPerson({
     wcaId: "2020AAAA01",
@@ -79,6 +81,13 @@ beforeEach(async () => {
     best: 500,
     stateRank: 1,
   });
+  // Carlos only has fto, which never counts.
+  await insertRankSingle({
+    personId: "2020CCCC01",
+    eventId: "fto",
+    best: 3000,
+    stateRank: 1,
+  });
 });
 
 describe("getSOSR", () => {
@@ -105,6 +114,32 @@ describe("getSOSR", () => {
     ]);
   });
 
+  it("adds deprecated events with the deprecated scope, never fto", async () => {
+    const { data } = await getSOSR(
+      sosrInput({ deprecated: true }),
+      "JAL",
+      "single",
+    );
+
+    expect(
+      data.map((row) => ({
+        personId: row.personId,
+        overall: Number(row.overall),
+      })),
+    ).toEqual([
+      // 333 1 + 222 1 + 333ft missing (worst 1 + 1 = 2).
+      { personId: "2020AAAA01", overall: 4 },
+      // 333 2 + 222 2 + 333ft 1.
+      { personId: "2020BBBB01", overall: 5 },
+    ]);
+    const beto = data.find((row) => row.personId === "2020BBBB01")!;
+    expect(beto.events).toEqual([
+      { eventId: "333", stateRank: 2, completed: true },
+      { eventId: "222", stateRank: 2, completed: false },
+      { eventId: "333ft", stateRank: 1, completed: true },
+    ]);
+  });
+
   it("filters by gender", async () => {
     const { data } = await getSOSR(
       sosrInput({ gender: ["m"] }),
@@ -123,7 +158,10 @@ describe("getSOSR", () => {
 
 describe("getSOSRGenderCounts / getSOSRState", () => {
   it("counts distinct ranked people by gender in the state", async () => {
-    expect(await getSOSRGenderCounts("JAL", "single")).toEqual({ f: 1, m: 1 });
+    expect(await getSOSRGenderCounts("JAL", "single", "official")).toEqual({
+      f: 1,
+      m: 1,
+    });
   });
 
   it("looks up the state name", async () => {

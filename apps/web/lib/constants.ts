@@ -11,6 +11,12 @@ export const ORGANIZER_APP_URL =
  * not yet official (e.g. fto), 990-999 are deprecated (333ft, magic, ...).
  */
 export const OFFICIAL_EVENT_MAX_RANK = 800;
+export const DEPRECATED_EVENT_MIN_RANK = 990;
+export const DEPRECATED_EVENT_MAX_RANK = 999;
+
+/** `official`: rank < 800. `all`: official plus deprecated (990-999); never fto. */
+export const EVENT_SCOPES = ["official", "all"] as const;
+export type EventScope = (typeof EVENT_SCOPES)[number];
 
 export const SINGLE_EVENTS = ["333fm", "333bf", "333mbf", "444bf", "555bf"];
 
@@ -51,7 +57,14 @@ export const eventNames: Record<string, string> = {
   "444bf": "4x4x4 Blindfolded",
   "555bf": "5x5x5 Blindfolded",
   "333mbf": "3x3x3 Multi-Blind",
+  "333ft": "3x3x3 With Feet",
+  magic: "Magic",
+  mmagic: "Master Magic",
+  "333mbo": "3x3x3 Multi-Blind Old Style",
 };
+
+/** Deprecated events that get their own column in cross-event tables (333mbo has no Mexican results). */
+export const DEPRECATED_EVENT_IDS = ["333ft", "magic", "mmagic"] as const;
 
 export const SPECIALTY_EVENT_IDS = [
   "333",
@@ -72,3 +85,10 @@ export const SPECIALTY_EVENT_IDS = [
   "555bf",
   "333mbf",
 ] as const;
+
+/** Event columns of cross-event tables (Kinch, SOR), in event rank order. */
+export function crossEventIds(scope: EventScope): string[] {
+  return scope === "all"
+    ? [...SPECIALTY_EVENT_IDS, ...DEPRECATED_EVENT_IDS]
+    : [...SPECIALTY_EVENT_IDS];
+}

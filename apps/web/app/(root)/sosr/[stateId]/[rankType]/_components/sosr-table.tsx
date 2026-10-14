@@ -6,6 +6,7 @@ import { DataTable } from "@/components/data-table/data-table";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import type { getSOSR, getSOSRGenderCounts } from "../_lib/queries";
 import { getColumns } from "./sosr-table-columns";
+import type { EventScope } from "@/lib/constants";
 
 interface SOSRTableProps {
   promises: Promise<
@@ -15,14 +16,15 @@ interface SOSRTableProps {
     ]
   >;
   rankType: "single" | "average";
+  scope: EventScope;
 }
 
-export function SOSRTable({ promises, rankType }: SOSRTableProps) {
+export function SOSRTable({ promises, rankType, scope }: SOSRTableProps) {
   const [{ data, pageCount }, genderCounts] = React.use(promises);
 
   const columns = React.useMemo(
-    () => getColumns({ rankType, genderCounts }),
-    [rankType, genderCounts],
+    () => getColumns({ rankType, genderCounts, scope }),
+    [rankType, genderCounts, scope],
   );
 
   const { table } = useDataTable({

@@ -4,6 +4,7 @@ import "server-only";
 import { db } from "@workspace/db";
 import { type Person, person, result, teamMember } from "@workspace/db/schema";
 import { and, asc, count, desc, eq, gt, inArray, sql } from "drizzle-orm";
+import { officialEventIdsSql } from "@/lib/official-events";
 import { accentInsensitiveContains } from "@/lib/search";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -86,12 +87,14 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
                 (SELECT COUNT(*)
                   FROM ranks_single
                   WHERE person_id = ${person.wcaId}
-                  AND state_rank = 1)
+                  AND state_rank = 1
+                  AND event_id IN ${officialEventIdsSql})
                 +
                 (SELECT COUNT(*)
                   FROM ranks_average
                   WHERE person_id = ${person.wcaId}
-                  AND state_rank = 1)
+                  AND state_rank = 1
+                  AND event_id IN ${officialEventIdsSql})
               ) AS INTEGER) AS state_records
             )`.as("state_records"),
         historicalStateRecords: sql<number>`(
@@ -101,6 +104,7 @@ async function getMembers(input: GetMembersSchema, stateId: Person["stateId"]) {
               ), 0) AS INTEGER)
               FROM results
               WHERE person_id = ${person.wcaId}
+                AND event_id IN ${officialEventIdsSql}
             )`.as("historical_state_records"),
         specialties: teamMember.specialties,
       })

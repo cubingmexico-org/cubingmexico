@@ -2,8 +2,8 @@
 
 import "server-only";
 import { db } from "@workspace/db";
-import { SINGLE_EVENTS } from "@/lib/constants";
-import { officialEventIdsSql } from "@/lib/official-events";
+import { SINGLE_EVENTS, type EventScope } from "@/lib/constants";
+import { crossEventIdsSql } from "@/lib/official-events";
 import { sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -19,9 +19,13 @@ interface KinchRanksTeams {
   }[];
 }
 
-export async function getKinchRanksTeams(): Promise<KinchRanksTeams[]> {
+export async function getKinchRanksTeams(
+  scope: EventScope = "official",
+): Promise<KinchRanksTeams[]> {
   cacheLife("days");
   cacheTag("kinch-ranks-teams-data");
+
+  const scopeEventIds = crossEventIdsSql(scope);
 
   const data = await db.execute(
     sql`
@@ -58,7 +62,7 @@ export async function getKinchRanksTeams(): Promise<KinchRanksTeams[]> {
                   MIN(best) AS personal_best,
                   'average' AS type
                 FROM ranks_average
-                WHERE event_id IN ${officialEventIdsSql}
+                WHERE event_id IN ${scopeEventIds}
                 GROUP BY person_id, event_id
                 UNION ALL
                 SELECT
@@ -77,7 +81,7 @@ export async function getKinchRanksTeams(): Promise<KinchRanksTeams[]> {
                   MIN(best) AS national_best,
                   'average' AS type
                 FROM ranks_average
-                WHERE country_rank = 1 AND event_id IN ${officialEventIdsSql}
+                WHERE country_rank = 1 AND event_id IN ${scopeEventIds}
                 GROUP BY event_id
                 UNION ALL
                 SELECT
@@ -120,7 +124,7 @@ export async function getKinchRanksTeams(): Promise<KinchRanksTeams[]> {
             FROM teams t
             CROSS JOIN events e
             LEFT JOIN TeamKinch tk ON t.state_id = tk.state_id AND e.id = tk.event_id
-            WHERE e.id IN ${officialEventIdsSql}
+            WHERE e.id IN ${scopeEventIds}
             GROUP BY t.name, t.state_id
             ORDER BY overall DESC;
           `,

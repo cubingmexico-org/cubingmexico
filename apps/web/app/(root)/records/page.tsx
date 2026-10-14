@@ -8,6 +8,8 @@ import { EventSelector } from "./_components/event-selector";
 import { ShowSelector } from "./_components/show-selector";
 import { ClearFiltersButton } from "./_components/clear-filters-button";
 import { AsOfDatePicker } from "@/components/as-of-date-picker";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 import {
   MixedRecordsTable,
   SeparateRecordsTables,
@@ -30,7 +32,7 @@ export default async function Page(props: PageProps) {
     search.show === "history" || search.show === "mixed-history";
 
   const [events, states, records, history] = await Promise.all([
-    getEvents(),
+    getEvents(eventScopeFromDeprecated(search.deprecated)),
     getStates(),
     isHistoryMode ? Promise.resolve([]) : getRecords(search),
     isHistoryMode ? getRecordHistory(search) : Promise.resolve([]),
@@ -61,6 +63,8 @@ export default async function Page(props: PageProps) {
         </div>
 
         <AsOfDatePicker className="sm:max-w-xs" />
+
+        <DeprecatedEventsSwitch />
 
         <ClearFiltersButton />
       </div>

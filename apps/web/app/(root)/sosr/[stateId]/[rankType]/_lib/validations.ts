@@ -8,6 +8,7 @@ import {
 import { getFiltersStateParser, getSortingStateParser } from "@/lib/parsers";
 import type { SumOfStateRanks } from "../_types";
 import { person } from "@workspace/db/schema";
+import { deprecatedParser } from "@/lib/search-params";
 
 export const searchParamsCache = createSearchParamsCache({
   page: parseAsInteger.withDefault(1),
@@ -22,6 +23,7 @@ export const searchParamsCache = createSearchParamsCache({
   // advanced filter
   filters: getFiltersStateParser().withDefault([]),
   joinOperator: parseAsStringEnum(["and", "or"]).withDefault("and"),
+  deprecated: deprecatedParser,
 });
 
 export type GetSOSRSinglesSchema = Awaited<

@@ -12,7 +12,11 @@ import {
   resultAttempts,
 } from "@workspace/db/schema";
 import { and, desc, eq, gt, sql, inArray, or } from "drizzle-orm";
-import { inOfficialEvents } from "@/lib/official-events";
+import {
+  eventScopeFromDeprecated,
+  inOfficialEvents,
+  inScopeEvents,
+} from "@/lib/official-events";
 import { competitionAsOfCondition } from "@/lib/as-of-date";
 import { recordDateSql, toDateKey } from "@/lib/record-date";
 import { GetRecordsSchema } from "./validations";
@@ -66,7 +70,7 @@ export async function getRecords(input: GetRecordsSchema) {
     input.state ? eq(state.name, input.state) : undefined,
     input.gender ? eq(person.gender, input.gender) : undefined,
     input.event ? eq(result.eventId, input.event) : undefined,
-    inOfficialEvents(result.eventId),
+    inScopeEvents(result.eventId, eventScopeFromDeprecated(input.deprecated)),
     gt(result.best, 0),
     competitionAsOfCondition(input.asOf),
   );
@@ -75,7 +79,7 @@ export async function getRecords(input: GetRecordsSchema) {
     input.state ? eq(state.name, input.state) : undefined,
     input.gender ? eq(person.gender, input.gender) : undefined,
     input.event ? eq(result.eventId, input.event) : undefined,
-    inOfficialEvents(result.eventId),
+    inScopeEvents(result.eventId, eventScopeFromDeprecated(input.deprecated)),
     gt(result.average, 0),
     competitionAsOfCondition(input.asOf),
   );
@@ -273,7 +277,7 @@ export async function getRecordHistory(
     input.state ? eq(state.name, input.state) : undefined,
     input.gender ? eq(person.gender, input.gender) : undefined,
     input.event ? eq(result.eventId, input.event) : undefined,
-    inOfficialEvents(result.eventId),
+    inScopeEvents(result.eventId, eventScopeFromDeprecated(input.deprecated)),
     competitionAsOfCondition(input.asOf),
   );
 

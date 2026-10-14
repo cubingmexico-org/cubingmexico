@@ -5,6 +5,7 @@ import {
   parseAsStringEnum,
 } from "nuqs/server";
 import { SHOW_MODES } from "./show-modes";
+import { deprecatedParser } from "@/lib/search-params";
 
 export { SHOW_MODES, type ShowMode } from "./show-modes";
 
@@ -14,6 +15,7 @@ export const searchParamsCache = createSearchParamsCache({
   event: parseAsString.withDefault(""),
   show: parseAsStringEnum([...SHOW_MODES]).withDefault("mixed"),
   asOf: parseAsString.withDefault(""),
+  deprecated: deprecatedParser,
 });
 
 export type GetRecordsSchema = Awaited<

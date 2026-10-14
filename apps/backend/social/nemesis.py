@@ -19,7 +19,8 @@ NEMESIS_FREE_SQL = """
     FROM nemesis_stats ns
     JOIN persons p ON p.wca_id = ns.person_id
     LEFT JOIN states s ON s.id = p.state_id
-    WHERE ns.nemesis_count = 0
+    WHERE ns.scope = 'official'
+      AND ns.nemesis_count = 0
       AND ns.event_count >= %(min_events)s
 """
 
@@ -44,7 +45,7 @@ def fetch_nemesis_free_ids(cur) -> set[str]:
     cur.execute(
         """
         SELECT person_id FROM nemesis_stats
-        WHERE nemesis_count = 0 AND event_count >= %s
+        WHERE scope = 'official' AND nemesis_count = 0 AND event_count >= %s
         """,
         (NEMESIS_FREE_MIN_EVENTS,),
     )

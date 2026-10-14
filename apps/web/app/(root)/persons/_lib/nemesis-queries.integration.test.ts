@@ -86,3 +86,33 @@ describe("nemesis queries ignore unofficial events", () => {
     expect(report.almost).toEqual([]);
   });
 });
+
+describe("nemesis queries with the deprecated scope", () => {
+  it("adds deprecated slots but still ignores fto", async () => {
+    const report = await getNemesisReport("2020AAAA01", "all");
+
+    expect(report.slotCount).toBe(3);
+    expect(report.nemeses.map((n) => n.wcaId)).toEqual(["2020CCCC01"]);
+    expect(report.almost.map((a) => [a.wcaId, a.missing.eventId])).toEqual([
+      ["2020BBBB01", "333ft"],
+    ]);
+  });
+
+  it("keeps deprecated what-if targets", async () => {
+    const report = await findNemesisReport({
+      singles: { "333": 600, "222": 300, "333ft": 5000, fto: 1000 },
+      averages: {},
+      excludeWcaId: "2020AAAA01",
+      scope: "all",
+    });
+
+    expect(report.slotCount).toBe(3);
+    expect(report.nemeses.map((n) => n.wcaId)).toEqual(["2020CCCC01"]);
+  });
+
+  it("still ignores fto when finding nemesized", async () => {
+    const report = await getNemesizedReport("2020AAAA01", "all");
+
+    expect(report.victims.map((v) => v.wcaId)).toEqual(["2020DDDD01"]);
+  });
+});

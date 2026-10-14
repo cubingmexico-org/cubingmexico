@@ -7,6 +7,7 @@ import * as React from "react";
 import { RankTypeSelector } from "./rank-type-selector";
 import { person } from "@workspace/db/schema";
 import {
+  parseAsBoolean,
   parseAsString,
   parseAsArrayOf,
   createSerializer,
@@ -17,6 +18,7 @@ import { ResultTypeSelector } from "./result-type-selector";
 import { usePathname } from "next/navigation";
 import type { EventId } from "@/types/wca";
 import { AsOfDatePicker } from "@/components/as-of-date-picker";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 
 const searchParams = {
   name: parseAsString.withDefault(""),
@@ -26,6 +28,7 @@ const searchParams = {
   ).withDefault([]),
   asOf: parseAsString.withDefault(""),
   show: parseAsArrayOf(parseAsStringEnum(["results"])).withDefault([]),
+  deprecated: parseAsBoolean.withDefault(false),
 };
 const serialize = createSerializer(searchParams);
 
@@ -34,6 +37,7 @@ interface EventSelectorProps extends React.HTMLAttributes<HTMLDivElement> {
     id: string;
     name: string;
   }[];
+  officialEventIds: string[];
   selectedEventId: EventId;
   selectedRankType: "single" | "average";
   className?: string;
@@ -41,6 +45,7 @@ interface EventSelectorProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function EventSelector({
   events,
+  officialEventIds,
   selectedEventId,
   selectedRankType,
   className,
@@ -48,11 +53,19 @@ export function EventSelector({
 }: EventSelectorProps) {
   const eventName = events.find((event) => event.id === selectedEventId)?.name;
 
-  const [{ name, state, gender, asOf }] = useQueryStates(searchParams);
+  const [{ name, state, gender, asOf, deprecated }] =
+    useQueryStates(searchParams);
 
   const pathname = usePathname();
 
-  const preserved = { name, state, gender, asOf };
+  const preserved = { name, state, gender, asOf, deprecated };
+
+  const visibleEvents = events.filter(
+    (event) =>
+      deprecated ||
+      event.id === selectedEventId ||
+      officialEventIds.includes(event.id),
+  );
 
   const hrefSingle = serialize(
     pathname.includes("results")
@@ -84,7 +97,7 @@ export function EventSelector({
       <div className="flex flex-col gap-2">
         <span className="font-semibold text-sm">Eventos</span>
         <div className="flex flex-wrap gap-2 text-muted-foreground">
-          {events.map((event) => {
+          {visibleEvents.map((event) => {
             const href = serialize(
               pathname.includes("results")
                 ? `/rankings/${event.id}/${selectedRankType}/results`
@@ -125,6 +138,7 @@ export function EventSelector({
         />
       </div>
       <AsOfDatePicker className="sm:max-w-xs" />
+      <DeprecatedEventsSwitch />
     </div>
   );
 }
