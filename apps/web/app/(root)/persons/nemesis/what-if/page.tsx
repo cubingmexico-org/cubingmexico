@@ -17,6 +17,15 @@ import {
 import { NemesisPicker } from "../_components/nemesis-picker";
 import { WhatIfForm } from "./_components/what-if-form";
 import { WhatIfResults } from "./_components/what-if-results";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
+import { deprecatedParser } from "@/lib/search-params";
+import type { EventScope } from "@/lib/constants";
+import { createSearchParamsCache } from "nuqs/server";
+
+const searchParamsCache = createSearchParamsCache({
+  deprecated: deprecatedParser,
+});
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -61,6 +70,9 @@ export default async function Page({ searchParams }: Props) {
         cuántos némesis te quedarían.
       </p>
       <NemesisPicker value={person} basePath="/persons/nemesis/what-if" />
+      <div className="flex justify-center mb-6">
+        <DeprecatedEventsSwitch />
+      </div>
       {params.id && !person ? (
         <p className="text-center text-muted-foreground">
           No encontramos al competidor seleccionado.
@@ -70,6 +82,9 @@ export default async function Page({ searchParams }: Props) {
           wcaId={person.wcaId}
           name={person.name ?? person.wcaId}
           params={params}
+          scope={eventScopeFromDeprecated(
+            searchParamsCache.parse(params).deprecated,
+          )}
         />
       ) : (
         <p className="text-center text-muted-foreground">
@@ -84,14 +99,16 @@ async function WhatIfContent({
   wcaId,
   name,
   params,
+  scope,
 }: {
   wcaId: string;
   name: string;
   params: Record<string, string | string[] | undefined>;
+  scope: EventScope;
 }) {
   const [events, real] = await Promise.all([
-    getEvents(),
-    getPersonRecordValues(wcaId),
+    getEvents(scope),
+    getPersonRecordValues(wcaId, scope),
   ]);
 
   const overrides = parseWhatIfParams(
@@ -101,11 +118,12 @@ async function WhatIfContent({
   const simulated = hasOverrides(overrides);
 
   const [baseline, hypothetical] = await Promise.all([
-    getNemesisReport(wcaId),
+    getNemesisReport(wcaId, scope),
     simulated
       ? findNemesisReport({
           ...applyWhatIfOverrides(real, overrides),
           excludeWcaId: wcaId,
+          scope,
         })
       : null,
   ]);
@@ -114,14 +132,17 @@ async function WhatIfContent({
     <div className="flex flex-col gap-8">
       <div className="flex justify-center">
         <Button variant="ghost" size="sm" asChild>
-          <Link href={`/persons/nemesis?id=${wcaId}`}>
+          <Link
+            href={`/persons/nemesis?id=${wcaId}${scope === "all" ? "&deprecated=true" : ""}`}
+            prefetch={false}
+          >
             <ArrowLeft className="size-4" />
             Ver némesis reales
           </Link>
         </Button>
       </div>
       <WhatIfForm
-        key={JSON.stringify(overrides)}
+        key={`${scope}-${JSON.stringify(overrides)}`}
         wcaId={wcaId}
         events={events}
         real={real}

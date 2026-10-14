@@ -281,6 +281,7 @@ export default async function Page({
                       <div className="min-w-0">
                         <Link
                           href={`/persons/${resultRow.personId}`}
+                          prefetch={false}
                           className="truncate font-medium text-link hover:text-link/80"
                         >
                           {resultRow.personName ?? resultRow.personId}
@@ -309,6 +310,7 @@ export default async function Page({
                     "bg-background",
                   )}
                   href={`/competitions/${id}/results/podiums`}
+                  prefetch={false}
                 >
                   Ver resultados completos
                 </Link>

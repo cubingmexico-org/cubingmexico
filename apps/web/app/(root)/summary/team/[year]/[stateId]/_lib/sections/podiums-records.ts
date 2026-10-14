@@ -9,6 +9,7 @@ import {
   result,
 } from "@workspace/db/schema";
 import { and, asc, desc, eq, gt, inArray, or, sql } from "drizzle-orm";
+import { inOfficialEvents, isOfficialEvent } from "@/lib/official-events";
 import {
   FEATURED_CHAMPIONSHIP_TYPES,
   TOP_N,
@@ -142,6 +143,7 @@ export function queryPodiumsRecordsSection({
       .where(
         and(
           memberYearFilter,
+          isOfficialEvent,
           or(
             eq(result.stateSingleRecord, "SR"),
             eq(result.stateAverageRecord, "SR"),
@@ -162,7 +164,7 @@ export function queryPodiumsRecordsSection({
         wr: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'WR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'WR' THEN 1 ELSE 0 END))::int`,
         nar: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NAR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NAR' THEN 1 ELSE 0 END))::int`,
         nr: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NR' THEN 1 ELSE 0 END))::int`,
-        sr: sql<number>`SUM((CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END))::int`,
+        sr: sql<number>`SUM(CASE WHEN ${inOfficialEvents(result.eventId)} THEN (CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END) ELSE 0 END)::int`,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
@@ -183,6 +185,7 @@ export function queryPodiumsRecordsSection({
       .where(
         and(
           memberYearFilter,
+          inOfficialEvents(result.eventId),
           or(
             eq(result.stateSingleRecord, "SR"),
             eq(result.stateAverageRecord, "SR"),

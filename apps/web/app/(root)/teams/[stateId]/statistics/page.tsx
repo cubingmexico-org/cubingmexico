@@ -32,6 +32,15 @@ import {
   NationalRecordsList,
 } from "../_components/team-profile-shared";
 import { TeamResultsChart } from "./_components/team-results-chart";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
+import { deprecatedParser } from "@/lib/search-params";
+import { createSearchParamsCache } from "nuqs/server";
+import type { SearchParams } from "@/types";
+
+const searchParamsCache = createSearchParamsCache({
+  deprecated: deprecatedParser,
+});
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -49,10 +58,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page(props: {
   params: Promise<{ stateId: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const stateId = (await props.params).stateId;
+  const { deprecated } = searchParamsCache.parse(await props.searchParams);
   const [data, eventOptions, showAnnualSummary] = await Promise.all([
-    getStatisticsPageData(stateId),
+    getStatisticsPageData(stateId, eventScopeFromDeprecated(deprecated)),
     getTeamCompetitionEventOptions(stateId),
     canAccessAnnualSummary(),
   ]);
@@ -131,6 +142,7 @@ export default async function Page(props: {
         {showAnnualSummary ? (
           <Link
             href={`/summary/team/${summaryYear}/${stateId}`}
+            prefetch={false}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
             <CalendarRange />
@@ -166,8 +178,9 @@ export default async function Page(props: {
       <TeamResultsChart stateId={stateId} eventOptions={eventOptions} />
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <CardTitle>Récords nacionales actuales</CardTitle>
+          <DeprecatedEventsSwitch />
         </CardHeader>
         <CardContent>
           <NationalRecordsList records={nationalRecords} />

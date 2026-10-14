@@ -415,10 +415,11 @@ export const sumOfRanks = pgTable(
       .notNull()
       .references(() => person.wcaId, { onDelete: "cascade" }),
     resultType: varchar("result_type", { length: 7 }).notNull(),
+    scope: varchar("scope", { length: 8 }).notNull().default("official"),
     overall: integer("overall").notNull(),
     events: jsonb("events").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.personId, t.resultType] })],
+  (t) => [primaryKey({ columns: [t.personId, t.resultType, t.scope] })],
 );
 
 export type SumOfRanks = InferSelectModel<typeof sumOfRanks>;
@@ -430,10 +431,11 @@ export const kinchRanks = pgTable(
     personId: varchar("person_id", { length: 10 })
       .notNull()
       .references(() => person.wcaId, { onDelete: "cascade" }),
+    scope: varchar("scope", { length: 8 }).notNull().default("official"),
     overall: doublePrecision("overall").notNull(),
     events: jsonb("events").notNull(),
   },
-  (t) => [primaryKey({ columns: [t.personId] })],
+  (t) => [primaryKey({ columns: [t.personId, t.scope] })],
 );
 
 export type KinchRanks = InferSelectModel<typeof kinchRanks>;
@@ -445,10 +447,11 @@ export const streakRanks = pgTable(
     personId: varchar("person_id", { length: 10 })
       .notNull()
       .references(() => person.wcaId, { onDelete: "cascade" }),
+    scope: varchar("scope", { length: 8 }).notNull().default("official"),
     currentStreak: integer("current_streak").notNull().default(0),
     longestStreak: integer("longest_streak").notNull().default(0),
   },
-  (t) => [primaryKey({ columns: [t.personId] })],
+  (t) => [primaryKey({ columns: [t.personId, t.scope] })],
 );
 
 export type StreakRanks = InferSelectModel<typeof streakRanks>;
@@ -459,15 +462,16 @@ export const nemesisStats = pgTable(
     personId: varchar("person_id", { length: 10 })
       .notNull()
       .references(() => person.wcaId, { onDelete: "cascade" }),
+    scope: varchar("scope", { length: 8 }).notNull().default("official"),
     nemesisCount: integer("nemesis_count").notNull().default(0),
     nemesizedCount: integer("nemesized_count").notNull().default(0),
     eventCount: integer("event_count").notNull().default(0),
     slotCount: integer("slot_count").notNull().default(0),
   },
   (t) => [
-    primaryKey({ columns: [t.personId] }),
-    index("nemesis_stats_nemesis_count_idx").on(t.nemesisCount),
-    index("nemesis_stats_nemesized_count_idx").on(t.nemesizedCount),
+    primaryKey({ columns: [t.personId, t.scope] }),
+    index("nemesis_stats_nemesis_count_idx").on(t.scope, t.nemesisCount),
+    index("nemesis_stats_nemesized_count_idx").on(t.scope, t.nemesizedCount),
   ],
 );
 

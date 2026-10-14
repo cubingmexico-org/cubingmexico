@@ -3,6 +3,14 @@ import { getTeams } from "../(teams)/_lib/queries";
 import { getTeamInfo } from "../[stateId]/_lib/queries";
 import { TeamComparePicker } from "./_components/team-compare-picker";
 import { TeamCompareContent } from "./_components/team-compare-content";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
+import { deprecatedParser } from "@/lib/search-params";
+import { createSearchParamsCache } from "nuqs/server";
+
+const searchParamsCache = createSearchParamsCache({
+  deprecated: deprecatedParser,
+});
 
 type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -47,6 +55,7 @@ export async function generateMetadata({
 
 export default async function Page({ searchParams }: Props) {
   const params = await searchParams;
+  const { deprecated } = searchParamsCache.parse(params);
   const [a, b, teams] = await Promise.all([
     resolveTeam(parseTeamId(params.a)),
     resolveTeam(parseTeamId(params.b)),
@@ -79,7 +88,16 @@ export default async function Page({ searchParams }: Props) {
       {message || !a || !b ? (
         <p className="text-center text-muted-foreground mt-8">{message}</p>
       ) : (
-        <TeamCompareContent a={a.stateId} b={b.stateId} />
+        <>
+          <div className="flex justify-center mb-6">
+            <DeprecatedEventsSwitch />
+          </div>
+          <TeamCompareContent
+            a={a.stateId}
+            b={b.stateId}
+            scope={eventScopeFromDeprecated(deprecated)}
+          />
+        </>
       )}
     </>
   );

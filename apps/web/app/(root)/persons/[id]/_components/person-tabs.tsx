@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
+import {
+  parseAsBoolean,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+  useQueryStates,
+} from "nuqs";
 import {
   Tabs,
   TabsContent,
@@ -108,7 +114,12 @@ export function PersonTabs({
   const [nemeses, setNemeses] = useState<{
     report: NemesisReport;
     nemesized: NemesizedReport;
+    includeDeprecated: boolean;
   } | null>(null);
+  const [includeDeprecated] = useQueryState(
+    "deprecated",
+    parseAsBoolean.withDefault(false),
+  );
   const [mapData, setMapData] = useState<{
     locations: PersonCompetitionLocation[];
     statesData: GeoJSONProps["data"] | undefined;
@@ -259,13 +270,16 @@ export function PersonTabs({
   }, [tab, wcaId, staffCompetitions, showStaffCompetitionsTab]);
 
   useEffect(() => {
-    if (tab !== "nemesis" || nemeses !== null) {
+    if (
+      tab !== "nemesis" ||
+      (nemeses !== null && nemeses.includeDeprecated === includeDeprecated)
+    ) {
       return;
     }
 
     let cancelled = false;
     startTransition(() => {
-      void loadPersonNemeses(wcaId).then((data) => {
+      void loadPersonNemeses(wcaId, includeDeprecated).then((data) => {
         if (!cancelled) {
           setNemeses(data);
         }
@@ -275,7 +289,7 @@ export function PersonTabs({
     return () => {
       cancelled = true;
     };
-  }, [tab, wcaId, nemeses]);
+  }, [tab, wcaId, nemeses, includeDeprecated]);
 
   useEffect(() => {
     if (tab !== "map" || mapData !== null) {
@@ -420,7 +434,7 @@ export function PersonTabs({
       )}
 
       <TabsContent value="nemesis" className="mt-6">
-        {nemeses === null ? (
+        {nemeses === null || nemeses.includeDeprecated !== includeDeprecated ? (
           <Skeleton className="h-64 w-full" />
         ) : (
           <div className="flex flex-col gap-8">

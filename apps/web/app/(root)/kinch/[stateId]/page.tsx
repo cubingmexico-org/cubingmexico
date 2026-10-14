@@ -13,6 +13,16 @@ import { getStates } from "@/db/queries";
 import type { Metadata } from "next";
 import { getTeam } from "@/db/queries";
 import { getKinchRanksState } from "./_lib/queries";
+import { crossEventIds } from "@/lib/constants";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
+import { deprecatedParser } from "@/lib/search-params";
+import { createSearchParamsCache } from "nuqs/server";
+import type { SearchParams } from "@/types";
+
+const searchParamsCache = createSearchParamsCache({
+  deprecated: deprecatedParser,
+});
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -36,10 +46,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page(props: {
   params: Promise<{ stateId: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const stateId = (await props.params).stateId;
+  const { deprecated } = searchParamsCache.parse(await props.searchParams);
+  const scope = eventScopeFromDeprecated(deprecated);
 
-  const persons = await getKinchRanksState(stateId);
+  const persons = await getKinchRanksState(stateId, scope);
 
   const states = await getStates();
 
@@ -61,6 +74,7 @@ export default async function Page(props: {
           <Link
             className="text-muted-foreground hover:underline"
             href={`/records/${stateId}`}
+            prefetch={false}
           >
             récords estatales (SR)
           </Link>{" "}
@@ -78,6 +92,7 @@ export default async function Page(props: {
           resolución de rompecabezas.
         </p>
         <StateSelector states={states} stateName={stateName!} />
+        <DeprecatedEventsSwitch />
       </div>
       <Table>
         <TableHeader>
@@ -85,57 +100,11 @@ export default async function Page(props: {
             <TableHead>#</TableHead>
             <TableHead>Nombre</TableHead>
             <TableHead>Total</TableHead>
-            <TableHead>
-              <span className="cubing-icon event-333" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-222" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-444" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-555" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-666" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-777" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-333bf" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-333fm" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-333oh" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-clock" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-minx" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-pyram" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-skewb" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-sq1" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-444bf" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-555bf" />
-            </TableHead>
-            <TableHead>
-              <span className="cubing-icon event-333mbf" />
-            </TableHead>
+            {crossEventIds(scope).map((eventId) => (
+              <TableHead key={eventId}>
+                <span className={`cubing-icon event-${eventId}`} />
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>

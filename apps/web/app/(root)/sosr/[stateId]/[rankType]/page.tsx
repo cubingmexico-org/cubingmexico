@@ -10,6 +10,8 @@ import { StateSelector } from "../_components/state-selector";
 import { getValidFilters } from "@/lib/data-table";
 import { searchParamsCache } from "./_lib/validations";
 import { SearchParams } from "@/types";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 type Props = {
   params: Promise<{ stateId: string; rankType: "single" | "average" }>;
@@ -66,7 +68,11 @@ export default async function Page(props: PageProps) {
       stateId,
       rankType,
     ),
-    getSOSRGenderCounts(stateId, rankType),
+    getSOSRGenderCounts(
+      stateId,
+      rankType,
+      eventScopeFromDeprecated(search.deprecated),
+    ),
   ]);
 
   return (
@@ -94,6 +100,7 @@ export default async function Page(props: PageProps) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <RankTypeSelector stateId={stateId} selectedRankType={rankType} />
         </div>
+        <DeprecatedEventsSwitch />
       </div>
       <div className="grid gap-6">
         <React.Suspense
@@ -114,7 +121,11 @@ export default async function Page(props: PageProps) {
             />
           }
         >
-          <SOSRTable promises={promises} rankType={rankType} />
+          <SOSRTable
+            promises={promises}
+            rankType={rankType}
+            scope={eventScopeFromDeprecated(search.deprecated)}
+          />
         </React.Suspense>
       </div>
     </>

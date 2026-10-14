@@ -5,6 +5,7 @@ import Link from "next/link";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { cn } from "@workspace/ui/lib/utils";
 import { getSumOfRanksBaseEventIds } from "@/lib/sum-of-ranks-events";
+import { DEPRECATED_EVENT_IDS, type EventScope } from "@/lib/constants";
 
 export type SumOfRanksRankKey = "countryRank" | "stateRank";
 
@@ -32,6 +33,7 @@ interface GetSumOfRanksColumnsProps {
   rankKey: SumOfRanksRankKey;
   genderCounts: Record<string, number>;
   stateCounts?: Record<string, number>;
+  scope?: EventScope;
 }
 
 function eventRankValue(
@@ -79,6 +81,7 @@ export function getSumOfRanksColumns<TRow extends SumOfRanksRow>({
   rankKey,
   genderCounts,
   stateCounts,
+  scope = "official",
 }: GetSumOfRanksColumnsProps): ColumnDef<TRow>[] {
   const columns: ColumnDef<TRow>[] = [
     {
@@ -133,6 +136,9 @@ export function getSumOfRanksColumns<TRow extends SumOfRanksRow>({
       enableHiding: false,
     },
     ...getSumOfRanksBaseEventIds().map((eventId) =>
+      makeEventColumn<TRow>(eventId, rankKey),
+    ),
+    ...(scope === "all" ? DEPRECATED_EVENT_IDS : []).map((eventId) =>
       makeEventColumn<TRow>(eventId, rankKey),
     ),
   ];

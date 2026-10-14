@@ -12,10 +12,13 @@ import { alias } from "drizzle-orm/pg-core";
 import { cacheLife, cacheTag } from "next/cache";
 import { recordDateSql, toDateKey } from "@/lib/record-date";
 import type { HeadToHeadRound } from "@/lib/head-to-head";
+import { inScopeEvents } from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
 
 export async function getHeadToHeadResults(
   a: string,
   b: string,
+  scope: EventScope = "official",
 ): Promise<HeadToHeadRound[]> {
   "use cache";
   cacheLife("weeks");
@@ -60,7 +63,13 @@ export async function getHeadToHeadResults(
         eq(competitionRoundDate.roundTypeId, resultA.roundTypeId),
       ),
     )
-    .where(and(eq(resultA.personId, a), eq(resultB.personId, b)))
+    .where(
+      and(
+        eq(resultA.personId, a),
+        eq(resultB.personId, b),
+        inScopeEvents(resultA.eventId, scope),
+      ),
+    )
     .orderBy(desc(recordDateSql), asc(event.rank), desc(roundType.rank));
 
   return rows.map((row) => ({

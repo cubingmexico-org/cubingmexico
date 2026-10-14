@@ -5,6 +5,7 @@ import { RankTypeSelector as SharedRankTypeSelector } from "@/components/rank-ty
 import {
   createSerializer,
   parseAsArrayOf,
+  parseAsBoolean,
   parseAsString,
   parseAsStringEnum,
   useQueryStates,
@@ -17,6 +18,7 @@ const searchParams = {
   gender: parseAsArrayOf(
     parseAsStringEnum(person.gender.enumValues),
   ).withDefault([]),
+  deprecated: parseAsBoolean.withDefault(false),
 };
 const serialize = createSerializer(searchParams);
 
@@ -30,16 +32,18 @@ export function RankTypeSelector({
   className,
   ...props
 }: RankTypeSelectorProps) {
-  const [{ name, state, gender }] = useQueryStates(searchParams);
+  const [{ name, state, gender, deprecated }] = useQueryStates(searchParams);
   const hrefSingle = serialize(`/sor/single`, {
     name,
     state,
     gender,
+    deprecated,
   });
   const hrefAverage = serialize(`/sor/average`, {
     name,
     state,
     gender,
+    deprecated,
   });
 
   return (

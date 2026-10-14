@@ -39,55 +39,55 @@ export function PersonsCombobox({
   >([]);
 
   // Debounce search with loading simulation
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- debounced function is created once; deps inside debounce() are not trackable
-  const debouncedSearch = React.useCallback(
-    debounce(async (searchTerm: string) => {
-      setIsLoading(true);
-      setProgress(0);
+  const debouncedSearch = React.useMemo(
+    () =>
+      debounce(async (searchTerm: string) => {
+        setIsLoading(true);
+        setProgress(0);
 
-      // Simulate a more realistic progress pattern
-      const progressSteps = [15, 35, 65, 85, 95] as const;
-      let currentStepIndex = 0;
+        // Simulate a more realistic progress pattern
+        const progressSteps = [15, 35, 65, 85, 95] as const;
+        let currentStepIndex = 0;
 
-      const interval = setInterval(() => {
-        if (currentStepIndex < progressSteps.length) {
-          setProgress(progressSteps[currentStepIndex] ?? 0);
-          currentStepIndex++;
-        }
-      }, 150);
+        const interval = setInterval(() => {
+          if (currentStepIndex < progressSteps.length) {
+            setProgress(progressSteps[currentStepIndex] ?? 0);
+            currentStepIndex++;
+          }
+        }, 150);
 
-      try {
-        const params = new URLSearchParams({
-          search: searchTerm,
-          stateId,
-        });
-        const response = await fetch(
-          `/api/get-persons-without-state?${params.toString()}`,
-        );
+        try {
+          const params = new URLSearchParams({
+            search: searchTerm,
+            stateId,
+          });
+          const response = await fetch(
+            `/api/get-persons-without-state?${params.toString()}`,
+          );
 
-        if (!response.ok) {
-          setFilteredItems([]);
+          if (!response.ok) {
+            setFilteredItems([]);
+            setProgress(100);
+            return;
+          }
+
+          const data = await response.json();
+
+          const results = data?.data as {
+            id: string;
+            name: string;
+          }[];
+
+          setFilteredItems(results ?? []);
           setProgress(100);
-          return;
+        } catch (error) {
+          console.error("Error fetching persons:", error);
+          setFilteredItems([]);
+        } finally {
+          setIsLoading(false);
+          clearInterval(interval);
         }
-
-        const data = await response.json();
-
-        const results = data?.data as {
-          id: string;
-          name: string;
-        }[];
-
-        setFilteredItems(results ?? []);
-        setProgress(100);
-      } catch (error) {
-        console.error("Error fetching persons:", error);
-        setFilteredItems([]);
-      } finally {
-        setIsLoading(false);
-        clearInterval(interval);
-      }
-    }, 300),
+      }, 300),
     [stateId],
   );
 

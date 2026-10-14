@@ -8,7 +8,7 @@ import { db } from "@workspace/db";
 import { competition, socialPost } from "@workspace/db/schema";
 import {
   BLD_FMC_MEANS_EVENTS,
-  EXCLUDED_EVENTS,
+  OFFICIAL_EVENT_MAX_RANK,
   SPEEDSOLVING_AVERAGES_EVENTS,
 } from "@/lib/constants";
 import { getTier } from "@/lib/utils";
@@ -571,7 +571,7 @@ export async function getPendingMollerzPosts(limit = 50): Promise<
   const [members, posts] = await Promise.all([
     db.execute(sql`
       WITH current_events AS (
-        SELECT id FROM events WHERE id NOT IN (${sqlInList(EXCLUDED_EVENTS)})
+        SELECT id FROM events WHERE rank < ${OFFICIAL_EVENT_MAX_RANK}
       )
       SELECT
         p.wca_id AS "personId",
@@ -705,7 +705,8 @@ export async function getPendingNemesisPosts(limit = 50): Promise<
     LEFT JOIN states s ON s.id = p.state_id
     LEFT JOIN social_posts sp
       ON sp.post_type = 'nemesis' AND sp.subject_key = ns.person_id
-    WHERE ns.nemesis_count = 0
+    WHERE ns.scope = 'official'
+      AND ns.nemesis_count = 0
       AND ns.event_count >= ${NEMESIS_FREE_MIN_EVENTS}
     GROUP BY ns.person_id, p.name, s.name, ns.event_count, ns.nemesized_count
     HAVING NOT (

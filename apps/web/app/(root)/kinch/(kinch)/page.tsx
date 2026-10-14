@@ -9,6 +9,8 @@ import {
   getKinchRanksStateCounts,
 } from "../_lib/queries";
 import { getValidFilters } from "@/lib/data-table";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 interface PageProps {
   searchParams: Promise<SearchParams>;
@@ -19,36 +21,40 @@ export default async function Page(props: PageProps) {
   const search = searchParamsCache.parse(searchParams);
 
   const validFilters = getValidFilters(search.filters);
+  const scope = eventScopeFromDeprecated(search.deprecated);
 
   const promises = Promise.all([
     getKinchRanks({
       ...search,
       filters: validFilters,
     }),
-    getKinchRanksStateCounts(),
-    getKinchRanksGenderCounts(),
+    getKinchRanksStateCounts(scope),
+    getKinchRanksGenderCounts(scope),
   ]);
 
   return (
-    <React.Suspense
-      fallback={
-        <DataTableSkeleton
-          columnCount={7}
-          filterCount={2}
-          cellWidths={[
-            "10rem",
-            "30rem",
-            "10rem",
-            "10rem",
-            "6rem",
-            "6rem",
-            "6rem",
-          ]}
-          shrinkZero
-        />
-      }
-    >
-      <KinchTable promises={promises} />
-    </React.Suspense>
+    <>
+      <DeprecatedEventsSwitch />
+      <React.Suspense
+        fallback={
+          <DataTableSkeleton
+            columnCount={7}
+            filterCount={2}
+            cellWidths={[
+              "10rem",
+              "30rem",
+              "10rem",
+              "10rem",
+              "6rem",
+              "6rem",
+              "6rem",
+            ]}
+            shrinkZero
+          />
+        }
+      >
+        <KinchTable promises={promises} scope={scope} />
+      </React.Suspense>
+    </>
   );
 }

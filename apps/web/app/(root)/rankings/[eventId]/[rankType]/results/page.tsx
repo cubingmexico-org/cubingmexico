@@ -34,7 +34,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { eventId, rankType } = await params;
-  const events = await getEvents();
+  const events = await getEvents("all");
   const eventName =
     events.find((event) => event.id === eventId)?.name ?? eventId;
 
@@ -92,13 +92,17 @@ export default async function Page(props: PageProps) {
     getRankAveragesGenderCounts(eventId, searchAverage.asOf),
   ]);
 
-  const events = await getEvents();
+  const [events, officialEvents] = await Promise.all([
+    getEvents("all"),
+    getEvents(),
+  ]);
 
   return (
     <>
       <EventSelector
         className="mb-6"
         events={events}
+        officialEventIds={officialEvents.map((event) => event.id)}
         selectedEventId={eventId}
         selectedRankType={rankType}
       />

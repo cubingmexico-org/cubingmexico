@@ -81,6 +81,7 @@ export function ManageTeam({
                     buttonVariants({ variant: "ghost", size: "sm" }),
                   )}
                   href={`/teams/${stateId}`}
+                  prefetch={false}
                 >
                   <ArrowLeft />
                   Volver al Team

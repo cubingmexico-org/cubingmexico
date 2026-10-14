@@ -7,6 +7,8 @@ import { and, count, gt, eq, desc, asc, inArray } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
 import { type GetStreakRanksSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
+import type { EventScope } from "@/lib/constants";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 export async function getStreakRanks(input: GetStreakRanksSchema) {
   cacheLife("days");
@@ -15,6 +17,7 @@ export async function getStreakRanks(input: GetStreakRanksSchema) {
   const offset = (input.page - 1) * input.perPage;
 
   const where = and(
+    eq(streakRanks.scope, eventScopeFromDeprecated(input.deprecated)),
     input.name ? accentInsensitiveContains(person.name, input.name) : undefined,
     input.state.length > 0 ? inArray(state.name, input.state) : undefined,
     input.gender.length > 0 ? inArray(person.gender, input.gender) : undefined,
@@ -78,7 +81,7 @@ export async function getStreakRanks(input: GetStreakRanksSchema) {
   return { data, pageCount };
 }
 
-export async function getStreakRanksStateCounts() {
+export async function getStreakRanksStateCounts(scope: EventScope) {
   cacheLife("days");
   cacheTag("streak-ranks-state-counts");
 
@@ -90,6 +93,7 @@ export async function getStreakRanksStateCounts() {
     .from(streakRanks)
     .innerJoin(person, eq(streakRanks.personId, person.wcaId))
     .leftJoin(state, eq(person.stateId, state.id))
+    .where(eq(streakRanks.scope, scope))
     .groupBy(state.name)
     .having(gt(count(), 0))
     .orderBy(state.name)
@@ -105,7 +109,7 @@ export async function getStreakRanksStateCounts() {
     );
 }
 
-export async function getStreakRanksGenderCounts() {
+export async function getStreakRanksGenderCounts(scope: EventScope) {
   cacheLife("days");
   cacheTag("streak-ranks-gender-counts");
 
@@ -116,6 +120,7 @@ export async function getStreakRanksGenderCounts() {
     })
     .from(streakRanks)
     .innerJoin(person, eq(streakRanks.personId, person.wcaId))
+    .where(eq(streakRanks.scope, scope))
     .groupBy(person.gender)
     .having(gt(count(), 0))
     .then((res) =>

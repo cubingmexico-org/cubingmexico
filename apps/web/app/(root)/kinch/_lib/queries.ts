@@ -7,6 +7,8 @@ import { and, count, gt, eq, desc, asc, inArray } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
 import { type GetKinchSinglesSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
+import type { EventScope } from "@/lib/constants";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 export async function getKinchRanks(input: GetKinchSinglesSchema) {
   cacheLife("days");
@@ -15,6 +17,7 @@ export async function getKinchRanks(input: GetKinchSinglesSchema) {
   const offset = (input.page - 1) * input.perPage;
 
   const where = and(
+    eq(kinchRanks.scope, eventScopeFromDeprecated(input.deprecated)),
     input.name ? accentInsensitiveContains(person.name, input.name) : undefined,
     input.state.length > 0 ? inArray(state.name, input.state) : undefined,
     input.gender.length > 0 ? inArray(person.gender, input.gender) : undefined,
@@ -78,7 +81,7 @@ export async function getKinchRanks(input: GetKinchSinglesSchema) {
   return { data, pageCount };
 }
 
-export async function getKinchRanksStateCounts() {
+export async function getKinchRanksStateCounts(scope: EventScope) {
   cacheLife("days");
   cacheTag("kinch-ranks-state-counts");
 
@@ -90,6 +93,7 @@ export async function getKinchRanksStateCounts() {
     .from(kinchRanks)
     .innerJoin(person, eq(kinchRanks.personId, person.wcaId))
     .leftJoin(state, eq(person.stateId, state.id))
+    .where(eq(kinchRanks.scope, scope))
     .groupBy(state.name)
     .having(gt(count(), 0))
     .orderBy(state.name)
@@ -105,7 +109,7 @@ export async function getKinchRanksStateCounts() {
     );
 }
 
-export async function getKinchRanksGenderCounts() {
+export async function getKinchRanksGenderCounts(scope: EventScope) {
   cacheLife("days");
   cacheTag("kinch-ranks-gender-counts");
 
@@ -116,6 +120,7 @@ export async function getKinchRanksGenderCounts() {
     })
     .from(kinchRanks)
     .innerJoin(person, eq(kinchRanks.personId, person.wcaId))
+    .where(eq(kinchRanks.scope, scope))
     .groupBy(person.gender)
     .having(gt(count(), 0))
     .orderBy(person.gender)

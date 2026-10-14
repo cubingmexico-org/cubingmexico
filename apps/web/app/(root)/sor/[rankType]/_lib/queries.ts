@@ -7,6 +7,8 @@ import { and, count, gt, eq, desc, asc, inArray } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
 import { type GetSORSinglesSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
+import type { EventScope } from "@/lib/constants";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 export async function getSOR(
   input: GetSORSinglesSchema,
@@ -15,10 +17,12 @@ export async function getSOR(
   cacheLife("days");
   cacheTag(`sor-${rankType}`);
 
+  const scope = eventScopeFromDeprecated(input.deprecated);
   const offset = (input.page - 1) * input.perPage;
 
   const where = and(
     eq(sumOfRanks.resultType, rankType),
+    eq(sumOfRanks.scope, scope),
     input.name ? accentInsensitiveContains(person.name, input.name) : undefined,
     input.state.length > 0 ? inArray(state.name, input.state) : undefined,
     input.gender.length > 0 ? inArray(person.gender, input.gender) : undefined,
@@ -82,7 +86,10 @@ export async function getSOR(
   return { data, pageCount };
 }
 
-export async function getSORStateCounts(rankType: "single" | "average") {
+export async function getSORStateCounts(
+  rankType: "single" | "average",
+  scope: EventScope,
+) {
   cacheLife("days");
   cacheTag(`sor-state-counts-${rankType}`);
 
@@ -94,7 +101,9 @@ export async function getSORStateCounts(rankType: "single" | "average") {
     .from(sumOfRanks)
     .innerJoin(person, eq(sumOfRanks.personId, person.wcaId))
     .leftJoin(state, eq(person.stateId, state.id))
-    .where(eq(sumOfRanks.resultType, rankType))
+    .where(
+      and(eq(sumOfRanks.resultType, rankType), eq(sumOfRanks.scope, scope)),
+    )
     .groupBy(state.name)
     .having(gt(count(), 0))
     .orderBy(state.name)
@@ -110,7 +119,10 @@ export async function getSORStateCounts(rankType: "single" | "average") {
     );
 }
 
-export async function getSORGenderCounts(rankType: "single" | "average") {
+export async function getSORGenderCounts(
+  rankType: "single" | "average",
+  scope: EventScope,
+) {
   cacheLife("days");
   cacheTag(`sor-gender-counts-${rankType}`);
 
@@ -121,7 +133,9 @@ export async function getSORGenderCounts(rankType: "single" | "average") {
     })
     .from(sumOfRanks)
     .innerJoin(person, eq(sumOfRanks.personId, person.wcaId))
-    .where(eq(sumOfRanks.resultType, rankType))
+    .where(
+      and(eq(sumOfRanks.resultType, rankType), eq(sumOfRanks.scope, scope)),
+    )
     .groupBy(person.gender)
     .having(gt(count(), 0))
     .orderBy(person.gender)

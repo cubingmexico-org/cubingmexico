@@ -1,8 +1,10 @@
 import "server-only";
 import { db } from "@workspace/db";
 import { nemesisStats } from "@workspace/db/schema";
-import { eq, sql, type SQL } from "drizzle-orm";
+import { and, eq, sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
+import { eventIdsSql } from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
 
 export type PersonNemesis = {
   wcaId: string;
@@ -86,19 +88,24 @@ function targetValues({ singles, averages }: NemesisTargets): SQL[] {
 
 export async function getPersonRecordValues(
   wcaId: string,
+  scope: EventScope = "official",
 ): Promise<NemesisTargets> {
   "use cache";
   cacheLife("weeks");
   cacheTag(`person-nemeses-${wcaId}`);
 
+  const scopeEventIds = eventIdsSql(scope);
+
   const [singleRows, averageRows] = await Promise.all([
     db.execute(sql`
       SELECT event_id AS "eventId", best FROM ranks_single
       WHERE person_id = ${wcaId} AND best > 0
+        AND event_id IN ${scopeEventIds}
     `),
     db.execute(sql`
       SELECT event_id AS "eventId", best FROM ranks_average
       WHERE person_id = ${wcaId} AND best > 0
+        AND event_id IN ${scopeEventIds}
     `),
   ]);
 
@@ -113,13 +120,16 @@ export async function getPersonRecordValues(
   return { singles: toRecord(singleRows), averages: toRecord(averageRows) };
 }
 
-export async function getNemesisReport(wcaId: string): Promise<NemesisReport> {
+export async function getNemesisReport(
+  wcaId: string,
+  scope: EventScope = "official",
+): Promise<NemesisReport> {
   "use cache";
   cacheLife("weeks");
   cacheTag(`person-nemeses-${wcaId}`);
 
-  const targets = await getPersonRecordValues(wcaId);
-  return findNemesisReport({ ...targets, excludeWcaId: wcaId });
+  const targets = await getPersonRecordValues(wcaId, scope);
+  return findNemesisReport({ ...targets, excludeWcaId: wcaId, scope });
 }
 
 /**
@@ -131,10 +141,16 @@ export async function getNemesisReport(wcaId: string): Promise<NemesisReport> {
  */
 export async function findNemesisReport({
   excludeWcaId: wcaId,
+  scope = "official",
   ...targets
-}: NemesisTargets & { excludeWcaId: string }): Promise<NemesisReport> {
+}: NemesisTargets & {
+  excludeWcaId: string;
+  scope?: EventScope;
+}): Promise<NemesisReport> {
   "use cache";
   cacheLife("hours");
+
+  const scopeEventIds = eventIdsSql(scope);
 
   const values = targetValues(targets);
   if (values.length === 0) {
@@ -145,6 +161,7 @@ export async function findNemesisReport({
     WITH target AS (
       SELECT type, event_id, best
       FROM (VALUES ${sql.join(values, sql`, `)}) AS v(type, event_id, best)
+      WHERE event_id IN ${scopeEventIds}
     ),
     total AS (
       SELECT COUNT(*)::int AS n FROM target
@@ -274,13 +291,14 @@ export async function findNemesisReport({
 
 export async function getNemesizedReport(
   wcaId: string,
+  scope: EventScope = "official",
 ): Promise<NemesizedReport> {
   "use cache";
   cacheLife("weeks");
   cacheTag(`person-nemeses-${wcaId}`);
 
-  const targets = await getPersonRecordValues(wcaId);
-  return findNemesizedReport({ ...targets, excludeWcaId: wcaId });
+  const targets = await getPersonRecordValues(wcaId, scope);
+  return findNemesizedReport({ ...targets, excludeWcaId: wcaId, scope });
 }
 
 /**
@@ -294,10 +312,16 @@ export async function getNemesizedReport(
  */
 export async function findNemesizedReport({
   excludeWcaId: wcaId,
+  scope = "official",
   ...targets
-}: NemesisTargets & { excludeWcaId: string }): Promise<NemesizedReport> {
+}: NemesisTargets & {
+  excludeWcaId: string;
+  scope?: EventScope;
+}): Promise<NemesizedReport> {
   "use cache";
   cacheLife("hours");
+
+  const scopeEventIds = eventIdsSql(scope);
 
   const report: NemesizedReport = {
     victims: [],
@@ -315,6 +339,7 @@ export async function findNemesizedReport({
     WITH target AS (
       SELECT type, event_id, best
       FROM (VALUES ${sql.join(values, sql`, `)}) AS v(type, event_id, best)
+      WHERE event_id IN ${scopeEventIds}
     ),
     candidates AS (
       SELECT DISTINCT r.person_id
@@ -327,12 +352,12 @@ export async function findNemesizedReport({
       SELECT r.person_id, 'single'::text AS type, r.event_id, r.best
       FROM ranks_single r
       JOIN candidates c ON c.person_id = r.person_id
-      WHERE r.best > 0
+      WHERE r.best > 0 AND r.event_id IN ${scopeEventIds}
       UNION ALL
       SELECT r.person_id, 'average'::text AS type, r.event_id, r.best
       FROM ranks_average r
       JOIN candidates c ON c.person_id = r.person_id
-      WHERE r.best > 0
+      WHERE r.best > 0 AND r.event_id IN ${scopeEventIds}
     ),
     cmp AS (
       SELECT o.person_id, o.type, o.event_id,
@@ -448,6 +473,7 @@ export type PersonNemesisStats = {
 
 export async function getPersonNemesisStats(
   wcaId: string,
+  scope: EventScope = "official",
 ): Promise<PersonNemesisStats | null> {
   "use cache";
   cacheLife("days");
@@ -460,7 +486,7 @@ export async function getPersonNemesisStats(
       slotCount: nemesisStats.slotCount,
     })
     .from(nemesisStats)
-    .where(eq(nemesisStats.personId, wcaId))
+    .where(and(eq(nemesisStats.personId, wcaId), eq(nemesisStats.scope, scope)))
     .limit(1);
 
   return row ?? null;

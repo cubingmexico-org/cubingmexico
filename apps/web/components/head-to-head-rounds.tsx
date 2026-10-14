@@ -39,6 +39,7 @@ function RoundResult({
       {side.personId && (
         <Link
           href={`/persons/${side.personId}`}
+          prefetch={false}
           className="block text-xs text-link hover:text-link/80 truncate"
         >
           {side.personName ?? side.personId}
@@ -83,6 +84,7 @@ export function DirectMatchupRounds({
                 <TableCell>
                   <Link
                     href={`/competitions/${round.competitionId}`}
+                    prefetch={false}
                     className="text-link hover:text-link/80"
                   >
                     {round.competitionName}

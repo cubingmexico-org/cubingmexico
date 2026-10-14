@@ -52,7 +52,7 @@ WCA reference implementation: [`lib/check_regional_records.rb`](https://github.c
 
 1. Take the people whose `persons.state_id` = current state.
 2. Clear their `state_*_record` markers.
-3. For each event (except excluded events), load valid singles and averages, ordered by:
+3. For each official event (`events.rank < 800`), load valid singles and averages, ordered by:
    - 9i2 effective date: `COALESCE(competition_round_dates.end_date, competitions.start_date)`
    - `competitions.id`
    - round type rank

@@ -7,10 +7,10 @@ import { Home, RefreshCw, AlertTriangle, Send } from "lucide-react";
 
 export default function Error({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
@@ -62,7 +62,7 @@ export default function Error({
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
           <Button
-            onClick={() => reset()}
+            onClick={() => retry()}
             size="lg"
             className="bg-green-500 hover:bg-green-600"
           >

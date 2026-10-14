@@ -67,6 +67,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
       <div className="text-center space-y-3">
         <Link
           href={`/teams/${team.stateId}`}
+          prefetch={false}
           className="mx-auto inline-flex"
           aria-label={`Ver ${team.name}`}
         >
@@ -80,6 +81,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
         <h1 className="text-2xl sm:text-3xl font-bold">
           <Link
             href={`/teams/${team.stateId}`}
+            prefetch={false}
             className="text-link hover:text-link/80"
           >
             {team.name}
@@ -92,6 +94,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
           {" · "}
           <Link
             href={`/teams/${team.stateId}`}
+            prefetch={false}
             className="text-primary hover:underline"
           >
             Ver Team
@@ -114,6 +117,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
               <Link
                 key={availableYear}
                 href={`/summary/team/${availableYear}/${team.stateId}`}
+                prefetch={false}
                 className="text-primary hover:underline"
               >
                 {availableYear}
@@ -250,6 +254,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
               La competencia con más asistencia fue{" "}
               <Link
                 href={`/competitions/${hosted.biggestCompetition.id}`}
+                prefetch={false}
                 className="text-link hover:text-link/80 font-medium"
               >
                 {hosted.biggestCompetition.name}
@@ -513,6 +518,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
             La mayor reunión del Team fue{" "}
             <Link
               href={`/competitions/${members.biggestTurnout.competitionId}`}
+              prefetch={false}
               className="text-link hover:text-link/80 font-medium"
             >
               {members.biggestTurnout.competitionName}
@@ -530,6 +536,7 @@ export function TeamAnnualSummaryView({ summary }: Props) {
             La competencia con más Teams distintos fue{" "}
             <Link
               href={`/competitions/${members.mostDiverseComp.competitionId}`}
+              prefetch={false}
               className="text-link hover:text-link/80 font-medium"
             >
               {members.mostDiverseComp.competitionName}

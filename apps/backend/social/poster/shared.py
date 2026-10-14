@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 
 from common import (
+    OFFICIAL_EVENTS_SUBQUERY,
     PUBLIC_BASE_URL,
     SOCIAL_POSTS_ENABLED,
     get_connection,
@@ -43,7 +44,7 @@ MX_COMPS_WITH_RESULTS_SQL = """
     WHERE c.country_id = 'Mexico'
 """
 
-RECORD_MARKERS_SQL = """
+RECORD_MARKERS_SQL = f"""
     SELECT
         r.id AS result_id,
         r.person_id,
@@ -68,8 +69,11 @@ RECORD_MARKERS_SQL = """
       ON crd.competition_id = r.competition_id
      AND crd.event_id = r.event_id
      AND crd.round_type_id = r.round_type_id
-    WHERE r.regional_single_record IN ('NR', 'NAR', 'WR')
-       OR r.regional_average_record IN ('NR', 'NAR', 'WR')
+    WHERE (
+        r.regional_single_record IN ('NR', 'NAR', 'WR')
+        OR r.regional_average_record IN ('NR', 'NAR', 'WR')
+      )
+      AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
 """
 
 

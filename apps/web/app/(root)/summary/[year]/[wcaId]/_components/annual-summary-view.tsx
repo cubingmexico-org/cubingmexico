@@ -96,6 +96,7 @@ export function AnnualSummaryView({ summary }: Props) {
         <h1 className="text-2xl sm:text-3xl font-bold">
           <Link
             href={`/persons/${person.wcaId}`}
+            prefetch={false}
             className="text-link hover:text-link/80"
           >
             {displayName}
@@ -120,6 +121,7 @@ export function AnnualSummaryView({ summary }: Props) {
               <Link
                 key={availableYear}
                 href={`/summary/${availableYear}/${person.wcaId}`}
+                prefetch={false}
                 className="text-primary hover:underline"
               >
                 {availableYear}

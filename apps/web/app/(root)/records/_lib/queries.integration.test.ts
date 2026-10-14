@@ -21,6 +21,7 @@ function recordsInput(
     event: "",
     show: "mixed",
     asOf: "",
+    deprecated: false,
     ...overrides,
   } as GetRecordsSchema;
 }
@@ -28,7 +29,8 @@ function recordsInput(
 beforeEach(async () => {
   await insertEvent({ id: "333", name: "3x3x3 Cube", rank: 10 });
   await insertEvent({ id: "222", name: "2x2x2 Cube", rank: 20 });
-  await insertEvent({ id: "333ft", name: "3x3x3 With Feet", rank: 30 });
+  await insertEvent({ id: "333ft", name: "3x3x3 With Feet", rank: 996 });
+  await insertEvent({ id: "fto", name: "Face-Turning Octahedron", rank: 810 });
   await insertRoundType({ id: "f", rank: 90 });
 
   await insertPerson({
@@ -90,6 +92,14 @@ describe("getRecords", () => {
       best: 100,
       average: 200,
     });
+    await insertResult({
+      id: "afto",
+      competitionId: "Comp2024",
+      eventId: "fto",
+      personId: "2020AAAA01",
+      best: 3000,
+      average: 3500,
+    });
 
     await db.insert(resultAttempts).values([
       { resultId: "b333", attemptNumber: 1, value: 700 },
@@ -116,6 +126,11 @@ describe("getRecords", () => {
     });
 
     expect(records[1]!.average).toBeNull();
+  });
+
+  it("adds deprecated events with the deprecated scope, never fto", async () => {
+    const records = await getRecords(recordsInput({ deprecated: true }));
+    expect(records.map((r) => r.eventId)).toEqual(["333", "222", "333ft"]);
   });
 
   it("restricts to a state", async () => {
@@ -226,5 +241,32 @@ describe("getRecordHistory", () => {
       ["sr", "2024-06-02", false, true],
       ["nr", "2023-06-01", true, false],
     ]);
+  });
+
+  it("includes deprecated SR history only with the deprecated scope", async () => {
+    await insertResult({
+      id: "ftsr",
+      competitionId: "Comp2024",
+      eventId: "333ft",
+      personId: "2020AAAA01",
+      best: 100,
+      stateSingleRecord: "SR",
+    });
+    await insertResult({
+      id: "ftosr",
+      competitionId: "Comp2024",
+      eventId: "fto",
+      personId: "2020AAAA01",
+      best: 3000,
+      stateSingleRecord: "SR",
+    });
+
+    const official = await getRecordHistory(recordsInput({ state: "Jalisco" }));
+    expect(official.map((h) => h.resultId)).toEqual([]);
+
+    const withDeprecated = await getRecordHistory(
+      recordsInput({ state: "Jalisco", deprecated: true }),
+    );
+    expect(withDeprecated.map((h) => h.resultId)).toEqual(["ftsr"]);
   });
 });

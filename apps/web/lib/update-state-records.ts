@@ -19,7 +19,7 @@ import {
   roundType,
   state,
 } from "@workspace/db/schema";
-import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { eventScopeFilter } from "@/lib/official-events";
 import { recordDateSql } from "@/lib/record-date";
 import {
   markStateRecords,
@@ -84,7 +84,7 @@ export async function updateStateRecords(stateId: string) {
   const events = await db
     .select({ id: event.id })
     .from(event)
-    .where(notInArray(event.id, EXCLUDED_EVENTS));
+    .where(eventScopeFilter("all"));
 
   const singleSrIds: string[] = [];
   const averageSrIds: string[] = [];

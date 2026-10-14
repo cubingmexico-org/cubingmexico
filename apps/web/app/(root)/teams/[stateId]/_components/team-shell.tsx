@@ -132,6 +132,7 @@ export function TeamShell({
                     }),
                   )}
                   href={`/summary/team/${summaryYear}/${stateId}`}
+                  prefetch={false}
                 >
                   <CalendarRange /> Resumen anual
                 </Link>
@@ -145,6 +146,7 @@ export function TeamShell({
                     }),
                   )}
                   href={`/teams/${stateId}/manage`}
+                  prefetch={false}
                 >
                   <Settings />
                   Administrar Team
@@ -159,6 +161,7 @@ export function TeamShell({
                   "bg-black/20 text-white hover:bg-black/30 hover:text-white",
                 )}
                 href={`/teams/compare?a=${stateId}`}
+                prefetch={false}
               >
                 <Swords /> Comparar
               </Link>
@@ -186,24 +189,28 @@ export function TeamShell({
               <Link
                 className={tabClass(activeTab === "overview")}
                 href={`/teams/${stateId}`}
+                prefetch="auto"
               >
                 Resumen
               </Link>
               <Link
                 className={tabClass(activeTab === "members")}
                 href={`/teams/${stateId}/members`}
+                prefetch="auto"
               >
                 Miembros
               </Link>
               <Link
                 className={tabClass(activeTab === "competitions")}
                 href={`/teams/${stateId}/competitions`}
+                prefetch="auto"
               >
                 Competencias
               </Link>
               <Link
                 className={tabClass(activeTab === "statistics")}
                 href={`/teams/${stateId}/statistics`}
+                prefetch="auto"
               >
                 Estadísticas
               </Link>

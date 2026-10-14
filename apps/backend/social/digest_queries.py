@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 
+from common import OFFICIAL_EVENTS_SUBQUERY
 from social.calendar_mx import (
     format_date_range_short,
     format_month_label,
@@ -135,7 +136,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
 
     if union_ids:
         cur.execute(
-            """
+            f"""
             SELECT
                 SUM(
                     (r.regional_single_record = 'WR')::int
@@ -155,6 +156,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
                 r.regional_single_record IN ('NR', 'NAR', 'WR')
                 OR r.regional_average_record IN ('NR', 'NAR', 'WR')
               )
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             """,
             (union_ids,),
         )
@@ -167,7 +169,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             }
 
         cur.execute(
-            """
+            f"""
             SELECT
                 p.name AS person_name,
                 e.name AS event_name,
@@ -191,6 +193,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
                 r.regional_single_record IN ('NR', 'NAR', 'WR')
                 OR r.regional_average_record IN ('NR', 'NAR', 'WR')
               )
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             ORDER BY
                 CASE
                     WHEN COALESCE(
@@ -221,7 +224,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
         ]
 
         cur.execute(
-            """
+            f"""
             SELECT
                 SUM(
                     (COALESCE(r.state_single_record, '') = 'SR')::int
@@ -230,6 +233,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             FROM results r
             WHERE r.competition_id = ANY(%s)
               AND (r.state_single_record = 'SR' OR r.state_average_record = 'SR')
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             """,
             (union_ids,),
         )
@@ -237,7 +241,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
         sr_total = int(sr_row.sr_total or 0) if sr_row else 0
 
         cur.execute(
-            """
+            f"""
             SELECT
                 COALESCE(s.name, 'Sin estado') AS state_name,
                 SUM(
@@ -249,6 +253,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             LEFT JOIN states s ON s.id = p.state_id
             WHERE r.competition_id = ANY(%s)
               AND (r.state_single_record = 'SR' OR r.state_average_record = 'SR')
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             GROUP BY s.name
             ORDER BY sr_count DESC, state_name
             LIMIT 5
@@ -258,7 +263,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
         sr_by_state = [{"state_name": r.state_name, "count": int(r.sr_count or 0)} for r in cur.fetchall()]
 
         cur.execute(
-            """
+            f"""
             SELECT
                 p.name AS person_name,
                 COALESCE(s.name, 'Sin estado') AS state_name,
@@ -271,6 +276,7 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             LEFT JOIN states s ON s.id = p.state_id
             WHERE r.competition_id = ANY(%s)
               AND (r.state_single_record = 'SR' OR r.state_average_record = 'SR')
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             GROUP BY p.name, s.name
             ORDER BY sr_count DESC, p.name
             LIMIT 5
@@ -287,13 +293,14 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
         ]
 
         cur.execute(
-            """
+            f"""
             SELECT COUNT(*)::int AS podium_count
             FROM results r
             WHERE r.competition_id = ANY(%s)
               AND r.round_type_id IN ('f', 'c')
               AND r.pos IN (1, 2, 3)
               AND r.best > 0
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             """,
             (union_ids,),
         )
@@ -445,7 +452,7 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
         debut_count = int(row.n or 0) if row else 0
 
         cur.execute(
-            """
+            f"""
             SELECT
                 SUM(
                     (r.regional_single_record = 'WR')::int
@@ -465,6 +472,7 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
                 r.regional_single_record IN ('NR', 'NAR', 'WR')
                 OR r.regional_average_record IN ('NR', 'NAR', 'WR')
               )
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             """,
             (ids,),
         )
@@ -477,7 +485,7 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
             }
 
         cur.execute(
-            """
+            f"""
             SELECT
                 p.name AS person_name,
                 e.name AS event_name,
@@ -501,6 +509,7 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
                 r.regional_single_record IN ('NR', 'NAR', 'WR')
                 OR r.regional_average_record IN ('NR', 'NAR', 'WR')
               )
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             ORDER BY
                 CASE
                     WHEN COALESCE(
@@ -532,7 +541,7 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
         ]
 
         cur.execute(
-            """
+            f"""
             SELECT
                 p.name AS person_name,
                 COALESCE(s.name, 'Sin estado') AS state_name,
@@ -545,6 +554,7 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
             LEFT JOIN states s ON s.id = p.state_id
             WHERE r.competition_id = ANY(%s)
               AND (r.state_single_record = 'SR' OR r.state_average_record = 'SR')
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             GROUP BY p.wca_id, p.name, s.name
             ORDER BY sr_count DESC, p.name
             """,
@@ -562,13 +572,14 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
         ]
 
         cur.execute(
-            """
+            f"""
             SELECT COUNT(*)::int AS podium_count
             FROM results r
             WHERE r.competition_id = ANY(%s)
               AND r.round_type_id IN ('f', 'c')
               AND r.pos IN (1, 2, 3)
               AND r.best > 0
+              AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
             """,
             (ids,),
         )
@@ -636,6 +647,7 @@ def fetch_streaks_monthly_payload(cur, month_key_str: str) -> dict | None:
         FROM streak_ranks sr
         JOIN persons p ON p.wca_id = sr.person_id
         LEFT JOIN states s ON s.id = p.state_id
+        WHERE sr.scope = 'official'
         ORDER BY sr.current_streak DESC, sr.longest_streak DESC, sr.person_id
         LIMIT 5
         """
@@ -664,6 +676,7 @@ def fetch_streaks_monthly_payload(cur, month_key_str: str) -> dict | None:
         FROM streak_ranks sr
         JOIN persons p ON p.wca_id = sr.person_id
         LEFT JOIN states s ON s.id = p.state_id
+        WHERE sr.scope = 'official'
         ORDER BY sr.longest_streak DESC, sr.current_streak DESC, sr.person_id
         LIMIT 1
         """

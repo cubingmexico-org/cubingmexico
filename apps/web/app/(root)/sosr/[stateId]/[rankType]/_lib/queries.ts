@@ -9,7 +9,12 @@ import {
   rankSingle,
   state,
 } from "@workspace/db/schema";
-import { EXCLUDED_EVENTS } from "@/lib/constants";
+import {
+  eventIdsSql,
+  eventScopeFromDeprecated,
+  inScopeEvents,
+} from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
 import { accentInsensitiveContains } from "@/lib/search";
 import { and, eq, sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
@@ -23,13 +28,6 @@ function getRankTable(rankType: RankType) {
   return rankType === "single" ? rankSingle : rankAverage;
 }
 
-function getExcludedEventsList() {
-  return sql.join(
-    EXCLUDED_EVENTS.map((value) => sql`${value}`),
-    sql`, `,
-  );
-}
-
 export async function getSOSR(
   input: GetSOSRSinglesSchema,
   stateId: string,
@@ -39,9 +37,9 @@ export async function getSOSR(
   cacheTag(`sosr-${stateId}-${rankType}`);
 
   const offset = (input.page - 1) * input.perPage;
+  const scopeEventIds = eventIdsSql(eventScopeFromDeprecated(input.deprecated));
 
   const rankTable = getRankTable(rankType);
-  const excludedEvents = getExcludedEventsList();
   const peopleFilters: SQL[] = [];
   if (input.name) {
     peopleFilters.push(accentInsensitiveContains(sql`p.name`, input.name));
@@ -82,6 +80,7 @@ export async function getSOSR(
         INNER JOIN ${rankTable} r ON r.person_id = p.wca_id
         WHERE p.state_id = ${stateId}
           AND r.state_rank IS NOT NULL
+          AND r.event_id IN ${scopeEventIds}
           ${peopleFilterSql}
       )
       SELECT count(*)::int AS count FROM people;
@@ -90,10 +89,10 @@ export async function getSOSR(
 
   const data = (await db.execute(
     sql`
-      WITH events AS (
+      WITH scope_events AS (
         SELECT id, rank
         FROM ${event}
-        WHERE id NOT IN (${excludedEvents})
+        WHERE id IN ${scopeEventIds}
       ),
       worst_ranks AS (
         SELECT
@@ -103,7 +102,7 @@ export async function getSOSR(
         INNER JOIN ${person} p ON p.wca_id = r.person_id
         WHERE p.state_id = ${stateId}
           AND r.state_rank IS NOT NULL
-          AND r.event_id NOT IN (${excludedEvents})
+          AND r.event_id IN ${scopeEventIds}
         GROUP BY r.event_id
       ),
       people AS (
@@ -121,6 +120,7 @@ export async function getSOSR(
             FROM ${rankTable} r
             WHERE r.person_id = p.wca_id
               AND r.state_rank IS NOT NULL
+              AND r.event_id IN ${scopeEventIds}
           )
       ),
       rank_data AS (
@@ -131,7 +131,7 @@ export async function getSOSR(
         FROM ${rankTable} r
         INNER JOIN ${person} p ON p.wca_id = r.person_id
         WHERE p.state_id = ${stateId}
-          AND r.event_id NOT IN (${excludedEvents})
+          AND r.event_id IN ${scopeEventIds}
       ),
       person_events AS (
         SELECT
@@ -144,7 +144,7 @@ export async function getSOSR(
           COALESCE(NULLIF(r.state_rank, 0), COALESCE(wr.worst_rank, 1)) AS state_rank,
           r.state_rank AS original_state_rank
         FROM people p
-        CROSS JOIN events e
+        CROSS JOIN scope_events e
         LEFT JOIN rank_data r
           ON r.person_id = p.person_id
          AND r.event_id = e.id
@@ -207,7 +207,11 @@ export async function getSOSR(
   };
 }
 
-export async function getSOSRGenderCounts(stateId: string, rankType: RankType) {
+export async function getSOSRGenderCounts(
+  stateId: string,
+  rankType: RankType,
+  scope: EventScope,
+) {
   cacheLife("days");
   cacheTag(`sosr-gender-counts-${stateId}-${rankType}`);
 
@@ -221,7 +225,11 @@ export async function getSOSRGenderCounts(stateId: string, rankType: RankType) {
     .from(rankTable)
     .innerJoin(person, eq(rankTable.personId, person.wcaId))
     .where(
-      and(eq(person.stateId, stateId), sql`${rankTable.stateRank} is not null`),
+      and(
+        eq(person.stateId, stateId),
+        sql`${rankTable.stateRank} is not null`,
+        inScopeEvents(rankTable.eventId, scope),
+      ),
     )
     .groupBy(person.gender)
     .orderBy(person.gender)

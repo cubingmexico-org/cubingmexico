@@ -1,5 +1,6 @@
 "use client";
 
+import { parseAsBoolean, useQueryState } from "nuqs";
 import { useRouter } from "next/navigation";
 import { ArrowLeftRight } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
@@ -8,10 +9,15 @@ import {
   type SelectedPerson,
 } from "@/components/person-search-select";
 
-function buildCompareHref(a: string | null, b: string | null) {
+function buildCompareHref(
+  a: string | null,
+  b: string | null,
+  deprecated: boolean,
+) {
   const params = new URLSearchParams();
   if (a) params.set("a", a);
   if (b) params.set("b", b);
+  if (deprecated) params.set("deprecated", "true");
   const query = params.toString();
   return query ? `/persons/compare?${query}` : "/persons/compare";
 }
@@ -24,6 +30,10 @@ export function ComparePicker({
   b: SelectedPerson;
 }) {
   const router = useRouter();
+  const [deprecated] = useQueryState(
+    "deprecated",
+    parseAsBoolean.withDefault(false),
+  );
   const aId = a?.wcaId ?? null;
   const bId = b?.wcaId ?? null;
 
@@ -32,7 +42,9 @@ export function ComparePicker({
       <PersonSearchSelect
         value={a}
         placeholder="Primer competidor"
-        onSelect={(wcaId) => router.replace(buildCompareHref(wcaId, bId))}
+        onSelect={(wcaId) =>
+          router.replace(buildCompareHref(wcaId, bId, deprecated))
+        }
       />
       <Button
         type="button"
@@ -40,14 +52,16 @@ export function ComparePicker({
         size="icon"
         aria-label="Intercambiar competidores"
         disabled={!aId && !bId}
-        onClick={() => router.replace(buildCompareHref(bId, aId))}
+        onClick={() => router.replace(buildCompareHref(bId, aId, deprecated))}
       >
         <ArrowLeftRight className="size-4" />
       </Button>
       <PersonSearchSelect
         value={b}
         placeholder="Segundo competidor"
-        onSelect={(wcaId) => router.replace(buildCompareHref(aId, wcaId))}
+        onSelect={(wcaId) =>
+          router.replace(buildCompareHref(aId, wcaId, deprecated))
+        }
       />
     </div>
   );

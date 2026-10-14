@@ -37,11 +37,25 @@ import { cacheLife, cacheTag } from "next/cache";
 import { formatDelegateLevel } from "@/lib/delegate-level";
 import { PersonTabs } from "./_components/person-tabs";
 import { getPersonNemesisStats } from "../_lib/nemesis-queries";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
+import { deprecatedParser } from "@/lib/search-params";
+import { createSearchParamsCache } from "nuqs/server";
+import type { SearchParams } from "@/types";
+
+const searchParamsCache = createSearchParamsCache({
+  deprecated: deprecatedParser,
+});
 
 const numberFormat = new Intl.NumberFormat("es-MX");
 
 type Props = {
   params: Promise<{ id: string }>;
+};
+
+type PageProps = Props & {
+  searchParams: Promise<SearchParams>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -70,12 +84,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-async function PersonPageContent({ id }: { id: string }) {
+async function PersonPageContent({
+  id,
+  scope,
+}: {
+  id: string;
+  scope: EventScope;
+}) {
   "use cache";
   cacheLife("days");
   cacheTag(`person-page-${id}`);
 
-  const events = await getEvents();
+  const [events, officialEvents] = await Promise.all([
+    getEvents(scope),
+    getEvents(),
+  ]);
 
   const [
     wcaData,
@@ -88,16 +111,16 @@ async function PersonPageContent({ id }: { id: string }) {
     nemesisStats,
   ] = await Promise.all([
     getPersonAvatarFromWCA(id),
-    getPersonData(id),
+    getPersonData(id, scope),
     getOrganizerStatus(id),
     getMembershipData(
       id,
-      events.map((event) => event.id),
+      officialEvents.map((event) => event.id),
     ),
     getPersonCompetitionEventOptions(id),
     hasPersonChampionshipPodiums(id),
     hasPersonStaffCompetitions(id),
-    getPersonNemesisStats(id),
+    getPersonNemesisStats(id, scope),
   ]);
 
   if (!personData) {
@@ -155,7 +178,11 @@ async function PersonPageContent({ id }: { id: string }) {
         )}
         {team && (
           <Badge variant="outline" asChild>
-            <Link href={`/teams/${team.id}`} className="gap-1.5">
+            <Link
+              href={`/teams/${team.id}`}
+              prefetch={false}
+              className="gap-1.5"
+            >
               {team.image ? (
                 // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
                 <img
@@ -171,14 +198,22 @@ async function PersonPageContent({ id }: { id: string }) {
           </Badge>
         )}
         <Badge variant="outline" asChild>
-          <Link href={`/persons/compare?a=${id}`} className="gap-1.5">
+          <Link
+            href={`/persons/compare?a=${id}`}
+            prefetch={false}
+            className="gap-1.5"
+          >
             <Swords className="size-3.5" />
             Comparar
           </Link>
         </Badge>
         {nemesisStats && nemesisStats.slotCount > 0 && (
           <Badge variant="outline" asChild>
-            <Link href={`/persons/${id}?tab=nemesis`} className="gap-1.5">
+            <Link
+              href={`/persons/${id}?tab=nemesis`}
+              prefetch={false}
+              className="gap-1.5"
+            >
               {nemesisStats.nemesisCount === 0 ? (
                 <>
                   <Crown className="size-3.5" />
@@ -253,6 +288,9 @@ async function PersonPageContent({ id }: { id: string }) {
       <h2 className="text-center text-lg font-semibold my-4">
         Récords personales actuales
       </h2>
+      <div className="flex justify-center mb-4">
+        <DeprecatedEventsSwitch />
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
@@ -477,7 +515,7 @@ async function PersonPageContent({ id }: { id: string }) {
   );
 }
 
-export default async function Page({ params }: Props) {
+export default async function Page({ params, searchParams }: PageProps) {
   const id = (await params).id;
   const wcaId = id.toUpperCase();
 
@@ -485,5 +523,12 @@ export default async function Page({ params }: Props) {
     permanentRedirect(`/persons/${wcaId}`);
   }
 
-  return <PersonPageContent id={wcaId} />;
+  const { deprecated } = searchParamsCache.parse(await searchParams);
+
+  return (
+    <PersonPageContent
+      id={wcaId}
+      scope={eventScopeFromDeprecated(deprecated)}
+    />
+  );
 }

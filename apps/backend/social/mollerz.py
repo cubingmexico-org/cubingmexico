@@ -6,7 +6,7 @@ getTier in apps/web/lib/utils.ts.
 
 from __future__ import annotations
 
-from common import EXCLUDED_EVENTS
+from common import OFFICIAL_EVENT_MAX_RANK
 
 SPEEDSOLVING_AVERAGES_EVENTS = [
     "333",
@@ -37,7 +37,7 @@ SLUG_TO_TIER = {slug: tier for tier, slug in TIER_SLUGS.items()}
 
 MOLLERZ_MEMBERS_SQL = """
     WITH current_events AS (
-        SELECT id FROM events WHERE id NOT IN %(excluded)s
+        SELECT id FROM events WHERE rank < %(official_max_rank)s
     )
     SELECT
         p.wca_id,
@@ -111,7 +111,7 @@ def fetch_mollerz_members(cur) -> dict[str, dict]:
     cur.execute(
         MOLLERZ_MEMBERS_SQL,
         {
-            "excluded": tuple(EXCLUDED_EVENTS),
+            "official_max_rank": OFFICIAL_EVENT_MAX_RANK,
             "avg_events": tuple(SPEEDSOLVING_AVERAGES_EVENTS),
             "mean_events": tuple(BLD_FMC_MEANS_EVENTS),
         },

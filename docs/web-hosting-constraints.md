@@ -7,6 +7,7 @@ Relevant code:
 - Images: [`apps/web/next.config.mjs`](../apps/web/next.config.mjs) (`images.unoptimized`)
 - Legacy URL redirects: same file (`redirects()`)
 - Legacy URL crawl cleanup: [`apps/web/proxy.ts`](../apps/web/proxy.ts) (410 Gone)
+- Link prefetch lint rule: [`apps/web/eslint.config.js`](../apps/web/eslint.config.js)
 
 ---
 
@@ -51,6 +52,20 @@ That tells crawlers those trees are gone and reduces wasted server work from obs
 **Policy:** do not remove the redirects or the 410s “for consistency” without checking crawl logs. Prefer documenting edge cases here over flipping status codes casually.
 
 **When to revisit:** if crawl noise dies down and redirects alone are enough, or if you want a single strategy (all 301 or all 410) after measuring SEO impact.
+
+---
+
+## Link prefetching: `prefetch={false}` on dynamic links
+
+Every `<Link>` that scrolls into view prefetches its target. Each prefetch counts as a CDN request, and when the target is a dynamic route that is not cached yet (`/persons/:id`, `/persons/compare?…`, `/competitions/:id`), it also runs a function and uses Fluid Active CPU. Lists that render a link per row multiply this quickly.
+
+**Policy:** links with a dynamic `href` (a template literal like `` `/persons/${id}` ``) use `prefetch={false}`. Opt back in with `prefetch="auto"` only for a small set of navigation links where instant switching matters, such as the team tabs in `teams/[stateId]/_components/team-shell.tsx`.
+
+**Partial Prefetching:** `partialPrefetching: false` in [`apps/web/next.config.mjs`](../apps/web/next.config.mjs) is explicit on purpose. Next.js 16.4 warns when `cacheComponents` is on without it. Turning it on prefetches per-route shells for every visible link, so measure CDN requests and Active CPU before enabling it.
+
+**Enforcement:** a `no-restricted-syntax` rule in [`apps/web/eslint.config.js`](../apps/web/eslint.config.js) flags any internal `<Link>` with a template-literal `href` and no `prefetch` prop.
+
+**Why:** the nemesis and head-to-head features (Sep 30 – Oct 2, 2026) added per-row links that prefetched by default, and the project went over the free-tier CDN Requests and Fluid Active CPU limits.
 
 ---
 

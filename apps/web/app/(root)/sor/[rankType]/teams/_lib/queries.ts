@@ -2,7 +2,8 @@
 
 import "server-only";
 import { db } from "@workspace/db";
-import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { eventIdsSql } from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
 import { sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -19,7 +20,9 @@ interface TeamData {
   }[];
 }
 
-export async function getSORTeamsAverage(): Promise<TeamData[]> {
+export async function getSORTeamsAverage(
+  scope: EventScope = "official",
+): Promise<TeamData[]> {
   cacheLife("days");
   cacheTag("sor-teams-average");
 
@@ -28,7 +31,7 @@ export async function getSORTeamsAverage(): Promise<TeamData[]> {
           WITH all_events AS (
             SELECT DISTINCT event_id
             FROM ranks_average
-            WHERE event_id NOT IN (${sql.join(EXCLUDED_EVENTS, sql`, `)})
+            WHERE event_id IN ${eventIdsSql(scope)}
           ),
           best_person_event AS (
             SELECT DISTINCT ON (p.state_id, e.event_id)
@@ -79,7 +82,9 @@ export async function getSORTeamsAverage(): Promise<TeamData[]> {
   return data as unknown as TeamData[];
 }
 
-export async function getSORTeamsSingle(): Promise<TeamData[]> {
+export async function getSORTeamsSingle(
+  scope: EventScope = "official",
+): Promise<TeamData[]> {
   cacheLife("days");
   cacheTag("sor-teams-single");
 
@@ -88,7 +93,7 @@ export async function getSORTeamsSingle(): Promise<TeamData[]> {
     WITH all_events AS (
       SELECT DISTINCT event_id
       FROM ranks_single
-      WHERE event_id NOT IN (${sql.join(EXCLUDED_EVENTS, sql`, `)})
+      WHERE event_id IN ${eventIdsSql(scope)}
     ),
     best_person_event AS (
       SELECT DISTINCT ON (p.state_id, e.event_id)

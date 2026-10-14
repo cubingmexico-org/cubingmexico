@@ -1,7 +1,7 @@
 import psycopg2.extras
 from flask import Blueprint, jsonify
 
-from common import EXCLUDED_EVENTS, get_connection, log
+from common import OFFICIAL_EVENTS_SUBQUERY, get_connection, log
 from utils import convert_keys_to_camel_case
 
 misc_bp = Blueprint("misc", __name__)
@@ -181,11 +181,6 @@ def get_records(state_id):
             with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
                 log.info("Fetching records for state: %s", state_id)
 
-                excluded_placeholders = ""
-                if EXCLUDED_EVENTS:
-                    placeholders = ",".join(["%s"] * len(EXCLUDED_EVENTS))
-                    excluded_placeholders = placeholders
-
                 single_query = f"""
                     SELECT
                         rs.person_id,
@@ -202,7 +197,7 @@ def get_records(state_id):
                     INNER JOIN events e ON rs.event_id = e.id
                     WHERE p.state_id = %s
                     AND rs.state_rank = 1
-                    {"AND rs.event_id NOT IN (" + excluded_placeholders + ")" if EXCLUDED_EVENTS else ""}
+                    AND rs.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
                     ORDER BY e.rank
                 """
 
@@ -222,11 +217,11 @@ def get_records(state_id):
                     INNER JOIN events e ON ra.event_id = e.id
                     WHERE p.state_id = %s
                     AND ra.state_rank = 1
-                    {"AND ra.event_id NOT IN (" + excluded_placeholders + ")" if EXCLUDED_EVENTS else ""}
+                    AND ra.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
                     ORDER BY e.rank
                 """
 
-                query_params = [state_id] + EXCLUDED_EVENTS if EXCLUDED_EVENTS else [state_id]
+                query_params = [state_id]
 
                 cur.execute(single_query, query_params)
                 single_records = cur.fetchall()

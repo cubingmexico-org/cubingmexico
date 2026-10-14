@@ -10,8 +10,27 @@ import psycopg2.pool
 from flask import abort, request
 from google.cloud import secretmanager
 
-EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic", "fto"]
+# Mirrors the WCA's `Event.official` scope: ranks 800-989 are announced but
+# not yet official (e.g. fto), 990-999 are deprecated (333ft, magic, ...).
+OFFICIAL_EVENT_MAX_RANK = 800
+OFFICIAL_EVENTS_SUBQUERY = f"(SELECT id FROM events WHERE rank < {OFFICIAL_EVENT_MAX_RANK})"
+DEPRECATED_EVENT_MIN_RANK = 990
+DEPRECATED_EVENT_MAX_RANK = 999
+WITH_DEPRECATED_EVENTS_SUBQUERY = (
+    f"(SELECT id FROM events WHERE rank < {OFFICIAL_EVENT_MAX_RANK}"
+    f" OR rank BETWEEN {DEPRECATED_EVENT_MIN_RANK} AND {DEPRECATED_EVENT_MAX_RANK})"
+)
+# Derived tables store one variant per scope; "all" adds deprecated events (never fto).
+EVENT_SCOPES = ("official", "all")
+
+
+def events_subquery(scope):
+    return WITH_DEPRECATED_EVENTS_SUBQUERY if scope == "all" else OFFICIAL_EVENTS_SUBQUERY
+
+
 SINGLE_EVENTS = ["333fm", "333bf", "333mbf", "444bf", "555bf"]
+# Old-style multi-blind has no comparable national record, so Kinch skips it.
+KINCH_SKIPPED_EVENTS = ["333mbo"]
 
 logging.basicConfig(
     level=logging.INFO,

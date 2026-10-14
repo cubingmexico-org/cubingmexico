@@ -31,6 +31,8 @@ import {
   type OrganizerLevel,
 } from "@/lib/organizer-level";
 import { and, countDistinct, eq, gt, inArray, sql } from "drizzle-orm";
+import { inScopeEvents } from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
 import { cacheLife, cacheTag } from "next/cache";
 
 type RecordWithStateRank = {
@@ -62,7 +64,10 @@ export type OrganizerStatus = {
   level: OrganizerLevel;
 } | null;
 
-export async function getPersonData(wcaId: string): Promise<{
+export async function getPersonData(
+  wcaId: string,
+  scope: EventScope = "official",
+): Promise<{
   person: {
     wcaId: string;
     name: string | null;
@@ -155,7 +160,7 @@ export async function getPersonData(wcaId: string): Promise<{
       world: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'WR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'WR' THEN 1 ELSE 0 END))`,
       continental: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NAR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NAR' THEN 1 ELSE 0 END))`,
       national: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NR' THEN 1 ELSE 0 END))`,
-      state: sql<number>`SUM((CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END))`,
+      state: sql<number>`SUM(CASE WHEN ${inScopeEvents(result.eventId, scope)} THEN (CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END) ELSE 0 END)`,
     })
     .from(result)
     .where(eq(result.personId, wcaId));

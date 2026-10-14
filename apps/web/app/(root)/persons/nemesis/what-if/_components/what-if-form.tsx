@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { parseAsBoolean, useQueryState } from "nuqs";
 import { Loader2, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
@@ -78,6 +79,10 @@ export function WhatIfForm({
   overrides: WhatIfOverrides;
 }) {
   const router = useRouter();
+  const [deprecated] = useQueryState(
+    "deprecated",
+    parseAsBoolean.withDefault(false),
+  );
   const [isPending, startTransition] = useTransition();
   const [errors, setErrors] = useState<Set<string>>(new Set());
   const [inputs, setInputs] = useState(() =>
@@ -85,6 +90,7 @@ export function WhatIfForm({
   );
 
   function navigate(query: URLSearchParams) {
+    if (deprecated) query.set("deprecated", "true");
     startTransition(() => {
       router.push(`${BASE_PATH}?${query.toString()}`, { scroll: false });
     });

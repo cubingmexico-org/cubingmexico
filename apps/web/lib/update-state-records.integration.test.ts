@@ -53,6 +53,31 @@ beforeEach(async () => {
 });
 
 describe("updateStateRecords", () => {
+  it("tags deprecated events but never fto", async () => {
+    await insertEvent({ id: "333ft", rank: 996 });
+    await insertEvent({ id: "fto", rank: 810 });
+    await competitionOn("CompA2024", "2024-01-01");
+
+    await insertResult({
+      id: "ft",
+      competitionId: "CompA2024",
+      eventId: "333ft",
+      personId: JAL_PERSON,
+      best: 5000,
+    });
+    await insertResult({
+      id: "octa",
+      competitionId: "CompA2024",
+      eventId: "fto",
+      personId: JAL_PERSON,
+      best: 3000,
+    });
+
+    await updateStateRecords("JAL");
+
+    expect(await taggedSingles()).toEqual(["ft"]);
+  });
+
   it("tags each chronological improvement across the state's members", async () => {
     await competitionOn("CompA2024", "2024-01-01");
     await competitionOn("CompB2024", "2024-02-01");

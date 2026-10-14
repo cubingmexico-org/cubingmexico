@@ -72,6 +72,7 @@ export function CanvasEditor({
           img.src = element.imageUrl;
           img.onload = () => {
             imageCache.current.set(element.imageUrl!, img);
+            // eslint-disable-next-line react-hooks/immutability -- runs from an async onload, after drawCanvas is declared
             drawCanvas(); // Redraw when image loads
           };
           img.onerror = () => {

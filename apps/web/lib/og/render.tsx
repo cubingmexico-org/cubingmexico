@@ -1,6 +1,5 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { existsSync } from "node:fs";
 import { ImageResponse } from "next/og";
 import {
   OG_BRAND,
@@ -22,19 +21,6 @@ export type RenderOgImageOptions = {
   initials?: string;
 };
 
-function resolvePublicFile(filename: string): string {
-  const candidates = [
-    join(process.cwd(), "public", filename),
-    join(process.cwd(), "apps/web/public", filename),
-  ];
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) {
-      return candidate;
-    }
-  }
-  return candidates[0]!;
-}
-
 let logoDataUriPromise: Promise<string | null> | null = null;
 let fontDataPromise: Promise<ArrayBuffer | null> | null = null;
 
@@ -42,7 +28,7 @@ async function loadLogoDataUri(): Promise<string | null> {
   if (!logoDataUriPromise) {
     logoDataUriPromise = (async () => {
       try {
-        const bytes = await readFile(resolvePublicFile("logo.png"));
+        const bytes = await readFile(join(process.cwd(), "public/logo.png"));
         return `data:image/png;base64,${bytes.toString("base64")}`;
       } catch {
         return null;

@@ -26,7 +26,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { eventId, rankType } = await params;
-  const events = await getEvents();
+  const events = await getEvents("all");
   const eventName =
     events.find((event) => event.id === eventId)?.name ?? eventId;
 
@@ -53,13 +53,17 @@ interface PageProps {
 export default async function Page({ params, searchParams }: PageProps) {
   const { eventId, rankType } = await params;
 
-  const events = await getEvents();
+  const [events, officialEvents] = await Promise.all([
+    getEvents("all"),
+    getEvents(),
+  ]);
 
   return (
     <>
       <EventSelector
         className="mb-6"
         events={events}
+        officialEventIds={officialEvents.map((event) => event.id)}
         selectedEventId={eventId}
         selectedRankType={rankType}
       />

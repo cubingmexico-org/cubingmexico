@@ -12,7 +12,11 @@ export function TeamPersonLink({
   name: string | null;
 }) {
   return (
-    <Link href={`/persons/${wcaId}`} className="text-link hover:text-link/80">
+    <Link
+      href={`/persons/${wcaId}`}
+      prefetch={false}
+      className="text-link hover:text-link/80"
+    >
       {name ?? wcaId}
     </Link>
   );

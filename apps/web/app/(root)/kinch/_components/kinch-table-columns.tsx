@@ -6,6 +6,7 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { cn } from "@workspace/ui/lib/utils";
 import { KinchRanks } from "../_types";
 import Link from "next/link";
+import { crossEventIds, type EventScope } from "@/lib/constants";
 
 interface Event {
   eventId: string;
@@ -15,11 +16,41 @@ interface Event {
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
   genderCounts: Record<string, number>;
+  scope: EventScope;
+}
+
+function makeEventColumn(eventId: string): ColumnDef<KinchRanks> {
+  return {
+    accessorKey: `events_${eventId}`,
+    header: () => (
+      <div className="flex items-center justify-center">
+        <span className={`cubing-icon event-${eventId}`} />
+      </div>
+    ),
+    cell: ({ row }) => {
+      const events = row.original.events as Event[];
+      const event = events.find((event) => event.eventId === eventId);
+      return (
+        <div
+          className={cn(
+            "flex space-x-2 justify-center",
+            event?.ratio === 100 && "text-green-500 font-semibold",
+            event?.ratio === 0 && "text-red-500 font-semibold",
+          )}
+        >
+          {event?.ratio.toFixed(2)}
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
+  };
 }
 
 export function getColumns({
   stateCounts,
   genderCounts,
+  scope,
 }: GetColumnsProps): ColumnDef<KinchRanks>[] {
   return [
     {
@@ -73,431 +104,7 @@ export function getColumns({
       ),
       enableHiding: false,
     },
-    {
-      accessorKey: "events_333",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-333" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "333");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_222",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-222" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "222");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_444",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-444" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "444");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_555",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-555" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "555");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_666",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-666" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "666");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_777",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-777" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "777");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_333bf",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-333bf" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "333bf");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_333fm",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-333fm" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "333fm");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_333oh",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-333oh" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "333oh");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_clock",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-clock" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "clock");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_minx",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-minx" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "minx");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_pyram",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-pyram" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "pyram");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_skewb",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-skewb" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "skewb");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_sq1",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-sq1" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "sq1");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_444bf",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-444bf" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "444bf");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_555bf",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-555bf" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "555bf");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
-    {
-      accessorKey: "events_333mbf",
-      header: () => (
-        <div className="flex items-center justify-center">
-          <span className="cubing-icon event-333mbf" />
-        </div>
-      ),
-      cell: ({ row }) => {
-        const events = row.original.events as Event[];
-        const event = events.find((event) => event.eventId === "333mbf");
-        return (
-          <div
-            className={cn(
-              "flex space-x-2 justify-center",
-              event?.ratio === 100 && "text-green-500 font-semibold",
-              event?.ratio === 0 && "text-red-500 font-semibold",
-            )}
-          >
-            {event?.ratio.toFixed(2)}
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    },
+    ...crossEventIds(scope).map(makeEventColumn),
     {
       id: "state",
       accessorKey: "state",

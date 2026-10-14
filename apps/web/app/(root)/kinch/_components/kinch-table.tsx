@@ -10,6 +10,7 @@ import type {
   getKinchRanksStateCounts,
 } from "../_lib/queries";
 import { getColumns } from "./kinch-table-columns";
+import type { EventScope } from "@/lib/constants";
 
 interface KinchTableProps {
   promises: Promise<
@@ -19,9 +20,10 @@ interface KinchTableProps {
       Awaited<ReturnType<typeof getKinchRanksGenderCounts>>,
     ]
   >;
+  scope: EventScope;
 }
 
-export function KinchTable({ promises }: KinchTableProps) {
+export function KinchTable({ promises, scope }: KinchTableProps) {
   const [{ data, pageCount }, stateCounts, genderCounts] = React.use(promises);
 
   const columns = React.useMemo(
@@ -29,8 +31,9 @@ export function KinchTable({ promises }: KinchTableProps) {
       getColumns({
         stateCounts,
         genderCounts,
+        scope,
       }),
-    [stateCounts, genderCounts],
+    [stateCounts, genderCounts, scope],
   );
 
   const { table } = useDataTable({

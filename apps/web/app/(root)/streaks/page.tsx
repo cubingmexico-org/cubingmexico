@@ -9,6 +9,8 @@ import {
   getStreakRanksStateCounts,
 } from "./_lib/queries";
 import { getValidFilters } from "@/lib/data-table";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 interface PageProps {
   searchParams: Promise<SearchParams>;
@@ -19,14 +21,15 @@ export default async function Page(props: PageProps) {
   const search = searchParamsCache.parse(searchParams);
 
   const validFilters = getValidFilters(search.filters);
+  const scope = eventScopeFromDeprecated(search.deprecated);
 
   const promises = Promise.all([
     getStreakRanks({
       ...search,
       filters: validFilters,
     }),
-    getStreakRanksStateCounts(),
-    getStreakRanksGenderCounts(),
+    getStreakRanksStateCounts(scope),
+    getStreakRanksGenderCounts(scope),
   ]);
 
   return (
@@ -40,6 +43,7 @@ export default async function Page(props: PageProps) {
           cualquier evento.
         </p>
       </div>
+      <DeprecatedEventsSwitch />
       <React.Suspense
         fallback={
           <DataTableSkeleton

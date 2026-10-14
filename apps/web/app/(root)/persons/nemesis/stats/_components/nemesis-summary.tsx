@@ -54,6 +54,7 @@ export function NemesisSummary({
           {summary.topNemesized ? (
             <Link
               href={`/persons/${summary.topNemesized.personId}`}
+              prefetch={false}
               className="text-link hover:text-link/80"
             >
               {summary.topNemesized.name ?? summary.topNemesized.personId}

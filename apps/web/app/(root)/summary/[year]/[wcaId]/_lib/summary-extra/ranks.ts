@@ -6,6 +6,7 @@ import {
   BLD_FMC_MEANS_EVENTS,
   SPEEDSOLVING_AVERAGES_EVENTS,
 } from "@/lib/constants";
+import { isOfficialEvent } from "@/lib/official-events";
 import { getTier } from "@/lib/utils";
 import { and, countDistinct, eq, gt, inArray, lte, sql } from "drizzle-orm";
 import type { MollerzConditions, RankProgressRow, YearMollerz } from "./types";
@@ -192,7 +193,7 @@ export async function computeYearMollerz(
   const events = await db
     .select({ id: event.id })
     .from(event)
-    .where(sql`${event.rank} < 200`);
+    .where(isOfficialEvent);
 
   const eventIds = events.map((e) => e.id);
   if (eventIds.length === 0) return null;

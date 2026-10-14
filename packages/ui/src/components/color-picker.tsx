@@ -636,6 +636,7 @@ function ColorPickerRoot(props: ColorPickerRootProps) {
     onOpenChange: onOpenChange,
     onFormatChange: onFormatChange,
   });
+  // eslint-disable-next-line react-hooks/refs -- latest-callbacks ref, read only from store event handlers
   callbacksRef.current = {
     onColorChange: onValueChange,
     onOpenChange: onOpenChange,
@@ -643,6 +644,7 @@ function ColorPickerRoot(props: ColorPickerRootProps) {
   };
 
   const store = React.useMemo(
+    // eslint-disable-next-line react-hooks/refs -- the store keeps the ref objects and reads them outside render
     () => createColorPickerStore(listenersRef, stateRef, callbacksRef),
     [listenersRef, stateRef],
   );

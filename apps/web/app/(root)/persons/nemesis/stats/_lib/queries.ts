@@ -8,6 +8,8 @@ import { cacheLife, cacheTag } from "next/cache";
 import { accentInsensitiveContains } from "@/lib/search";
 import type { GetNemesisStatsSchema } from "./validations";
 import type { NemesisStatsView } from "./views";
+import type { EventScope } from "@/lib/constants";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 function viewMetric(view: NemesisStatsView) {
   return view === "mas-nemesis"
@@ -23,6 +25,7 @@ export async function getNemesisStatsTable(input: GetNemesisStatsSchema) {
   const metric = viewMetric(input.view);
 
   const where = and(
+    eq(nemesisStats.scope, eventScopeFromDeprecated(input.deprecated)),
     input.view === "invictos" ? eq(nemesisStats.nemesisCount, 0) : undefined,
     input.minEvents > 1
       ? gte(nemesisStats.eventCount, input.minEvents)
@@ -91,7 +94,7 @@ export async function getNemesisStatsTable(input: GetNemesisStatsSchema) {
   return { data, pageCount };
 }
 
-export async function getNemesisSummary() {
+export async function getNemesisSummary(scope: EventScope) {
   cacheLife("days");
   cacheTag("nemesis-stats");
 
@@ -111,7 +114,8 @@ export async function getNemesisSummary() {
           Number,
         ),
     })
-    .from(nemesisStats);
+    .from(nemesisStats)
+    .where(eq(nemesisStats.scope, scope));
 
   const [topNemesized] = await db
     .select({
@@ -121,6 +125,7 @@ export async function getNemesisSummary() {
     })
     .from(nemesisStats)
     .innerJoin(person, eq(nemesisStats.personId, person.wcaId))
+    .where(eq(nemesisStats.scope, scope))
     .orderBy(desc(nemesisStats.nemesizedCount), asc(person.name))
     .limit(1);
 
@@ -133,7 +138,7 @@ export async function getNemesisSummary() {
   };
 }
 
-export async function getNemesisStateBreakdown() {
+export async function getNemesisStateBreakdown(scope: EventScope) {
   cacheLife("days");
   cacheTag("nemesis-stats");
 
@@ -153,6 +158,7 @@ export async function getNemesisStateBreakdown() {
     .from(nemesisStats)
     .innerJoin(person, eq(nemesisStats.personId, person.wcaId))
     .innerJoin(state, eq(person.stateId, state.id))
+    .where(eq(nemesisStats.scope, scope))
     .groupBy(state.id, state.name)
     .orderBy(
       desc(sql`count(*) filter (where ${nemesisStats.nemesisCount} = 0)`),
@@ -160,7 +166,7 @@ export async function getNemesisStateBreakdown() {
     );
 }
 
-export async function getNemesisStatsStateCounts() {
+export async function getNemesisStatsStateCounts(scope: EventScope) {
   cacheLife("days");
   cacheTag("nemesis-stats");
 
@@ -169,6 +175,7 @@ export async function getNemesisStatsStateCounts() {
     .from(nemesisStats)
     .innerJoin(person, eq(nemesisStats.personId, person.wcaId))
     .leftJoin(state, eq(person.stateId, state.id))
+    .where(eq(nemesisStats.scope, scope))
     .groupBy(state.name)
     .having(gt(count(), 0))
     .orderBy(state.name)
@@ -184,7 +191,7 @@ export async function getNemesisStatsStateCounts() {
     );
 }
 
-export async function getNemesisStatsGenderCounts() {
+export async function getNemesisStatsGenderCounts(scope: EventScope) {
   cacheLife("days");
   cacheTag("nemesis-stats");
 
@@ -192,6 +199,7 @@ export async function getNemesisStatsGenderCounts() {
     .select({ gender: person.gender, count: count() })
     .from(nemesisStats)
     .innerJoin(person, eq(nemesisStats.personId, person.wcaId))
+    .where(eq(nemesisStats.scope, scope))
     .groupBy(person.gender)
     .having(gt(count(), 0))
     .then((res) =>

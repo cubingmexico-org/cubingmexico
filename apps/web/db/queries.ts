@@ -20,9 +20,10 @@ import {
 import { cacheLife, cacheTag } from "next/cache";
 import { and, desc, eq, isNull, lt, notInArray, or } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
-import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { eventScopeFilter } from "@/lib/official-events";
+import type { EventScope } from "@/lib/constants";
 
-export async function getEvents() {
+export async function getEvents(scope: EventScope = "official") {
   cacheLife("max");
   cacheTag("events");
 
@@ -32,7 +33,7 @@ export async function getEvents() {
       name: event.name,
     })
     .from(event)
-    .where(notInArray(event.id, EXCLUDED_EVENTS))
+    .where(eventScopeFilter(scope))
     .orderBy(event.rank)
     .then((res) => res);
 }

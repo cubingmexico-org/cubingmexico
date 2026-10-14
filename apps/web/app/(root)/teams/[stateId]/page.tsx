@@ -37,6 +37,15 @@ import {
 } from "./_components/team-profile-shared";
 import { TeamLocation } from "./_components/team-location";
 import { CompetitionLogo } from "@/components/competition-logo";
+import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { eventScopeFromDeprecated } from "@/lib/official-events";
+import { deprecatedParser } from "@/lib/search-params";
+import { createSearchParamsCache } from "nuqs/server";
+import type { SearchParams } from "@/types";
+
+const searchParamsCache = createSearchParamsCache({
+  deprecated: deprecatedParser,
+});
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -54,12 +63,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ stateId: string }>;
+  searchParams: Promise<SearchParams>;
 }) {
   const stateId = (await params).stateId;
+  const { deprecated } = searchParamsCache.parse(await searchParams);
   const [data, statesGeoJSON] = await Promise.all([
-    getTeamOverviewData(stateId),
+    getTeamOverviewData(stateId, eventScopeFromDeprecated(deprecated)),
     getStatesGeoJSON(),
   ]);
 
@@ -163,6 +175,7 @@ export default async function Page({
           </div>
           <Link
             href={`/teams/${stateId}/statistics`}
+            prefetch={false}
             className={cn(
               buttonVariants({ variant: "outline", size: "sm" }),
               "gap-1.5",
@@ -264,6 +277,7 @@ export default async function Page({
               <CardTitle>Miembros destacados</CardTitle>
               <Link
                 href={`/teams/${stateId}/members`}
+                prefetch={false}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   "gap-1",
@@ -309,7 +323,8 @@ export default async function Page({
             <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
               <CardTitle>Récords nacionales</CardTitle>
               <Link
-                href={`/teams/${stateId}/statistics`}
+                href={`/teams/${stateId}/statistics${deprecated ? "?deprecated=true" : ""}`}
+                prefetch={false}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   "gap-1",
@@ -319,7 +334,8 @@ export default async function Page({
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-4">
+              <DeprecatedEventsSwitch />
               <NationalRecordsList records={nationalRecordsTeaser} />
             </CardContent>
           </Card>
@@ -344,6 +360,7 @@ export default async function Page({
               <CardTitle>Próximas competencias</CardTitle>
               <Link
                 href={`/teams/${stateId}/competitions`}
+                prefetch={false}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" }),
                   "gap-1",
