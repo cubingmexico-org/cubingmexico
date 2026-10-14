@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { nemesisStats } from "@workspace/db/schema";
 import { eq, sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
+import { officialEventIdsSql } from "@/lib/official-events";
 
 export type PersonNemesis = {
   wcaId: string;
@@ -95,10 +96,12 @@ export async function getPersonRecordValues(
     db.execute(sql`
       SELECT event_id AS "eventId", best FROM ranks_single
       WHERE person_id = ${wcaId} AND best > 0
+        AND event_id IN ${officialEventIdsSql}
     `),
     db.execute(sql`
       SELECT event_id AS "eventId", best FROM ranks_average
       WHERE person_id = ${wcaId} AND best > 0
+        AND event_id IN ${officialEventIdsSql}
     `),
   ]);
 
@@ -145,6 +148,7 @@ export async function findNemesisReport({
     WITH target AS (
       SELECT type, event_id, best
       FROM (VALUES ${sql.join(values, sql`, `)}) AS v(type, event_id, best)
+      WHERE event_id IN ${officialEventIdsSql}
     ),
     total AS (
       SELECT COUNT(*)::int AS n FROM target
@@ -315,6 +319,7 @@ export async function findNemesizedReport({
     WITH target AS (
       SELECT type, event_id, best
       FROM (VALUES ${sql.join(values, sql`, `)}) AS v(type, event_id, best)
+      WHERE event_id IN ${officialEventIdsSql}
     ),
     candidates AS (
       SELECT DISTINCT r.person_id
@@ -327,12 +332,12 @@ export async function findNemesizedReport({
       SELECT r.person_id, 'single'::text AS type, r.event_id, r.best
       FROM ranks_single r
       JOIN candidates c ON c.person_id = r.person_id
-      WHERE r.best > 0
+      WHERE r.best > 0 AND r.event_id IN ${officialEventIdsSql}
       UNION ALL
       SELECT r.person_id, 'average'::text AS type, r.event_id, r.best
       FROM ranks_average r
       JOIN candidates c ON c.person_id = r.person_id
-      WHERE r.best > 0
+      WHERE r.best > 0 AND r.event_id IN ${officialEventIdsSql}
     ),
     cmp AS (
       SELECT o.person_id, o.type, o.event_id,

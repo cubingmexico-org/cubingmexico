@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.extras
 from flask import jsonify
 
-from common import EXCLUDED_EVENTS, get_connection, log, require_cron_auth
+from common import OFFICIAL_EVENT_MAX_RANK, get_connection, log, require_cron_auth
 from routes.admin.blueprint import admin_bp
 
 
@@ -29,12 +29,7 @@ def update_state_ranks():
                 cur.execute("SELECT id, name FROM states")
                 states = cur.fetchall()
 
-                if EXCLUDED_EVENTS:
-                    placeholders = ",".join(["%s"] * len(EXCLUDED_EVENTS))
-                    query = f"SELECT id FROM events WHERE id NOT IN ({placeholders})"
-                    cur.execute(query, EXCLUDED_EVENTS)
-                else:
-                    cur.execute("SELECT id FROM events")
+                cur.execute("SELECT id FROM events WHERE rank < %s", (OFFICIAL_EVENT_MAX_RANK,))
                 events = cur.fetchall()
 
                 single_updates = []
@@ -209,12 +204,7 @@ def update_state_records():
                 cur.execute("SELECT id, name FROM states")
                 states = cur.fetchall()
 
-                if EXCLUDED_EVENTS:
-                    placeholders = ",".join(["%s"] * len(EXCLUDED_EVENTS))
-                    query = f"SELECT id FROM events WHERE id NOT IN ({placeholders})"
-                    cur.execute(query, EXCLUDED_EVENTS)
-                else:
-                    cur.execute("SELECT id FROM events")
+                cur.execute("SELECT id FROM events WHERE rank < %s", (OFFICIAL_EVENT_MAX_RANK,))
                 events = cur.fetchall()
 
                 for state_row in states:

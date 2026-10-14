@@ -10,7 +10,10 @@ import psycopg2.pool
 from flask import abort, request
 from google.cloud import secretmanager
 
-EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic", "fto"]
+# Mirrors the WCA's `Event.official` scope: ranks 800-989 are announced but
+# not yet official (e.g. fto), 990-999 are deprecated (333ft, magic, ...).
+OFFICIAL_EVENT_MAX_RANK = 800
+OFFICIAL_EVENTS_SUBQUERY = f"(SELECT id FROM events WHERE rank < {OFFICIAL_EVENT_MAX_RANK})"
 SINGLE_EVENTS = ["333fm", "333bf", "333mbf", "444bf", "555bf"]
 
 logging.basicConfig(

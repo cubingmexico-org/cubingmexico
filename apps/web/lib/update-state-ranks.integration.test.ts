@@ -68,9 +68,9 @@ describe("updateStateRanks", () => {
     });
   });
 
-  it("skips rows with countryRank 0 and excluded events", async () => {
+  it("skips rows with countryRank 0 and unofficial events", async () => {
     await insertEvent({ id: "333" });
-    await insertEvent({ id: "333ft" });
+    await insertEvent({ id: "333ft", rank: 996 });
     await insertPerson({ wcaId: "2020AAAA01", stateId: "JAL" });
     await insertPerson({ wcaId: "2020BBBB01", stateId: "JAL" });
 

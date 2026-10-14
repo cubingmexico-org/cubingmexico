@@ -1,0 +1,25 @@
+---
+description: Which WCA events count in rankings, records, nemesis, Kinch, streaks and other derived stats
+alwaysApply: true
+---
+
+# Official events
+
+An event counts only if `events.rank < 800`, matching the WCA's `Event.official` scope.
+
+- Ranks 800-989 are announced but not yet official (e.g. `fto` at 810).
+- Ranks 990-999 are deprecated (`333ft`, `magic`, `mmagic`, `333mbo`).
+
+Never hardcode a list of event ids to exclude. Use the shared helpers:
+
+- Web (`apps/web/lib/official-events.ts`):
+  - `isOfficialEvent` for Drizzle queries that join `events`
+  - `inOfficialEvents(column)` for Drizzle queries on an `event_id` column
+  - `officialEventIdsSql` inside raw `sql` templates: `event_id IN ${officialEventIdsSql}`
+- Backend (`apps/backend/common.py`): `OFFICIAL_EVENTS_SUBQUERY` in f-string SQL, or `OFFICIAL_EVENT_MAX_RANK` as a bound parameter.
+
+Every query that counts, ranks or compares events or results must apply the filter. That covers nemesis, Kinch, sum of ranks, state ranks and records, records pages, PR streaks, Mollerz, year summaries and social posts. Display-only lists (a person's results, a competition's results) may show every event.
+
+When the same computation exists in both Python and TypeScript (for example `nemesis_stats.py` and `nemesis-queries.ts`, or `routes/admin/state.py` and `lib/update-state-*.ts`), both must filter identically.
+
+In test fixtures, give unofficial events a realistic rank (e.g. `insertEvent({ id: "333ft", rank: 996 })`); the factory default of 0 counts as official.

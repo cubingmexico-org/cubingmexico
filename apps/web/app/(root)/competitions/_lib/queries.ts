@@ -24,8 +24,8 @@ import {
   gte,
   lte,
   eq,
-  lt,
 } from "drizzle-orm";
+import { isOfficialEvent } from "@/lib/official-events";
 import { accentInsensitiveContains } from "@/lib/search";
 import { type GetCompetitionsSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
@@ -232,7 +232,7 @@ export async function getCompetitionsEventCounts() {
     .from(competitionEvent)
     .innerJoin(event, eq(competitionEvent.eventId, event.id))
     .innerJoin(competition, eq(competitionEvent.competitionId, competition.id))
-    .where(and(eq(competition.countryId, "Mexico"), lt(event.rank, 200)))
+    .where(and(eq(competition.countryId, "Mexico"), isOfficialEvent))
     .groupBy(event.name, event.rank)
     .having(gt(count(), 0))
     .orderBy(event.rank) // Changed to order by event.rank

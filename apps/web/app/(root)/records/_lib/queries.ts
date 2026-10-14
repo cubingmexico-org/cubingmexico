@@ -11,8 +11,8 @@ import {
   competitionRoundDate,
   resultAttempts,
 } from "@workspace/db/schema";
-import { and, desc, eq, gt, notInArray, sql, inArray, or } from "drizzle-orm";
-import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { and, desc, eq, gt, sql, inArray, or } from "drizzle-orm";
+import { inOfficialEvents } from "@/lib/official-events";
 import { competitionAsOfCondition } from "@/lib/as-of-date";
 import { recordDateSql, toDateKey } from "@/lib/record-date";
 import { GetRecordsSchema } from "./validations";
@@ -66,7 +66,7 @@ export async function getRecords(input: GetRecordsSchema) {
     input.state ? eq(state.name, input.state) : undefined,
     input.gender ? eq(person.gender, input.gender) : undefined,
     input.event ? eq(result.eventId, input.event) : undefined,
-    notInArray(result.eventId, EXCLUDED_EVENTS),
+    inOfficialEvents(result.eventId),
     gt(result.best, 0),
     competitionAsOfCondition(input.asOf),
   );
@@ -75,7 +75,7 @@ export async function getRecords(input: GetRecordsSchema) {
     input.state ? eq(state.name, input.state) : undefined,
     input.gender ? eq(person.gender, input.gender) : undefined,
     input.event ? eq(result.eventId, input.event) : undefined,
-    notInArray(result.eventId, EXCLUDED_EVENTS),
+    inOfficialEvents(result.eventId),
     gt(result.average, 0),
     competitionAsOfCondition(input.asOf),
   );
@@ -273,7 +273,7 @@ export async function getRecordHistory(
     input.state ? eq(state.name, input.state) : undefined,
     input.gender ? eq(person.gender, input.gender) : undefined,
     input.event ? eq(result.eventId, input.event) : undefined,
-    notInArray(result.eventId, EXCLUDED_EVENTS),
+    inOfficialEvents(result.eventId),
     competitionAsOfCondition(input.asOf),
   );
 
@@ -423,7 +423,7 @@ export async function getRecentNationalRecords(
           eq(result.regionalSingleRecord, "NR"),
           eq(result.regionalAverageRecord, "NR"),
         ),
-        notInArray(result.eventId, EXCLUDED_EVENTS),
+        inOfficialEvents(result.eventId),
       ),
     )
     .orderBy(desc(recordDateSql), event.rank)

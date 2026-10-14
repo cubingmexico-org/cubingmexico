@@ -10,9 +10,9 @@ import {
   result,
   roundType,
 } from "@workspace/db/schema";
-import { and, asc, desc, eq, notInArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
-import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { inOfficialEvents } from "@/lib/official-events";
 import { recordDateSql, toDateKey } from "@/lib/record-date";
 import type { HeadToHeadRound } from "@/lib/head-to-head";
 
@@ -44,7 +44,7 @@ async function getStateRankLeaders(
       and(
         eq(person.stateId, stateId),
         eq(table.stateRank, 1),
-        notInArray(table.eventId, EXCLUDED_EVENTS),
+        inOfficialEvents(table.eventId),
       ),
     )
     .orderBy(asc(table.eventId), asc(person.name));

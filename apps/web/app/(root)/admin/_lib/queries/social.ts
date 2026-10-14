@@ -8,7 +8,7 @@ import { db } from "@workspace/db";
 import { competition, socialPost } from "@workspace/db/schema";
 import {
   BLD_FMC_MEANS_EVENTS,
-  EXCLUDED_EVENTS,
+  OFFICIAL_EVENT_MAX_RANK,
   SPEEDSOLVING_AVERAGES_EVENTS,
 } from "@/lib/constants";
 import { getTier } from "@/lib/utils";
@@ -571,7 +571,7 @@ export async function getPendingMollerzPosts(limit = 50): Promise<
   const [members, posts] = await Promise.all([
     db.execute(sql`
       WITH current_events AS (
-        SELECT id FROM events WHERE id NOT IN (${sqlInList(EXCLUDED_EVENTS)})
+        SELECT id FROM events WHERE rank < ${OFFICIAL_EVENT_MAX_RANK}
       )
       SELECT
         p.wca_id AS "personId",

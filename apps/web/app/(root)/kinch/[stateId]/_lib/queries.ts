@@ -2,7 +2,8 @@
 
 import "server-only";
 import { db } from "@workspace/db";
-import { EXCLUDED_EVENTS, SINGLE_EVENTS } from "@/lib/constants";
+import { SINGLE_EVENTS } from "@/lib/constants";
+import { officialEventIdsSql } from "@/lib/official-events";
 import { sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -27,7 +28,7 @@ export async function getKinchRanksState(
                 MIN(best) AS personal_best,
                 'average' AS type
               FROM ranks_average
-              WHERE event_id NOT IN (${sql.join(EXCLUDED_EVENTS, sql`, `)})
+              WHERE event_id IN ${officialEventIdsSql}
               GROUP BY person_id, event_id
               UNION ALL
               SELECT
@@ -48,7 +49,7 @@ export async function getKinchRanksState(
               JOIN persons p ON r.person_id = p.wca_id
               WHERE r.state_rank = 1
                 AND p.state_id = ${stateId}
-                AND r.event_id NOT IN (${sql.join(EXCLUDED_EVENTS, sql`, `)})
+                AND r.event_id IN ${officialEventIdsSql}
               GROUP BY r.event_id
               UNION ALL
               SELECT
@@ -72,7 +73,7 @@ export async function getKinchRanksState(
             Events AS (
               SELECT id, rank
               FROM events
-              WHERE id NOT IN (${sql.join(EXCLUDED_EVENTS, sql`, `)})
+              WHERE id IN ${officialEventIdsSql}
             ),
             Ratios AS (
               SELECT  

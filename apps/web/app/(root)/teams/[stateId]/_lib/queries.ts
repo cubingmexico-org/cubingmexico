@@ -13,20 +13,9 @@ import {
   team,
   teamMember,
 } from "@workspace/db/schema";
-import {
-  and,
-  count,
-  gt,
-  eq,
-  inArray,
-  notInArray,
-  asc,
-  desc,
-  sql,
-  or,
-} from "drizzle-orm";
+import { and, count, gt, eq, inArray, asc, desc, sql, or } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
-import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { inOfficialEvents } from "@/lib/official-events";
 import { type GetMembersSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -280,7 +269,7 @@ export async function getSingleNationalRecords(stateId: string) {
       and(
         eq(person.stateId, stateId),
         eq(rankSingle.countryRank, 1),
-        notInArray(rankSingle.eventId, EXCLUDED_EVENTS),
+        inOfficialEvents(rankSingle.eventId),
       ),
     )
     .orderBy(asc(rankSingle.eventId), asc(person.name));
@@ -303,7 +292,7 @@ export async function getAverageNationalRecords(stateId: string) {
       and(
         eq(person.stateId, stateId),
         eq(rankAverage.countryRank, 1),
-        notInArray(rankAverage.eventId, EXCLUDED_EVENTS),
+        inOfficialEvents(rankAverage.eventId),
       ),
     )
     .orderBy(asc(rankAverage.eventId), asc(person.name));

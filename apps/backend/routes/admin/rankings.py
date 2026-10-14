@@ -5,7 +5,7 @@ import psycopg2.extras
 from flask import jsonify
 from psycopg2.extras import execute_values
 
-from common import EXCLUDED_EVENTS, SINGLE_EVENTS, get_connection, log, require_cron_auth
+from common import OFFICIAL_EVENTS_SUBQUERY, SINGLE_EVENTS, get_connection, log, require_cron_auth
 from nemesis_stats import compute_nemesis_stats
 from routes.admin.blueprint import admin_bp
 
@@ -15,12 +15,11 @@ from routes.admin.blueprint import admin_bp
 def update_sum_of_ranks():
     try:
         log.info("Starting sum of ranks update")
-        excluded = ",".join(f"'{e}'" for e in EXCLUDED_EVENTS)
 
         single_query = f"""
         WITH all_events AS (
           SELECT DISTINCT event_id FROM ranks_single
-          WHERE event_id NOT IN ({excluded})
+          WHERE event_id IN {OFFICIAL_EVENTS_SUBQUERY}
         ),
         all_people AS (
           SELECT DISTINCT wca_id, name FROM persons
@@ -56,7 +55,7 @@ def update_sum_of_ranks():
         average_query = f"""
         WITH all_events AS (
           SELECT DISTINCT event_id FROM ranks_average
-          WHERE event_id NOT IN ({excluded})
+          WHERE event_id IN {OFFICIAL_EVENTS_SUBQUERY}
         ),
         all_people AS (
           SELECT DISTINCT wca_id, name FROM persons
@@ -142,7 +141,6 @@ def update_kinch_ranks():
     try:
         log.info("Starting kinch ranks update")
 
-        excluded = ",".join(f"'{e}'" for e in EXCLUDED_EVENTS)
         single_events = ",".join(f"'{e}'" for e in SINGLE_EVENTS)
 
         query = f"""
@@ -153,7 +151,7 @@ def update_kinch_ranks():
             MIN(best) AS personal_best,
             'average' AS type
           FROM ranks_average
-          WHERE event_id NOT IN ({excluded})
+          WHERE event_id IN {OFFICIAL_EVENTS_SUBQUERY}
           GROUP BY person_id, event_id
           UNION ALL
           SELECT
@@ -171,7 +169,7 @@ def update_kinch_ranks():
             MIN(best) AS national_best,
             'average' AS type
           FROM ranks_average
-          WHERE country_rank = 1 AND event_id NOT IN ({excluded})
+          WHERE country_rank = 1 AND event_id IN {OFFICIAL_EVENTS_SUBQUERY}
           GROUP BY event_id
           UNION ALL
           SELECT
@@ -186,7 +184,7 @@ def update_kinch_ranks():
           SELECT DISTINCT person_id FROM ranks_single
         ),
         Events AS (
-          SELECT id FROM events WHERE id NOT IN ({excluded})
+          SELECT id FROM events WHERE id IN {OFFICIAL_EVENTS_SUBQUERY}
         ),
         Ratios AS (
           SELECT
@@ -314,10 +312,11 @@ def update_streak_ranks():
     try:
         log.info("Starting streak ranks update")
 
-        query = """
+        query = f"""
         SELECT r.person_id, r.competition_id, r.event_id, r.best, r.average
         FROM results r
         JOIN competitions c ON c.id = r.competition_id
+        WHERE r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
         ORDER BY r.person_id, c.start_date ASC, r.competition_id ASC
         """
 
@@ -385,12 +384,12 @@ def update_nemesis_stats():
     try:
         log.info("Starting nemesis stats update")
 
-        query = """
+        query = f"""
         SELECT person_id, 'single' AS slot_type, event_id, best
-        FROM ranks_single WHERE best > 0
+        FROM ranks_single WHERE best > 0 AND event_id IN {OFFICIAL_EVENTS_SUBQUERY}
         UNION ALL
         SELECT person_id, 'average' AS slot_type, event_id, best
-        FROM ranks_average WHERE best > 0
+        FROM ranks_average WHERE best > 0 AND event_id IN {OFFICIAL_EVENTS_SUBQUERY}
         """
 
         try:

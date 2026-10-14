@@ -2,7 +2,8 @@
 
 import "server-only";
 import { db } from "@workspace/db";
-import { EXCLUDED_EVENTS, SINGLE_EVENTS } from "@/lib/constants";
+import { SINGLE_EVENTS } from "@/lib/constants";
+import { officialEventIdsSql } from "@/lib/official-events";
 import { sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -57,7 +58,7 @@ export async function getKinchRanksTeams(): Promise<KinchRanksTeams[]> {
                   MIN(best) AS personal_best,
                   'average' AS type
                 FROM ranks_average
-                WHERE event_id NOT IN (${sql.join(EXCLUDED_EVENTS, sql`, `)})
+                WHERE event_id IN ${officialEventIdsSql}
                 GROUP BY person_id, event_id
                 UNION ALL
                 SELECT
@@ -76,7 +77,7 @@ export async function getKinchRanksTeams(): Promise<KinchRanksTeams[]> {
                   MIN(best) AS national_best,
                   'average' AS type
                 FROM ranks_average
-                WHERE country_rank = 1 AND event_id NOT IN (${sql.join(EXCLUDED_EVENTS, sql`, `)})
+                WHERE country_rank = 1 AND event_id IN ${officialEventIdsSql}
                 GROUP BY event_id
                 UNION ALL
                 SELECT
@@ -119,7 +120,7 @@ export async function getKinchRanksTeams(): Promise<KinchRanksTeams[]> {
             FROM teams t
             CROSS JOIN events e
             LEFT JOIN TeamKinch tk ON t.state_id = tk.state_id AND e.id = tk.event_id
-            WHERE e.id NOT IN (${sql.join(EXCLUDED_EVENTS, sql`, `)})
+            WHERE e.id IN ${officialEventIdsSql}
             GROUP BY t.name, t.state_id
             ORDER BY overall DESC;
           `,

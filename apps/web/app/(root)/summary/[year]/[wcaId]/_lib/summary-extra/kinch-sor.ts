@@ -2,8 +2,9 @@ import "server-only";
 
 import { db } from "@workspace/db";
 import { competition, event, result } from "@workspace/db/schema";
-import { EXCLUDED_EVENTS, SINGLE_EVENTS } from "@/lib/constants";
-import { and, eq, gt, inArray, lte, notInArray, sql } from "drizzle-orm";
+import { SINGLE_EVENTS } from "@/lib/constants";
+import { isOfficialEvent } from "@/lib/official-events";
+import { and, eq, gt, inArray, lte, sql } from "drizzle-orm";
 import type { YearKinchSor } from "./types";
 import { dayBefore, mbfScore } from "./utils";
 
@@ -17,9 +18,7 @@ export async function getAsOfPbs(asOf: Date): Promise<{
   const events = await db
     .select({ id: event.id })
     .from(event)
-    .where(
-      and(sql`${event.rank} < 200`, notInArray(event.id, EXCLUDED_EVENTS)),
-    );
+    .where(isOfficialEvent);
 
   const eventIds = events.map((e) => e.id);
   const asOfCond = lte(competition.startDate, asOf);

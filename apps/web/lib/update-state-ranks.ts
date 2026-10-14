@@ -1,5 +1,5 @@
 import { db } from "@workspace/db";
-import { and, asc, eq, inArray, ne, notInArray } from "drizzle-orm";
+import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import {
   person,
   rankAverage,
@@ -7,7 +7,7 @@ import {
   rankSingle,
   state,
 } from "@workspace/db/schema";
-import { EXCLUDED_EVENTS } from "@/lib/constants";
+import { isOfficialEvent } from "@/lib/official-events";
 import {
   assignSequentialRanks,
   type RankRecord,
@@ -45,10 +45,7 @@ export async function updateStateRanks(stateId: string) {
   }
 
   await db.transaction(async (tx) => {
-    const events = await tx
-      .select()
-      .from(event)
-      .where(notInArray(event.id, EXCLUDED_EVENTS));
+    const events = await tx.select().from(event).where(isOfficialEvent);
 
     const statePersons = await tx
       .select({ wcaId: person.wcaId })

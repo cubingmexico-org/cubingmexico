@@ -6,7 +6,11 @@ export const ORGANIZER_APP_URL =
   process.env.NEXT_PUBLIC_ORGANIZER_URL ??
   "https://certificados.cubingmexico.net";
 
-export const EXCLUDED_EVENTS = ["333ft", "333mbo", "magic", "mmagic", "fto"];
+/**
+ * Mirrors the WCA's `Event.official` scope: ranks 800-989 are announced but
+ * not yet official (e.g. fto), 990-999 are deprecated (333ft, magic, ...).
+ */
+export const OFFICIAL_EVENT_MAX_RANK = 800;
 
 export const SINGLE_EVENTS = ["333fm", "333bf", "333mbf", "444bf", "555bf"];
 

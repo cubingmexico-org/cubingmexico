@@ -28,7 +28,7 @@ function recordsInput(
 beforeEach(async () => {
   await insertEvent({ id: "333", name: "3x3x3 Cube", rank: 10 });
   await insertEvent({ id: "222", name: "2x2x2 Cube", rank: 20 });
-  await insertEvent({ id: "333ft", name: "3x3x3 With Feet", rank: 30 });
+  await insertEvent({ id: "333ft", name: "3x3x3 With Feet", rank: 996 });
   await insertRoundType({ id: "f", rank: 90 });
 
   await insertPerson({

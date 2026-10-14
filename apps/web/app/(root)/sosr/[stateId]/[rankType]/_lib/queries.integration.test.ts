@@ -21,7 +21,7 @@ function sosrInput(
 beforeEach(async () => {
   await insertEvent({ id: "333", rank: 10 });
   await insertEvent({ id: "222", rank: 20 });
-  await insertEvent({ id: "333ft", rank: 30 });
+  await insertEvent({ id: "333ft", rank: 996 });
 
   await insertPerson({
     wcaId: "2020AAAA01",
