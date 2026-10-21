@@ -1,59 +1,55 @@
 import { db } from "@workspace/db";
 import { design } from "@workspace/db/schema";
-import { podium, participation } from "@/data/certificates";
+import { sql } from "drizzle-orm";
+import { CERTIFICATE_DESIGN_TEMPLATES } from "@/data/certificates";
 
-const DEFAULT_PAGE_CONFIG = {
-  pageSize: "LETTER" as const,
-  pageOrientation: "portrait" as const,
-  pageMargins: [40, 60, 40, 60] as [number, number, number, number],
+const templateId = (module: string): string => {
+  const template = CERTIFICATE_DESIGN_TEMPLATES.find(
+    (t) => t.module === module,
+  );
+  if (!template) {
+    throw new Error(`Missing built-in template for module ${module}`);
+  }
+  return template.id;
 };
 
-/** Stable IDs so ensureGlobalDesignTemplates is idempotent. */
-export const GLOBAL_PODIUM_TEMPLATE_ID = "00000000-0000-4000-8000-000000000001";
-export const GLOBAL_PARTICIPATION_TEMPLATE_ID =
-  "00000000-0000-4000-8000-000000000002";
-
-const GLOBAL_TEMPLATES = [
-  {
-    id: GLOBAL_PODIUM_TEMPLATE_ID,
-    name: "Certificado de podio (Cubing México)",
-    module: "certificate_podium" as const,
-    json: {
-      content: podium,
-      pageConfig: DEFAULT_PAGE_CONFIG,
-    },
-  },
-  {
-    id: GLOBAL_PARTICIPATION_TEMPLATE_ID,
-    name: "Certificado de participación (Cubing México)",
-    module: "certificate_participation" as const,
-    json: {
-      content: participation,
-      pageConfig: DEFAULT_PAGE_CONFIG,
-    },
-  },
-];
+export const GLOBAL_PODIUM_TEMPLATE_ID = templateId("certificate_podium");
+export const GLOBAL_PARTICIPATION_TEMPLATE_ID = templateId(
+  "certificate_participation",
+);
 
 /**
  * Upserts built-in Cubing México certificate templates.
- * Safe to call on every templates list request.
+ * Safe to call on every templates list request: rows are only rewritten
+ * when the bundled template differs from the stored one.
  */
 export async function ensureGlobalDesignTemplates(): Promise<void> {
   await db
     .insert(design)
     .values(
-      GLOBAL_TEMPLATES.map((template) => ({
+      CERTIFICATE_DESIGN_TEMPLATES.map((template) => ({
         id: template.id,
         name: template.name,
         competitionId: null,
         userId: "system",
         module: template.module,
         schemaVersion: 1,
-        json: template.json,
+        json: template.document,
         isPublic: true,
         ownerScope: "global" as const,
         updatedAt: new Date(),
       })),
     )
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: design.id,
+      set: {
+        name: sql`excluded.name`,
+        module: sql`excluded.module`,
+        json: sql`excluded.json`,
+        updatedAt: sql`excluded.updated_at`,
+      },
+      setWhere: sql`${design.name} is distinct from excluded.name
+        or ${design.module} is distinct from excluded.module
+        or ${design.json} is distinct from excluded.json`,
+    });
 }
