@@ -5,6 +5,7 @@ import QRCode from "qrcode";
 import type { State, Team } from "@/db/queries";
 import type { Competition } from "@/types/wca";
 import { getBadgeGroupStationFields } from "@/lib/groups/badge-fields";
+import { canvasFont, ensureFontLoaded } from "@/lib/load-fonts";
 
 type CanvasStoreState = ReturnType<typeof useCanvasStore.getState>;
 
@@ -45,7 +46,7 @@ export function createBadgeRenderer({
     fontWeight: string,
   ): { fontSize: number; lines: string[] } => {
     let fontSize = baseFontSize;
-    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    ctx.font = canvasFont(fontWeight, fontSize, fontFamily);
 
     const splitIntoLines = (text: string, maxWidth: number): string[] => {
       const words = text.split(" ");
@@ -76,7 +77,7 @@ export function createBadgeRenderer({
     // Reduce font size until text fits within bounds (max 2 lines)
     while ((totalHeight > maxHeight || lines.length > 2) && fontSize > 8) {
       fontSize -= 0.5;
-      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+      ctx.font = canvasFont(fontWeight, fontSize, fontFamily);
       lines = splitIntoLines(text, maxWidth);
       totalHeight = lines.length * fontSize * 1.2;
     }
@@ -131,6 +132,7 @@ export function createBadgeRenderer({
           const baseFontSize = element.fontSize || 24;
           const fontFamily = element.fontFamily || "sans-serif";
           const fontWeight = element.fontWeight || "normal";
+          await ensureFontLoaded(fontFamily, fontWeight);
 
           // Replace placeholder text with person's data
           let content = element.content || "";
@@ -211,7 +213,7 @@ export function createBadgeRenderer({
           }
 
           ctx.fillStyle = element.color || "#000000";
-          ctx.font = `${fontWeight} ${optimalFontSize}px ${fontFamily}`;
+          ctx.font = canvasFont(fontWeight, optimalFontSize, fontFamily);
           ctx.textAlign = element.textAlign || "left";
 
           const lineHeight = optimalFontSize * 1.2;

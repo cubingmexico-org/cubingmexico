@@ -55,7 +55,6 @@
     "sonner": "catalog:",
     "swr": "^2.3.3",
     "tippy.js": "^6.3.7",
-    "webfontloader": "^1.6.28",
     "zod": "catalog:",
     "zustand": "5.0.8"
   },
@@ -66,7 +65,6 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "catalog:",
     "@types/react-dom": "catalog:",
-    "@types/webfontloader": "^1.6.38",
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "catalog:",

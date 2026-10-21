@@ -43,13 +43,18 @@ import {
   DialogClose,
   DialogFooter,
 } from "@workspace/ui/components/dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EventId, ExtendedPerson, WCIF } from "@/types/wcif";
 import { State, Team } from "@/db/queries";
 import { authClient } from "@/lib/auth-client";
 import { DesignLibraryDialog } from "@/components/design-library-dialog";
 import { getBadgeGroupStationFields } from "@/lib/groups/badge-fields";
 import { DEFAULT_BADGE_DESIGN } from "@/data/badges";
+import {
+  canvasFont,
+  ensureFontLoaded,
+  registerBundledFonts,
+} from "@/lib/load-fonts";
 
 interface CanvasProps {
   states: State[];
@@ -87,6 +92,10 @@ export function Canvas({
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { addText, addRectangle, addImage, addQRCode } = useAddCanvasElements();
+
+  useEffect(() => {
+    registerBundledFonts();
+  }, []);
   const [cloudMode, setCloudMode] = useState<
     "save" | "load" | "templates" | null
   >(null);
@@ -187,7 +196,7 @@ export function Canvas({
     fontWeight: string,
   ): { fontSize: number; lines: string[] } => {
     let fontSize = baseFontSize;
-    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    ctx.font = canvasFont(fontWeight, fontSize, fontFamily);
 
     const splitIntoLines = (text: string, maxWidth: number): string[] => {
       const words = text.split(" ");
@@ -218,7 +227,7 @@ export function Canvas({
     // Reduce font size until text fits within bounds (max 2 lines)
     while ((totalHeight > maxHeight || lines.length > 2) && fontSize > 8) {
       fontSize -= 0.5;
-      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+      ctx.font = canvasFont(fontWeight, fontSize, fontFamily);
       lines = splitIntoLines(text, maxWidth);
       totalHeight = lines.length * fontSize * 1.2;
     }
@@ -271,6 +280,7 @@ export function Canvas({
           const baseFontSize = element.fontSize || 24;
           const fontFamily = element.fontFamily || "sans-serif";
           const fontWeight = element.fontWeight || "normal";
+          await ensureFontLoaded(fontFamily, fontWeight);
 
           // Replace placeholder text with person's data
           let content = element.content || "";
@@ -334,7 +344,7 @@ export function Canvas({
           }
 
           ctx.fillStyle = element.color || "#000000";
-          ctx.font = `${fontWeight} ${optimalFontSize}px ${fontFamily}`;
+          ctx.font = canvasFont(fontWeight, optimalFontSize, fontFamily);
           ctx.textAlign = element.textAlign || "left";
 
           const lineHeight = optimalFontSize * 1.2;

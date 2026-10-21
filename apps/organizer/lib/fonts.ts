@@ -1,340 +1,146 @@
-export const fonts = [
-  {
-    value: "Allura",
-    label: "Allura",
-  },
-  {
-    value: "Chau Philomene",
-    label: "Chau Philomene",
-  },
-  {
-    value: "Cookie",
-    label: "Cookie",
-  },
-  {
-    value: "Dancing Script",
-    label: "Dancing Script",
-  },
-  {
-    value: "Great Vibes",
-    label: "Great Vibes",
-  },
-  {
-    value: "Inter",
-    label: "Inter",
-  },
-  {
-    value: "Kanit",
-    label: "Kanit",
-  },
-  {
-    value: "Lato",
-    label: "Lato",
-  },
-  {
-    value: "Lora",
-    label: "Lora",
-  },
-  {
-    value: "Maven Pro",
-    label: "Maven Pro",
-  },
-  {
-    value: "Merriweather",
-    label: "Merriweather",
-  },
-  {
-    value: "Montserrat",
-    label: "Montserrat",
-  },
-  {
-    value: "Mulish",
-    label: "Mulish",
-  },
-  {
-    value: "Noto Sans",
-    label: "Noto Sans",
-  },
-  {
-    value: "Nunito",
-    label: "Nunito",
-  },
-  {
-    value: "Open Sans",
-    label: "Open Sans",
-  },
-  {
-    value: "Oswald",
-    label: "Oswald",
-  },
-  {
-    value: "Pacifico",
-    label: "Pacifico",
-  },
-  {
-    value: "Playfair Display",
-    label: "Playfair Display",
-  },
-  {
-    value: "Poppins",
-    label: "Poppins",
-  },
-  {
-    value: "PT Sans",
-    label: "PT Sans",
-  },
-  {
-    value: "Raleway",
-    label: "Raleway",
-  },
-  {
-    value: "Roboto",
-    label: "Roboto",
-  },
-  {
-    value: "Roboto Condensed",
-    label: "Roboto Condensed",
-  },
-  {
-    value: "Roboto Mono",
-    label: "Roboto Mono",
-  },
-  {
-    value: "Roboto Slab",
-    label: "Roboto Slab",
-  },
-  {
-    value: "Rubik",
-    label: "Rubik",
-  },
-  {
-    value: "Satisfy",
-    label: "Satisfy",
-  },
-  {
-    value: "Ubuntu",
-    label: "Ubuntu",
-  },
-  {
-    value: "Work Sans",
-    label: "Work Sans",
-  },
+export type FontCategory = "sans" | "serif" | "display" | "script" | "mono";
+
+export const FONT_CATEGORIES: { id: FontCategory; label: string }[] = [
+  { id: "sans", label: "Sans serif" },
+  { id: "serif", label: "Serif" },
+  { id: "display", label: "Display" },
+  { id: "script", label: "Manuscrita" },
+  { id: "mono", label: "Monoespaciada" },
 ];
 
-export const fontDeclarations = {
-  Allura: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Allura/Allura-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Allura/Allura-Regular.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Allura/Allura-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Allura/Allura-Regular.ttf`,
-  },
-  "Chau Philomene": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Chau_Philomene/ChauPhilomeneOne-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Chau_Philomene/ChauPhilomeneOne-Regular.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Chau_Philomene/ChauPhilomeneOne-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Chau_Philomene/ChauPhilomeneOne-Regular.ttf`,
-  },
-  Cookie: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Cookie/Cookie-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Cookie/Cookie-Regular.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Cookie/Cookie-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Cookie/Cookie-Regular.ttf`,
-  },
-  "Dancing Script": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Dancing_Script/DancingScript-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Dancing_Script/DancingScript-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Dancing_Script/DancingScript-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Dancing_Script/DancingScript-Regular.ttf`,
-  },
-  "Great Vibes": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Great_Vibes/GreatVibes-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Great_Vibes/GreatVibes-Regular.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Great_Vibes/GreatVibes-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Great_Vibes/GreatVibes-Regular.ttf`,
-  },
-  Inter: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Inter/Inter-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Inter/Inter-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Inter/Inter-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Inter/Inter-Regular.ttf`,
-  },
-  Kanit: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Kanit/Kanit-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Kanit/Kanit-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Kanit/Kanit-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Kanit/Kanit-Regular.ttf`,
-  },
-  Lato: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Lato/Lato-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Lato/Lato-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Lato/Lato-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Lato/Lato-Regular.ttf`,
-  },
-  Lora: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Lora/Lora-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Lora/Lora-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Lora/Lora-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Lora/Lora-Regular.ttf`,
-  },
-  "Maven Pro": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/MavenPro/MavenPro-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/MavenPro/MavenPro-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/MavenPro/MavenPro-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/MavenPro/MavenPro-Regular.ttf`,
-  },
-  Merriweather: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Merriweather/Merriweather-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Merriweather/Merriweather-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Merriweather/Merriweather-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Merriweather/Merriweather-Regular.ttf`,
-  },
-  Montserrat: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Montserrat/Montserrat-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Montserrat/Montserrat-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Montserrat/Montserrat-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Montserrat/Montserrat-Regular.ttf`,
-  },
-  Mulish: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Mulish/Mulish-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Mulish/Mulish-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Mulish/Mulish-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Mulish/Mulish-Regular.ttf`,
-  },
-  "Noto Sans": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Noto_Sans/NotoSans-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Noto_Sans/NotoSans-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Noto_Sans/NotoSans-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Noto_Sans/NotoSans-Regular.ttf`,
-  },
-  Nunito: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Nunito/Nunito-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Nunito/Nunito-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Nunito/Nunito-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Nunito/Nunito-Regular.ttf`,
-  },
-  "Open Sans": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Open_Sans/OpenSans-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Open_Sans/OpenSans-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Open_Sans/OpenSans-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Open_Sans/OpenSans-Regular.ttf`,
-  },
-  Oswald: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Oswald/Oswald-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Oswald/Oswald-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Oswald/Oswald-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Oswald/Oswald-Regular.ttf`,
-  },
-  Pacifico: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Pacifico/Pacifico-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Pacifico/Pacifico-Regular.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Pacifico/Pacifico-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Pacifico/Pacifico-Regular.ttf`,
-  },
-  "Playfair Display": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Playfair_Display/PlayfairDisplay-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Playfair_Display/PlayfairDisplay-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Playfair_Display/PlayfairDisplay-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Playfair_Display/PlayfairDisplay-Regular.ttf`,
-  },
-  Poppins: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Poppins/Poppins-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Poppins/Poppins-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Poppins/Poppins-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Poppins/Poppins-Regular.ttf`,
-  },
-  "PT Sans": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/PT_Sans/PTSans-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/PT_Sans/PTSans-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/PT_Sans/PTSans-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/PT_Sans/PTSans-Regular.ttf`,
-  },
-  Raleway: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Raleway/Raleway-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Raleway/Raleway-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Raleway/Raleway-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Raleway/Raleway-Regular.ttf`,
-  },
-  Roboto: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto/Roboto-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto/Roboto-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto/Roboto-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto/Roboto-Regular.ttf`,
-  },
-  "Roboto Condensed": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Condensed/RobotoCondensed-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Condensed/RobotoCondensed-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Condensed/RobotoCondensed-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Condensed/RobotoCondensed-Regular.ttf`,
-  },
-  "Roboto Mono": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Mono/RobotoMono-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Mono/RobotoMono-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Mono/RobotoMono-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Mono/RobotoMono-Regular.ttf`,
-  },
-  "Roboto Slab": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Slab/RobotoSlab-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Slab/RobotoSlab-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Slab/RobotoSlab-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Roboto_Slab/RobotoSlab-Regular.ttf`,
-  },
-  Rubik: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Rubik/Rubik-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Rubik/Rubik-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Rubik/Rubik-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Rubik/Rubik-Regular.ttf`,
-  },
-  Satisfy: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Satisfy/Satisfy-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Satisfy/Satisfy-Regular.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Satisfy/Satisfy-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Satisfy/Satisfy-Regular.ttf`,
-  },
-  Ubuntu: {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Ubuntu/Ubuntu-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Ubuntu/Ubuntu-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Ubuntu/Ubuntu-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Ubuntu/Ubuntu-Regular.ttf`,
-  },
-  "Work Sans": {
-    normal: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Work_Sans/WorkSans-Regular.ttf`,
-    bold: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Work_Sans/WorkSans-Bold.ttf`,
-    italics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Work_Sans/WorkSans-Regular.ttf`,
-    bolditalics: `${process.env.NEXT_PUBLIC_APP_URL}/fonts/Work_Sans/WorkSans-Regular.ttf`,
-  },
-};
+/** A font whose files live in `public/fonts`, usable in the editors, canvas and PDFs. */
+export interface BundledFont {
+  family: string;
+  category: FontCategory;
+  /** Path under the app origin, e.g. `/fonts/Roboto/Roboto-Regular.ttf`. */
+  regular: string;
+  /** Omitted for single-weight fonts; bold then falls back to `regular`. */
+  bold?: string;
+}
 
-export const fontFamilies = [
-  "Allura",
-  "Chau Philomene",
-  "Cookie",
-  "Dancing Script",
-  "Great Vibes",
-  "Inter",
-  "Kanit",
-  "Lato",
-  "Lora",
-  "Maven Pro",
-  "Merriweather",
-  "Montserrat",
-  "Noto Sans",
-  "Nunito",
-  "Open Sans",
-  "Oswald",
-  "Pacifico",
-  "Playfair Display",
-  "Poppins",
-  "PT Sans",
-  "Raleway",
-  "Roboto",
-  "Roboto Condensed",
-  "Roboto Mono",
-  "Roboto Slab",
-  "Rubik",
-  "Satisfy",
-  "Ubuntu",
-  "Work Sans",
+const font = (
+  family: string,
+  category: FontCategory,
+  dir: string,
+  prefix: string,
+  { bold = true, ext = "ttf" }: { bold?: boolean; ext?: "ttf" | "otf" } = {},
+): BundledFont => ({
+  family,
+  category,
+  regular: `/fonts/${dir}/${prefix}-Regular.${ext}`,
+  ...(bold ? { bold: `/fonts/${dir}/${prefix}-Bold.${ext}` } : {}),
+});
+
+export const BUNDLED_FONTS: BundledFont[] = [
+  // Sans serif
+  font("Archivo", "sans", "Archivo", "Archivo"),
+  font("Barlow", "sans", "Barlow", "Barlow"),
+  font(
+    "Basically A Sans Serif Font",
+    "sans",
+    "BasicallyASansSerif",
+    "BasicallyASansSerif",
+    { bold: false },
+  ),
+  font("DM Sans", "sans", "DM_Sans", "DMSans"),
+  font("Fira Sans", "sans", "Fira_Sans", "FiraSans"),
+  font("Inter", "sans", "Inter", "Inter"),
+  font("Josefin Sans", "sans", "Josefin_Sans", "JosefinSans"),
+  font("Kanit", "sans", "Kanit", "Kanit"),
+  font("Lato", "sans", "Lato", "Lato"),
+  font("Manrope", "sans", "Manrope", "Manrope"),
+  font("Maven Pro", "sans", "MavenPro", "MavenPro"),
+  font("Montserrat", "sans", "Montserrat", "Montserrat"),
+  font("Mulish", "sans", "Mulish", "Mulish"),
+  font("Noto Sans", "sans", "Noto_Sans", "NotoSans"),
+  font("Nunito", "sans", "Nunito", "Nunito"),
+  font("Open Sans", "sans", "Open_Sans", "OpenSans"),
+  font("Poppins", "sans", "Poppins", "Poppins"),
+  font("PT Sans", "sans", "PT_Sans", "PTSans"),
+  font("Raleway", "sans", "Raleway", "Raleway"),
+  font("Roboto", "sans", "Roboto", "Roboto"),
+  font("Roboto Condensed", "sans", "Roboto_Condensed", "RobotoCondensed"),
+  font("Rubik", "sans", "Rubik", "Rubik"),
+  font("Source Sans 3", "sans", "Source_Sans_3", "SourceSans3"),
+  font("Ubuntu", "sans", "Ubuntu", "Ubuntu"),
+  font("Work Sans", "sans", "Work_Sans", "WorkSans"),
+  // Serif
+  font("Cinzel", "serif", "Cinzel", "Cinzel"),
+  font(
+    "Cormorant Garamond",
+    "serif",
+    "Cormorant_Garamond",
+    "CormorantGaramond",
+  ),
+  font("Crimson Text", "serif", "Crimson_Text", "CrimsonText"),
+  font("EB Garamond", "serif", "EB_Garamond", "EBGaramond"),
+  font("Libre Baskerville", "serif", "Libre_Baskerville", "LibreBaskerville"),
+  font("Lora", "serif", "Lora", "Lora"),
+  font("Merriweather", "serif", "Merriweather", "Merriweather"),
+  font("Playfair Display", "serif", "Playfair_Display", "PlayfairDisplay"),
+  font("Roboto Slab", "serif", "Roboto_Slab", "RobotoSlab"),
+  // Display
+  font("Anton", "display", "Anton", "Anton", { bold: false }),
+  font("Bebas Neue", "display", "Bebas_Neue", "BebasNeue", { bold: false }),
+  font("Black Ops One", "display", "Black_Ops_One", "BlackOpsOne", {
+    bold: false,
+  }),
+  font("Bungee", "display", "Bungee", "Bungee", { bold: false }),
+  font("Chau Philomene", "display", "Chau_Philomene", "ChauPhilomeneOne", {
+    bold: false,
+  }),
+  font("Lobster", "display", "Lobster", "Lobster", { bold: false }),
+  font("Oswald", "display", "Oswald", "Oswald"),
+  font("Righteous", "display", "Righteous", "Righteous", { bold: false }),
+  font("Russo One", "display", "Russo_One", "RussoOne", { bold: false }),
+  font("Santa Monday", "display", "SantaMonday", "SantaMonday", {
+    bold: false,
+    ext: "otf",
+  }),
+  // Script
+  font("Allura", "script", "Allura", "Allura", { bold: false }),
+  font("Caveat", "script", "Caveat", "Caveat"),
+  font("Cookie", "script", "Cookie", "Cookie", { bold: false }),
+  font("Dancing Script", "script", "Dancing_Script", "DancingScript"),
+  font("Great Vibes", "script", "Great_Vibes", "GreatVibes", { bold: false }),
+  font("Kaushan Script", "script", "Kaushan_Script", "KaushanScript", {
+    bold: false,
+  }),
+  font("Pacifico", "script", "Pacifico", "Pacifico", { bold: false }),
+  font("Parisienne", "script", "Parisienne", "Parisienne", { bold: false }),
+  font("Sacramento", "script", "Sacramento", "Sacramento", { bold: false }),
+  font("Satisfy", "script", "Satisfy", "Satisfy", { bold: false }),
+  // Monospace
+  font("Roboto Mono", "mono", "Roboto_Mono", "RobotoMono"),
 ];
+
+/** Badge-only: drawn by the browser on canvas, but their files can't be bundled for PDFs. */
+export const BADGE_SYSTEM_FONTS = [
+  "Arial",
+  "Helvetica",
+  "Times New Roman",
+  "Georgia",
+  "Courier New",
+  "Verdana",
+  "Comic Sans MS",
+  "Impact",
+];
+
+export const fontFamilies = BUNDLED_FONTS.map((f) => f.family);
+
+export const fonts = BUNDLED_FONTS.map((f) => ({
+  value: f.family,
+  label: f.family,
+}));
+
+/** pdfmake font dictionary; italics are not bundled, so they reuse the upright files. */
+export const fontDeclarations = Object.fromEntries(
+  BUNDLED_FONTS.map((f) => {
+    const normal = `${process.env.NEXT_PUBLIC_APP_URL}${f.regular}`;
+    const bold = `${process.env.NEXT_PUBLIC_APP_URL}${f.bold ?? f.regular}`;
+    return [f.family, { normal, bold, italics: normal, bolditalics: bold }];
+  }),
+);
 
 export const fontSizes = [
   "8",

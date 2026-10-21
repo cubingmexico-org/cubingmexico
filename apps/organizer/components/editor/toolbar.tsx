@@ -39,6 +39,7 @@ import {
   ColorPickerTrigger,
 } from "@workspace/ui/components/color-picker";
 import { fontFamilies, fontSizes } from "@/lib/fonts";
+import { registerBundledFonts } from "@/lib/load-fonts";
 import { ComboboxFont } from "./combobox-font";
 
 interface ToolbarProps {
@@ -46,32 +47,19 @@ interface ToolbarProps {
 }
 
 export default function Toolbar({ editor }: ToolbarProps) {
-  const loadFonts = async () => {
-    const WebFont = await import("webfontloader");
-    WebFont.load({
-      google: {
-        families: fontFamilies.map((font) => `${font}:400,700`),
-      },
-    });
-  };
+  React.useEffect(() => {
+    registerBundledFonts();
+  }, []);
 
   if (!editor) {
     return null;
   }
 
-  void loadFonts();
-
   return (
     <div className="flex justify-between items-start mx-6">
       <div className="flex items-center justify-center gap-1">
         <ComboboxFont
-          setValue={async (value) => {
-            const WebFont = (await import("webfontloader")).default;
-            WebFont.load({
-              google: {
-                families: [`${value}:400,700`],
-              },
-            });
+          setValue={(value) => {
             editor.chain().focus().setFontFamily(value).run();
           }}
           value={
