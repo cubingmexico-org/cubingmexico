@@ -85,7 +85,7 @@ export function FontsCombobox({ value, onValueChange }: FontsComboboxProps) {
           <ChevronDown className="h-4 w-4" />
         </ComboboxTrigger>
       </ComboboxAnchor>
-      <ComboboxContent>
+      <ComboboxContent className="max-h-80 overflow-y-auto">
         <ComboboxEmpty>No se encontró ninguna fuente.</ComboboxEmpty>
         {FONT_GROUPS.map((group) => (
           <ComboboxGroup key={group.id}>
