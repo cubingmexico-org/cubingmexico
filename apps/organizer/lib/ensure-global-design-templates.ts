@@ -1,7 +1,22 @@
 import { db } from "@workspace/db";
 import { design } from "@workspace/db/schema";
 import { sql } from "drizzle-orm";
+import type { DesignModule } from "@workspace/db/schema";
+import { BADGE_DESIGN_TEMPLATES } from "@/data/badges";
 import { CERTIFICATE_DESIGN_TEMPLATES } from "@/data/certificates";
+
+const GLOBAL_TEMPLATES: {
+  id: string;
+  name: string;
+  module: DesignModule;
+  document: unknown;
+}[] = [
+  ...CERTIFICATE_DESIGN_TEMPLATES,
+  ...BADGE_DESIGN_TEMPLATES.map((template) => ({
+    ...template,
+    module: "badges" as const,
+  })),
+];
 
 const templateId = (module: string): string => {
   const template = CERTIFICATE_DESIGN_TEMPLATES.find(
@@ -27,7 +42,7 @@ export async function ensureGlobalDesignTemplates(): Promise<void> {
   await db
     .insert(design)
     .values(
-      CERTIFICATE_DESIGN_TEMPLATES.map((template) => ({
+      GLOBAL_TEMPLATES.map((template) => ({
         id: template.id,
         name: template.name,
         competitionId: null,

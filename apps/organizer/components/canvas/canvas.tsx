@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useCanvasStore } from "@/lib/canvas-store";
 import { getPrimaryRoleLabel } from "@/lib/person-roles";
-import type { CanvasElement } from "@/types/canvas";
+import type { BadgeDesignFile, CanvasElement } from "@/types/canvas";
 import QRCode from "qrcode";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -37,6 +37,7 @@ import { State, Team } from "@/db/queries";
 import { authClient } from "@/lib/auth-client";
 import { DesignLibraryDialog } from "@/components/design-library-dialog";
 import { getBadgeGroupStationFields } from "@/lib/groups/badge-fields";
+import { DEFAULT_BADGE_DESIGN } from "@/data/badges";
 
 interface CanvasProps {
   states: State[];
@@ -739,7 +740,7 @@ export function Canvas({
     URL.revokeObjectURL(url);
   };
 
-  const getBadgeDesignJson = () => ({
+  const getBadgeDesignJson = (): BadgeDesignFile => ({
     elements,
     canvasWidth,
     canvasHeight,
@@ -756,18 +757,11 @@ export function Canvas({
       return;
     }
 
-    const design = data as {
-      elements?: { front: CanvasElement[]; back: CanvasElement[] };
-      canvasWidth?: number;
-      canvasHeight?: number;
-      backgroundImage?: string;
-      backgroundImageBack?: string;
-      enableBackSide?: boolean;
-    };
+    const design = data as Partial<BadgeDesignFile>;
 
-    if (design.elements) setElements(design.elements);
     if (design.canvasWidth && design.canvasHeight)
       setCanvasSize(design.canvasWidth, design.canvasHeight);
+    if (design.elements) setElements(design.elements);
     if (design.backgroundImage) setBackgroundImage(design.backgroundImage);
     if (design.backgroundImageBack)
       setBackgroundImageBack(design.backgroundImageBack);
@@ -797,11 +791,14 @@ export function Canvas({
   };
 
   const resetCanvas = () => {
-    setElements({ front: [], back: [] });
-    setCanvasSize(638, 1011);
+    setCanvasSize(
+      DEFAULT_BADGE_DESIGN.canvasWidth,
+      DEFAULT_BADGE_DESIGN.canvasHeight,
+    );
+    setElements(DEFAULT_BADGE_DESIGN.elements);
     setBackgroundImage(undefined);
     setBackgroundImageBack(undefined);
-    setEnableBackSide(false);
+    setEnableBackSide(DEFAULT_BADGE_DESIGN.enableBackSide);
     setIsResetDialogOpen(false);
   };
 
@@ -863,9 +860,9 @@ export function Canvas({
               <DialogHeader>
                 <DialogTitle>¿Estás seguro de reiniciar el lienzo?</DialogTitle>
                 <DialogDescription>
-                  Esta acción eliminará todos los elementos y restablecerá el
-                  lienzo a su estado predeterminado. Esta acción no se puede
-                  deshacer.
+                  Esta acción reemplazará todos los elementos con el gafete
+                  clásico predeterminado y quitará los fondos. Esta acción no se
+                  puede deshacer.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>

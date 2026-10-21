@@ -41,6 +41,16 @@ export interface CanvasElement {
   qrIncludeIcon?: boolean;
 }
 
+/** Serialized badge design, as saved to the cloud or exported as JSON. */
+export interface BadgeDesignFile {
+  elements: { front: CanvasElement[]; back: CanvasElement[] };
+  canvasWidth: number;
+  canvasHeight: number;
+  backgroundImage?: string;
+  backgroundImageBack?: string;
+  enableBackSide: boolean;
+}
+
 export interface CanvasState {
   elements: {
     front: CanvasElement[];
