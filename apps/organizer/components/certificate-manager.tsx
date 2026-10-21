@@ -33,7 +33,7 @@ import type {
   RegisteredPerson,
   PodiumData,
 } from "@/types/wcif";
-import { participation, podium } from "@/data/certificates";
+import { DEFAULT_TEMPLATES } from "@/data/certificates";
 import { JSONContent } from "@tiptap/react";
 import { Margins, PageOrientation, PageSize } from "pdfmake/interfaces";
 import { CertificateManagerSkeleton } from "./certificate-manager-skeleton";
@@ -74,22 +74,31 @@ export function CertificateManager({
     ParticipantData[]
   >([]);
 
-  const [content, setContent] = useState<JSONContent>(podium);
-  const [participantsContent, setParticipantsContent] =
-    useState<JSONContent>(participation);
+  const { podium, participation } = DEFAULT_TEMPLATES;
 
-  const [pageMargins, setPageMargins] = useState<Margins>([40, 60, 40, 60]);
+  const [content, setContent] = useState<JSONContent>(podium.content);
+  const [participantsContent, setParticipantsContent] = useState<JSONContent>(
+    participation.content,
+  );
+
+  const [pageMargins, setPageMargins] = useState<Margins>(
+    podium.pageConfig.pageMargins,
+  );
   const [pageMarginsParticipants, setPageMarginsParticipants] =
-    useState<Margins>([40, 60, 40, 60]);
+    useState<Margins>(participation.pageConfig.pageMargins);
 
-  const [pageOrientation, setPageOrientation] =
-    useState<PageOrientation>("landscape");
+  const [pageOrientation, setPageOrientation] = useState<PageOrientation>(
+    podium.pageConfig.pageOrientation,
+  );
   const [pageOrientationParticipants, setPageOrientationParticipants] =
-    useState<PageOrientation>("portrait");
+    useState<PageOrientation>(participation.pageConfig.pageOrientation);
 
-  const [pageSize, setPageSize] = useState<PageSize>("LETTER");
-  const [pageSizeParticipants, setPageSizeParticipants] =
-    useState<PageSize>("LETTER");
+  const [pageSize, setPageSize] = useState<PageSize>(
+    podium.pageConfig.pageSize,
+  );
+  const [pageSizeParticipants, setPageSizeParticipants] = useState<PageSize>(
+    participation.pageConfig.pageSize,
+  );
 
   const [files, setFiles] = useState<File[]>([]);
   const [filesParticipants, setFilesParticipants] = useState<File[]>([]);

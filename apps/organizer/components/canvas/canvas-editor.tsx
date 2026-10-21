@@ -3,6 +3,7 @@
 import type React from "react";
 import { useRef, useEffect, useState } from "react";
 import { useCanvasStore } from "@/lib/canvas-store";
+import { canvasFont, ensureFontLoaded } from "@/lib/load-fonts";
 import { ZoomControls } from "./zoom-controls";
 import type { EventId } from "@/types/wcif";
 
@@ -97,6 +98,29 @@ export function CanvasEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- prune the image cache only when elements change
   }, [currentElements]);
 
+  // Redraw once the fonts used by text elements finish loading
+  const textFonts = currentElements
+    .filter((element) => element.type === "text")
+    .map((element) => `${element.fontWeight || "normal"}|${element.fontFamily}`)
+    .sort()
+    .join(",");
+  useEffect(() => {
+    if (!textFonts) return;
+    let cancelled = false;
+    void Promise.all(
+      textFonts.split(",").map((entry) => {
+        const [weight = "normal", family = ""] = entry.split("|");
+        return ensureFontLoaded(family, weight);
+      }),
+    ).then(() => {
+      if (!cancelled) drawCanvas();
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- drawCanvas is recreated every render; only reload when the set of fonts changes
+  }, [textFonts]);
+
   useEffect(() => {
     // Load the appropriate background image based on active side
     const currentBackground =
@@ -132,7 +156,7 @@ export function CanvasEditor({
     const ctx = canvas.getContext("2d");
     if (!ctx) return { width: 0, height: fontSize };
 
-    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    ctx.font = canvasFont(fontWeight, fontSize, fontFamily);
     const metrics = ctx.measureText(text);
     return {
       width: metrics.width,
@@ -216,7 +240,7 @@ export function CanvasEditor({
           }
 
           ctx.fillStyle = element.color || "#000000";
-          ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+          ctx.font = canvasFont(fontWeight, fontSize, fontFamily);
           ctx.textAlign = element.textAlign || "left";
 
           let textX = element.x;

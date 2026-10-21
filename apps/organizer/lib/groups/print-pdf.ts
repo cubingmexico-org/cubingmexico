@@ -1,6 +1,6 @@
 import * as pdfMake from "pdfmake/build/pdfmake";
 import type { TDocumentDefinitions } from "pdfmake/interfaces";
-import { fontDeclarations } from "@/lib/fonts";
+import { fontDeclarationsFor } from "@/lib/fonts";
 
 export type PrintAction = "open" | "download";
 
@@ -9,7 +9,11 @@ export function createGroupsPdf(
   action: PrintAction,
   filename: string,
 ): void {
-  const pdf = pdfMake.createPdf(docDefinition, undefined, fontDeclarations);
+  const pdf = pdfMake.createPdf(
+    docDefinition,
+    undefined,
+    fontDeclarationsFor(docDefinition),
+  );
   if (action === "open") {
     pdf.open();
   } else {

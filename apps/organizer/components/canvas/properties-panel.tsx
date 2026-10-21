@@ -1,6 +1,7 @@
 "use client";
 
 import { useCanvasStore } from "@/lib/canvas-store";
+import { canvasFont, ensureFontLoaded } from "@/lib/load-fonts";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
@@ -242,7 +243,11 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                   const ctx = canvas.getContext("2d");
                   if (ctx) {
                     const fontWeight = selectedElement.fontWeight || "normal";
-                    ctx.font = `${fontWeight} ${selectedElement.fontSize || 24}px ${selectedElement.fontFamily || "Arial"}`;
+                    ctx.font = canvasFont(
+                      fontWeight,
+                      selectedElement.fontSize || 24,
+                      selectedElement.fontFamily || "Arial",
+                    );
                     const metrics = ctx.measureText(content);
                     const width = metrics.width;
                     const height = (selectedElement.fontSize || 24) * 1.2;
@@ -261,13 +266,18 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
             <div className="space-y-2">
               <FontsCombobox
                 value={selectedElement.fontFamily || "Arial"}
-                onValueChange={(fontFamily) => {
+                onValueChange={async (fontFamily) => {
+                  const fontWeight = selectedElement.fontWeight || "normal";
+                  await ensureFontLoaded(fontFamily, fontWeight);
                   // Measure text dimensions
                   const canvas = document.createElement("canvas");
                   const ctx = canvas.getContext("2d");
                   if (ctx) {
-                    const fontWeight = selectedElement.fontWeight || "normal";
-                    ctx.font = `${fontWeight} ${selectedElement.fontSize || 24}px ${fontFamily}`;
+                    ctx.font = canvasFont(
+                      fontWeight,
+                      selectedElement.fontSize || 24,
+                      fontFamily,
+                    );
                     const metrics = ctx.measureText(
                       selectedElement.content || "",
                     );
@@ -296,7 +306,11 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                   const ctx = canvas.getContext("2d");
                   if (ctx) {
                     const fontWeight = selectedElement.fontWeight || "normal";
-                    ctx.font = `${fontWeight} ${fontSize}px ${selectedElement.fontFamily || "Arial"}`;
+                    ctx.font = canvasFont(
+                      fontWeight,
+                      fontSize,
+                      selectedElement.fontFamily || "Arial",
+                    );
                     const metrics = ctx.measureText(
                       selectedElement.content || "",
                     );
@@ -332,7 +346,11 @@ export function PropertiesPanel({ eventIds }: PropertiesPanelProps) {
                     const canvas = document.createElement("canvas");
                     const ctx = canvas.getContext("2d");
                     if (ctx) {
-                      ctx.font = `${newWeight} ${selectedElement.fontSize || 24}px ${selectedElement.fontFamily || "Arial"}`;
+                      ctx.font = canvasFont(
+                        newWeight,
+                        selectedElement.fontSize || 24,
+                        selectedElement.fontFamily || "Arial",
+                      );
                       const metrics = ctx.measureText(
                         selectedElement.content || "",
                       );

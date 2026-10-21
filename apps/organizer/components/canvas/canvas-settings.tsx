@@ -8,14 +8,12 @@ import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { useCanvasStore } from "@/lib/canvas-store";
 import type { CanvasElement } from "@/types/canvas";
-import { Settings } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@workspace/ui/components/sheet";
 import { Switch } from "@workspace/ui/components/switch";
 import { Separator } from "@workspace/ui/components/separator";
@@ -106,7 +104,13 @@ function createTentTemplateElements(
   ];
 }
 
-export function CanvasSettings() {
+export function CanvasSettings({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const {
     canvasWidth,
     canvasHeight,
@@ -187,12 +191,7 @@ export function CanvasSettings() {
   };
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" title="Configuración del lienzo">
-          <Settings />
-        </Button>
-      </SheetTrigger>
+    <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="overflow-y-auto pb-4">
         <SheetHeader>
           <SheetTitle>Configuración del lienzo</SheetTitle>

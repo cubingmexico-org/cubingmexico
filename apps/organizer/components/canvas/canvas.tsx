@@ -1,7 +1,7 @@
 "use client";
 
 import { CanvasEditor } from "@/components/canvas/canvas-editor";
-import { Toolbar } from "@/components/canvas/toolbar";
+import { Toolbar, useAddCanvasElements } from "@/components/canvas/toolbar";
 import { PropertiesPanel } from "@/components/canvas/properties-panel";
 import { CanvasSettings } from "@/components/canvas/canvas-settings";
 import { Button } from "@workspace/ui/components/button";
@@ -14,16 +14,28 @@ import {
   Cloud,
   CloudDownload,
   LayoutTemplate,
+  Settings,
+  Type,
+  ImageIcon,
+  QrCode,
+  Square,
 } from "lucide-react";
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarTrigger,
+} from "@workspace/ui/components/menubar";
 import { useCanvasStore } from "@/lib/canvas-store";
 import { getPrimaryRoleLabel } from "@/lib/person-roles";
-import type { CanvasElement } from "@/types/canvas";
+import type { BadgeDesignFile, CanvasElement } from "@/types/canvas";
 import QRCode from "qrcode";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
 import {
   Dialog,
-  DialogTrigger,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -31,12 +43,18 @@ import {
   DialogClose,
   DialogFooter,
 } from "@workspace/ui/components/dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { EventId, ExtendedPerson, WCIF } from "@/types/wcif";
 import { State, Team } from "@/db/queries";
 import { authClient } from "@/lib/auth-client";
 import { DesignLibraryDialog } from "@/components/design-library-dialog";
 import { getBadgeGroupStationFields } from "@/lib/groups/badge-fields";
+import { DEFAULT_BADGE_DESIGN } from "@/data/badges";
+import {
+  canvasFont,
+  ensureFontLoaded,
+  registerBundledFonts,
+} from "@/lib/load-fonts";
 
 interface CanvasProps {
   states: State[];
@@ -72,6 +90,12 @@ export function Canvas({
   } = useCanvasStore();
 
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { addText, addRectangle, addImage, addQRCode } = useAddCanvasElements();
+
+  useEffect(() => {
+    registerBundledFonts();
+  }, []);
   const [cloudMode, setCloudMode] = useState<
     "save" | "load" | "templates" | null
   >(null);
@@ -172,7 +196,7 @@ export function Canvas({
     fontWeight: string,
   ): { fontSize: number; lines: string[] } => {
     let fontSize = baseFontSize;
-    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+    ctx.font = canvasFont(fontWeight, fontSize, fontFamily);
 
     const splitIntoLines = (text: string, maxWidth: number): string[] => {
       const words = text.split(" ");
@@ -203,7 +227,7 @@ export function Canvas({
     // Reduce font size until text fits within bounds (max 2 lines)
     while ((totalHeight > maxHeight || lines.length > 2) && fontSize > 8) {
       fontSize -= 0.5;
-      ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
+      ctx.font = canvasFont(fontWeight, fontSize, fontFamily);
       lines = splitIntoLines(text, maxWidth);
       totalHeight = lines.length * fontSize * 1.2;
     }
@@ -256,6 +280,7 @@ export function Canvas({
           const baseFontSize = element.fontSize || 24;
           const fontFamily = element.fontFamily || "sans-serif";
           const fontWeight = element.fontWeight || "normal";
+          await ensureFontLoaded(fontFamily, fontWeight);
 
           // Replace placeholder text with person's data
           let content = element.content || "";
@@ -319,7 +344,7 @@ export function Canvas({
           }
 
           ctx.fillStyle = element.color || "#000000";
-          ctx.font = `${fontWeight} ${optimalFontSize}px ${fontFamily}`;
+          ctx.font = canvasFont(fontWeight, optimalFontSize, fontFamily);
           ctx.textAlign = element.textAlign || "left";
 
           const lineHeight = optimalFontSize * 1.2;
@@ -739,7 +764,7 @@ export function Canvas({
     URL.revokeObjectURL(url);
   };
 
-  const getBadgeDesignJson = () => ({
+  const getBadgeDesignJson = (): BadgeDesignFile => ({
     elements,
     canvasWidth,
     canvasHeight,
@@ -756,18 +781,11 @@ export function Canvas({
       return;
     }
 
-    const design = data as {
-      elements?: { front: CanvasElement[]; back: CanvasElement[] };
-      canvasWidth?: number;
-      canvasHeight?: number;
-      backgroundImage?: string;
-      backgroundImageBack?: string;
-      enableBackSide?: boolean;
-    };
+    const design = data as Partial<BadgeDesignFile>;
 
-    if (design.elements) setElements(design.elements);
     if (design.canvasWidth && design.canvasHeight)
       setCanvasSize(design.canvasWidth, design.canvasHeight);
+    if (design.elements) setElements(design.elements);
     if (design.backgroundImage) setBackgroundImage(design.backgroundImage);
     if (design.backgroundImageBack)
       setBackgroundImageBack(design.backgroundImageBack);
@@ -797,11 +815,14 @@ export function Canvas({
   };
 
   const resetCanvas = () => {
-    setElements({ front: [], back: [] });
-    setCanvasSize(638, 1011);
+    setCanvasSize(
+      DEFAULT_BADGE_DESIGN.canvasWidth,
+      DEFAULT_BADGE_DESIGN.canvasHeight,
+    );
+    setElements(DEFAULT_BADGE_DESIGN.elements);
     setBackgroundImage(undefined);
     setBackgroundImageBack(undefined);
-    setEnableBackSide(false);
+    setEnableBackSide(DEFAULT_BADGE_DESIGN.enableBackSide);
     setIsResetDialogOpen(false);
   };
 
@@ -823,10 +844,98 @@ export function Canvas({
           onApply={(json) => applyBadgeDesignJson(json)}
         />
       ) : null}
-      <header className="h-14 border-b border-border bg-card flex items-center justify-between px-4">
+      <CanvasSettings open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
+      <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Estás seguro de reiniciar el lienzo?</DialogTitle>
+            <DialogDescription>
+              Esta acción reemplazará todos los elementos con el gafete clásico
+              predeterminado y quitará los fondos. Esta acción no se puede
+              deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cerrar
+              </Button>
+            </DialogClose>
+            <Button onClick={resetCanvas}>Reiniciar lienzo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <header className="h-14 border-b border-border bg-card flex items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold text-foreground">Gafetes</h1>
-          <span className="text-sm text-muted-foreground">
+          <Menubar>
+            <MenubarMenu>
+              <MenubarTrigger>Archivo</MenubarTrigger>
+              <MenubarContent>
+                <MenubarItem onClick={() => setIsResetDialogOpen(true)}>
+                  <RotateCcw />
+                  Reiniciar
+                </MenubarItem>
+                <MenubarItem
+                  disabled={!competitionId}
+                  onClick={() => setCloudMode("save")}
+                >
+                  <Cloud />
+                  Guardar en la nube
+                </MenubarItem>
+                <MenubarItem
+                  disabled={!competitionId}
+                  onClick={() => setCloudMode("load")}
+                >
+                  <CloudDownload />
+                  Cargar desde la nube
+                </MenubarItem>
+                <MenubarItem
+                  disabled={!competitionId}
+                  onClick={() => setCloudMode("templates")}
+                >
+                  <LayoutTemplate />
+                  Plantillas
+                </MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem onClick={exportToJSON}>
+                  <Download />
+                  Descargar JSON
+                </MenubarItem>
+                <MenubarItem onClick={importFromJSON}>
+                  <Upload />
+                  Subir JSON
+                </MenubarItem>
+                <MenubarSeparator />
+                <MenubarItem onClick={() => setIsSettingsOpen(true)}>
+                  <Settings />
+                  Configuración del lienzo
+                </MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+            <MenubarMenu>
+              <MenubarTrigger>Insertar</MenubarTrigger>
+              <MenubarContent>
+                <MenubarItem onClick={addText}>
+                  <Type />
+                  Texto
+                </MenubarItem>
+                <MenubarItem onClick={addImage}>
+                  <ImageIcon />
+                  Imagen
+                </MenubarItem>
+                <MenubarItem onClick={addQRCode}>
+                  <QrCode />
+                  Código QR
+                </MenubarItem>
+                <MenubarItem onClick={addRectangle}>
+                  <Square />
+                  Cuadro
+                </MenubarItem>
+              </MenubarContent>
+            </MenubarMenu>
+          </Menubar>
+          <span className="whitespace-nowrap text-sm text-muted-foreground">
             {pxToMm(canvasWidth).toFixed(1)} × {pxToMm(canvasHeight).toFixed(1)}{" "}
             mm
           </span>
@@ -850,71 +959,10 @@ export function Canvas({
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <CanvasSettings />
-          <Dialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <RotateCcw />
-                Reiniciar
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>¿Estás seguro de reiniciar el lienzo?</DialogTitle>
-                <DialogDescription>
-                  Esta acción eliminará todos los elementos y restablecerá el
-                  lienzo a su estado predeterminado. Esta acción no se puede
-                  deshacer.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="secondary">
-                    Cerrar
-                  </Button>
-                </DialogClose>
-                <Button onClick={resetCanvas}>Reiniciar lienzo</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCloudMode("save")}
-          >
-            <Cloud />
-            Guardar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCloudMode("load")}
-          >
-            <CloudDownload />
-            Cargar
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setCloudMode("templates")}
-          >
-            <LayoutTemplate />
-            Plantillas
-          </Button>
-          <Button variant="outline" size="sm" onClick={importFromJSON}>
-            <Upload />
-            Importar JSON
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportToJSON}>
-            <Download />
-            Exportar JSON
-          </Button>
-          <Button variant="default" size="sm" onClick={previewCanvas}>
-            <Eye />
-            Previsualizar
-          </Button>
-        </div>
+        <Button variant="default" size="sm" onClick={previewCanvas}>
+          <Eye />
+          Previsualizar
+        </Button>
       </header>
 
       <div className="flex-1 flex overflow-hidden">

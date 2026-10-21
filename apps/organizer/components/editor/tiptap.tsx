@@ -61,7 +61,7 @@ import { DialogDocumentSettings } from "@/components/editor/dialog-document-sett
 import { TextTransform } from "@/components/editor/extensions/text-transform";
 import { FontSize } from "@/components/editor/extensions/font-size";
 import { DesignLibraryDialog } from "@/components/design-library-dialog";
-import { participation, podium } from "@/data/certificates";
+import { DEFAULT_TEMPLATES } from "@/data/certificates";
 import Toolbar from "./toolbar";
 import suggestionPodiumEs from "./mentions/suggestions/suggestion-podium";
 import suggestionParticipationEs from "./mentions/suggestions/suggestion-participation";
@@ -118,7 +118,8 @@ export default function Tiptap({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      // No italic font files are bundled, so italics could not be exported to PDF.
+      StarterKit.configure({ italic: false }),
       Mention.configure({
         HTMLAttributes: {
           class: "mention",
@@ -289,17 +290,8 @@ export default function Tiptap({
           <MenubarTrigger>Archivo</MenubarTrigger>
           <MenubarContent>
             <MenubarItem
-              disabled={
-                variant === "podium"
-                  ? content === podium
-                  : content === participation
-              }
-              onClick={() => {
-                const newContent =
-                  variant === "podium" ? podium : participation;
-                editor.commands.setContent(newContent);
-                handleChange(newContent);
-              }}
+              disabled={content === DEFAULT_TEMPLATES[variant].content}
+              onClick={() => applyDocumentFile(DEFAULT_TEMPLATES[variant])}
             >
               <RotateCcw />
               Reiniciar

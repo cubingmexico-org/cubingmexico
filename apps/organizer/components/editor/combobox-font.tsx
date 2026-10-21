@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
 import { cn } from "@workspace/ui/lib/utils";
-import { fonts } from "@/lib/fonts";
+import { BUNDLED_FONTS, FONT_CATEGORIES } from "@/lib/fonts";
 
 interface ComboboxFontProps {
   value: string;
@@ -43,12 +43,8 @@ export function ComboboxFont({
           variant="outline"
         >
           {value ? (
-            <p
-              style={{
-                fontFamily: fonts.find((font) => font.value === value)?.value,
-              }}
-            >
-              {fonts.find((font) => font.value === value)?.label}
+            <p className="truncate" style={{ fontFamily: `"${value}"` }}>
+              {value}
             </p>
           ) : (
             "Buscar fuente..."
@@ -56,38 +52,38 @@ export function ComboboxFont({
           <ChevronsUpDown className="shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
+      <PopoverContent className="w-64 p-0">
         <Command>
-          <CommandInput placeholder="" />
-          <CommandEmpty>Sin resultados.</CommandEmpty>
-          <CommandGroup>
-            <CommandList>
-              {fonts.map((font) => (
-                <CommandItem
-                  key={font.value}
-                  onSelect={(currentValue) => {
-                    setValue(currentValue === value ? "" : currentValue);
-                    setOpen(false);
-                  }}
-                  value={font.value}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === font.value ? "opacity-100" : "opacity-0",
-                    )}
-                  />
-                  <p
-                    style={{
-                      fontFamily: font.value,
+          <CommandInput placeholder="Buscar fuente..." />
+          <CommandList>
+            <CommandEmpty>Sin resultados.</CommandEmpty>
+            {FONT_CATEGORIES.map((category) => (
+              <CommandGroup heading={category.label} key={category.id}>
+                {BUNDLED_FONTS.filter(
+                  (font) => font.category === category.id,
+                ).map((font) => (
+                  <CommandItem
+                    key={font.family}
+                    onSelect={() => {
+                      setValue(font.family === value ? "" : font.family);
+                      setOpen(false);
                     }}
+                    value={font.family}
                   >
-                    {font.label}
-                  </p>
-                </CommandItem>
-              ))}
-            </CommandList>
-          </CommandGroup>
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === font.family ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    <p style={{ fontFamily: `"${font.family}"` }}>
+                      {font.family}
+                    </p>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            ))}
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>

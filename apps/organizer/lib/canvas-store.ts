@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import type { CanvasElement, CanvasState } from "@/types/canvas";
 import { clampElementToCanvas } from "@/lib/canvas-bounds";
+import { DEFAULT_BADGE_DESIGN } from "@/data/badges";
 
 function clampElement(
   element: CanvasElement,
@@ -42,15 +43,12 @@ interface CanvasStore extends CanvasState {
 }
 
 export const useCanvasStore = create<CanvasStore>((set) => ({
-  elements: {
-    front: [],
-    back: [],
-  },
-  enableBackSide: false,
+  elements: DEFAULT_BADGE_DESIGN.elements,
+  enableBackSide: DEFAULT_BADGE_DESIGN.enableBackSide,
   setEnableBackSide: (enable) => set({ enableBackSide: enable }),
   selectedElementId: null,
-  canvasWidth: 638,
-  canvasHeight: 1011,
+  canvasWidth: DEFAULT_BADGE_DESIGN.canvasWidth,
+  canvasHeight: DEFAULT_BADGE_DESIGN.canvasHeight,
   backgroundImage: undefined,
   backgroundImageBack: undefined,
   zoom: 1,
