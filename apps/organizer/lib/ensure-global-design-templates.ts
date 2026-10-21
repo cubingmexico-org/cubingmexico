@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { design } from "@workspace/db/schema";
-import { sql } from "drizzle-orm";
+import { and, eq, notInArray, sql } from "drizzle-orm";
 import type { DesignModule } from "@workspace/db/schema";
 import { BADGE_DESIGN_TEMPLATES } from "@/data/badges";
 import { CERTIFICATE_DESIGN_TEMPLATES } from "@/data/certificates";
@@ -34,11 +34,23 @@ export const GLOBAL_PARTICIPATION_TEMPLATE_ID = templateId(
 );
 
 /**
- * Upserts built-in Cubing México certificate templates.
+ * Syncs the built-in Cubing México templates: upserts every bundled one and
+ * deletes built-in rows that are no longer bundled.
  * Safe to call on every templates list request: rows are only rewritten
  * when the bundled template differs from the stored one.
  */
 export async function ensureGlobalDesignTemplates(): Promise<void> {
+  await db.delete(design).where(
+    and(
+      eq(design.ownerScope, "global"),
+      eq(design.userId, "system"),
+      notInArray(
+        design.id,
+        GLOBAL_TEMPLATES.map((template) => template.id),
+      ),
+    ),
+  );
+
   await db
     .insert(design)
     .values(

@@ -4,8 +4,6 @@ import type { SavedDocumentFile } from "@/components/editor/saved-document";
 import { participationDefault } from "./participation";
 import { participationSimple } from "./participation-simple";
 import { podiumDefault } from "./podium";
-import { podiumNewcomer } from "./podium-newcomer";
-
 export type CertificateDesignTemplate = {
   /** Stable UUID used as the `designs` row id. Never change or reuse one. */
   id: string;
@@ -78,12 +76,6 @@ export const CERTIFICATE_DESIGN_TEMPLATES: CertificateDesignTemplate[] = [
     name: "Certificado de podio (Cubing México)",
     module: "certificate_podium",
     document: podiumDefault,
-  },
-  {
-    id: "00000000-0000-4000-8000-000000000003",
-    name: "Certificado de podio, primera vez (Cubing México)",
-    module: "certificate_podium",
-    document: podiumNewcomer,
   },
   {
     id: "00000000-0000-4000-8000-000000000004",

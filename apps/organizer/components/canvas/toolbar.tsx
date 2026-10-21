@@ -4,7 +4,8 @@ import { Button } from "@workspace/ui/components/button";
 import { Type, ImageIcon, QrCode, Square } from "lucide-react";
 import { useCanvasStore } from "@/lib/canvas-store";
 
-export function Toolbar() {
+/** Adds a new element with default styling to the active side. */
+export function useAddCanvasElements() {
   const { addElement } = useCanvasStore();
 
   const addText = () => {
@@ -84,6 +85,12 @@ export function Toolbar() {
       keepAspectRatio: true,
     });
   };
+
+  return { addText, addRectangle, addImage, addQRCode };
+}
+
+export function Toolbar() {
+  const { addText, addRectangle, addImage, addQRCode } = useAddCanvasElements();
 
   return (
     <div className="w-20 bg-card border-r border-border flex flex-col items-center gap-2 py-4">

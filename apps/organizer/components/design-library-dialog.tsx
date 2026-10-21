@@ -250,7 +250,7 @@ export function DesignLibraryDialog({
             </div>
           </div>
         ) : (
-          <div className="py-2">
+          <div className="min-w-0 py-2">
             {isLoading ? (
               <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
                 <Loader2 className="size-4 animate-spin" />
@@ -267,7 +267,7 @@ export function DesignLibraryDialog({
                   : "No hay plantillas disponibles para este módulo."}
               </p>
             ) : (
-              <ScrollArea className="h-72 pr-3">
+              <ScrollArea className="h-72 pr-3 [&_[data-radix-scroll-area-viewport]>div]:block!">
                 <ul className="flex flex-col gap-2">
                   {data.designs.map((item) => (
                     <li
