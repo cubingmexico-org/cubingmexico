@@ -12,10 +12,13 @@ export const FONT_CATEGORIES: { id: FontCategory; label: string }[] = [
 export interface BundledFont {
   family: string;
   category: FontCategory;
-  /** Path under the app origin, e.g. `/fonts/Roboto/Roboto-Regular.ttf`. */
+  /** TrueType/OpenType file for pdfmake, e.g. `/fonts/Roboto/Roboto-Regular.ttf`. */
   regular: string;
   /** Omitted for single-weight fonts; bold then falls back to `regular`. */
   bold?: string;
+  /** Compressed copies of `regular` / `bold` for the browser. */
+  webRegular: string;
+  webBold?: string;
 }
 
 const font = (
@@ -24,13 +27,23 @@ const font = (
   dir: string,
   prefix: string,
   { bold = true, ext = "ttf" }: { bold?: boolean; ext?: "ttf" | "otf" } = {},
-): BundledFont => ({
-  family,
-  category,
-  regular: `/fonts/${dir}/${prefix}-Regular.${ext}`,
-  ...(bold ? { bold: `/fonts/${dir}/${prefix}-Bold.${ext}` } : {}),
-});
+): BundledFont => {
+  const base = `/fonts/${dir}/${prefix}`;
+  return {
+    family,
+    category,
+    regular: `${base}-Regular.${ext}`,
+    webRegular: `${base}-Regular.woff2`,
+    ...(bold
+      ? { bold: `${base}-Bold.${ext}`, webBold: `${base}-Bold.woff2` }
+      : {}),
+  };
+};
 
+/**
+ * Saved designs store the family name as plain text, so never rename or
+ * remove an entry; only add new ones.
+ */
 export const BUNDLED_FONTS: BundledFont[] = [
   // Sans serif
   font("Archivo", "sans", "Archivo", "Archivo"),
@@ -133,14 +146,46 @@ export const fonts = BUNDLED_FONTS.map((f) => ({
   label: f.family,
 }));
 
-/** pdfmake font dictionary; italics are not bundled, so they reuse the upright files. */
-export const fontDeclarations = Object.fromEntries(
-  BUNDLED_FONTS.map((f) => {
-    const normal = `${process.env.NEXT_PUBLIC_APP_URL}${f.regular}`;
-    const bold = `${process.env.NEXT_PUBLIC_APP_URL}${f.bold ?? f.regular}`;
-    return [f.family, { normal, bold, italics: normal, bolditalics: bold }];
-  }),
-);
+/** pdfmake's built-in default font, used by any text without an explicit `font`. */
+const PDF_DEFAULT_FONT = "Roboto";
+
+function collectFontNames(node: unknown, found: Set<string>): void {
+  if (Array.isArray(node)) {
+    for (const item of node) collectFontNames(item, found);
+  } else if (node && typeof node === "object") {
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "font" && typeof value === "string") {
+        found.add(value);
+      } else {
+        collectFontNames(value, found);
+      }
+    }
+  }
+}
+
+/**
+ * pdfmake font dictionary with only the fonts `docDefinition` uses, because
+ * pdfmake downloads every font it is given before rendering. Returns a fresh
+ * object each call since pdfmake mutates it. Italics are not bundled, so they
+ * reuse the upright files.
+ */
+export function fontDeclarationsFor(docDefinition: unknown) {
+  const used = new Set([PDF_DEFAULT_FONT]);
+  collectFontNames(docDefinition, used);
+
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL ?? "");
+
+  return Object.fromEntries(
+    BUNDLED_FONTS.filter((f) => used.has(f.family)).map((f) => {
+      const normal = `${origin}${f.regular}`;
+      const bold = `${origin}${f.bold ?? f.regular}`;
+      return [f.family, { normal, bold, italics: normal, bolditalics: bold }];
+    }),
+  );
+}
 
 export const fontSizes = [
   "8",

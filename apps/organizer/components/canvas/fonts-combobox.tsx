@@ -70,8 +70,9 @@ export function FontsCombobox({ value, onValueChange }: FontsComboboxProps) {
           </TooltipTrigger>
           <TooltipContent>
             <p>
-              Las fuentes del sistema solo funcionan en gafetes. ¿No encuentras
-              la fuente que buscas? Solicítala.
+              Las fuentes del sistema solo funcionan en gafetes y pueden verse
+              distintas según la computadora. ¿No encuentras la fuente que
+              buscas? Solicítala.
             </p>
           </TooltipContent>
         </Tooltip>

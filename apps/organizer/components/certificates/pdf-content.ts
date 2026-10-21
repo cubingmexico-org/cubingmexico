@@ -16,7 +16,7 @@ import {
   PageSize,
   TDocumentDefinitions,
 } from "pdfmake/interfaces";
-import { fontDeclarations } from "@/lib/fonts";
+import { fontDeclarationsFor } from "@/lib/fonts";
 import * as pdfMake from "pdfmake/build/pdfmake";
 import { toast } from "sonner";
 
@@ -500,7 +500,11 @@ export function generatePodiumPdf(
       language: "es",
     } as TDocumentDefinitions;
 
-    const pdf = pdfMake.createPdf(docDefinition, undefined, fontDeclarations);
+    const pdf = pdfMake.createPdf(
+      docDefinition,
+      undefined,
+      fontDeclarationsFor(docDefinition),
+    );
 
     if (action === "open") {
       pdf.open();
@@ -592,7 +596,11 @@ export function generateParticipantPdf(
       language: "es",
     } as TDocumentDefinitions;
 
-    const pdf = pdfMake.createPdf(docDefinition, undefined, fontDeclarations);
+    const pdf = pdfMake.createPdf(
+      docDefinition,
+      undefined,
+      fontDeclarationsFor(docDefinition),
+    );
     if (action === "open") {
       pdf.open();
     } else {

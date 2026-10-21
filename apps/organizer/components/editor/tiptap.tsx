@@ -118,7 +118,8 @@ export default function Tiptap({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      // No italic font files are bundled, so italics could not be exported to PDF.
+      StarterKit.configure({ italic: false }),
       Mention.configure({
         HTMLAttributes: {
           class: "mention",
