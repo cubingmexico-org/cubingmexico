@@ -14,10 +14,18 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { cn } from "@workspace/ui/lib/utils";
-import type { PersonPodiumsByEvent } from "../_lib/queries";
+import type {
+  PersonPodiumsByEvent,
+  PersonUnofficialPodiumsByEvent,
+} from "../_lib/queries";
+import { CcEventIcon } from "@/components/cubing-contests/cc-event-icon";
+import { CcAttribution } from "@/components/cubing-contests/cc-attribution";
 
 type Props = {
-  podiums: PersonPodiumsByEvent[];
+  podiums: (PersonPodiumsByEvent | PersonUnofficialPodiumsByEvent)[];
+  /** `unofficial` uses Cubing Contests icons and attribution. */
+  variant?: "official" | "unofficial";
+  title?: string;
 };
 
 const GOLD_CLASS = "text-amber-600 font-bold";
@@ -32,12 +40,16 @@ function MedalCell({ value, className }: { value: number; className: string }) {
   );
 }
 
-export function PersonPodiumsTab({ podiums }: Props) {
+export function PersonPodiumsTab({
+  podiums,
+  variant = "official",
+  title = "Podios por evento",
+}: Props) {
   if (podiums.length === 0) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Podios por evento</CardTitle>
+          <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
@@ -61,9 +73,9 @@ export function PersonPodiumsTab({ podiums }: Props) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Podios por evento</CardTitle>
+        <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -81,8 +93,22 @@ export function PersonPodiumsTab({ podiums }: Props) {
                 <TableRow key={row.eventId}>
                   <TableCell className="text-center">{index + 1}</TableCell>
                   <TableCell className="whitespace-nowrap">
-                    <span className={`cubing-icon event-${row.eventId} mr-2`} />
-                    {row.eventName}
+                    {variant === "unofficial" ? (
+                      <span className="inline-flex items-center gap-2">
+                        <CcEventIcon
+                          eventId={row.eventId}
+                          eventName={row.eventName}
+                        />
+                        {row.eventName}
+                      </span>
+                    ) : (
+                      <>
+                        <span
+                          className={`cubing-icon event-${row.eventId} mr-2`}
+                        />
+                        {row.eventName}
+                      </>
+                    )}
                   </TableCell>
                   <MedalCell value={row.gold} className={GOLD_CLASS} />
                   <MedalCell value={row.silver} className={SILVER_CLASS} />
@@ -113,6 +139,7 @@ export function PersonPodiumsTab({ podiums }: Props) {
             </TableFooter>
           </Table>
         </div>
+        {variant === "unofficial" && <CcAttribution />}
       </CardContent>
     </Card>
   );

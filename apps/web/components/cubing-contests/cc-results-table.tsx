@@ -14,6 +14,7 @@ import {
   CcCompetitors,
 } from "@/components/cubing-contests/cc-competitors";
 import { CcEventIcon } from "@/components/cubing-contests/cc-event-icon";
+import { CcRecordBadge } from "@/components/cubing-contests/cc-record-badge";
 
 type CcResultsTableProps = {
   rows: CcResultRow[];
@@ -153,10 +154,12 @@ export function CcResultsTable({
                   </div>
                 </TableCell>
               )}
-              <TableCell className="text-right font-bold">
+              <TableCell className="text-right font-bold whitespace-nowrap">
+                <CcRecordBadge marker={row.singleRecord} className="mr-1.5" />
                 {row.best > 0 ? formatCcResult(row.eventFormat, row.best) : "—"}
               </TableCell>
-              <TableCell className="text-right font-bold">
+              <TableCell className="text-right font-bold whitespace-nowrap">
+                <CcRecordBadge marker={row.averageRecord} className="mr-1.5" />
                 {row.average > 0
                   ? formatCcResult(row.eventFormat, row.average, "average")
                   : "—"}

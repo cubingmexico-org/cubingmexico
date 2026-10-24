@@ -16,9 +16,16 @@ import {
   gte,
   inArray,
   lt,
+  sql,
   type SQL,
   type SQLWrapper,
 } from "drizzle-orm";
+import { cacheLife, cacheTag } from "next/cache";
+import {
+  computeCcRecordMarkers,
+  type CcRecordHistoryEntry,
+  type CcRecordMarkers,
+} from "@/lib/cubing-contests-records";
 import {
   summarizeCcYear,
   type CcCompetitor,
@@ -83,12 +90,68 @@ export async function getCcResultRows(where: SQL): Promise<CcResultRow[]> {
     .where(where)
     .orderBy(asc(ccEvent.rank), asc(ccResult.date), asc(ccResult.pos));
 
-  const competitors = await loadCcCompetitors(rows.map((r) => r.resultId));
+  const [competitors, { markers }] = await Promise.all([
+    loadCcCompetitors(rows.map((r) => r.resultId)),
+    getCcRecordMarkers(),
+  ]);
   return rows.map((row) => ({
     ...row,
     eventFormat: row.eventFormat as CcEventFormat,
+    singleRecord: markers[row.resultId]?.single ?? null,
+    averageRecord: markers[row.resultId]?.average ?? null,
     competitors: competitors.get(row.resultId) ?? [],
   }));
+}
+
+/**
+ * UNR/USR markers for every result, keyed by result id, plus each national and
+ * state record progression. Computed over the whole (small) `cc_*` dataset.
+ */
+export async function getCcRecordMarkers(): Promise<{
+  markers: Record<number, CcRecordMarkers>;
+  history: CcRecordHistoryEntry[];
+}> {
+  "use cache";
+  cacheLife("days");
+  cacheTag("cc-results", "cc-record-markers");
+
+  const rows = (await db.execute(sql`
+    SELECT
+      r.id AS "resultId",
+      r.event_id AS "eventId",
+      r.date,
+      r.best,
+      r.average,
+      bool_or(p.region_code = 'MX') AS "hasMexican",
+      array_remove(array_agg(DISTINCT s.name), NULL) AS "stateNames"
+    FROM cc_results r
+    JOIN cc_result_persons rp ON rp.result_id = r.id
+    JOIN cc_persons p ON p.id = rp.person_id
+    LEFT JOIN persons wp ON wp.wca_id = p.wca_id
+    LEFT JOIN states s ON s.id = wp.state_id
+    GROUP BY r.id
+  `)) as unknown as {
+    resultId: number;
+    eventId: string;
+    date: Date | string;
+    best: number;
+    average: number;
+    hasMexican: boolean | null;
+    stateNames: string[] | null;
+  }[];
+
+  const { markers, history } = computeCcRecordMarkers(
+    rows.map((row) => ({
+      resultId: Number(row.resultId),
+      eventId: row.eventId,
+      date: row.date,
+      best: Number(row.best),
+      average: Number(row.average),
+      hasMexican: row.hasMexican === true,
+      stateNames: row.stateNames ?? [],
+    })),
+  );
+  return { markers: Object.fromEntries(markers), history };
 }
 
 /** Keeps the incoming event order; sorts each event's rows by round, then position. */
@@ -109,13 +172,23 @@ export function groupCcResultsByEvent(
   return Array.from(groups.values());
 }
 
+/** Subquery of result ids with at least one member of the state's team (`persons.state_id`). */
+export function teamMemberCcResultIds(stateId: string) {
+  return db
+    .select({ resultId: ccResultPerson.resultId })
+    .from(ccResultPerson)
+    .innerJoin(ccPerson, eq(ccResultPerson.personId, ccPerson.id))
+    .innerJoin(person, eq(ccPerson.wcaId, person.wcaId))
+    .where(eq(person.stateId, stateId));
+}
+
 /**
- * Year summary of the results whose ids `resultIds` selects, dated within the
- * calendar year (UTC).
+ * Summary of the results whose ids `resultIds` selects, limited to the calendar
+ * year (UTC) when `year` is given.
  */
-export async function getCcYearSummary(
+export async function getCcResultsSummary(
   resultIds: SQLWrapper,
-  year: number,
+  year?: number,
 ): Promise<CcYearSummary> {
   const rows = await db
     .select({
@@ -131,8 +204,12 @@ export async function getCcYearSummary(
     .where(
       and(
         inArray(ccResult.id, resultIds),
-        gte(ccResult.date, new Date(Date.UTC(year, 0, 1))),
-        lt(ccResult.date, new Date(Date.UTC(year + 1, 0, 1))),
+        year === undefined
+          ? undefined
+          : gte(ccResult.date, new Date(Date.UTC(year, 0, 1))),
+        year === undefined
+          ? undefined
+          : lt(ccResult.date, new Date(Date.UTC(year + 1, 0, 1))),
       ),
     )
     .orderBy(asc(ccEvent.rank), asc(ccResult.date));

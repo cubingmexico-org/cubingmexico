@@ -32,13 +32,17 @@ import {
   hasPersonStaffCompetitions,
   hasPersonUnofficialResults,
   getPersonUnofficialPrs,
+  getPersonUnofficialHonors,
 } from "./_lib/queries";
 import type { PersonalRecordWithStateRank } from "./_lib/queries";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { formatDelegateLevel } from "@/lib/delegate-level";
 import { PersonTabs } from "./_components/person-tabs";
-import { UnofficialPrsTable } from "./_components/unofficial-prs-table";
+import {
+  UnofficialHonorsTables,
+  UnofficialPrsTable,
+} from "./_components/unofficial-prs-table";
 import { getPersonNemesisStats } from "../_lib/nemesis-queries";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
@@ -114,6 +118,7 @@ async function PersonPageContent({
     nemesisStats,
     showUnofficialTab,
     unofficialPrs,
+    unofficialHonors,
   ] = await Promise.all([
     getPersonAvatarFromWCA(id),
     getPersonData(id, scope),
@@ -128,6 +133,7 @@ async function PersonPageContent({
     getPersonNemesisStats(id, scope),
     hasPersonUnofficialResults(id),
     getPersonUnofficialPrs(id),
+    getPersonUnofficialHonors(id),
   ]);
 
   if (!personData) {
@@ -463,7 +469,11 @@ async function PersonPageContent({
         </TableBody>
       </Table>
       {unofficialPrs.length > 0 && (
-        <UnofficialPrsTable wcaId={id} prs={unofficialPrs} />
+        <UnofficialPrsTable
+          wcaId={id}
+          prs={unofficialPrs}
+          showStateRank={Boolean(person.state)}
+        />
       )}
       <div className="grid md:grid-cols-2 grid-cols-1 gap-4 mt-6">
         <div>
@@ -513,6 +523,9 @@ async function PersonPageContent({
           </Table>
         </div>
       </div>
+      {showUnofficialTab && (
+        <UnofficialHonorsTables honors={unofficialHonors} />
+      )}
       <PersonTabs
         wcaId={id}
         personName={person.name ?? id}

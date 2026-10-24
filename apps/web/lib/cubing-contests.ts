@@ -1,4 +1,5 @@
 import { formatTime } from "@/lib/utils";
+import type { CcRecordMarker } from "@/lib/cubing-contests-records";
 
 /**
  * Unofficial events from Cubing Contests (https://cubingcontests.com), held at
@@ -42,6 +43,8 @@ export interface CcResultRow {
   best: number;
   average: number;
   attempts: number[];
+  singleRecord: CcRecordMarker | null;
+  averageRecord: CcRecordMarker | null;
   competitors: CcCompetitor[];
 }
 

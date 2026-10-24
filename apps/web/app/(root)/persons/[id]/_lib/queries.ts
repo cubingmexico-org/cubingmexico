@@ -33,8 +33,15 @@ export type {
   PersonPrStreakCompetition,
   PersonPrStreaks,
 } from "./records";
-export type { PersonUnofficialPr } from "./unofficial";
+export type {
+  PersonUnofficialHonors,
+  PersonUnofficialPodiumsByEvent,
+  PersonUnofficialPr,
+  PersonUnofficialPrValue,
+} from "./unofficial";
 export {
+  getPersonUnofficialHonors,
+  getPersonUnofficialPodiumsByEvent,
   getPersonUnofficialPrs,
   getPersonUnofficialResults,
   hasPersonUnofficialResults,
