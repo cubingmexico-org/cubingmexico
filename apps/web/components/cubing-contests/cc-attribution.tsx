@@ -22,8 +22,8 @@ export function CcAttribution({ className }: { className?: string }) {
       >
         CC BY-SA 4.0
       </a>
-      . No cuentan para rankings ni récords oficiales. UNR/USR: récord o
-      ranking nacional/estatal no oficial.
+      . No cuentan para rankings ni récords oficiales. UNR/USR: récord o ranking
+      nacional/estatal no oficial.
     </p>
   );
 }

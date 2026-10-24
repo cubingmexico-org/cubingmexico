@@ -382,7 +382,11 @@ describe("UNR/USR record markers", () => {
   it("marks national record progressions, including same-day ties", async () => {
     const comp2024 = await getCompetitionCcResults("Comp2024", "fto");
     expect(
-      comp2024.map((row) => [row.resultId, row.singleRecord, row.averageRecord]),
+      comp2024.map((row) => [
+        row.resultId,
+        row.singleRecord,
+        row.averageRecord,
+      ]),
     ).toEqual([
       [4, null, null],
       [2, "UNR", null],
@@ -431,7 +435,10 @@ describe("UNR/USR record markers", () => {
   });
 
   it("includes national records in a state's history", async () => {
-    const history = await getCcRecordHistory({ state: "Jalisco", event: "fto" });
+    const history = await getCcRecordHistory({
+      state: "Jalisco",
+      event: "fto",
+    });
     expect(history.map((row) => [row.key, row.marker])).toEqual([
       ["2-single", "UNR"],
       ["1-average", "UNR"],

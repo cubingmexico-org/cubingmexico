@@ -183,11 +183,7 @@ export function PersonTabs({
   }, [tab, wcaId, unofficialResults, showUnofficialTab]);
 
   useEffect(() => {
-    if (
-      tab !== "podiums" ||
-      !showUnofficialTab ||
-      unofficialPodiums !== null
-    ) {
+    if (tab !== "podiums" || !showUnofficialTab || unofficialPodiums !== null) {
       return;
     }
 

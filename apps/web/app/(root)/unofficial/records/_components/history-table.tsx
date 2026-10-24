@@ -18,8 +18,7 @@ export function CcRecordHistoryTable({ rows }: { rows: CcRecordHistoryRow[] }) {
   if (rows.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No hay historial de récords no oficiales para los filtros
-        seleccionados.
+        No hay historial de récords no oficiales para los filtros seleccionados.
       </p>
     );
   }

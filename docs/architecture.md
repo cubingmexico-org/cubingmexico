@@ -99,7 +99,10 @@ Unofficial events held at WCA competitions (FTO, Mirror Blocks, Team-Blind, and 
   - The competition "Eventos" tab, the "Podios" tab ("Podios no oficiales") and the "Por persona" tab (under each person).
   - The person header ("Récords personales no oficiales") and the team page ("Récords estatales no oficiales").
   - The person and team annual summaries ("Eventos no oficiales" section, excluded from share cards).
-  - Links from `/records` and the rankings event selector. Rankings and records are computed on the fly from the stored results; there is no Python mirror.
+  - Links from `/records` and the rankings event selector.
+  - Person profile "Medallas no oficiales" / "Récords no oficiales" and the "Podios" tab; team page "Podios en eventos no oficiales".
+- Unofficial ranks and records use their own labels, UNR and USR, so they're never confused with NR/SR. USR ranks a competitor (or team) within a state; a team counts for every member's state.
+- UNR/USR record markers are computed on the fly in [`lib/cubing-contests-records.ts`](../apps/web/lib/cubing-contests-records.ts) with the same rules as official SR (`markStateRecords`: best result per calendar day, ties all count, a national record is never also a state record). `getCcRecordMarkers` caches them for every result; `/unofficial/records?show=history` lists the national or state progression. Rankings and records are computed on the fly from the stored results; there is no Python mirror.
 
 ## Related docs
 

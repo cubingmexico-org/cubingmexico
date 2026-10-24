@@ -1,4 +1,7 @@
-import { markStateRecords, type StateRecordRow } from "@/lib/mark-state-records";
+import {
+  markStateRecords,
+  type StateRecordRow,
+} from "@/lib/mark-state-records";
 
 /**
  * Unofficial national (UNR) and state (USR) records for Cubing Contests
@@ -82,7 +85,8 @@ export function computeCcRecordMarkers(rows: CcRecordInputRow[]): {
     const ordered = eventRows
       .slice()
       .sort(
-        (a, b) => dateValue(a.date) - dateValue(b.date) || a.resultId - b.resultId,
+        (a, b) =>
+          dateValue(a.date) - dateValue(b.date) || a.resultId - b.resultId,
       );
     const states = new Set(ordered.flatMap((row) => row.stateNames));
 

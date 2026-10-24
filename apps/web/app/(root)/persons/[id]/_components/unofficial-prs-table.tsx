@@ -25,7 +25,9 @@ export function UnofficialHonorsTables({
   return (
     <div className="grid md:grid-cols-2 grid-cols-1 gap-4 mt-4">
       <div>
-        <h3 className="text-center font-semibold mb-2">Medallas no oficiales</h3>
+        <h3 className="text-center font-semibold mb-2">
+          Medallas no oficiales
+        </h3>
         <Table>
           <TableHeader>
             <TableRow>
@@ -103,12 +105,16 @@ export function UnofficialPrsTable({
         <TableHeader>
           <TableRow>
             <TableHead>Evento</TableHead>
-            {showStateRank && <TableHead className="text-center">USR</TableHead>}
+            {showStateRank && (
+              <TableHead className="text-center">USR</TableHead>
+            )}
             <TableHead className="text-center">UNR</TableHead>
             <TableHead className="text-center">Single</TableHead>
             <TableHead className="text-center">Average</TableHead>
             <TableHead className="text-center">UNR</TableHead>
-            {showStateRank && <TableHead className="text-center">USR</TableHead>}
+            {showStateRank && (
+              <TableHead className="text-center">USR</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>

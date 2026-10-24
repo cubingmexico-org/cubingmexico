@@ -185,9 +185,7 @@ export async function getPersonUnofficialPrs(
           getCcEventRanking(event.id, "single"),
           getCcEventRanking(event.id, "average"),
         ]);
-        const best = (
-          rows: CcRankingRow[],
-        ): PersonUnofficialPrValue | null => {
+        const best = (rows: CcRankingRow[]): PersonUnofficialPrValue | null => {
           const row = rows.find((candidate) =>
             candidate.competitors.some(
               (competitor) => competitor.wcaId === wcaId,
