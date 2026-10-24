@@ -30,6 +30,7 @@ import {
   getPersonAvatarFromWCA,
   hasPersonChampionshipPodiums,
   hasPersonStaffCompetitions,
+  hasPersonUnofficialResults,
 } from "./_lib/queries";
 import type { PersonalRecordWithStateRank } from "./_lib/queries";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -109,6 +110,7 @@ async function PersonPageContent({
     showChampionshipPodiumsTab,
     showStaffCompetitionsTab,
     nemesisStats,
+    showUnofficialTab,
   ] = await Promise.all([
     getPersonAvatarFromWCA(id),
     getPersonData(id, scope),
@@ -121,6 +123,7 @@ async function PersonPageContent({
     hasPersonChampionshipPodiums(id),
     hasPersonStaffCompetitions(id),
     getPersonNemesisStats(id, scope),
+    hasPersonUnofficialResults(id),
   ]);
 
   if (!personData) {
@@ -510,6 +513,7 @@ async function PersonPageContent({
         showRecordsTab={showRecordsTab}
         showChampionshipPodiumsTab={showChampionshipPodiumsTab}
         showStaffCompetitionsTab={showStaffCompetitionsTab}
+        showUnofficialTab={showUnofficialTab}
       />
     </>
   );

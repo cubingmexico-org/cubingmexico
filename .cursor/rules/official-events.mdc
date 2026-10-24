@@ -17,6 +17,8 @@ Every counting query has two scopes (`EventScope` in `apps/web/lib/constants.ts`
 
 Pages expose the scope through the `?deprecated=true` URL param (`deprecatedParser` in `lib/search-params.ts`), and render `DeprecatedEventsSwitch` next to the data it changes. Links between such pages should preserve the param (`useDeprecatedQuery`). Home page, social posts and digests always use `official`.
 
+Unofficial results from Cubing Contests live only in the `cc_*` tables (`cc_events`, `cc_results`, ...), never in `events` or `results`, and never take part in either scope. Don't join them into scoped queries.
+
 Never hardcode a list of event ids to exclude. Use the shared helpers:
 
 - Web (`apps/web/lib/official-events.ts`):

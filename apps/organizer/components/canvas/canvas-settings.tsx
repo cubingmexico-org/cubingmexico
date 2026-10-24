@@ -23,6 +23,9 @@ const DPI = 300;
 const pxToMm = (px: number) => (px * 25.4) / DPI;
 const mmToPx = (mm: number) => Math.round((mm * DPI) / 25.4);
 
+/** Tent / table card presets are hidden until they are ready for organizers. */
+const SHOW_TENT_SETTINGS = false;
+
 /** ~6×4″ landscape tent face at 300 DPI */
 const TENT_LANDSCAPE = { width: 1800, height: 1200 };
 /** ~4×6″ portrait tent face at 300 DPI */
@@ -282,46 +285,51 @@ export function CanvasSettings({
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Carpas / mesa</Label>
-              <p className="text-xs text-muted-foreground">
-                Tamaño ~6×4″ (300 DPI). La plantilla reemplaza el contenido del
-                frente.
-              </p>
-              <div className="grid grid-cols-1 gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    applySizePreset(TENT_LANDSCAPE.width, TENT_LANDSCAPE.height)
-                  }
-                >
-                  Carpa mesa (152×102 mm)
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    applySizePreset(TENT_PORTRAIT.width, TENT_PORTRAIT.height)
-                  }
-                >
-                  Carpa mesa vertical (102×152 mm)
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => applyTentTemplate("landscape")}
-                >
-                  Aplicar plantilla de carpa
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => applyTentTemplate("portrait")}
-                >
-                  Aplicar plantilla vertical
-                </Button>
+            {SHOW_TENT_SETTINGS ? (
+              <div className="space-y-2">
+                <Label>Carpas / mesa</Label>
+                <p className="text-xs text-muted-foreground">
+                  Tamaño ~6×4″ (300 DPI). La plantilla reemplaza el contenido
+                  del frente.
+                </p>
+                <div className="grid grid-cols-1 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      applySizePreset(
+                        TENT_LANDSCAPE.width,
+                        TENT_LANDSCAPE.height,
+                      )
+                    }
+                  >
+                    Carpa mesa (152×102 mm)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      applySizePreset(TENT_PORTRAIT.width, TENT_PORTRAIT.height)
+                    }
+                  >
+                    Carpa mesa vertical (102×152 mm)
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => applyTentTemplate("landscape")}
+                  >
+                    Aplicar plantilla de carpa
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => applyTentTemplate("portrait")}
+                  >
+                    Aplicar plantilla vertical
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
 
           <Separator />

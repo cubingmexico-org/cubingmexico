@@ -21,6 +21,8 @@ interface ResultsHeaderProps {
   competitionCity: string;
   defaultEventId: string;
   logo?: string | null;
+  /** Show the "No oficiales" tab (Cubing Contests results exist). */
+  hasUnofficial?: boolean;
 }
 
 export function ResultsHeader({
@@ -29,6 +31,7 @@ export function ResultsHeader({
   competitionCity,
   defaultEventId,
   logo,
+  hasUnofficial = false,
 }: ResultsHeaderProps) {
   const pathname = usePathname() || "";
 
@@ -51,6 +54,16 @@ export function ResultsHeader({
       path: `/competitions/${competitionId}/results/py_person`,
       label: "Por persona",
     },
+    ...(hasUnofficial
+      ? [
+          {
+            key: "unofficial",
+            href: `/competitions/${competitionId}/results/unofficial`,
+            path: `/competitions/${competitionId}/results/unofficial`,
+            label: "No oficiales",
+          },
+        ]
+      : []),
   ];
 
   const activeTab = tabs.find((tab) => pathname === tab.path)?.key;

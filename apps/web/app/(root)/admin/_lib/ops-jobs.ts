@@ -48,6 +48,12 @@ export const ADMIN_OPS_JOBS = [
       "Recalcula cuántos némesis tiene cada competidor y de cuántos es némesis.",
   },
   {
+    path: "/update-cubing-contests",
+    label: "Importar resultados de Cubing Contests",
+    description:
+      "Importa los eventos no oficiales de competencias WCA (en México o con mexicanos) desde el export de Cubing Contests. Se omite si el export no cambió.",
+  },
+  {
     path: "/post-summary-unlock",
     label: "Publicar resumen anual",
     description:

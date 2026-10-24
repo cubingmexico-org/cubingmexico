@@ -8,6 +8,7 @@ import {
   getPersonPrStreaks,
   getPersonRecordHistory,
   getPersonStaffCompetitions,
+  getPersonUnofficialResults,
 } from "./queries";
 import { getStatesGeoJSON } from "@/db/queries";
 import {
@@ -41,6 +42,10 @@ export async function loadPersonPodiumsByEvent(wcaId: string) {
 
 export async function loadPersonStaffCompetitions(wcaId: string) {
   return getPersonStaffCompetitions(wcaId);
+}
+
+export async function loadPersonUnofficialResults(wcaId: string) {
+  return getPersonUnofficialResults(wcaId);
 }
 
 export async function loadPersonNemeses(

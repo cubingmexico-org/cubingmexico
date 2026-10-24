@@ -1,6 +1,7 @@
 """WCA results export import and Mexican competition sync."""
 
 import io
+import json
 import zipfile
 from datetime import datetime
 
@@ -29,6 +30,36 @@ from utils import extract_first_image_url
 
 # (connect, read) seconds; read is per-chunk inactivity, not total download time.
 WCA_EXPORT_TIMEOUT = (30, 300)
+# Shown in the site footer, as the WCA asks of sites using its export.
+WCA_EXPORT_DATE_KEY = "wca_export_date"
+
+
+def parse_wca_export_date(raw):
+    """`export_date` from the export's metadata.json, or None."""
+    try:
+        value = json.loads(raw).get("export_date")
+    except (ValueError, AttributeError):
+        return None
+    return str(value) if value else None
+
+
+def store_wca_export_date(raw):
+    export_date = parse_wca_export_date(raw)
+    if not export_date:
+        log.warning("WCA export metadata.json has no export_date")
+        return
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO export_metadata (key, value, updated_at)
+                VALUES (%s, %s, NOW())
+                ON CONFLICT (key) DO UPDATE
+                SET value = EXCLUDED.value,
+                    updated_at = EXCLUDED.updated_at
+                """,
+                (WCA_EXPORT_DATE_KEY, export_date),
+            )
 
 
 @admin_bp.route("/update-database", methods=["POST"])
@@ -90,6 +121,9 @@ def update_full_database():
                         log.info("Results table update was skipped. Skipping result attempts as well.")
                         continue
                     import_result_attempts(z, file_name)
+
+            if "metadata.json" in available_files:
+                store_wca_export_date(z.read("metadata.json"))
 
         try:
             from social.poster import post_summary_unlock_if_due

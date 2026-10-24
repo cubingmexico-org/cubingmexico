@@ -22,6 +22,8 @@ import {
   Swords,
   Skull,
   ChartBar,
+  Shapes,
+  Award,
 } from "lucide-react";
 import {
   NavigationMenu,
@@ -149,6 +151,24 @@ export function HeaderNavigationMenu() {
                   <Link href="/streaks" className="flex-row items-center gap-2">
                     <Flame className="size-4" />
                     Rachas de PRs
+                  </Link>
+                </NavigationMenuLink>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/unofficial/rankings"
+                    className="flex-row items-center gap-2"
+                  >
+                    <Shapes className="size-4" />
+                    Rankings no oficiales
+                  </Link>
+                </NavigationMenuLink>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/unofficial/records"
+                    className="flex-row items-center gap-2"
+                  >
+                    <Award className="size-4" />
+                    Récords no oficiales
                   </Link>
                 </NavigationMenuLink>
               </li>

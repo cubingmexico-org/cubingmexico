@@ -34,6 +34,10 @@ export type {
   PersonPrStreaks,
 } from "./records";
 export {
+  getPersonUnofficialResults,
+  hasPersonUnofficialResults,
+} from "./unofficial";
+export {
   getPersonRecordHistory,
   getPersonChampionshipPodiums,
   hasPersonChampionshipPodiums,

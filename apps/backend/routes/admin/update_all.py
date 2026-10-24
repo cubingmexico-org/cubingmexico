@@ -4,6 +4,7 @@ from flask import jsonify
 
 from common import log, require_cron_auth
 from routes.admin.blueprint import admin_bp
+from routes.admin.cubing_contests import run_update_cubing_contests
 from routes.admin.rankings import update_kinch_ranks, update_nemesis_stats, update_streak_ranks, update_sum_of_ranks
 from routes.admin.schedules import update_competition_schedules
 from routes.admin.state import update_state_ranks, update_state_records
@@ -49,6 +50,15 @@ def update_all():
                     ),
                     status_code,
                 )
+
+        try:
+            cc_result, cc_status = run_update_cubing_contests()
+            details["update_cubing_contests"] = {"status": cc_status, "result": cc_result}
+            if cc_status != 200:
+                log.error("Cubing Contests import failed (update-all continues): %s", cc_result)
+        except Exception as e:
+            log.exception("Cubing Contests import failed (update-all continues): %s", e)
+            details["update_cubing_contests"] = {"status": 500, "result": {"success": False}}
 
         try:
             from social.poster import post_streaks_monthly_if_due, post_weekly_digest_if_due, post_year_recap_if_due

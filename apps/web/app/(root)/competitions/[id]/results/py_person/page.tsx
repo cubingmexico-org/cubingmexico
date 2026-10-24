@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCompetitionLogo, getWcaCompetitionData } from "../../_lib/queries";
 import { getCompetitionResultsGroupedByPerson } from "./_lib/queries";
+import { getCompetitionCcEvents } from "../unofficial/_lib/queries";
 import { ResultsHeader } from "../_components/results-header";
 import { ResultsByPersonView } from "../_components/results-views";
 
@@ -11,10 +12,11 @@ export default async function Page({
 }) {
   const id = (await params).id;
 
-  const [competitionData, groupedByPerson, logo] = await Promise.all([
+  const [competitionData, groupedByPerson, logo, ccEvents] = await Promise.all([
     getWcaCompetitionData(id),
     getCompetitionResultsGroupedByPerson(id),
     getCompetitionLogo(id),
+    getCompetitionCcEvents(id),
   ]);
 
   if (!competitionData) {
@@ -32,6 +34,7 @@ export default async function Page({
         competitionCity={competitionData.city}
         defaultEventId={defaultEventId}
         logo={logo}
+        hasUnofficial={ccEvents.length > 0}
       />
       <ResultsByPersonView groupedByPerson={groupedByPerson} />
     </main>

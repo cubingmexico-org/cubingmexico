@@ -16,9 +16,19 @@ import {
   TeamMember,
   competition,
   result,
+  exportMetadata,
 } from "@workspace/db/schema";
 import { cacheLife, cacheTag } from "next/cache";
-import { and, desc, eq, isNull, lt, notInArray, or } from "drizzle-orm";
+import {
+  and,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  lt,
+  notInArray,
+  or,
+} from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
 import { eventScopeFilter } from "@/lib/official-events";
 import type { EventScope } from "@/lib/constants";
@@ -311,6 +321,39 @@ export async function addMember({
     console.error("Failed to add member in database");
     throw error;
   }
+}
+
+/** Dates of the last imported WCA and Cubing Contests exports, for attribution. */
+export async function getDataSourceDates(): Promise<{
+  wca: Date | null;
+  cubingContests: Date | null;
+}> {
+  cacheLife("hours");
+  cacheTag("data-source-dates");
+
+  const rows = await db
+    .select({ key: exportMetadata.key, value: exportMetadata.value })
+    .from(exportMetadata)
+    .where(
+      inArray(exportMetadata.key, [
+        "wca_export_date",
+        "cubing_contests_export_date",
+      ]),
+    );
+
+  const toDate = (key: string) => {
+    // The Cubing Contests job appends ":partial" when it skipped results.
+    const value = rows
+      .find((row) => row.key === key)
+      ?.value?.split(":partial")[0];
+    const date = value ? new Date(value) : null;
+    return date && !Number.isNaN(date.getTime()) ? date : null;
+  };
+
+  return {
+    wca: toDate("wca_export_date"),
+    cubingContests: toDate("cubing_contests_export_date"),
+  };
 }
 
 export async function getLastCompetitionWithResults() {

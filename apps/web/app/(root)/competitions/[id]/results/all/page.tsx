@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { getCompetitionLogo, getWcaCompetitionData } from "../../_lib/queries";
 import { getCompetitionResultsForEvent } from "./_lib/queries";
+import { getCompetitionCcEvents } from "../unofficial/_lib/queries";
 import { ResultsHeader } from "../_components/results-header";
 import { ResultsAllView } from "../_components/results-views";
 import { cacheLife, cacheTag } from "next/cache";
@@ -26,10 +27,10 @@ async function ResultsAllCached({
   cacheLife("weeks");
   cacheTag(`competition-results-all-page-${competitionId}-${eventId}`);
 
-  const eventResults = await getCompetitionResultsForEvent(
-    competitionId,
-    eventId,
-  );
+  const [eventResults, ccEvents] = await Promise.all([
+    getCompetitionResultsForEvent(competitionId, eventId),
+    getCompetitionCcEvents(competitionId),
+  ]);
   const groupedResultsByEvent = eventResults ? [eventResults] : [];
 
   return (
@@ -40,6 +41,7 @@ async function ResultsAllCached({
         competitionCity={competitionCity}
         defaultEventId={eventId}
         logo={logo}
+        hasUnofficial={ccEvents.length > 0}
       />
       <ResultsAllView
         competitionId={competitionId}
