@@ -14,12 +14,17 @@ import {
 } from "./queries";
 import {
   getCompetitionCcEvents,
+  getCompetitionCcPodiums,
   getCompetitionCcResults,
+  getCompetitionCcResultsByPerson,
 } from "../../competitions/[id]/results/unofficial/_lib/queries";
 import {
+  getPersonUnofficialPrs,
   getPersonUnofficialResults,
   hasPersonUnofficialResults,
 } from "../../persons/[id]/_lib/unofficial";
+import { getPersonYearUnofficial } from "../../summary/[year]/[wcaId]/_lib/unofficial";
+import { getTeamYearUnofficial } from "../../summary/team/[year]/[stateId]/_lib/unofficial";
 
 const ANA = 1;
 const BETO = 2;
@@ -295,6 +300,71 @@ describe("competition queries", () => {
         [3, "Beto"],
       ],
     );
+  });
+});
+
+describe("competition podiums and per-person results", () => {
+  it("returns the top three of each final, by event and position", async () => {
+    const groups = await getCompetitionCcPodiums("Comp2024");
+    expect(
+      groups.map((group) => [
+        group.eventId,
+        group.results.map((row) => row.resultId),
+      ]),
+    ).toEqual([
+      ["fto", [4, 2, 3]],
+      ["333_team_bld", [12]],
+    ]);
+  });
+
+  it("lists team results under every member with a profile", async () => {
+    const byPerson = await getCompetitionCcResultsByPerson("Comp2024");
+    expect(Object.keys(byPerson).sort()).toEqual(["2020AAAA01", "2020BBBB01"]);
+    expect(byPerson["2020AAAA01"]?.map((row) => row.resultId)).toEqual([2, 12]);
+    expect(byPerson["2020BBBB01"]?.map((row) => row.resultId)).toEqual([3, 12]);
+  });
+});
+
+describe("getPersonUnofficialPrs", () => {
+  it("returns bests with national ranks, using the best team for team events", async () => {
+    const prs = await getPersonUnofficialPrs("2020AAAA01");
+    expect(prs.map((pr) => [pr.eventId, pr.single, pr.average])).toEqual([
+      ["fto", { value: 2800, countryRank: 1 }, { value: 3500, countryRank: 2 }],
+      ["333_team_bld", { value: 5000, countryRank: 1 }, null],
+    ]);
+  });
+
+  it("is empty for a person without unofficial results", async () => {
+    await insertPerson({ wcaId: "2020ZZZZ01", name: "Zoe" });
+    expect(await getPersonUnofficialPrs("2020ZZZZ01")).toEqual([]);
+  });
+});
+
+describe("year summaries", () => {
+  it("summarizes a person's year, counting final podiums", async () => {
+    expect(await getPersonYearUnofficial("2020AAAA01", 2024)).toEqual({
+      resultCount: 3,
+      competitionCount: 2,
+      events: [
+        { eventId: "fto", eventName: "Face-Turning Octahedron" },
+        { eventId: "333_team_bld", eventName: "3x3x3 Team-Blind" },
+      ],
+      podiums: { gold: 2, silver: 1, bronze: 0 },
+    });
+    const previous = await getPersonYearUnofficial("2020AAAA01", 2023);
+    expect(previous.resultCount).toBe(2);
+    expect(previous.competitionCount).toBe(1);
+  });
+
+  it("summarizes a team's members", async () => {
+    const summary = await getTeamYearUnofficial("CMX", 2024);
+    expect(summary).toMatchObject({
+      memberCount: 1,
+      resultCount: 2,
+      competitionCount: 1,
+      podiums: { gold: 1, silver: 0, bronze: 1 },
+    });
+    expect((await getTeamYearUnofficial("CMX", 2022)).resultCount).toBe(0);
   });
 });
 

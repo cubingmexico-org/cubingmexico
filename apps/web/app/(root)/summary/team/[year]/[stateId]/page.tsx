@@ -6,6 +6,7 @@ import { getTeam } from "@/db/queries";
 import { SummaryLoading } from "../../../_components/summary-loading";
 import { canAccessAnnualSummary } from "../../../_lib/summary-access";
 import { getTeamAnnualSummary } from "./_lib/queries";
+import { getTeamYearUnofficial } from "./_lib/unofficial";
 import { TeamAnnualSummaryView } from "./_components/team-annual-summary-view";
 
 type Props = {
@@ -56,12 +57,15 @@ async function TeamSummaryPageContent({
   cacheLife("days");
   cacheTag(`team-summary-page-${year}-${stateId}`);
 
-  const summary = await getTeamAnnualSummary(stateId, year);
+  const [summary, unofficial] = await Promise.all([
+    getTeamAnnualSummary(stateId, year),
+    getTeamYearUnofficial(stateId, year),
+  ]);
   if (!summary) {
     notFound();
   }
 
-  return <TeamAnnualSummaryView summary={summary} />;
+  return <TeamAnnualSummaryView summary={summary} unofficial={unofficial} />;
 }
 
 async function TeamSummaryPage({ params }: Props) {

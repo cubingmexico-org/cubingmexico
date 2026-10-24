@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { getCompetitionLogo, getWcaCompetitionData } from "../../_lib/queries";
 import { getCompetitionResultsGroupedByPerson } from "./_lib/queries";
-import { getCompetitionCcEvents } from "../unofficial/_lib/queries";
+import {
+  getCompetitionCcEvents,
+  getCompetitionCcResultsByPerson,
+} from "../unofficial/_lib/queries";
 import { ResultsHeader } from "../_components/results-header";
 import { ResultsByPersonView } from "../_components/results-views";
 
@@ -12,12 +15,14 @@ export default async function Page({
 }) {
   const id = (await params).id;
 
-  const [competitionData, groupedByPerson, logo, ccEvents] = await Promise.all([
-    getWcaCompetitionData(id),
-    getCompetitionResultsGroupedByPerson(id),
-    getCompetitionLogo(id),
-    getCompetitionCcEvents(id),
-  ]);
+  const [competitionData, groupedByPerson, logo, ccEvents, ccByPerson] =
+    await Promise.all([
+      getWcaCompetitionData(id),
+      getCompetitionResultsGroupedByPerson(id),
+      getCompetitionLogo(id),
+      getCompetitionCcEvents(id),
+      getCompetitionCcResultsByPerson(id),
+    ]);
 
   if (!competitionData) {
     notFound();
@@ -36,7 +41,10 @@ export default async function Page({
         logo={logo}
         hasUnofficial={ccEvents.length > 0}
       />
-      <ResultsByPersonView groupedByPerson={groupedByPerson} />
+      <ResultsByPersonView
+        groupedByPerson={groupedByPerson}
+        unofficialByPerson={ccByPerson}
+      />
     </main>
   );
 }

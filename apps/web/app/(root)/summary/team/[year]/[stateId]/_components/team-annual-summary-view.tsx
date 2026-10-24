@@ -18,6 +18,8 @@ import { championshipLabel, formatSummaryDate } from "../../../../_lib/format";
 import type { TeamAnnualSummary } from "../_lib/queries";
 import { getTeamShareHighlights } from "../_lib/share-highlights";
 import { TeamSummaryShareButton } from "./team-summary-share-button";
+import type { TeamYearUnofficial } from "../_lib/unofficial";
+import { UnofficialSummarySection } from "../../../../_components/unofficial-summary-section";
 
 function formatDelta(n: number): string {
   if (n > 0) return `+${n.toLocaleString("es-MX")}`;
@@ -38,9 +40,10 @@ function PersonLink({ wcaId, name }: { wcaId: string; name: string | null }) {
 
 type Props = {
   summary: TeamAnnualSummary;
+  unofficial?: TeamYearUnofficial | null;
 };
 
-export function TeamAnnualSummaryView({ summary }: Props) {
+export function TeamAnnualSummaryView({ summary, unofficial }: Props) {
   const { team, year, availableYears, hosted, members, staff } = summary;
 
   const shareData = {
@@ -297,6 +300,20 @@ export function TeamAnnualSummaryView({ summary }: Props) {
             </Table>
           </div>
         </section>
+      )}
+
+      {unofficial && unofficial.resultCount > 0 && (
+        <UnofficialSummarySection
+          lead={
+            <>
+              <Stat>{unofficial.memberCount}</Stat>{" "}
+              {unofficial.memberCount === 1
+                ? "miembro del Team registró"
+                : "miembros del Team registraron"}
+            </>
+          }
+          summary={unofficial}
+        />
       )}
 
       {hosted.solves.totalSolves > 0 && (

@@ -6,6 +6,7 @@ import { getPerson } from "@/db/queries";
 import { SummaryLoading } from "../../_components/summary-loading";
 import { canAccessAnnualSummary } from "../../_lib/summary-access";
 import { getAnnualSummary } from "./_lib/queries";
+import { getPersonYearUnofficial } from "./_lib/unofficial";
 import { AnnualSummaryView } from "./_components/annual-summary-view";
 
 type Props = {
@@ -56,12 +57,15 @@ async function SummaryPageContent({
   cacheLife("days");
   cacheTag(`person-summary-page-${year}-${wcaId}`);
 
-  const summary = await getAnnualSummary(wcaId, year);
+  const [summary, unofficial] = await Promise.all([
+    getAnnualSummary(wcaId, year),
+    getPersonYearUnofficial(wcaId, year),
+  ]);
   if (!summary) {
     notFound();
   }
 
-  return <AnnualSummaryView summary={summary} />;
+  return <AnnualSummaryView summary={summary} unofficial={unofficial} />;
 }
 
 async function SummaryPage({ params }: Props) {

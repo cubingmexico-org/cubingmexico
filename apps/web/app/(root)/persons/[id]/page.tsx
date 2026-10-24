@@ -31,12 +31,14 @@ import {
   hasPersonChampionshipPodiums,
   hasPersonStaffCompetitions,
   hasPersonUnofficialResults,
+  getPersonUnofficialPrs,
 } from "./_lib/queries";
 import type { PersonalRecordWithStateRank } from "./_lib/queries";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { formatDelegateLevel } from "@/lib/delegate-level";
 import { PersonTabs } from "./_components/person-tabs";
+import { UnofficialPrsTable } from "./_components/unofficial-prs-table";
 import { getPersonNemesisStats } from "../_lib/nemesis-queries";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
@@ -111,6 +113,7 @@ async function PersonPageContent({
     showStaffCompetitionsTab,
     nemesisStats,
     showUnofficialTab,
+    unofficialPrs,
   ] = await Promise.all([
     getPersonAvatarFromWCA(id),
     getPersonData(id, scope),
@@ -124,6 +127,7 @@ async function PersonPageContent({
     hasPersonStaffCompetitions(id),
     getPersonNemesisStats(id, scope),
     hasPersonUnofficialResults(id),
+    getPersonUnofficialPrs(id),
   ]);
 
   if (!personData) {
@@ -458,6 +462,9 @@ async function PersonPageContent({
           ))}
         </TableBody>
       </Table>
+      {unofficialPrs.length > 0 && (
+        <UnofficialPrsTable wcaId={id} prs={unofficialPrs} />
+      )}
       <div className="grid md:grid-cols-2 grid-cols-1 gap-4 mt-6">
         <div>
           <h3 className="text-center font-semibold mb-2">Medallas</h3>

@@ -46,6 +46,8 @@ import { RegistrationButton } from "./_components/registration-button";
 import { AddToCalendarButton } from "./_components/add-to-calendar-button";
 import { formatAverageResult, formatBestResult } from "./_lib/results";
 import { CompetitionLogo } from "@/components/competition-logo";
+import { CcEventIcon } from "@/components/cubing-contests/cc-event-icon";
+import { getCompetitionCcEvents } from "./results/unofficial/_lib/queries";
 
 export default async function Page({
   params,
@@ -54,9 +56,10 @@ export default async function Page({
 }) {
   const id = (await params).id;
 
-  const [competitionData, logo] = await Promise.all([
+  const [competitionData, logo, ccEvents] = await Promise.all([
     getWcaCompetitionData(id),
     getCompetitionLogo(id),
+    getCompetitionCcEvents(id),
   ]);
 
   if (!competitionData) {
@@ -492,6 +495,36 @@ export default async function Page({
                   </div>
                 ))}
               </div>
+              {ccEvents.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <div>
+                    <h3 className="font-semibold">Eventos no oficiales</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Resultados de Cubing Contests para los eventos no
+                      oficiales de esta competencia.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                    {ccEvents.map((event) => (
+                      <Link
+                        key={event.id}
+                        prefetch={false}
+                        href={`/competitions/${id}/results/unofficial?event=${event.id}`}
+                        className="flex items-center gap-3 p-4 border border-transparent rounded-lg hover:bg-accent transition-colors"
+                      >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                          <CcEventIcon
+                            eventId={event.id}
+                            eventName={event.name}
+                            className="text-xl"
+                          />
+                        </div>
+                        <p className="font-medium">{event.name}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

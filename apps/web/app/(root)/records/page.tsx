@@ -1,3 +1,7 @@
+import Link from "next/link";
+import { Shapes } from "lucide-react";
+import { buttonVariants } from "@workspace/ui/components/button";
+import { cn } from "@workspace/ui/lib/utils";
 import { getRecordHistory, getRecords } from "./_lib/queries";
 import { SearchParams } from "@/types";
 import { searchParamsCache } from "./_lib/validations";
@@ -66,7 +70,17 @@ export default async function Page(props: PageProps) {
 
         <DeprecatedEventsSwitch />
 
-        <ClearFiltersButton />
+        <div className="flex flex-wrap items-center gap-2">
+          <ClearFiltersButton />
+          <Link
+            prefetch={false}
+            href={`/unofficial/records${search.state ? `?state=${encodeURIComponent(search.state)}` : ""}`}
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            <Shapes />
+            Ver récords no oficiales
+          </Link>
+        </div>
       </div>
 
       {search.show === "mixed" ? (
