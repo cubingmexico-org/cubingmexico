@@ -103,7 +103,8 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-kinch-ranks` — Update Kinch ranks
   - `POST /update-streak-ranks` — Update personal-record streak ranks
   - `POST /update-nemesis-stats` — Recompute per-person nemesis counts (how many nemeses each competitor has and how many people they are the nemesis of)
-  - `POST /update-all` — Run full database import plus all derived rank updates; then publish SEMANA (after state records), RACHAS and AÑO if due
+  - `POST /update-cubing-contests` — Import unofficial-event results from the [Cubing Contests](https://cubingcontests.com/export) CSV export into the `cc_*` tables. Only `wca-comp` contests are kept (no meetups or CC-only competitions), either held in Mexico or with at least one Mexican competitor. CC events that share an id with an official WCA event are dropped. Skips when the export date is unchanged; `?force=true` re-imports. Results whose WCA competition isn't in `competitions` yet are skipped and the export is retried on the next run.
+  - `POST /update-all` — Run full database import plus all derived rank updates, then the Cubing Contests import (its failures are logged and don't fail the run); then publish SEMANA (after state records), RACHAS and AÑO if due
   - `POST /post-summary-unlock` — If Dec 20+ UTC, publish the annual summary unlock graphic (idempotent; respects `SOCIAL_POSTS_ENABLED`)
   - `POST /post-weekly-digest` — Publish the current Mexico City ISO-week SEMANA digest (idempotent; run after `/update-state-records`)
   - `POST /post-year-recap` — On Dec 31 (Mexico City, retries through Jan 2), publish the AÑO year-recap carousel with the new-year greeting (idempotent)

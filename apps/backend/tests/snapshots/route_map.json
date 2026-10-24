@@ -488,6 +488,14 @@
     "cron_auth": true
   },
   {
+    "rule": "/update-cubing-contests",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_cubing_contests",
+    "cron_auth": true
+  },
+  {
     "rule": "/update-database",
     "methods": [
       "POST"

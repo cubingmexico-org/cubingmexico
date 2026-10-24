@@ -25,6 +25,8 @@ import { PersonChampionshipPodiumsTab } from "./championship-podiums-tab";
 import { PersonPrStreaksTab } from "./pr-streaks-tab";
 import { PersonPodiumsTab } from "./podiums-tab";
 import { PersonStaffCompetitionsTab } from "./staff-competitions-tab";
+import { PersonUnofficialTab } from "./unofficial-tab";
+import type { CcEventResultsGroup } from "@/lib/cubing-contests";
 import { MapContainer } from "./map-container";
 import type {
   PersonChampionshipPodium,
@@ -51,6 +53,7 @@ import {
   loadPersonPrStreaks,
   loadPersonRecordHistory,
   loadPersonStaffCompetitions,
+  loadPersonUnofficialResults,
 } from "../_lib/actions";
 
 const TAB_VALUES = [
@@ -63,6 +66,7 @@ const TAB_VALUES = [
   "nemesis",
   "map",
   "staff-competitions",
+  "unofficial",
 ] as const;
 
 type TabValue = (typeof TAB_VALUES)[number];
@@ -74,6 +78,7 @@ type PersonTabsProps = {
   showRecordsTab: boolean;
   showChampionshipPodiumsTab: boolean;
   showStaffCompetitionsTab: boolean;
+  showUnofficialTab: boolean;
 };
 
 export function PersonTabs({
@@ -83,10 +88,12 @@ export function PersonTabs({
   showRecordsTab,
   showChampionshipPodiumsTab,
   showStaffCompetitionsTab,
+  showUnofficialTab,
 }: PersonTabsProps) {
-  const [{ tab, event }, setQuery] = useQueryStates({
+  const [{ tab, event, ccEvent }, setQuery] = useQueryStates({
     tab: parseAsStringLiteral(TAB_VALUES).withDefault("results-by-event"),
     event: parseAsString.withDefault(eventOptions[0]?.eventId ?? ""),
+    ccEvent: parseAsString,
   });
 
   const selectedEventId =
@@ -120,6 +127,9 @@ export function PersonTabs({
     "deprecated",
     parseAsBoolean.withDefault(false),
   );
+  const [unofficialResults, setUnofficialResults] = useState<
+    CcEventResultsGroup[] | null
+  >(null);
   const [mapData, setMapData] = useState<{
     locations: PersonCompetitionLocation[];
     statesData: GeoJSONProps["data"] | undefined;
@@ -130,7 +140,8 @@ export function PersonTabs({
     if (
       (tab === "records" && !showRecordsTab) ||
       (tab === "championship-podiums" && !showChampionshipPodiumsTab) ||
-      (tab === "staff-competitions" && !showStaffCompetitionsTab)
+      (tab === "staff-competitions" && !showStaffCompetitionsTab) ||
+      (tab === "unofficial" && !showUnofficialTab)
     ) {
       void setQuery({ tab: "results-by-event" });
     }
@@ -139,8 +150,32 @@ export function PersonTabs({
     showRecordsTab,
     showChampionshipPodiumsTab,
     showStaffCompetitionsTab,
+    showUnofficialTab,
     setQuery,
   ]);
+
+  useEffect(() => {
+    if (
+      tab !== "unofficial" ||
+      !showUnofficialTab ||
+      unofficialResults !== null
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    startTransition(() => {
+      void loadPersonUnofficialResults(wcaId).then((groups) => {
+        if (!cancelled) {
+          setUnofficialResults(groups);
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, wcaId, unofficialResults, showUnofficialTab]);
 
   useEffect(() => {
     if (
@@ -324,7 +359,8 @@ export function PersonTabs({
     6 +
     (showRecordsTab ? 1 : 0) +
     (showChampionshipPodiumsTab ? 1 : 0) +
-    (showStaffCompetitionsTab ? 1 : 0);
+    (showStaffCompetitionsTab ? 1 : 0) +
+    (showUnofficialTab ? 1 : 0);
 
   function selectTab(nextTab: TabValue) {
     void setQuery({ tab: nextTab });
@@ -351,7 +387,8 @@ export function PersonTabs({
           tabCount === 6 && "md:grid-cols-6",
           tabCount === 7 && "md:grid-cols-7",
           tabCount === 8 && "md:grid-cols-8",
-          tabCount >= 9 && "md:grid-cols-9",
+          tabCount === 9 && "md:grid-cols-9",
+          tabCount >= 10 && "md:grid-cols-10",
         )}
       >
         <TabsTrigger value="results-by-event">Resultados</TabsTrigger>
@@ -368,6 +405,9 @@ export function PersonTabs({
         <TabsTrigger value="map">Mapa</TabsTrigger>
         {showStaffCompetitionsTab && (
           <TabsTrigger value="staff-competitions">Organización</TabsTrigger>
+        )}
+        {showUnofficialTab && (
+          <TabsTrigger value="unofficial">No oficiales</TabsTrigger>
         )}
       </TabsList>
 
@@ -482,6 +522,21 @@ export function PersonTabs({
             <p className="text-sm text-muted-foreground text-center">
               Esta persona no ha organizado ni delegado competencias.
             </p>
+          )}
+        </TabsContent>
+      )}
+
+      {showUnofficialTab && (
+        <TabsContent value="unofficial" className="mt-6">
+          {unofficialResults === null ? (
+            <Skeleton className="h-64 w-full" />
+          ) : (
+            <PersonUnofficialTab
+              wcaId={wcaId}
+              groups={unofficialResults}
+              selectedEventId={ccEvent}
+              onEventSelect={(eventId) => void setQuery({ ccEvent: eventId })}
+            />
           )}
         </TabsContent>
       )}

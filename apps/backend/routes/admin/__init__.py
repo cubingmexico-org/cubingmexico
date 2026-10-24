@@ -1,6 +1,7 @@
 """Cron-protected admin update routes."""
 
 from routes.admin import (  # noqa: F401  (registers routes)
+    cubing_contests,
     rankings,
     schedules,
     social_jobs,

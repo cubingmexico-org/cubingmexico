@@ -1,4 +1,5 @@
 import { getEvents, getStates } from "@/db/queries";
+import { getCcRankingEvents } from "@/app/(root)/unofficial/_lib/queries";
 import type { MetadataRoute } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -9,6 +10,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const states = await getStates();
   const events = await getEvents();
+  const ccEvents = await getCcRankingEvents();
+
+  const unofficialRankingUrls = ccEvents.flatMap((event) =>
+    (["single", "average"] as const).map((rankType) => ({
+      url: `https://www.cubingmexico.net/unofficial/rankings/${event.id}/${rankType}`,
+      changeFrequency: "weekly" as const,
+      priority: 0.4,
+    })),
+  );
 
   const teamUrls = states.map((state) => {
     return {
@@ -131,6 +141,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.6,
     },
+    {
+      url: "https://www.cubingmexico.net/unofficial/records",
+      changeFrequency: "weekly",
+      priority: 0.5,
+    },
+    ...unofficialRankingUrls,
     {
       url: "https://www.cubingmexico.net/kinch",
       changeFrequency: "weekly",

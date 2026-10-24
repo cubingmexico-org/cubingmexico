@@ -1,5 +1,9 @@
 import { db } from "@workspace/db";
 import {
+  ccEvent,
+  ccPerson,
+  ccResult,
+  ccResultPerson,
   competition,
   competitionRoundDate,
   event,
@@ -99,6 +103,61 @@ export async function insertResult(
     roundTypeId: null,
     ...values,
   });
+}
+
+type CcEventInsert = typeof ccEvent.$inferInsert;
+type CcPersonInsert = typeof ccPerson.$inferInsert;
+type CcResultInsert = typeof ccResult.$inferInsert;
+
+export async function insertCcEvent(
+  values: Partial<CcEventInsert> & Pick<CcEventInsert, "id">,
+) {
+  await db.insert(ccEvent).values({
+    name: values.id,
+    format: "time",
+    rank: 1000,
+    participants: 1,
+    ...values,
+  });
+}
+
+export async function insertCcPerson(
+  values: Partial<CcPersonInsert> & Pick<CcPersonInsert, "id">,
+) {
+  await db.insert(ccPerson).values({
+    name: `CC Person ${values.id}`,
+    regionCode: "MX",
+    wcaId: null,
+    ...values,
+  });
+}
+
+/** Inserts the result and one `cc_result_persons` row per `personIds` entry, in order. */
+export async function insertCcResult(
+  values: Partial<CcResultInsert> &
+    Pick<CcResultInsert, "id" | "competitionId" | "eventId"> & {
+      personIds: number[];
+    },
+) {
+  const { personIds, ...resultValues } = values;
+  await db.insert(ccResult).values({
+    roundTypeId: "f",
+    roundNumber: 1,
+    formatId: "a",
+    pos: 1,
+    best: 0,
+    average: 0,
+    attempts: [],
+    date: new Date("2024-06-01T00:00:00Z"),
+    ...resultValues,
+  });
+  await db.insert(ccResultPerson).values(
+    personIds.map((personId, position) => ({
+      resultId: values.id,
+      personId,
+      position,
+    })),
+  );
 }
 
 export async function insertCompetitionRoundDate(

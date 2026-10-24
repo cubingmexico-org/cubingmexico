@@ -349,6 +349,78 @@ export const resultAttempts = pgTable(
 
 export type ResultAttempts = InferSelectModel<typeof resultAttempts>;
 
+// Cubing Contests: unofficial events held at WCA competitions. Never part of
+// the official/all event scopes.
+
+export const ccEvent = pgTable("cc_events", {
+  id: varchar("id", { length: 32 }).primaryKey(),
+  name: varchar("name", { length: 64 }).notNull(),
+  format: varchar("format", {
+    length: 10,
+    enum: ["time", "number", "multi"],
+  }).notNull(),
+  rank: integer("rank").notNull().default(0),
+  participants: smallint("participants").notNull().default(1),
+});
+
+export type CcEvent = InferSelectModel<typeof ccEvent>;
+
+export const ccPerson = pgTable(
+  "cc_persons",
+  {
+    id: integer("id").primaryKey(),
+    name: varchar("name", { length: 80 }).notNull(),
+    regionCode: varchar("region_code", { length: 2 }),
+    wcaId: varchar("wca_id", { length: 10 }),
+  },
+  (t) => [index("cc_persons_wca_id_idx").on(t.wcaId)],
+);
+
+export type CcPerson = InferSelectModel<typeof ccPerson>;
+
+export const ccResult = pgTable(
+  "cc_results",
+  {
+    id: integer("id").primaryKey(),
+    competitionId: varchar("competition_id", { length: 32 })
+      .notNull()
+      .references(() => competition.id, { onDelete: "cascade" }),
+    eventId: varchar("event_id", { length: 32 })
+      .notNull()
+      .references(() => ccEvent.id, { onDelete: "cascade" }),
+    roundTypeId: varchar("round_type_id", { length: 1 }),
+    roundNumber: smallint("round_number").notNull().default(1),
+    formatId: varchar("format_id", { length: 1 }).notNull(),
+    pos: smallint("pos"),
+    best: integer("best").notNull().default(0),
+    average: integer("average").notNull().default(0),
+    attempts: integer("attempts").array().notNull(),
+    date: timestamp("date").notNull(),
+  },
+  (t) => [index("cc_results_comp_event_idx").on(t.competitionId, t.eventId)],
+);
+
+export type CcResult = InferSelectModel<typeof ccResult>;
+
+export const ccResultPerson = pgTable(
+  "cc_result_persons",
+  {
+    resultId: integer("result_id")
+      .notNull()
+      .references(() => ccResult.id, { onDelete: "cascade" }),
+    personId: integer("person_id")
+      .notNull()
+      .references(() => ccPerson.id, { onDelete: "cascade" }),
+    position: smallint("position").notNull().default(0),
+  },
+  (t) => [
+    primaryKey({ columns: [t.resultId, t.personId] }),
+    index("cc_result_persons_person_idx").on(t.personId),
+  ],
+);
+
+export type CcResultPerson = InferSelectModel<typeof ccResultPerson>;
+
 // Cubing México
 
 export const state = pgTable("states", {

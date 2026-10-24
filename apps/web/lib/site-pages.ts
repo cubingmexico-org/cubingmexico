@@ -31,6 +31,16 @@ export const SITE_PAGES: SitePage[] = [
   },
   { title: "Récords", href: "/records", keywords: ["records", "nr", "sr"] },
   {
+    title: "Rankings no oficiales",
+    href: "/unofficial/rankings",
+    keywords: ["cubing contests", "fto", "mirror", "kilominx", "no oficial"],
+  },
+  {
+    title: "Récords no oficiales",
+    href: "/unofficial/records",
+    keywords: ["cubing contests", "records", "no oficial"],
+  },
+  {
     title: "Sum of Ranks",
     href: "/sor/single",
     keywords: ["sor", "suma de ranks"],

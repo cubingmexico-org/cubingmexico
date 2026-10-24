@@ -17,6 +17,7 @@ flowchart LR
 
   db[(Postgres)]
   wca["WCA API, export and WCIF"]
+  cc["Cubing Contests export"]
   meta["Meta (Facebook and Instagram)"]
   uploadthing[UploadThing]
 
@@ -30,6 +31,7 @@ flowchart LR
   backend --> secrets
 
   backend -->|"TSV export, WCIF"| wca
+  backend -->|CSV export| cc
   web -->|OAuth| wca
   organizer -->|"OAuth, WCIF"| wca
   backend -->|publish posts| meta
@@ -46,6 +48,7 @@ flowchart LR
 **backend (Flask)** ([apps/backend](../apps/backend))
 
 - WCA TSV export import (`/update-database`) and the full nightly pipeline (`/update-all`).
+- Cubing Contests CSV export import (`/update-cubing-contests`, also run at the end of `/update-all`): unofficial events held at WCA competitions in Mexico or with Mexican competitors, stored in the `cc_*` tables.
 - Bulk recomputation across all states: state ranks, state records, Kinch, sum of ranks, streaks, nemesis stats, and competition round dates (WCIF).
 - Social posts: image rendering (PIL), captions, and publishing to Facebook and Instagram.
 - Every mutating endpoint is protected by `require_cron_auth` (bearer `CRON_SECRET`). Cloud Scheduler calls them, and so does the web superadmin panel through `BACKEND_URL`.
@@ -83,6 +86,14 @@ Pages that count events accept `?deprecated=true`, which switches from the `offi
 - `sum_of_ranks`, `kinch_ranks`, `streak_ranks` and `nemesis_stats` store one set of rows per scope (`scope` is part of the primary key). The backend jobs in `routes/admin/rankings.py` compute both scopes on every run.
 
 See `.cursor/rules/official-events.mdc` for the helpers to use.
+
+## Unofficial events (Cubing Contests)
+
+Unofficial events held at WCA competitions (FTO, Mirror Blocks, Team-Blind, and so on) come from the [Cubing Contests](https://cubingcontests.com/export) export (CC BY-SA 4.0, attributed with `CcAttribution` wherever they are shown). They live only in `cc_events`, `cc_persons`, `cc_results` and `cc_result_persons`, never in `events`, `results` or `ranks_*`, so they are outside both event scopes and never feed state ranks, records, Kinch, SOR, streaks or nemesis.
+
+- `cc_persons.wca_id` has no foreign key: CC competitors may lack a WCA id or be foreigners missing from `persons`. Readers left-join `persons` to link profiles and get states.
+- Team events store one `cc_result_persons` row per member. Rankings treat the sorted member set as one competitor.
+- The web reads them in [`lib/cubing-contests-queries.ts`](../apps/web/lib/cubing-contests-queries.ts) and shows them on the competition results "No oficiales" tab, the person "No oficiales" tab, `/unofficial/rankings` and `/unofficial/records`. Rankings and records are computed on the fly from the stored results; there is no Python mirror.
 
 ## Related docs
 
