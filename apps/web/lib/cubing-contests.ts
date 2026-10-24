@@ -144,6 +144,45 @@ export function formatCcResult(
   return formatTime(value);
 }
 
+export interface CcYearSummary {
+  resultCount: number;
+  competitionCount: number;
+  events: { eventId: string; eventName: string }[];
+  podiums: { gold: number; silver: number; bronze: number };
+}
+
+export interface CcYearSummaryRow {
+  eventId: string;
+  eventName: string;
+  competitionId: string;
+  roundTypeId: string | null;
+  position: number | null;
+  best: number;
+}
+
+/** Rows must be in event order. A podium is a top-3 finish in a final with a valid single. */
+export function summarizeCcYear(rows: CcYearSummaryRow[]): CcYearSummary {
+  const events = new Map<string, string>();
+  const podiums = { gold: 0, silver: 0, bronze: 0 };
+  for (const row of rows) {
+    if (!events.has(row.eventId)) events.set(row.eventId, row.eventName);
+    const isFinal = row.roundTypeId === "f" || row.roundTypeId === "c";
+    if (!isFinal || row.best <= 0) continue;
+    if (row.position === 1) podiums.gold++;
+    else if (row.position === 2) podiums.silver++;
+    else if (row.position === 3) podiums.bronze++;
+  }
+  return {
+    resultCount: rows.length,
+    competitionCount: new Set(rows.map((row) => row.competitionId)).size,
+    events: Array.from(events, ([eventId, eventName]) => ({
+      eventId,
+      eventName,
+    })),
+    podiums,
+  };
+}
+
 /** Lower is better; DNF, DNS and empty values never rank. */
 export function isCcRankable(value: number): boolean {
   return value > 0;

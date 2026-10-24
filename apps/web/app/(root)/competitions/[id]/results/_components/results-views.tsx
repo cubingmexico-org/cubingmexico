@@ -31,6 +31,9 @@ import {
 import { StateLabel } from "@/components/state-flag";
 import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
 import { normalizeSearchText } from "@/lib/search";
+import type { CcResultRow } from "@/lib/cubing-contests";
+import { CcAttribution } from "@/components/cubing-contests/cc-attribution";
+import { CcResultsTable } from "@/components/cubing-contests/cc-results-table";
 
 interface CompetitionHeaderData {
   event_ids: string[];
@@ -50,6 +53,8 @@ interface ResultsAllViewProps {
 
 interface ResultsByPersonViewProps {
   groupedByPerson: ResultsByPersonGroup[];
+  /** Cubing Contests results keyed by WCA id, shown under each person's official results. */
+  unofficialByPerson?: Record<string, CcResultRow[]>;
 }
 
 export function ResultsPodiumsView({ podiumGroups }: ResultsPodiumsViewProps) {
@@ -377,7 +382,9 @@ export function ResultsAllView({
 
 export function ResultsByPersonView({
   groupedByPerson,
+  unofficialByPerson = {},
 }: ResultsByPersonViewProps) {
+  const hasUnofficial = Object.keys(unofficialByPerson).length > 0;
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredGroups = useMemo(() => {
@@ -543,10 +550,23 @@ export function ResultsByPersonView({
                     </TableBody>
                   </Table>
                 </div>
+                {unofficialByPerson[personGroup.personId]?.length ? (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-muted-foreground">
+                      No oficiales
+                    </h4>
+                    <CcResultsTable
+                      rows={unofficialByPerson[personGroup.personId]!}
+                      mode="events"
+                      personWcaId={personGroup.personId}
+                    />
+                  </div>
+                ) : null}
               </div>
             );
           })
         )}
+        {hasUnofficial && <CcAttribution />}
       </CardContent>
     </Card>
   );

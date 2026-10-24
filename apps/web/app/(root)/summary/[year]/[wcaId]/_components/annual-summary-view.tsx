@@ -14,6 +14,8 @@ import type { AnnualSummary } from "../_lib/queries";
 import { getShareHighlights } from "../_lib/share-highlights";
 import { SummaryShareButton } from "./summary-share-button";
 import { StateLabel } from "@/components/state-flag";
+import type { CcYearSummary } from "@/lib/cubing-contests";
+import { UnofficialSummarySection } from "../../../_components/unofficial-summary-section";
 import { cn } from "@workspace/ui/lib/utils";
 
 function subjectPronoun(gender: AnnualSummary["person"]["gender"]): string {
@@ -51,9 +53,10 @@ function objectPronoun(gender: AnnualSummary["person"]["gender"]): string {
 
 type Props = {
   summary: AnnualSummary;
+  unofficial?: CcYearSummary | null;
 };
 
-export function AnnualSummaryView({ summary }: Props) {
+export function AnnualSummaryView({ summary, unofficial }: Props) {
   const {
     person,
     year,
@@ -229,6 +232,13 @@ export function AnnualSummaryView({ summary }: Props) {
             </div>
           )}
         </section>
+      )}
+
+      {unofficial && unofficial.resultCount > 0 && (
+        <UnofficialSummarySection
+          lead={`${pronoun} registró`}
+          summary={unofficial}
+        />
       )}
 
       {championshipPodiums.total > 0 && (

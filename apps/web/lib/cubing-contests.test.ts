@@ -1,5 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { ccIconClass, formatCcResult } from "@/lib/cubing-contests";
+import {
+  ccIconClass,
+  formatCcResult,
+  summarizeCcYear,
+  type CcYearSummaryRow,
+} from "@/lib/cubing-contests";
+
+describe("summarizeCcYear", () => {
+  const row = (overrides: Partial<CcYearSummaryRow>): CcYearSummaryRow => ({
+    eventId: "fto",
+    eventName: "FTO",
+    competitionId: "A",
+    roundTypeId: "f",
+    position: 1,
+    best: 3000,
+    ...overrides,
+  });
+
+  it("counts results, competitions, events and final podiums", () => {
+    expect(
+      summarizeCcYear([
+        row({}),
+        row({ roundTypeId: "1", position: 1 }),
+        row({ competitionId: "B", position: 2 }),
+        row({ eventId: "kilominx", eventName: "Kilominx", position: 3 }),
+        row({ eventId: "kilominx", eventName: "Kilominx", best: -1 }),
+        row({ eventId: "kilominx", eventName: "Kilominx", position: 4 }),
+      ]),
+    ).toEqual({
+      resultCount: 6,
+      competitionCount: 2,
+      events: [
+        { eventId: "fto", eventName: "FTO" },
+        { eventId: "kilominx", eventName: "Kilominx" },
+      ],
+      podiums: { gold: 1, silver: 1, bronze: 1 },
+    });
+  });
+});
 
 describe("ccIconClass", () => {
   it("uses unofficial icons when available", () => {

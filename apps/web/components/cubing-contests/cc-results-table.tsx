@@ -13,6 +13,7 @@ import {
   CcCompetitorName,
   CcCompetitors,
 } from "@/components/cubing-contests/cc-competitors";
+import { CcEventIcon } from "@/components/cubing-contests/cc-event-icon";
 
 type CcResultsTableProps = {
   rows: CcResultRow[];
@@ -20,8 +21,10 @@ type CcResultsTableProps = {
    * `competitors`: one row per result with every competitor (competition page).
    * `competitions`: one row per result with its competition, plus teammates of
    * `personWcaId` for team events (person profile).
+   * `events`: one row per result with its event and round, plus teammates of
+   * `personWcaId` (one person's results at a competition).
    */
-  mode: "competitors" | "competitions";
+  mode: "competitors" | "competitions" | "events";
   personWcaId?: string;
 };
 
@@ -78,6 +81,8 @@ export function CcResultsTable({
 }: CcResultsTableProps) {
   const solveCount = Math.max(1, ...rows.map((row) => row.attempts.length));
   const hasTeams = rows.some((row) => row.competitors.length > 1);
+  const showRound = mode !== "competitors";
+  const showTeammates = mode !== "competitors" && hasTeams;
 
   return (
     <div className="overflow-x-auto">
@@ -85,10 +90,11 @@ export function CcResultsTable({
         <TableHeader>
           <TableRow>
             {mode === "competitions" && <TableHead>Competencia</TableHead>}
-            {mode === "competitions" && <TableHead>Ronda</TableHead>}
+            {mode === "events" && <TableHead>Evento</TableHead>}
+            {showRound && <TableHead>Ronda</TableHead>}
             <TableHead>Posición</TableHead>
             {mode === "competitors" && <TableHead>Competidor</TableHead>}
-            {mode === "competitions" && hasTeams && <TableHead>Con</TableHead>}
+            {showTeammates && <TableHead>Con</TableHead>}
             <TableHead className="text-right">Single</TableHead>
             <TableHead className="text-right">Average</TableHead>
             <TableHead colSpan={solveCount} className="text-center">
@@ -113,7 +119,19 @@ export function CcResultsTable({
                   </div>
                 </TableCell>
               )}
-              {mode === "competitions" && (
+              {mode === "events" && (
+                <TableCell className="font-medium">
+                  <div className="flex items-center gap-2 whitespace-nowrap">
+                    <CcEventIcon
+                      eventId={row.eventId}
+                      eventName={row.eventName}
+                      className="text-lg"
+                    />
+                    <span>{row.eventName}</span>
+                  </div>
+                </TableCell>
+              )}
+              {showRound && (
                 <TableCell>{roundTypeLabel(row.roundTypeId)}</TableCell>
               )}
               <TableCell>{row.position ?? "—"}</TableCell>
@@ -122,7 +140,7 @@ export function CcResultsTable({
                   <CcCompetitors competitors={row.competitors} />
                 </TableCell>
               )}
-              {mode === "competitions" && hasTeams && (
+              {showTeammates && (
                 <TableCell>
                   <div className="space-y-1">
                     {row.competitors

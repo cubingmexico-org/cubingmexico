@@ -9,12 +9,23 @@ import {
   person,
   state,
 } from "@workspace/db/schema";
-import { asc, eq, inArray, type SQL } from "drizzle-orm";
-import type {
-  CcCompetitor,
-  CcEventFormat,
-  CcEventResultsGroup,
-  CcResultRow,
+import {
+  and,
+  asc,
+  eq,
+  gte,
+  inArray,
+  lt,
+  type SQL,
+  type SQLWrapper,
+} from "drizzle-orm";
+import {
+  summarizeCcYear,
+  type CcCompetitor,
+  type CcEventFormat,
+  type CcEventResultsGroup,
+  type CcResultRow,
+  type CcYearSummary,
 } from "@/lib/cubing-contests";
 import { roundRank } from "@/lib/utils";
 
@@ -96,6 +107,36 @@ export function groupCcResultsByEvent(
     groups.set(row.eventId, group);
   }
   return Array.from(groups.values());
+}
+
+/**
+ * Year summary of the results whose ids `resultIds` selects, dated within the
+ * calendar year (UTC).
+ */
+export async function getCcYearSummary(
+  resultIds: SQLWrapper,
+  year: number,
+): Promise<CcYearSummary> {
+  const rows = await db
+    .select({
+      eventId: ccResult.eventId,
+      eventName: ccEvent.name,
+      competitionId: ccResult.competitionId,
+      roundTypeId: ccResult.roundTypeId,
+      position: ccResult.pos,
+      best: ccResult.best,
+    })
+    .from(ccResult)
+    .innerJoin(ccEvent, eq(ccResult.eventId, ccEvent.id))
+    .where(
+      and(
+        inArray(ccResult.id, resultIds),
+        gte(ccResult.date, new Date(Date.UTC(year, 0, 1))),
+        lt(ccResult.date, new Date(Date.UTC(year + 1, 0, 1))),
+      ),
+    )
+    .orderBy(asc(ccEvent.rank), asc(ccResult.date));
+  return summarizeCcYear(rows);
 }
 
 export function sortCcRowsByRound(rows: CcResultRow[]): CcResultRow[] {

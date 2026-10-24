@@ -36,6 +36,8 @@ import {
   TeamPersonLink,
 } from "./_components/team-profile-shared";
 import { TeamLocation } from "./_components/team-location";
+import { UnofficialStateRecordsList } from "./_components/unofficial-state-records";
+import { getCcRecords } from "@/app/(root)/unofficial/_lib/queries";
 import { CompetitionLogo } from "@/components/competition-logo";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
@@ -78,6 +80,11 @@ export default async function Page({
   if (!data) {
     return notFound();
   }
+
+  const unofficialRecords = await getCcRecords({
+    state: data.team.state,
+    event: "",
+  });
 
   const {
     team,
@@ -339,6 +346,28 @@ export default async function Page({
               <NationalRecordsList records={nationalRecordsTeaser} />
             </CardContent>
           </Card>
+
+          {unofficialRecords.length > 0 && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
+                <CardTitle>Récords estatales no oficiales</CardTitle>
+                <Link
+                  href={`/unofficial/records?state=${encodeURIComponent(team.state)}`}
+                  prefetch={false}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" }),
+                    "gap-1",
+                  )}
+                >
+                  Ver todos
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </CardHeader>
+              <CardContent>
+                <UnofficialStateRecordsList records={unofficialRecords} />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="min-w-0 space-y-6">

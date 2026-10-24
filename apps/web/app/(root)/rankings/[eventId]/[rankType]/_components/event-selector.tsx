@@ -124,6 +124,13 @@ export function EventSelector({
             );
           })}
         </div>
+        <Link
+          prefetch={false}
+          href="/unofficial/rankings"
+          className="text-sm text-link hover:text-link/80 self-start"
+        >
+          Ver rankings no oficiales (FTO, Mirror Blocks y más)
+        </Link>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <RankTypeSelector

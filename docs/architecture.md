@@ -95,7 +95,11 @@ Unofficial events held at WCA competitions (FTO, Mirror Blocks, Team-Blind, and 
 - The site footer (`DataSourcesNotice`) credits both sources with the dates of the last imported exports (`export_metadata` keys `wca_export_date` and `cubing_contests_export_date`), as the WCA asks of sites using its export.
 - `cc_persons.wca_id` has no foreign key: CC competitors may lack a WCA id or be foreigners missing from `persons`. Readers left-join `persons` to link profiles and get states.
 - Team events store one `cc_result_persons` row per member. Rankings treat the sorted member set as one competitor.
-- The web reads them in [`lib/cubing-contests-queries.ts`](../apps/web/lib/cubing-contests-queries.ts) and shows them on the competition results "No oficiales" tab, the person "No oficiales" tab, `/unofficial/rankings` and `/unofficial/records`. Rankings and records are computed on the fly from the stored results; there is no Python mirror.
+- The web reads them in [`lib/cubing-contests-queries.ts`](../apps/web/lib/cubing-contests-queries.ts) and shows them on the competition results "No oficiales" tab, the person "No oficiales" tab, `/unofficial/rankings` and `/unofficial/records`. They also appear, always in their own block and never in official totals, on:
+  - The competition "Eventos" tab, the "Podios" tab ("Podios no oficiales") and the "Por persona" tab (under each person).
+  - The person header ("Récords personales no oficiales") and the team page ("Récords estatales no oficiales").
+  - The person and team annual summaries ("Eventos no oficiales" section, excluded from share cards).
+  - Links from `/records` and the rankings event selector. Rankings and records are computed on the fly from the stored results; there is no Python mirror.
 
 ## Related docs
 
