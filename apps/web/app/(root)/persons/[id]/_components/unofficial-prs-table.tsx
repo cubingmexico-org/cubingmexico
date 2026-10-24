@@ -10,9 +10,63 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { formatCcResult } from "@/lib/cubing-contests";
 import { CcEventIcon } from "@/components/cubing-contests/cc-event-icon";
-import type { PersonUnofficialPr } from "../_lib/queries";
+import type {
+  PersonUnofficialHonors,
+  PersonUnofficialPr,
+} from "../_lib/queries";
 
-function RankCell({ rank }: { rank: number | undefined }) {
+/** Mirrors the official Medallas/Récords row, for unofficial events. */
+export function UnofficialHonorsTables({
+  honors,
+}: {
+  honors: PersonUnofficialHonors;
+}) {
+  const { medals, records } = honors;
+  return (
+    <div className="grid md:grid-cols-2 grid-cols-1 gap-4 mt-4">
+      <div>
+        <h3 className="text-center font-semibold mb-2">
+          Medallas no oficiales
+        </h3>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center">Oro</TableHead>
+              <TableHead className="text-center">Plata</TableHead>
+              <TableHead className="text-center">Bronce</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="text-center">{medals.gold}</TableCell>
+              <TableCell className="text-center">{medals.silver}</TableCell>
+              <TableCell className="text-center">{medals.bronze}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+      <div>
+        <h3 className="text-center font-semibold mb-2">Récords no oficiales</h3>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="text-center">UNR</TableHead>
+              <TableHead className="text-center">USR</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <TableRow>
+              <TableCell className="text-center">{records.unr}</TableCell>
+              <TableCell className="text-center">{records.usr}</TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
+function RankCell({ rank }: { rank: number | null | undefined }) {
   return (
     <TableCell
       className={cn("text-center", rank === 1 && "font-semibold text-blue-700")}
@@ -25,9 +79,12 @@ function RankCell({ rank }: { rank: number | undefined }) {
 export function UnofficialPrsTable({
   wcaId,
   prs,
+  showStateRank,
 }: {
   wcaId: string;
   prs: PersonUnofficialPr[];
+  /** The person has a state, so USR columns apply. */
+  showStateRank: boolean;
 }) {
   return (
     <section className="mt-6">
@@ -48,10 +105,16 @@ export function UnofficialPrsTable({
         <TableHeader>
           <TableRow>
             <TableHead>Evento</TableHead>
-            <TableHead className="text-center">NR</TableHead>
+            {showStateRank && (
+              <TableHead className="text-center">USR</TableHead>
+            )}
+            <TableHead className="text-center">UNR</TableHead>
             <TableHead className="text-center">Single</TableHead>
             <TableHead className="text-center">Average</TableHead>
-            <TableHead className="text-center">NR</TableHead>
+            <TableHead className="text-center">UNR</TableHead>
+            {showStateRank && (
+              <TableHead className="text-center">USR</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -63,6 +126,7 @@ export function UnofficialPrsTable({
                   <span>{pr.eventName}</span>
                 </div>
               </TableCell>
+              {showStateRank && <RankCell rank={pr.single?.stateRank} />}
               <RankCell rank={pr.single?.countryRank} />
               <TableCell className="text-center font-semibold">
                 {pr.single
@@ -75,6 +139,7 @@ export function UnofficialPrsTable({
                   : null}
               </TableCell>
               <RankCell rank={pr.average?.countryRank} />
+              {showStateRank && <RankCell rank={pr.average?.stateRank} />}
             </TableRow>
           ))}
         </TableBody>

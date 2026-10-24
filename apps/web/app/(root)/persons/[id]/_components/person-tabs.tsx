@@ -36,6 +36,7 @@ import type {
   PersonResultsByEventGroup,
   PersonResultsEventOption,
   PersonStaffCompetition,
+  PersonUnofficialPodiumsByEvent,
 } from "../_lib/queries";
 import type { PersonCompetitionLocation } from "../_lib/queries";
 import type {
@@ -53,6 +54,7 @@ import {
   loadPersonPrStreaks,
   loadPersonRecordHistory,
   loadPersonStaffCompetitions,
+  loadPersonUnofficialPodiums,
   loadPersonUnofficialResults,
 } from "../_lib/actions";
 
@@ -130,6 +132,9 @@ export function PersonTabs({
   const [unofficialResults, setUnofficialResults] = useState<
     CcEventResultsGroup[] | null
   >(null);
+  const [unofficialPodiums, setUnofficialPodiums] = useState<
+    PersonUnofficialPodiumsByEvent[] | null
+  >(null);
   const [mapData, setMapData] = useState<{
     locations: PersonCompetitionLocation[];
     statesData: GeoJSONProps["data"] | undefined;
@@ -176,6 +181,25 @@ export function PersonTabs({
       cancelled = true;
     };
   }, [tab, wcaId, unofficialResults, showUnofficialTab]);
+
+  useEffect(() => {
+    if (tab !== "podiums" || !showUnofficialTab || unofficialPodiums !== null) {
+      return;
+    }
+
+    let cancelled = false;
+    startTransition(() => {
+      void loadPersonUnofficialPodiums(wcaId).then((podiums) => {
+        if (!cancelled) {
+          setUnofficialPodiums(podiums);
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, wcaId, unofficialPodiums, showUnofficialTab]);
 
   useEffect(() => {
     if (
@@ -459,7 +483,16 @@ export function PersonTabs({
         {podiumsByEvent === null ? (
           <Skeleton className="h-64 w-full" />
         ) : (
-          <PersonPodiumsTab podiums={podiumsByEvent} />
+          <div className="flex flex-col gap-6">
+            <PersonPodiumsTab podiums={podiumsByEvent} />
+            {unofficialPodiums && unofficialPodiums.length > 0 && (
+              <PersonPodiumsTab
+                podiums={unofficialPodiums}
+                variant="unofficial"
+                title="Podios no oficiales por evento"
+              />
+            )}
+          </div>
         )}
       </TabsContent>
 

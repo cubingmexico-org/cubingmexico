@@ -4,8 +4,23 @@ import "server-only";
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
-import type { CcEventFormat, CcEventOption } from "@/lib/cubing-contests";
-import { loadCcCompetitors } from "@/lib/cubing-contests-queries";
+import { ccResult } from "@workspace/db/schema";
+import { inArray } from "drizzle-orm";
+import type {
+  CcEventFormat,
+  CcEventOption,
+  CcResultRow,
+} from "@/lib/cubing-contests";
+import {
+  getCcRecordMarkers,
+  getCcResultRows,
+  loadCcCompetitors,
+} from "@/lib/cubing-contests-queries";
+import {
+  CC_NATIONAL_SCOPE,
+  type CcRecordMarker,
+  type CcRecordType,
+} from "@/lib/cubing-contests-records";
 import {
   countCcRankingStates,
   filterCcRanking,
@@ -131,6 +146,63 @@ export async function getCcRankingStateCounts(
 ) {
   const rows = await getCcEventRanking(eventId, rankType);
   return countCcRankingStates(rows);
+}
+
+export interface CcRecordHistoryRow {
+  key: string;
+  type: CcRecordType;
+  /** For a state's history, results that were also national records keep UNR. */
+  marker: CcRecordMarker;
+  value: number;
+  result: CcResultRow;
+}
+
+/**
+ * Every result that set or tied the national record (or the state's record,
+ * when `state` is set), newest first.
+ */
+export async function getCcRecordHistory(input: {
+  state: string;
+  event: string;
+}): Promise<CcRecordHistoryRow[]> {
+  const { history } = await getCcRecordMarkers();
+  const scope = input.state || CC_NATIONAL_SCOPE;
+  const entries = history.filter(
+    (entry) =>
+      entry.scope === scope && (!input.event || entry.eventId === input.event),
+  );
+  if (entries.length === 0) return [];
+
+  const results = await getCcResultRows(
+    inArray(
+      ccResult.id,
+      entries.map((entry) => entry.resultId),
+    ),
+  );
+  const byId = new Map(results.map((result) => [result.resultId, result]));
+
+  return entries
+    .flatMap((entry) => {
+      const result = byId.get(entry.resultId);
+      if (!result) return [];
+      const recordMarker =
+        entry.type === "single" ? result.singleRecord : result.averageRecord;
+      return [
+        {
+          key: `${entry.resultId}-${entry.type}`,
+          type: entry.type,
+          marker: recordMarker ?? "UNR",
+          value: entry.type === "single" ? result.best : result.average,
+          result,
+        },
+      ];
+    })
+    .sort(
+      (a, b) =>
+        b.result.date.getTime() - a.result.date.getTime() ||
+        a.result.eventName.localeCompare(b.result.eventName) ||
+        a.type.localeCompare(b.type),
+    );
 }
 
 /**

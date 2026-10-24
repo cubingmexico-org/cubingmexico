@@ -38,6 +38,7 @@ import {
 import { TeamLocation } from "./_components/team-location";
 import { UnofficialStateRecordsList } from "./_components/unofficial-state-records";
 import { getCcRecords } from "@/app/(root)/unofficial/_lib/queries";
+import { getTeamUnofficialMedals } from "./_lib/unofficial";
 import { CompetitionLogo } from "@/components/competition-logo";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
@@ -81,10 +82,10 @@ export default async function Page({
     return notFound();
   }
 
-  const unofficialRecords = await getCcRecords({
-    state: data.team.state,
-    event: "",
-  });
+  const [unofficialRecords, unofficialMedals] = await Promise.all([
+    getCcRecords({ state: data.team.state, event: "" }),
+    getTeamUnofficialMedals(stateId),
+  ]);
 
   const {
     team,
@@ -222,6 +223,24 @@ export default async function Page({
             <KeyStat label="Años activo" value={activeYears} />
           ) : null}
         </div>
+
+        {unofficialMedals.total > 0 && (
+          <div className="space-y-3 pt-2">
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <h3 className="text-sm font-semibold">
+                Podios en eventos no oficiales
+              </h3>
+              <Link
+                href={`/unofficial/records?state=${encodeURIComponent(team.state)}`}
+                prefetch={false}
+                className="text-sm text-link hover:text-link/80"
+              >
+                Ver récords no oficiales
+              </Link>
+            </div>
+            <MedalStrip medals={unofficialMedals} />
+          </div>
+        )}
       </section>
 
       <div className="grid min-w-0 gap-6 lg:grid-cols-3">

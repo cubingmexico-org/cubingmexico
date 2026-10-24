@@ -9,7 +9,10 @@ import {
 import { and, countDistinct, eq, gte, lt } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import type { CcYearSummary } from "@/lib/cubing-contests";
-import { getCcYearSummary } from "@/lib/cubing-contests-queries";
+import {
+  getCcResultsSummary,
+  teamMemberCcResultIds,
+} from "@/lib/cubing-contests-queries";
 
 export type TeamYearUnofficial = CcYearSummary & { memberCount: number };
 
@@ -25,15 +28,8 @@ export async function getTeamYearUnofficial(
   cacheLife("days");
   cacheTag("cc-results", `team-summary-unofficial-${stateId}-${year}`);
 
-  const memberResultIds = db
-    .select({ resultId: ccResultPerson.resultId })
-    .from(ccResultPerson)
-    .innerJoin(ccPerson, eq(ccResultPerson.personId, ccPerson.id))
-    .innerJoin(person, eq(ccPerson.wcaId, person.wcaId))
-    .where(eq(person.stateId, stateId));
-
   const [summary, members] = await Promise.all([
-    getCcYearSummary(memberResultIds, year),
+    getCcResultsSummary(teamMemberCcResultIds(stateId), year),
     db
       .select({ count: countDistinct(person.wcaId) })
       .from(ccResultPerson)

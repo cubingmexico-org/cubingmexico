@@ -29,7 +29,7 @@ export function getColumns({
     {
       accessorKey: "countryRank",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="NR" />
+        <DataTableColumnHeader column={column} title="UNR" />
       ),
       cell: ({ row }) => <div>{row.original.countryRank}</div>,
       enableSorting: false,
@@ -40,7 +40,7 @@ export function getColumns({
       id: "stateRank",
       accessorKey: "stateRank",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="SR" />
+        <DataTableColumnHeader column={column} title="USR" />
       ),
       cell: ({ row }) => <div>{row.original.stateRank ?? "—"}</div>,
       enableSorting: false,

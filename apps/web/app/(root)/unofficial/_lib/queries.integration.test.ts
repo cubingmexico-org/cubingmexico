@@ -10,6 +10,7 @@ import {
   getCcEventRanking,
   getCcRankingEvents,
   getCcRankingPage,
+  getCcRecordHistory,
   getCcRecords,
 } from "./queries";
 import {
@@ -19,10 +20,13 @@ import {
   getCompetitionCcResultsByPerson,
 } from "../../competitions/[id]/results/unofficial/_lib/queries";
 import {
+  getPersonUnofficialHonors,
+  getPersonUnofficialPodiumsByEvent,
   getPersonUnofficialPrs,
   getPersonUnofficialResults,
   hasPersonUnofficialResults,
 } from "../../persons/[id]/_lib/unofficial";
+import { getTeamUnofficialMedals } from "../../teams/[stateId]/_lib/unofficial";
 import { getPersonYearUnofficial } from "../../summary/[year]/[wcaId]/_lib/unofficial";
 import { getTeamYearUnofficial } from "../../summary/team/[year]/[stateId]/_lib/unofficial";
 
@@ -329,14 +333,156 @@ describe("getPersonUnofficialPrs", () => {
   it("returns bests with national ranks, using the best team for team events", async () => {
     const prs = await getPersonUnofficialPrs("2020AAAA01");
     expect(prs.map((pr) => [pr.eventId, pr.single, pr.average])).toEqual([
-      ["fto", { value: 2800, countryRank: 1 }, { value: 3500, countryRank: 2 }],
-      ["333_team_bld", { value: 5000, countryRank: 1 }, null],
+      [
+        "fto",
+        { value: 2800, countryRank: 1, stateRank: 1 },
+        { value: 3500, countryRank: 2, stateRank: 1 },
+      ],
+      ["333_team_bld", { value: 5000, countryRank: 1, stateRank: 1 }, null],
     ]);
+  });
+
+  it("ranks within the person's state and has no USR without a state", async () => {
+    await insertPerson({ wcaId: "2020DDDD01", name: "Dani", stateId: "JAL" });
+    await insertCcPerson({ id: 5, name: "Dani", wcaId: "2020DDDD01" });
+    await insertCcResult({
+      id: 30,
+      competitionId: "Comp2024",
+      eventId: "fto",
+      personIds: [5],
+      pos: 4,
+      best: 3200,
+      date: new Date("2024-06-01T00:00:00Z"),
+    });
+    const [fto] = await getPersonUnofficialPrs("2020DDDD01");
+    expect(fto?.single).toEqual({ value: 3200, countryRank: 4, stateRank: 2 });
+
+    await insertPerson({ wcaId: "2020EEEE01", name: "Eli" });
+    await insertCcPerson({ id: 6, name: "Eli", wcaId: "2020EEEE01" });
+    await insertCcResult({
+      id: 31,
+      competitionId: "Comp2024",
+      eventId: "fto",
+      personIds: [6],
+      pos: 5,
+      best: 3300,
+      date: new Date("2024-06-01T00:00:00Z"),
+    });
+    const [eliFto] = await getPersonUnofficialPrs("2020EEEE01");
+    expect(eliFto?.single?.stateRank).toBeNull();
   });
 
   it("is empty for a person without unofficial results", async () => {
     await insertPerson({ wcaId: "2020ZZZZ01", name: "Zoe" });
     expect(await getPersonUnofficialPrs("2020ZZZZ01")).toEqual([]);
+  });
+});
+
+describe("UNR/USR record markers", () => {
+  it("marks national record progressions, including same-day ties", async () => {
+    const comp2024 = await getCompetitionCcResults("Comp2024", "fto");
+    expect(
+      comp2024.map((row) => [
+        row.resultId,
+        row.singleRecord,
+        row.averageRecord,
+      ]),
+    ).toEqual([
+      [4, null, null],
+      [2, "UNR", null],
+      [3, "UNR", "UNR"],
+    ]);
+    const comp2023 = await getCompetitionCcResults("Comp2023", "fto");
+    expect(comp2023[0]).toMatchObject({
+      resultId: 1,
+      singleRecord: "UNR",
+      averageRecord: "UNR",
+    });
+    const euro = await getCompetitionCcResults("Euro2024", "fto");
+    expect(euro[0]).toMatchObject({ resultId: 5, singleRecord: null });
+  });
+
+  it("marks a state's first result as USR when it isn't a UNR", async () => {
+    await insertPerson({ wcaId: "2020DDDD01", name: "Dani", stateId: "PUE" });
+    await insertCcPerson({ id: 5, name: "Dani", wcaId: "2020DDDD01" });
+    await insertCcResult({
+      id: 30,
+      competitionId: "Comp2024",
+      eventId: "fto",
+      personIds: [5],
+      pos: 4,
+      best: 3200,
+      date: new Date("2024-06-01T00:00:00Z"),
+    });
+    const rows = await getCompetitionCcResults("Comp2024", "fto");
+    expect(rows.find((row) => row.resultId === 30)?.singleRecord).toBe("USR");
+
+    const history = await getCcRecordHistory({ state: "Puebla", event: "" });
+    expect(history.map((row) => [row.key, row.marker])).toEqual([
+      ["30-single", "USR"],
+    ]);
+  });
+
+  it("lists the national history newest first", async () => {
+    const history = await getCcRecordHistory({ state: "", event: "fto" });
+    expect(history.map((row) => [row.key, row.marker, row.value])).toEqual([
+      ["3-average", "UNR", 3400],
+      ["2-single", "UNR", 2800],
+      ["3-single", "UNR", 2800],
+      ["1-average", "UNR", 3500],
+      ["1-single", "UNR", 3000],
+    ]);
+  });
+
+  it("includes national records in a state's history", async () => {
+    const history = await getCcRecordHistory({
+      state: "Jalisco",
+      event: "fto",
+    });
+    expect(history.map((row) => [row.key, row.marker])).toEqual([
+      ["2-single", "UNR"],
+      ["1-average", "UNR"],
+      ["1-single", "UNR"],
+    ]);
+  });
+});
+
+describe("unofficial podiums and honors", () => {
+  it("counts a person's medals and records", async () => {
+    expect(await getPersonUnofficialHonors("2020AAAA01")).toEqual({
+      medals: { gold: 4, silver: 1, bronze: 0 },
+      records: { unr: 6, usr: 0 },
+    });
+  });
+
+  it("groups a person's medals by event", async () => {
+    expect(await getPersonUnofficialPodiumsByEvent("2020AAAA01")).toEqual([
+      {
+        eventId: "fto",
+        eventName: "Face-Turning Octahedron",
+        gold: 1,
+        silver: 1,
+        bronze: 0,
+        total: 2,
+      },
+      {
+        eventId: "333_team_bld",
+        eventName: "3x3x3 Team-Blind",
+        gold: 3,
+        silver: 0,
+        bronze: 0,
+        total: 3,
+      },
+    ]);
+  });
+
+  it("counts a team's medals once per result", async () => {
+    expect(await getTeamUnofficialMedals("CMX")).toEqual({
+      gold: 2,
+      silver: 0,
+      bronze: 1,
+      total: 3,
+    });
   });
 });
 
