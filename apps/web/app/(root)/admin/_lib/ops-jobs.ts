@@ -86,6 +86,17 @@ export const ADMIN_OPS_JOBS = [
 
 export type AdminOpsPath = (typeof ADMIN_OPS_JOBS)[number]["path"];
 
+/**
+ * Cache tags to revalidate after a job succeeds. The backend can't reach the
+ * Next cache, so pages prerendered before an import would otherwise keep
+ * stale data until their cache life ends.
+ */
+export const OPS_JOB_CACHE_TAGS: Partial<Record<AdminOpsPath, string[]>> = {
+  "/update-database": ["data-source-dates"],
+  "/update-cubing-contests": ["cc-results", "data-source-dates"],
+  "/update-all": ["cc-results", "data-source-dates"],
+};
+
 const ALLOWED_PATHS = new Set<string>(ADMIN_OPS_JOBS.map((job) => job.path));
 
 export function isAllowedOpsPath(path: string): path is AdminOpsPath {

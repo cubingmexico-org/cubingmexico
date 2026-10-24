@@ -1,8 +1,12 @@
 import { connection, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { getSessionUserId } from "@/lib/team-auth";
 import { unauthorizedResponse } from "@/lib/api-auth";
 import { isSuperadmin } from "@/lib/superadmin";
-import { isAllowedOpsPath } from "@/app/(root)/admin/_lib/ops-jobs";
+import {
+  isAllowedOpsPath,
+  OPS_JOB_CACHE_TAGS,
+} from "@/app/(root)/admin/_lib/ops-jobs";
 import { triggerBackendJob } from "@/app/(root)/admin/_lib/ops";
 
 export const maxDuration = 300;
@@ -35,6 +39,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const result = await triggerBackendJob(path);
+    if (result.ok) {
+      for (const tag of OPS_JOB_CACHE_TAGS[path] ?? []) {
+        revalidateTag(tag, "max");
+      }
+    }
     return NextResponse.json(
       {
         success: result.ok,
