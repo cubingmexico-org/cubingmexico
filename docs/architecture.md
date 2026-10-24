@@ -91,6 +91,8 @@ See `.cursor/rules/official-events.mdc` for the helpers to use.
 
 Unofficial events held at WCA competitions (FTO, Mirror Blocks, Team-Blind, and so on) come from the [Cubing Contests](https://cubingcontests.com/export) export (CC BY-SA 4.0, attributed with `CcAttribution` wherever they are shown). They live only in `cc_events`, `cc_persons`, `cc_results` and `cc_result_persons`, never in `events`, `results` or `ranks_*`, so they are outside both event scopes and never feed state ranks, records, Kinch, SOR, streaks or nemesis.
 
+- Official WCA events are never imported from Cubing Contests (CC category 5, or an id with `events.rank < 800`).
+- The site footer (`DataSourcesNotice`) credits both sources with the dates of the last imported exports (`export_metadata` keys `wca_export_date` and `cubing_contests_export_date`), as the WCA asks of sites using its export.
 - `cc_persons.wca_id` has no foreign key: CC competitors may lack a WCA id or be foreigners missing from `persons`. Readers left-join `persons` to link profiles and get states.
 - Team events store one `cc_result_persons` row per member. Rankings treat the sorted member set as one competitor.
 - The web reads them in [`lib/cubing-contests-queries.ts`](../apps/web/lib/cubing-contests-queries.ts) and shows them on the competition results "No oficiales" tab, the person "No oficiales" tab, `/unofficial/rankings` and `/unofficial/records`. Rankings and records are computed on the fly from the stored results; there is no Python mirror.

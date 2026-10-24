@@ -15,10 +15,11 @@ PERSONS = read_cc_csv(
     "id,name,region_code,wca_id\n1,Ana MX,MX,2019ANAM01\n2,Bob FR,FR,2018BOBF01\n3,Carla MX,MX,__EMPTY_STRING__\n"
 )
 EVENTS = read_cc_csv(
-    "event_id,name,format,rank,participants,default_round_format\n"
-    "fto,Face-Turning Octahedron,time,1010,1,a\n"
-    "333_team_bld,3x3x3 Team-Blind,time,1020,2,a\n"
-    "333,3x3x3 Cube,time,10,1,a\n"
+    "event_id,name,category_id,format,rank,participants,default_round_format\n"
+    "fto,Face-Turning Octahedron,4,time,1010,1,a\n"
+    "333_team_bld,3x3x3 Team-Blind,4,time,1020,2,a\n"
+    "333,3x3x3 Cube,5,time,10,1,a\n"
+    "333oh,3x3x3 One-Handed,5,time,90,1,a\n"
 )
 ROUNDS = read_cc_csv(
     "id,competition_id,event_id,round_number,round_type_id,format\n"
@@ -84,6 +85,14 @@ def test_official_wca_event_dropped():
     out = _select([_result(1, "333", "[1]", "MexOpen2025")])
     assert out["results"] == []
     assert out["events"] == []
+
+
+def test_cc_wca_category_dropped_even_without_wca_events_table():
+    out = _select(
+        [_result(1, "333", "[1]", "MexOpen2025"), _result(2, "333oh", "[1]", "MexOpen2025")],
+        official_event_ids=frozenset(),
+    )
+    assert out["results"] == []
 
 
 def test_unapproved_result_dropped():

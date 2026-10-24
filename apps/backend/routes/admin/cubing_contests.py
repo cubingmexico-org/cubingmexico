@@ -31,6 +31,8 @@ CC_FILES = {
     "results": "export_results.csv",
 }
 CC_EVENT_FORMATS = ("time", "number", "multi")
+# Cubing Contests' "WCA" category: the current official WCA events.
+CC_WCA_CATEGORY_ID = "5"
 
 
 def read_cc_csv(text):
@@ -57,7 +59,9 @@ def select_cc_rows(contests, persons, events, rounds, results, competition_ids, 
     """Pick the results to import and the events and persons they reference.
 
     `competition_ids` are the WCA competitions present in our `competitions` table;
-    `official_event_ids` are WCA events with rank < 800, whose CC namesakes are dropped.
+    Official WCA events are never imported: CC events in its WCA category are
+    dropped, and so are CC events sharing an id with `official_event_ids`
+    (WCA events with rank < 800).
     """
     contests_by_id = {c["competition_id"]: c for c in contests if c["type"] == "wca-comp" and c["state"] == "published"}
     persons_by_id = {int(p["id"]): p for p in persons}
@@ -75,7 +79,7 @@ def select_cc_rows(contests, persons, events, rounds, results, competition_ids, 
         if contest is None or row["approved"].upper() != "TRUE":
             continue
         event = events_by_id.get(row["event_id"])
-        if event is None or row["event_id"] in official_event_ids:
+        if event is None or event.get("category_id") == CC_WCA_CATEGORY_ID or row["event_id"] in official_event_ids:
             continue
         person_ids = [int(pid) for pid in json.loads(row["person_ids"] or "[]")]
         if not person_ids or any(pid not in persons_by_id for pid in person_ids):

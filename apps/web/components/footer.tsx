@@ -12,7 +12,11 @@ import {
 import { Clock, Trophy } from "lucide-react";
 import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
-import { getLastCompetitionWithResults } from "@/db/queries";
+import {
+  getDataSourceDates,
+  getLastCompetitionWithResults,
+} from "@/db/queries";
+import { DataSourcesNotice } from "./data-sources-notice";
 import { cacheLife, cacheTag } from "next/cache";
 
 async function FooterContent() {
@@ -21,7 +25,10 @@ async function FooterContent() {
   cacheTag("site-footer");
 
   const currentYear = new Date().getFullYear();
-  const competitions = await getLastCompetitionWithResults();
+  const [competitions, dataSourceDates] = await Promise.all([
+    getLastCompetitionWithResults(),
+    getDataSourceDates(),
+  ]);
 
   return (
     <footer className="text-muted-foreground body-font">
@@ -66,7 +73,7 @@ async function FooterContent() {
             </Link>
           </span>
         </div>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 my-4">
           <div className="inline-flex justify-center sm:justify-start flex-col sm:flex-row sm:items-center gap-2 text-sm">
             <span className="text-muted-foreground flex items-center">
               <Trophy className="h-4 w-4 mr-1" />
@@ -97,6 +104,10 @@ async function FooterContent() {
             )}
           </div>
         </div>
+        <DataSourcesNotice
+          wcaExportDate={dataSourceDates.wca}
+          ccExportDate={dataSourceDates.cubingContests}
+        />
         <div className="mt-4 text-center text-xs text-muted-foreground">
           <p>
             Hecho con ❤️ por{" "}
