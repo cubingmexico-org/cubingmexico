@@ -1,6 +1,9 @@
 # Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
 # Set the working directory in the container
 WORKDIR /app
 
@@ -8,11 +11,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY app.py common.py utils.py nemesis_stats.py ./
-COPY routes ./routes
-COPY social ./social
-COPY assets ./assets
+# Copy application files (see .dockerignore)
+COPY . .
+
+RUN useradd --create-home --uid 1000 app
+USER app
 
 # Expose the Flask port
 EXPOSE 8080

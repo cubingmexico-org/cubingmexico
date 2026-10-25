@@ -8,14 +8,17 @@
     "./client": "./src/client.ts"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
     "better-auth": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "eslint": "catalog:",
     "typescript": "catalog:"
   }
 }

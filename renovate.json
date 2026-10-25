@@ -3,7 +3,8 @@
   "extends": [
     "config:recommended",
     ":semanticCommits",
-    "group:monorepos"
+    "group:monorepos",
+    "helpers:pinGitHubActionDigests"
   ],
   "timezone": "America/Mexico_City",
   "schedule": ["before 6am on monday"],
@@ -26,7 +27,15 @@
     {
       "description": "Next.js and React move together",
       "matchManagers": ["npm"],
-      "matchPackageNames": ["next", "react", "react-dom", "@types/react", "@types/react-dom", "eslint-config-next", "@next/{/,}**"],
+      "matchPackageNames": [
+        "next",
+        "react",
+        "react-dom",
+        "@types/react",
+        "@types/react-dom",
+        "eslint-config-next",
+        "@next/{/,}**"
+      ],
       "groupName": "next and react"
     },
     {

@@ -14,7 +14,8 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: "/rankings/a/:eventId/:rankType(single|average)/:state([A-Za-z]{2,3})",
+        source:
+          "/rankings/a/:eventId/:rankType(single|average)/:state([A-Za-z]{2,3})",
         destination: "/rankings/:eventId/:rankType",
         permanent: true,
       },
@@ -24,7 +25,8 @@ const nextConfig = {
         permanent: true,
       },
       {
-        source: "/rankings/:gender(f|m)/:eventId/:rankType(single|average)/:state([A-Za-z]{2,3})",
+        source:
+          "/rankings/:gender(f|m)/:eventId/:rankType(single|average)/:state([A-Za-z]{2,3})",
         destination: "/rankings/:eventId/:rankType?gender=:gender",
         permanent: true,
       },

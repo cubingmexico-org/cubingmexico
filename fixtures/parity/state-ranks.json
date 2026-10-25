@@ -9,7 +9,9 @@
     {
       "name": "single person",
       "input": [{ "personId": "2020AAAA01", "eventId": "333" }],
-      "expected": [{ "personId": "2020AAAA01", "eventId": "333", "stateRank": 1 }]
+      "expected": [
+        { "personId": "2020AAAA01", "eventId": "333", "stateRank": 1 }
+      ]
     },
     {
       "name": "ranks follow input order",

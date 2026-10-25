@@ -11,8 +11,8 @@
     "check-types": "turbo check-types",
     "test": "turbo test",
     "test:integration": "turbo test:integration",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
     "clean": "rm -rf .turbo node_modules apps/*/node_modules apps/*/.next apps/*/.turbo packages/*/node_modules packages/*/dist packages/*/.turbo",
     "db:up": "docker compose up db -d",
     "db:down": "docker compose down",
@@ -27,6 +27,6 @@
   },
   "packageManager": "pnpm@10.4.1",
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   }
 }
