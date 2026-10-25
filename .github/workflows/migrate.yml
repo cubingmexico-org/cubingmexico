@@ -26,7 +26,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Use Supabase direct or Session-mode connection string (not Transaction pooler :6543).
+      # Use the Neon direct connection string (host without "-pooler").
       # main → production (DATABASE_URL); development → staging (DATABASE_URL_STAGING)
       - name: Apply Drizzle migrations
         run: pnpm --filter @workspace/db migrate

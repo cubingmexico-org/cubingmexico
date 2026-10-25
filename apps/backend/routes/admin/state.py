@@ -79,7 +79,9 @@ def update_state_ranks():
 
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("CREATE TEMP TABLE tmp_updates (person_id text, event_id text, state_rank int)")
+                cur.execute(
+                    "CREATE TEMP TABLE tmp_updates (person_id text, event_id text, state_rank int) ON COMMIT DROP"
+                )
 
                 psycopg2.extras.execute_values(
                     cur,
@@ -97,7 +99,9 @@ def update_state_ranks():
                 """
                 )
 
-                cur.execute("CREATE TEMP TABLE tmp_avg_updates (person_id text, event_id text, state_rank int)")
+                cur.execute(
+                    "CREATE TEMP TABLE tmp_avg_updates (person_id text, event_id text, state_rank int) ON COMMIT DROP"
+                )
                 psycopg2.extras.execute_values(
                     cur,
                     "INSERT INTO tmp_avg_updates (person_id, event_id, state_rank) VALUES %s",
