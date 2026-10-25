@@ -1,15 +1,22 @@
 # Use an official Python runtime as a parent image
 FROM python:3.12-slim
 
+COPY --from=ghcr.io/astral-sh/uv:0.13.5 /uv /bin/uv
+
+# The venv lives outside /app so the docker-compose bind mount on /app doesn't hide it.
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_LINK_MODE=copy \
+    PATH="/opt/venv/bin:$PATH"
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install locked dependencies (no dev group)
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --locked --no-dev --no-cache
 
 # Copy application files (see .dockerignore)
 COPY . .

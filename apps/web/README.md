@@ -20,7 +20,7 @@ A comprehensive web platform for managing and displaying WCA (World Cube Associa
 ### Prerequisites
 
 - Node.js >= 24
-- pnpm 10.4.1 or higher
+- pnpm 10.34.9 or higher
 - PostgreSQL database
 
 ### Environment Variables

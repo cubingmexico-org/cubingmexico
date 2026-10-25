@@ -48,7 +48,7 @@ export function AssignPersonForm({ states }: { states: StateOption[] }) {
       return;
     }
 
-    const timeout = setTimeout(async () => {
+    const runSearch = async () => {
       setSearching(true);
       try {
         const params = new URLSearchParams({ search });
@@ -62,7 +62,9 @@ export function AssignPersonForm({ states }: { states: StateOption[] }) {
       } finally {
         setSearching(false);
       }
-    }, 300);
+    };
+
+    const timeout = setTimeout(() => void runSearch(), 300);
 
     return () => clearTimeout(timeout);
   }, [search]);

@@ -18,7 +18,7 @@
     "studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "dotenv": "catalog:",
+    "dotenv": "^16.4.7",
     "drizzle-orm": "catalog:",
     "postgres": "catalog:"
   },
@@ -27,7 +27,7 @@
     "@workspace/typescript-config": "workspace:*",
     "drizzle-kit": "^0.31.5",
     "eslint": "catalog:",
-    "tsx": "catalog:",
+    "tsx": "^4.20.6",
     "typescript": "catalog:"
   }
 }

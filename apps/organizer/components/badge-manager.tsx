@@ -355,8 +355,8 @@ export function BadgeManager({
                     variant="outline"
                     size="sm"
                     className="gap-2 transition-all"
-                    onClick={() => {
-                      revalidateWCIF(competition.id);
+                    onClick={async () => {
+                      await revalidateWCIF(competition.id);
                       setLastUpdate(new Date());
                     }}
                   >

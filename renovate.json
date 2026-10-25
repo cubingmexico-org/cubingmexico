@@ -10,9 +10,7 @@
   "schedule": ["before 6am on monday"],
   "prConcurrentLimit": 5,
   "rangeStrategy": "bump",
-  "pip_requirements": {
-    "managerFilePatterns": ["/(^|/)requirements(-dev)?\\.txt$/"]
-  },
+  "minimumReleaseAge": "3 days",
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 6am on the first day of the month"]
@@ -57,8 +55,8 @@
       "allowedVersions": "<25"
     },
     {
-      "description": "Backend Python pins, non-major",
-      "matchManagers": ["pip_requirements"],
+      "description": "Backend Python dependencies (pyproject.toml + uv.lock), non-major",
+      "matchManagers": ["pep621"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "backend python non-major"
     },

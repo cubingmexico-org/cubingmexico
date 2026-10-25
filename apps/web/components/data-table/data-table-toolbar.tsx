@@ -7,7 +7,6 @@ import * as React from "react";
 import { DataTableDateFilter } from "@/components/data-table/data-table-date-filter";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { DataTableSliderFilter } from "@/components/data-table/data-table-slider-filter";
-// import { DataTableViewOptions } from "@/components/data-table/data-table-view-options";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { cn } from "@workspace/ui/lib/utils";
@@ -60,10 +59,7 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <div className="flex items-center gap-2">
-        {children}
-        {/* <DataTableViewOptions table={table} /> */}
-      </div>
+      <div className="flex items-center gap-2">{children}</div>
     </div>
   );
 }

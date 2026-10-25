@@ -9,6 +9,7 @@
     "dev:organizer": "turbo dev --filter=organizer",
     "lint": "turbo lint",
     "check-types": "turbo check-types",
+    "knip": "knip",
     "test": "turbo test",
     "test:integration": "turbo test:integration",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
@@ -19,13 +20,13 @@
     "services:up": "docker compose up --build -d"
   },
   "devDependencies": {
-    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "knip": "^5.88.1",
     "prettier": "^3.6.2",
     "turbo": "^2.5.5",
     "typescript": "catalog:"
   },
-  "packageManager": "pnpm@10.4.1",
+  "packageManager": "pnpm@10.34.9",
   "engines": {
     "node": "24.x"
   }

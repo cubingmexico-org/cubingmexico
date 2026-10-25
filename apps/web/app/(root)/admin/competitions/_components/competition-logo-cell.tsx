@@ -165,18 +165,22 @@ export function CompetitionLogoCell({
 
     setBusy(true);
     try {
-      await toast.promise(uploadBlob(file), {
-        loading: "Subiendo logo...",
-        success: "Logo actualizado",
-        error: (err) =>
-          err instanceof UploadThingError
-            ? ((err.data && "error" in err.data
-                ? String(err.data.error)
-                : null) ?? err.message)
-            : err instanceof Error
-              ? err.message
-              : "Error al subir",
-      });
+      await toast
+        .promise(uploadBlob(file), {
+          loading: "Subiendo logo...",
+          success: "Logo actualizado",
+          error: (err) =>
+            err instanceof UploadThingError
+              ? ((err.data && "error" in err.data
+                  ? String(err.data.error)
+                  : null) ?? err.message)
+              : err instanceof Error
+                ? err.message
+                : "Error al subir",
+        })
+        .unwrap();
+    } catch {
+      // The error toast already reports the failure.
     } finally {
       setBusy(false);
       if (fileInputRef.current) {
@@ -285,12 +289,16 @@ export function CompetitionLogoCell({
         erasedBlob,
         `${competitionId}-logo.png`,
       );
-      await toast.promise(uploadBlob(file), {
-        loading: "Guardando logo transparente...",
-        success: "Logo transparente guardado",
-        error: (err) =>
-          err instanceof Error ? err.message : "Error al guardar",
-      });
+      await toast
+        .promise(uploadBlob(file), {
+          loading: "Guardando logo transparente...",
+          success: "Logo transparente guardado",
+          error: (err) =>
+            err instanceof Error ? err.message : "Error al guardar",
+        })
+        .unwrap();
+    } catch {
+      // The error toast already reports the failure.
     } finally {
       setBusy(false);
     }

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "include": ["files", "dependencies", "devDependencies", "unlisted"],
+  "workspaces": {
+    "packages/icons": {
+      "ignoreDependencies": ["react", "@types/react"]
+    },
+    "packages/ui": {
+      "ignoreDependencies": ["@tailwindcss/postcss", "postcss-load-config"]
+    }
+  }
+}

@@ -11,10 +11,10 @@ Flask backend that imports World Cube Association (WCA) export data, maintains c
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.12 (see `.python-version`)
+- [uv](https://docs.astral.sh/uv/) (dependencies are declared in `pyproject.toml` and locked in `uv.lock`)
 - PostgreSQL
 - Google Cloud project with Secret Manager access
-- pip dependencies (see requirements.txt)
 
 ## Configuration
 
@@ -61,15 +61,15 @@ If you want to run Python directly while using PostgreSQL in Docker (from monore
 # 1. Start Postgres and apply shared migrations/seed
 docker compose up db migrator --build
 
-# 2. Install Python dependencies
-pip install -r requirements.txt
+# 2. Install Python dependencies (creates .venv, including the dev group)
+uv sync
 
 # 3. Copy environment file
 cp .env.example .env
 
 # 4. Load env and run Flask backend
 set -a; source .env; set +a
-python app.py
+uv run python app.py
 ```
 
 The app will be available at `http://localhost:5000`.
@@ -216,6 +216,8 @@ Keep `SOCIAL_POSTS_ENABLED=false` in development/staging (and until secrets and 
 
 ## Development
 
+- Run checks with `uv run ruff check .`, `uv run ruff format --check .` and `uv run pytest`.
+- Add or upgrade dependencies with `uv add <package>` / `uv lock --upgrade-package <package>`; commit `pyproject.toml` and `uv.lock` together.
 - utils.py contains helpers: get_state_from_coordinates and convert_keys_to_camel_case.
 - Logging uses standard Python logging at INFO level.
 

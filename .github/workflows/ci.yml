@@ -9,12 +9,22 @@ on:
 permissions:
   contents: read
 
+# Vercel Remote Cache; turbo falls back to the local .turbo cache when these are unset.
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  # On pull requests, only run tasks for packages changed since the base branch.
+  TURBO_FILTER: ${{ github.event_name == 'pull_request' && '--affected' || '' }}
+
 jobs:
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # --affected diffs against the base branch.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
       - uses: ./.github/actions/setup
 
@@ -28,14 +38,11 @@ jobs:
       - name: Format
         run: pnpm format:check
 
-      - name: Lint
-        run: pnpm lint
+      - name: Unused files and dependencies
+        run: pnpm knip
 
-      - name: Typecheck
-        run: pnpm check-types
-
-      - name: Test
-        run: pnpm test
+      - name: Lint, typecheck and test
+        run: pnpm turbo run lint check-types test $TURBO_FILTER
 
       # drizzle-kit generate never connects; the URL only satisfies drizzle.config.ts.
       - name: Migration drift
@@ -99,6 +106,8 @@ jobs:
       NEXT_PUBLIC_APP_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
       - uses: ./.github/actions/setup
 
@@ -120,7 +129,7 @@ jobs:
         run: psql "$DATABASE_URL" -c "INSERT INTO events (id, format, name, rank) VALUES ('333', 'time', '3x3x3 Cube', 10) ON CONFLICT DO NOTHING;"
 
       - name: Build
-        run: pnpm build
+        run: pnpm turbo run build $TURBO_FILTER
 
   backend:
     runs-on: ubuntu-latest
@@ -131,21 +140,17 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: |
-            apps/backend/requirements.txt
-            apps/backend/requirements-dev.txt
+          working-directory: apps/backend
 
-      - run: pip install -r requirements.txt -r requirements-dev.txt
+      - run: uv sync --locked
 
       - name: Lint
-        run: ruff check .
+        run: uv run ruff check .
 
       - name: Format
-        run: ruff format --check .
+        run: uv run ruff format --check .
 
       - name: Test
-        run: pytest
+        run: uv run pytest

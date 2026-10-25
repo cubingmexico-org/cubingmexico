@@ -2,35 +2,30 @@ packages:
   - "apps/*"
   - "packages/*"
 
+# Don't resolve versions published less than a day ago (minutes); limits exposure to compromised releases.
+minimumReleaseAge: 1440
+
 # Versions shared by two or more workspace packages. Reference them with "catalog:".
 catalog:
   "@cubing/icons": "^1.1.2"
   "@icons-pack/react-simple-icons": "^13.13.0"
-  "@radix-ui/react-slot": "^1.2.3"
-  "@radix-ui/react-tooltip": "^1.2.8"
   "@types/node": "^24.9.1"
-  "@types/papaparse": "^5.3.15"
   "@types/react": "^19.3.0"
   "@types/react-dom": "^19.3.0"
   "@vercel/analytics": "^1.3.2"
   better-auth: "^1.4.18"
   date-fns: "^4.1.0"
-  dotenv: "^16.4.7"
   drizzle-orm: "^0.44.7"
   eslint: "^9.39.1"
-  jszip: "^3.10.1"
   lucide-react: "^0.548.0"
   next: "16.4.1"
   next-themes: "^0.4.6"
-  papaparse: "^5.4.1"
   postgres: "^3.4.7"
   react: "^19.3.1"
   react-day-picker: "9.11.1"
   react-dom: "^19.3.1"
   recharts: "^2.15.4"
   sonner: "^2.0.7"
-  tsx: "^4.20.6"
   typescript: "^5.9.3"
-  vaul: "^1.1.2"
   vitest: "^3.2.4"
   zod: "^4.1.12"

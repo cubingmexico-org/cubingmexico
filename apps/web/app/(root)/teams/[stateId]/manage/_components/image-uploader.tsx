@@ -70,7 +70,7 @@ export function ImageUploader({ stateId }: { stateId: string }) {
         onChange={(e) => {
           const files = e.target.files;
           if (files && files.length > 0) {
-            handleUpload(Array.from(files));
+            void handleUpload(Array.from(files));
           }
         }}
         ref={fileInputRef}
