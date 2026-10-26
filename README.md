@@ -171,7 +171,7 @@ pnpm services:up
 ## Tech Stack
 
 - **Framework:** Next.js 16 with App Router
-- **Language:** TypeScript 5.7
+- **Language:** TypeScript 5.9
 - **Package Manager:** pnpm
 - **Build System:** Turborepo
 - **UI Components:** shadcn/ui + Radix UI
@@ -190,12 +190,12 @@ Add components to the shared UI package:
 pnpm dlx shadcn@latest add button -c packages/ui
 ```
 
-This places components in `packages/ui/src/components/ui/`.
+This places components in `packages/ui/src/components/`.
 
 ### Using UI Components
 
 ```tsx
-import { Button } from "@workspace/ui/components/ui/button";
+import { Button } from "@workspace/ui/components/button";
 ```
 
 ## Additional Resources

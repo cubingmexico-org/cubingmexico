@@ -66,13 +66,31 @@ import Toolbar from "./toolbar";
 import suggestionPodiumEs from "./mentions/suggestions/suggestion-podium";
 import suggestionParticipationEs from "./mentions/suggestions/suggestion-participation";
 import Submenu from "./submenu";
-import {
-  getBottomMarginValue,
-  getLeftMarginValue,
-  getRightMarginValue,
-  getTopMarginValue,
-} from "./margin-classes";
 import { isSavedDocumentFile, type SavedDocumentFile } from "./saved-document";
+
+const MAX_PAGE_MARGIN = 200;
+
+// Only [left, top] or [left, top, right, bottom] arrays are applied in the editor.
+function marginsToPadding(pageMargins: Margins): string {
+  if (!Array.isArray(pageMargins)) {
+    return "";
+  }
+
+  const sides: [string, number | undefined][] = [
+    ["left", pageMargins[0]],
+    ["top", pageMargins[1]],
+    ["right", pageMargins.length === 4 ? pageMargins[2] : undefined],
+    ["bottom", pageMargins.length === 4 ? pageMargins[3] : undefined],
+  ];
+
+  return sides
+    .filter(
+      (side): side is [string, number] =>
+        side[1] !== undefined && side[1] >= 0 && side[1] <= MAX_PAGE_MARGIN,
+    )
+    .map(([side, value]) => `padding-${side}: ${value}pt; `)
+    .join("");
+}
 
 interface TiptapProps {
   content: JSONContent;
@@ -152,36 +170,6 @@ export default function Tiptap({
         class: cn(
           "shadow bg-white text-black focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 overflow-y-clip",
           {
-            [getLeftMarginValue(
-              Array.isArray(pageMargins) ? pageMargins[0] : 0,
-            )]:
-              Array.isArray(pageMargins) &&
-              pageMargins[0] >= 0 &&
-              pageMargins[0] <= 200,
-            [getTopMarginValue(
-              Array.isArray(pageMargins) ? pageMargins[1] : 0,
-            )]:
-              Array.isArray(pageMargins) &&
-              pageMargins[1] >= 0 &&
-              pageMargins[1] <= 200,
-            [getRightMarginValue(
-              Array.isArray(pageMargins) && pageMargins.length === 4
-                ? pageMargins[2]
-                : 0,
-            )]:
-              Array.isArray(pageMargins) &&
-              pageMargins.length === 4 &&
-              pageMargins[2] >= 0 &&
-              pageMargins[2] <= 200,
-            [getBottomMarginValue(
-              Array.isArray(pageMargins) && pageMargins.length === 4
-                ? pageMargins[3]
-                : 0,
-            )]:
-              Array.isArray(pageMargins) &&
-              pageMargins.length === 4 &&
-              pageMargins[3] >= 0 &&
-              pageMargins[3] <= 200,
             "w-[612pt] h-[792pt]":
               pageSize === "LETTER" && pageOrientation === "portrait",
             "w-[792pt] h-[612pt]":
@@ -192,9 +180,11 @@ export default function Tiptap({
               pageSize === "A4" && pageOrientation === "landscape",
           },
         ),
-        style: background
-          ? `background-image: url(${background}); background-size: contain; background-repeat: no-repeat; background-position: center;`
-          : "",
+        style:
+          marginsToPadding(pageMargins) +
+          (background
+            ? `background-image: url(${background}); background-size: contain; background-repeat: no-repeat; background-position: center;`
+            : ""),
       },
     },
     content,

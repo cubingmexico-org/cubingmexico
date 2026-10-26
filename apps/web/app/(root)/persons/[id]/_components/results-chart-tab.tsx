@@ -29,14 +29,25 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { roundRank, roundTypeLabel } from "@/lib/utils";
 import {
-  decodeMultiBlind,
-  formatAttemptValue,
-  formatTime333mbf,
-  roundRank,
-  roundTypeLabel,
-} from "@/lib/utils";
-import { cn } from "@workspace/ui/lib/utils";
+  attemptToChartValue,
+  calculateAoN,
+  calculateDeviation,
+  chartUnit,
+  formatDisplayValue,
+  formatSolveTooltipValue,
+  formatTotalTime,
+  isHigherBetter,
+  totalLabel,
+  yAxisTick,
+} from "@/lib/solve-chart";
+import { SolveChartEventPicker } from "@/components/solve-chart/solve-chart-event-picker";
+import { SolveChartLegend } from "@/components/solve-chart/solve-chart-legend";
+import {
+  SolveChartTooltipCard,
+  type SolveChartTooltipRow,
+} from "@/components/solve-chart/solve-chart-tooltip-card";
 import type {
   PersonResultsByEventGroup,
   PersonResultsEventOption,
@@ -62,129 +73,6 @@ type SessionPoint = {
   bestAo50: number | null;
   bestAo100: number | null;
 };
-
-function isHigherBetter(eventId: string): boolean {
-  return eventId === "333mbf";
-}
-
-// Converts a raw attempt value into a numeric value suitable for the Y axis.
-// Non-positive values (DNF / DNS / skipped) become null so the line shows a gap.
-function attemptToChartValue(eventId: string, value: number): number | null {
-  if (value <= 0) {
-    return null;
-  }
-
-  if (eventId === "333fm") {
-    return value; // move count
-  }
-
-  if (eventId === "333mbf") {
-    return decodeMultiBlind(value)?.points ?? null;
-  }
-
-  return value / 100; // centiseconds -> seconds
-}
-
-// Calculates WCA trimmed mean for AoN (Average of N)
-function calculateAoN(solves: (number | null)[], N: number): number | null {
-  if (solves.length < N) return null;
-  const window = solves.slice(solves.length - N);
-  const dnfCount = window.filter((v) => v === null).length;
-
-  let trimCount = 1;
-  if (N >= 20) {
-    trimCount = Math.ceil(N * 0.05); // 50 -> 3, 100 -> 5
-  } else if (N <= 3) {
-    trimCount = 0;
-  }
-
-  if (dnfCount > trimCount) {
-    return null;
-  }
-
-  const validVals = window
-    .filter((v): v is number => v !== null)
-    .sort((a, b) => a - b);
-
-  const validToTrimFromTop = trimCount - dnfCount;
-  const trimmed = validVals.slice(
-    trimCount,
-    validVals.length - validToTrimFromTop,
-  );
-
-  if (trimmed.length === 0) return null;
-  const sum = trimmed.reduce((acc, val) => acc + val, 0);
-  return sum / trimmed.length;
-}
-
-// Calculates standard deviation of an array of numbers
-function calculateDeviation(values: number[]): number | null {
-  if (values.length < 2) return null;
-  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-  const variance =
-    values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) /
-    (values.length - 1);
-  return Math.sqrt(variance);
-}
-
-// Helper to format values for table and tooltip display
-function formatDisplayValue(eventId: string, val: number | null): string {
-  if (val === null || Number.isNaN(val) || !Number.isFinite(val)) {
-    return "—";
-  }
-  if (eventId === "333fm") {
-    return val.toFixed(2).replace(/\.00$/, "");
-  }
-  if (eventId === "333mbf") {
-    return Number.isInteger(val) ? `${val}` : val.toFixed(2);
-  }
-  return (
-    formatAttemptValue(eventId, Math.round(val * 100)) ?? `${val.toFixed(2)}`
-  );
-}
-
-function formatSolveTooltipValue(eventId: string, rawSolve: number): string {
-  if (eventId === "333mbf" && rawSolve > 0) {
-    return formatTime333mbf(rawSolve);
-  }
-  return formatDisplayValue(eventId, attemptToChartValue(eventId, rawSolve));
-}
-
-// Helper to format total accumulated time / moves / points across all solves
-function formatTotalTime(eventId: string, val: number | null): string {
-  if (val === null || Number.isNaN(val) || !Number.isFinite(val)) {
-    return "—";
-  }
-  if (eventId === "333fm") {
-    return `${Math.round(val).toLocaleString("es-MX")} movs`;
-  }
-  if (eventId === "333mbf") {
-    return `${Math.round(val).toLocaleString("es-MX")} pts`;
-  }
-
-  if (val < 60) {
-    return `${val.toFixed(2)}s`;
-  }
-
-  const seconds = val % 60;
-  const totalMinutes = Math.floor(val / 60);
-  const minutes = totalMinutes % 60;
-  const totalHours = Math.floor(totalMinutes / 60);
-  const hours = totalHours % 24;
-  const days = Math.floor(totalHours / 24);
-
-  const secStr = seconds.toFixed(2).padStart(5, "0");
-
-  if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m ${secStr}s`;
-  }
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${secStr}s`;
-  }
-
-  return `${minutes}m ${secStr}s`;
-}
 
 export function PersonResultsChartTab({
   eventOptions,
@@ -420,12 +308,7 @@ export function PersonResultsChartTab({
         : Math.min(...validValues)
       : null;
 
-  const unit =
-    selectedResults?.eventId === "333fm"
-      ? "movs"
-      : selectedResults?.eventId === "333mbf"
-        ? "pts"
-        : "s";
+  const unit = chartUnit(selectedResults?.eventId ?? "");
 
   const chartConfig = {
     value: {
@@ -464,19 +347,11 @@ export function PersonResultsChartTab({
   return (
     <Card>
       <CardHeader className="space-y-6">
-        <div className="flex flex-wrap justify-center gap-2 text-muted-foreground">
-          {eventOptions.map((group) => (
-            <button
-              key={group.eventId}
-              type="button"
-              onClick={() => onEventSelect?.(group.eventId)}
-              className={cn(
-                `cubing-icon event-${group.eventId} text-3xl hover:text-primary/50 transition-colors`,
-                selectedEventId === group.eventId && "text-primary",
-              )}
-            />
-          ))}
-        </div>
+        <SolveChartEventPicker
+          eventOptions={eventOptions}
+          selectedEventId={selectedEventId}
+          onEventSelect={onEventSelect}
+        />
         <CardTitle className="flex items-center gap-2">
           <span
             className={`cubing-icon event-${selectedResults.eventId} text-xl`}
@@ -522,20 +397,9 @@ export function PersonResultsChartTab({
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  tickFormatter={(value: number) => {
-                    if (selectedResults.eventId === "333fm") {
-                      return `${value}`;
-                    }
-                    if (selectedResults.eventId === "333mbf") {
-                      return `${Math.round(value)}`;
-                    }
-                    return (
-                      formatAttemptValue(
-                        selectedResults.eventId,
-                        Math.round(value * 100),
-                      ) ?? `${value}`
-                    );
-                  }}
+                  tickFormatter={(value: number) =>
+                    yAxisTick(selectedResults.eventId, value)
+                  }
                 />
                 {bestValue !== null && (
                   <ReferenceLine
@@ -569,11 +433,7 @@ export function PersonResultsChartTab({
                     const ptsSuffix =
                       selectedResults.eventId === "333mbf" ? ` ${unit}` : "";
 
-                    const rows: {
-                      label: string;
-                      color: string;
-                      value: string;
-                    }[] = [];
+                    const rows: SolveChartTooltipRow[] = [];
 
                     if (point.value !== null) {
                       rows.push({
@@ -623,33 +483,15 @@ export function PersonResultsChartTab({
                     }
 
                     return (
-                      <div className="rounded-lg border border-border bg-background px-3 py-2 shadow-md text-xs">
-                        <p className="mb-1.5 font-semibold text-foreground">
-                          #{point.solveNumber} · {point.competitionName}
-                          {point.round ? ` · ${point.round}` : ""}
-                        </p>
-                        <div className="flex flex-col gap-1">
-                          {rows.map((row) => (
-                            <div
-                              key={row.label}
-                              className="flex items-center justify-between gap-4"
-                            >
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className="h-2 w-2 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: row.color }}
-                                />
-                                <span className="text-muted-foreground">
-                                  {row.label}
-                                </span>
-                              </div>
-                              <span className="font-mono font-medium text-foreground">
-                                {row.value}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      <SolveChartTooltipCard
+                        title={
+                          <>
+                            #{point.solveNumber} · {point.competitionName}
+                            {point.round ? ` · ${point.round}` : ""}
+                          </>
+                        }
+                        rows={rows}
+                      />
                     );
                   }}
                 />
@@ -764,24 +606,17 @@ export function PersonResultsChartTab({
               </LineChart>
             </ChartContainer>
 
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-6 text-xs font-medium text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-foreground border border-muted-foreground/30 inline-block" />
-                <span>Resoluciones</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#facc15] inline-block" />
-                <span>Mejor</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ef4444] inline-block" />
-                <span>Ao50</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#22c55e] inline-block" />
-                <span>Ao100</span>
-              </div>
-            </div>
+            <SolveChartLegend
+              items={[
+                {
+                  label: "Resoluciones",
+                  colorClass: "border border-muted-foreground/30 bg-foreground",
+                },
+                { label: "Mejor", colorClass: "bg-[#facc15]" },
+                { label: "Ao50", colorClass: "bg-[#ef4444]" },
+                { label: "Ao100", colorClass: "bg-[#22c55e]" },
+              ]}
+            />
 
             {/* Statistics Summary Table */}
             {stats && (
@@ -882,11 +717,7 @@ export function PersonResultsChartTab({
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">
-                        {selectedResults.eventId === "333fm"
-                          ? "Movimientos totales"
-                          : selectedResults.eventId === "333mbf"
-                            ? "Puntos totales"
-                            : "Tiempo total"}
+                        {totalLabel(selectedResults.eventId)}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {formatTotalTime(

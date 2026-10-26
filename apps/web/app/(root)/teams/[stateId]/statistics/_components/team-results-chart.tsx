@@ -31,14 +31,24 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { Skeleton } from "@workspace/ui/components/skeleton";
+import { roundRank, roundTypeLabel } from "@/lib/utils";
 import {
-  decodeMultiBlind,
-  formatAttemptValue,
-  formatTime333mbf,
-  roundRank,
-  roundTypeLabel,
-} from "@/lib/utils";
-import { cn } from "@workspace/ui/lib/utils";
+  attemptToChartValue,
+  calculateDeviation,
+  chartUnit,
+  formatDisplayValue,
+  formatSolveTooltipValue,
+  formatTotalTime,
+  isHigherBetter,
+  totalLabel,
+  yAxisTick,
+} from "@/lib/solve-chart";
+import { SolveChartEventPicker } from "@/components/solve-chart/solve-chart-event-picker";
+import { SolveChartLegend } from "@/components/solve-chart/solve-chart-legend";
+import {
+  SolveChartTooltipCard,
+  type SolveChartTooltipRow,
+} from "@/components/solve-chart/solve-chart-tooltip-card";
 import { loadTeamCompetitionResults } from "../_lib/actions";
 import type {
   TeamResultsByEventGroup,
@@ -60,89 +70,6 @@ type SessionPoint = {
   best: number | null;
   isStateRecord: boolean;
 };
-
-function isHigherBetter(eventId: string): boolean {
-  return eventId === "333mbf";
-}
-
-function attemptToChartValue(eventId: string, value: number): number | null {
-  if (value <= 0) {
-    return null;
-  }
-
-  if (eventId === "333fm") {
-    return value;
-  }
-
-  if (eventId === "333mbf") {
-    return decodeMultiBlind(value)?.points ?? null;
-  }
-
-  return value / 100;
-}
-
-function calculateDeviation(values: number[]): number | null {
-  if (values.length < 2) return null;
-  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-  const variance =
-    values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) /
-    (values.length - 1);
-  return Math.sqrt(variance);
-}
-
-function formatDisplayValue(eventId: string, val: number | null): string {
-  if (val === null || Number.isNaN(val) || !Number.isFinite(val)) {
-    return "—";
-  }
-  if (eventId === "333fm") {
-    return val.toFixed(2).replace(/\.00$/, "");
-  }
-  if (eventId === "333mbf") {
-    return Number.isInteger(val) ? `${val}` : val.toFixed(2);
-  }
-  return (
-    formatAttemptValue(eventId, Math.round(val * 100)) ?? `${val.toFixed(2)}`
-  );
-}
-
-function formatSolveTooltipValue(eventId: string, rawSolve: number): string {
-  if (eventId === "333mbf" && rawSolve > 0) {
-    return formatTime333mbf(rawSolve);
-  }
-  return formatDisplayValue(eventId, attemptToChartValue(eventId, rawSolve));
-}
-
-function formatTotalTime(eventId: string, val: number | null): string {
-  if (val === null || Number.isNaN(val) || !Number.isFinite(val)) {
-    return "—";
-  }
-  if (eventId === "333fm") {
-    return `${Math.round(val).toLocaleString("es-MX")} movs`;
-  }
-  if (eventId === "333mbf") {
-    return `${Math.round(val).toLocaleString("es-MX")} pts`;
-  }
-
-  if (val < 60) {
-    return `${val.toFixed(2)}s`;
-  }
-
-  const seconds = val % 60;
-  const totalMinutes = Math.floor(val / 60);
-  const minutes = totalMinutes % 60;
-  const totalHours = Math.floor(totalMinutes / 60);
-  const hours = totalHours % 24;
-  const days = Math.floor(totalHours / 24);
-  const secStr = seconds.toFixed(2).padStart(5, "0");
-
-  if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m ${secStr}s`;
-  }
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${secStr}s`;
-  }
-  return `${minutes}m ${secStr}s`;
-}
 
 function TeamResultsChartView({
   eventOptions,
@@ -308,12 +235,7 @@ function TeamResultsChartView({
         : Math.min(...validValues)
       : null;
 
-  const unit =
-    selectedResults?.eventId === "333fm"
-      ? "movs"
-      : selectedResults?.eventId === "333mbf"
-        ? "pts"
-        : "s";
+  const unit = chartUnit(selectedResults?.eventId ?? "");
 
   const chartConfig = {
     value: {
@@ -344,19 +266,11 @@ function TeamResultsChartView({
   return (
     <Card>
       <CardHeader className="space-y-6">
-        <div className="flex flex-wrap justify-center gap-2 text-muted-foreground">
-          {eventOptions.map((group) => (
-            <button
-              key={group.eventId}
-              type="button"
-              onClick={() => onEventSelect(group.eventId)}
-              className={cn(
-                `cubing-icon event-${group.eventId} text-3xl hover:text-primary/50 transition-colors`,
-                selectedEventId === group.eventId && "text-primary",
-              )}
-            />
-          ))}
-        </div>
+        <SolveChartEventPicker
+          eventOptions={eventOptions}
+          selectedEventId={selectedEventId}
+          onEventSelect={onEventSelect}
+        />
         <CardTitle className="flex flex-wrap items-center gap-2">
           {selectedResults ? (
             <>
@@ -417,20 +331,9 @@ function TeamResultsChartView({
                   tickLine={false}
                   axisLine={false}
                   tickMargin={8}
-                  tickFormatter={(value: number) => {
-                    if (selectedResults.eventId === "333fm") {
-                      return `${value}`;
-                    }
-                    if (selectedResults.eventId === "333mbf") {
-                      return `${Math.round(value)}`;
-                    }
-                    return (
-                      formatAttemptValue(
-                        selectedResults.eventId,
-                        Math.round(value * 100),
-                      ) ?? `${value}`
-                    );
-                  }}
+                  tickFormatter={(value: number) =>
+                    yAxisTick(selectedResults.eventId, value)
+                  }
                 />
                 {bestValue !== null && (
                   <ReferenceLine
@@ -459,11 +362,7 @@ function TeamResultsChartView({
                       selectedResults.eventId !== "333fm" &&
                       selectedResults.eventId !== "333mbf";
 
-                    const rows: {
-                      label: string;
-                      color: string;
-                      value: string;
-                    }[] = [];
+                    const rows: SolveChartTooltipRow[] = [];
 
                     if (point.value !== null) {
                       rows.push({
@@ -491,36 +390,20 @@ function TeamResultsChartView({
                     }
 
                     return (
-                      <div className="rounded-lg border border-border bg-background px-3 py-2 text-xs shadow-md">
-                        <p className="mb-1.5 font-semibold text-foreground">
-                          #{point.solveNumber} · {point.personName}
-                        </p>
-                        <p className="mb-1.5 text-muted-foreground">
-                          {point.competitionName}
-                          {point.round ? ` · ${point.round}` : ""}
-                        </p>
-                        <div className="flex flex-col gap-1">
-                          {rows.map((row) => (
-                            <div
-                              key={row.label}
-                              className="flex items-center justify-between gap-4"
-                            >
-                              <div className="flex items-center gap-1.5">
-                                <span
-                                  className="h-2 w-2 shrink-0 rounded-full"
-                                  style={{ backgroundColor: row.color }}
-                                />
-                                <span className="text-muted-foreground">
-                                  {row.label}
-                                </span>
-                              </div>
-                              <span className="font-mono font-medium text-foreground">
-                                {row.value}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      <SolveChartTooltipCard
+                        title={
+                          <>
+                            #{point.solveNumber} · {point.personName}
+                          </>
+                        }
+                        subtitle={
+                          <>
+                            {point.competitionName}
+                            {point.round ? ` · ${point.round}` : ""}
+                          </>
+                        }
+                        rows={rows}
+                      />
                     );
                   }}
                 />
@@ -565,16 +448,15 @@ function TeamResultsChartView({
               </LineChart>
             </ChartContainer>
 
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-6 text-xs font-medium text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-2.5 w-2.5 rounded-full border border-muted-foreground/30 bg-foreground" />
-                <span>Resoluciones</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#facc15]" />
-                <span>SR / Mejor del team</span>
-              </div>
-            </div>
+            <SolveChartLegend
+              items={[
+                {
+                  label: "Resoluciones",
+                  colorClass: "border border-muted-foreground/30 bg-foreground",
+                },
+                { label: "SR / Mejor del team", colorClass: "bg-[#facc15]" },
+              ]}
+            />
 
             {stats ? (
               <div className="mt-8 rounded-md border">
@@ -624,11 +506,7 @@ function TeamResultsChartView({
                     </TableRow>
                     <TableRow>
                       <TableCell className="font-medium">
-                        {selectedResults.eventId === "333fm"
-                          ? "Movimientos totales"
-                          : selectedResults.eventId === "333mbf"
-                            ? "Puntos totales"
-                            : "Tiempo total"}
+                        {totalLabel(selectedResults.eventId)}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {formatTotalTime(

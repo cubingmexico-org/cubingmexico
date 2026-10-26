@@ -1,46 +1,32 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
-  "globalEnv": ["NODE_ENV", "VERCEL_ENV"],
+  "globalEnv": [
+    "NODE_ENV",
+    "VERCEL_ENV",
+    "API_URL",
+    "AUTH_COOKIE_DOMAIN",
+    "AUTH_TRUSTED_ORIGINS",
+    "BACKEND_URL",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "CRON_SECRET",
+    "DATABASE_URL",
+    "NEXT_PUBLIC_APP_URL",
+    "SUPERADMIN_WCA_IDS",
+    "UPLOADTHING_TOKEN",
+    "WCA_CLIENT_ID",
+    "WCA_CLIENT_SECRET"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "env": [
-        "API_URL",
-        "AUTH_COOKIE_DOMAIN",
-        "AUTH_TRUSTED_ORIGINS",
-        "BACKEND_URL",
-        "BETTER_AUTH_SECRET",
-        "BETTER_AUTH_URL",
-        "CRON_SECRET",
-        "DATABASE_URL",
-        "NEXT_PUBLIC_APP_URL",
-        "SUPERADMIN_WCA_IDS",
-        "UPLOADTHING_TOKEN",
-        "WCA_CLIENT_ID",
-        "WCA_CLIENT_SECRET"
-      ],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
       "outputs": [".next/**", "!.next/cache/**"]
     },
     "lint": {},
     "check-types": {},
     "test": {
-      "env": [
-        "API_URL",
-        "AUTH_COOKIE_DOMAIN",
-        "AUTH_TRUSTED_ORIGINS",
-        "BACKEND_URL",
-        "BETTER_AUTH_SECRET",
-        "BETTER_AUTH_URL",
-        "CRON_SECRET",
-        "DATABASE_URL",
-        "NEXT_PUBLIC_APP_URL",
-        "SUPERADMIN_WCA_IDS",
-        "UPLOADTHING_TOKEN",
-        "WCA_CLIENT_ID",
-        "WCA_CLIENT_SECRET"
-      ],
       "inputs": ["$TURBO_DEFAULT$"],
       "outputs": []
     },
@@ -50,22 +36,7 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true,
-      "env": [
-        "API_URL",
-        "AUTH_COOKIE_DOMAIN",
-        "AUTH_TRUSTED_ORIGINS",
-        "BACKEND_URL",
-        "BETTER_AUTH_SECRET",
-        "BETTER_AUTH_URL",
-        "CRON_SECRET",
-        "DATABASE_URL",
-        "NEXT_PUBLIC_APP_URL",
-        "SUPERADMIN_WCA_IDS",
-        "UPLOADTHING_TOKEN",
-        "WCA_CLIENT_ID",
-        "WCA_CLIENT_SECRET"
-      ]
+      "persistent": true
     }
   }
 }
