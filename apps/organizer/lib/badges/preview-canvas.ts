@@ -1,6 +1,6 @@
 import QRCode from "qrcode";
 import type { CanvasElement } from "@/types/canvas";
-import type { ExtendedPerson, WCIF } from "@/types/wcif";
+import type { EventId, ExtendedPerson, WCIF } from "@/types/wcif";
 import type { State, Team } from "@/db/queries";
 import { getPrimaryRoleLabel } from "@/lib/person-roles";
 import { getBadgeGroupStationFields } from "@/lib/groups/badge-fields";
@@ -16,12 +16,22 @@ import {
 } from "@/lib/canvas-draw";
 
 export interface BadgePreviewData {
+  /** A person without a name renders a blank badge: no placeholders, person images or groups QR. */
   person: ExtendedPerson;
   states: State[];
   teams: Team[];
   wcif?: WCIF;
   competitionId: string;
   competitionLogoUrl?: string | null;
+  /** Orders event icons, and lists them all on blank badges. */
+  competitionEventIds?: EventId[];
+}
+
+const PLACEHOLDER_PATTERN =
+  /@(nombre|wcaid|rol|id|país|estado|team|grupo|estación)/gi;
+
+function isBlankBadge(person: ExtendedPerson): boolean {
+  return !person.name;
 }
 
 const QR_LOGOS: Partial<
@@ -67,6 +77,8 @@ export async function createCanvasForSide({
       };
       img.onerror = () => {
         console.error("Failed to load background image");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         resolve();
       };
     });
@@ -174,6 +186,8 @@ function replacePlaceholders(
   content: string,
   { person, states, teams, wcif }: BadgePreviewData,
 ): string {
+  if (isBlankBadge(person)) return content.replace(PLACEHOLDER_PATTERN, "");
+
   content = content.replace(/@nombre/gi, person.name);
   content = content.replace(/@wcaid/gi, person.wcaId || "Nuevo");
 
@@ -275,10 +289,17 @@ function drawTintedImage(
 async function drawEventIcons(
   ctx: CanvasRenderingContext2D,
   element: CanvasElement,
-  person: ExtendedPerson,
+  { person, competitionEventIds }: BadgePreviewData,
 ) {
-  const personEventIds = person.registration?.eventIds || [];
+  const personEventIds = isBlankBadge(person)
+    ? [...(competitionEventIds ?? [])]
+    : [...(person.registration?.eventIds ?? [])];
   if (personEventIds.length === 0) return;
+  if (competitionEventIds) {
+    personEventIds.sort(
+      (a, b) => competitionEventIds.indexOf(a) - competitionEventIds.indexOf(b),
+    );
+  }
 
   const spacing = 5;
   const iconSize = element.height;
@@ -319,6 +340,12 @@ async function drawEventIcons(
   );
 }
 
+const PERSON_IMAGES = new Set([
+  "/avatar.png",
+  "/team-logo.svg",
+  "/country.svg",
+]);
+
 function resolveImageUrl(
   imageUrl: string,
   { person, teams, competitionLogoUrl }: BadgePreviewData,
@@ -349,7 +376,11 @@ async function drawImage(
   if (!element.imageUrl) return;
 
   if (element.imageUrl === "/events.svg") {
-    await drawEventIcons(ctx, element, data.person);
+    await drawEventIcons(ctx, element, data);
+    return;
+  }
+
+  if (isBlankBadge(data.person) && PERSON_IMAGES.has(element.imageUrl)) {
     return;
   }
 
@@ -412,6 +443,7 @@ function getQrData(
     case "wca-integrated-results":
       return `https://www.worldcubeassociation.org/competitions/${competitionId}/live`;
     case "competition-groups":
+      if (isBlankBadge(person)) return undefined;
       return `https://www.competitiongroups.com/competitions/${competitionId}/persons/${person.registrantId}`;
     default:
       return element.qrData;
