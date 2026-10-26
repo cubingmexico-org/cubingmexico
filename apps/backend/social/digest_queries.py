@@ -139,16 +139,16 @@ def fetch_weekly_digest_payload(cur, week_key: str) -> dict | None:
             f"""
             SELECT
                 SUM(
-                    (r.regional_single_record = 'WR')::int
-                    + (r.regional_average_record = 'WR')::int
+                    (COALESCE(r.regional_single_record, '') = 'WR')::int
+                    + (COALESCE(r.regional_average_record, '') = 'WR')::int
                 )::int AS wr,
                 SUM(
-                    (r.regional_single_record = 'NAR')::int
-                    + (r.regional_average_record = 'NAR')::int
+                    (COALESCE(r.regional_single_record, '') = 'NAR')::int
+                    + (COALESCE(r.regional_average_record, '') = 'NAR')::int
                 )::int AS nar,
                 SUM(
-                    (r.regional_single_record = 'NR')::int
-                    + (r.regional_average_record = 'NR')::int
+                    (COALESCE(r.regional_single_record, '') = 'NR')::int
+                    + (COALESCE(r.regional_average_record, '') = 'NR')::int
                 )::int AS nr
             FROM results r
             WHERE r.competition_id = ANY(%s)
@@ -455,16 +455,16 @@ def fetch_year_recap_payload(cur, year: int) -> dict:
             f"""
             SELECT
                 SUM(
-                    (r.regional_single_record = 'WR')::int
-                    + (r.regional_average_record = 'WR')::int
+                    (COALESCE(r.regional_single_record, '') = 'WR')::int
+                    + (COALESCE(r.regional_average_record, '') = 'WR')::int
                 )::int AS wr,
                 SUM(
-                    (r.regional_single_record = 'NAR')::int
-                    + (r.regional_average_record = 'NAR')::int
+                    (COALESCE(r.regional_single_record, '') = 'NAR')::int
+                    + (COALESCE(r.regional_average_record, '') = 'NAR')::int
                 )::int AS nar,
                 SUM(
-                    (r.regional_single_record = 'NR')::int
-                    + (r.regional_average_record = 'NR')::int
+                    (COALESCE(r.regional_single_record, '') = 'NR')::int
+                    + (COALESCE(r.regional_average_record, '') = 'NR')::int
                 )::int AS nr
             FROM results r
             WHERE r.competition_id = ANY(%s)

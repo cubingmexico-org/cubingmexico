@@ -21,6 +21,20 @@ def insert_team(conn, state_id: str, name: str, **values: Any) -> None:
     _insert(conn, "teams", {"state_id": state_id, "name": name, **values})
 
 
+def insert_streak_rank(conn, person_id: str, scope: str, *, current: int, longest: int, rank: int = 1) -> None:
+    _insert(
+        conn,
+        "streak_ranks",
+        {
+            "rank": rank,
+            "person_id": person_id,
+            "scope": scope,
+            "current_streak": current,
+            "longest_streak": longest,
+        },
+    )
+
+
 def insert_event(conn, event_id: str, rank: int, *, format: str = "time") -> None:
     _insert(conn, "events", {"id": event_id, "format": format, "name": event_id, "rank": rank})
 
