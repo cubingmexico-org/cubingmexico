@@ -4,7 +4,6 @@
   "globalEnv": [
     "NODE_ENV",
     "VERCEL_ENV",
-    "API_URL",
     "AUTH_COOKIE_DOMAIN",
     "AUTH_TRUSTED_ORIGINS",
     "BACKEND_URL",

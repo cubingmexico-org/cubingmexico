@@ -26,7 +26,6 @@ flowchart LR
   backend -->|psycopg2| db
 
   web -->|"admin ops and social, CRON_SECRET"| backend
-  organizer -->|"API_URL: teams, states"| backend
   scheduler -->|"cron jobs, CRON_SECRET"| backend
   backend --> secrets
 
@@ -53,7 +52,7 @@ flowchart LR
 - Bulk recomputation across all states: state ranks, state records, Kinch, sum of ranks, streaks, nemesis stats, and competition round dates (WCIF).
 - Social posts: image rendering (PIL), captions, and publishing to Facebook and Instagram.
 - Every mutating endpoint is protected by `require_cron_auth` (bearer `CRON_SECRET`). Cloud Scheduler calls them, and so does the web superadmin panel through `BACKEND_URL`.
-- A small read API (`/teams`, `/states`, `/persons`, `/rank/...`) that the organizer app uses.
+- A small public read API (`/teams`, `/states`, `/persons`, `/rank/...`, `/competitor-states/...`). Nothing in this repo calls it anymore; it stays for external consumers.
 
 **web (Next.js)** ([apps/web](../apps/web))
 
@@ -66,7 +65,7 @@ flowchart LR
 **organizer (Next.js)** ([apps/organizer](../apps/organizer))
 
 - Printables (certificates, badges, scorecards), the competition desk, and groups. See [organizacion-roadmap.md](./organizacion-roadmap.md).
-- Reads WCIF from the WCA, its own designs from Postgres, and teams and states from the Flask backend.
+- Reads WCIF from the WCA, and its own designs, teams, states and competitors' states from Postgres via Drizzle. It doesn't call the Flask backend.
 
 ## Known duplication
 
@@ -75,7 +74,7 @@ State ranks and state records are computed in two places:
 - **Python:** [`routes/admin/state.py`](../apps/backend/routes/admin/state.py) and `update_all.py`, for all states after each WCA import.
 - **TypeScript:** `apps/web/lib/update-state-ranks.ts` and `update-state-records.ts`, for one state after roster changes.
 
-Nemesis counts are also computed twice: [`nemesis_stats.py`](../apps/backend/nemesis_stats.py) (all pairs, fed by `update_nemesis_stats`) and `apps/web/app/(root)/persons/_lib/nemesis-queries.ts` (one person at a time).
+Nemesis counts are also computed twice: [`nemesis_stats.py`](../apps/backend/nemesis_stats.py) (all pairs, fed by `update_nemesis_stats`) and `apps/web/app/(root)/persons/_lib/nemesis-queries.ts` (one person at a time). Both integration suites check them against [`fixtures/parity/nemesis.json`](../fixtures/parity/nemesis.json), in both event scopes.
 
 Both sides must apply the same rules: tie handling, official events, the 9i2 effective date, and the marker hierarchy described in [state-records.md](./state-records.md). An event is official when `events.rank < 800`, matching the WCA's `Event.official`. Use the shared helpers (`apps/web/lib/official-events.ts`, `OFFICIAL_EVENTS_SUBQUERY` in `apps/backend/common.py`) rather than event id lists. When you change ranking or record logic, update both implementations.
 

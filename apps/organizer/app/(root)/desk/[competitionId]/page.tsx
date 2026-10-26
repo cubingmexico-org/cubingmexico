@@ -107,7 +107,9 @@ export default async function Page({
   }
 
   const states = await getStates();
-  const competitorStates = await getCompetitorStates(competitionId);
+  const competitorStates = await getCompetitorStates(
+    wcif.persons.flatMap((person) => (person.wcaId ? [person.wcaId] : [])),
+  );
   const competitionLogoUrl = await getCompetitionLogoById(competitionId);
   const extendedPersons = enrichPersonsWithStates(
     wcif.persons,

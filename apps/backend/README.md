@@ -76,6 +76,8 @@ The app will be available at `http://localhost:5000`.
 
 ## Important API endpoints
 
+The read endpoints below are kept for external consumers. The apps in this repo read Postgres directly and don't call them.
+
 - **Competitions**
   - `GET /competitions` — List competitions (Mexico only) with pagination and filters
   - `GET /competitions/<competition_id>` — Get one competition (Mexico only) with related events, organizers, delegates, and championships

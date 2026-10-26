@@ -33,7 +33,7 @@ From the monorepo root:
 pnpm install
 ```
 
-Copy [`apps/organizer/.env.example`](./.env.example) to `apps/organizer/.env.local` and fill in WCA OAuth, Better Auth, `API_URL`, and `DATABASE_URL`.
+Copy [`apps/organizer/.env.example`](./.env.example) to `apps/organizer/.env.local` and fill in WCA OAuth, Better Auth, and `DATABASE_URL`.
 
 ### Database
 

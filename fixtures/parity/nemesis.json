@@ -1,0 +1,138 @@
+{
+  "description": "Nemesis counts per person and event scope. Checked by apps/backend/tests_integration/test_rankings_jobs.py (nemesis_stats job) and apps/web/app/(root)/persons/_lib/nemesis-queries.integration.test.ts (findNemesisReport / findNemesizedReport). B is a nemesis of A when B is strictly better in every slot (event, single|average) where A has a result.",
+  "events": [
+    { "id": "333", "rank": 10 },
+    { "id": "222", "rank": 20 },
+    { "id": "333ft", "rank": 996 },
+    { "id": "fto", "rank": 810 }
+  ],
+  "persons": [
+    "2020AAAA01",
+    "2020BBBB01",
+    "2020CCCC01",
+    "2020DDDD01",
+    "2020EEEE01",
+    "2020FFFF01"
+  ],
+  "ranks": [
+    {
+      "personId": "2020AAAA01",
+      "type": "single",
+      "eventId": "333",
+      "best": 800
+    },
+    {
+      "personId": "2020AAAA01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1000
+    },
+    {
+      "personId": "2020AAAA01",
+      "type": "single",
+      "eventId": "222",
+      "best": 300
+    },
+
+    {
+      "personId": "2020BBBB01",
+      "type": "single",
+      "eventId": "333",
+      "best": 900
+    },
+    {
+      "personId": "2020BBBB01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1100
+    },
+    {
+      "personId": "2020BBBB01",
+      "type": "single",
+      "eventId": "222",
+      "best": 400
+    },
+
+    {
+      "personId": "2020CCCC01",
+      "type": "single",
+      "eventId": "333",
+      "best": 800
+    },
+    {
+      "personId": "2020CCCC01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1200
+    },
+
+    {
+      "personId": "2020DDDD01",
+      "type": "single",
+      "eventId": "333",
+      "best": 950
+    },
+    {
+      "personId": "2020DDDD01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1300
+    },
+    {
+      "personId": "2020DDDD01",
+      "type": "single",
+      "eventId": "333ft",
+      "best": 2000
+    },
+
+    {
+      "personId": "2020EEEE01",
+      "type": "single",
+      "eventId": "333",
+      "best": 1000
+    },
+    {
+      "personId": "2020EEEE01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1400
+    },
+    {
+      "personId": "2020EEEE01",
+      "type": "single",
+      "eventId": "333ft",
+      "best": 1500
+    },
+
+    {
+      "personId": "2020FFFF01",
+      "type": "single",
+      "eventId": "333",
+      "best": 2000
+    },
+    {
+      "personId": "2020FFFF01",
+      "type": "single",
+      "eventId": "fto",
+      "best": 100
+    }
+  ],
+  "expected": {
+    "official": {
+      "2020AAAA01": { "nemesisCount": 0, "nemesizedCount": 4, "slotCount": 3 },
+      "2020BBBB01": { "nemesisCount": 1, "nemesizedCount": 3, "slotCount": 3 },
+      "2020CCCC01": { "nemesisCount": 0, "nemesizedCount": 3, "slotCount": 2 },
+      "2020DDDD01": { "nemesisCount": 3, "nemesizedCount": 2, "slotCount": 2 },
+      "2020EEEE01": { "nemesisCount": 4, "nemesizedCount": 1, "slotCount": 2 },
+      "2020FFFF01": { "nemesisCount": 5, "nemesizedCount": 0, "slotCount": 1 }
+    },
+    "all": {
+      "2020AAAA01": { "nemesisCount": 0, "nemesizedCount": 2, "slotCount": 3 },
+      "2020BBBB01": { "nemesisCount": 1, "nemesizedCount": 1, "slotCount": 3 },
+      "2020CCCC01": { "nemesisCount": 0, "nemesizedCount": 1, "slotCount": 2 },
+      "2020DDDD01": { "nemesisCount": 0, "nemesizedCount": 1, "slotCount": 3 },
+      "2020EEEE01": { "nemesisCount": 0, "nemesizedCount": 1, "slotCount": 3 },
+      "2020FFFF01": { "nemesisCount": 5, "nemesizedCount": 0, "slotCount": 1 }
+    }
+  }
+}

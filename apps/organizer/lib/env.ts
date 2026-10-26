@@ -5,7 +5,6 @@ import { z } from "zod";
 const envSchema = z.object({
   ...dbEnvSchema.shape,
   ...authEnvSchema.shape,
-  API_URL: z.url(),
   NEXT_PUBLIC_APP_URL: z.url(),
 });
 

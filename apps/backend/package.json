@@ -5,7 +5,8 @@
   "scripts": {
     "lint": "uv run --locked ruff check . && uv run --locked ruff format --check .",
     "check-types": "uv sync --locked && pyright",
-    "test": "uv run --locked pytest"
+    "test": "uv run --locked pytest",
+    "test:integration": "uv run --locked pytest tests_integration"
   },
   "devDependencies": {
     "pyright": "^1.1.414"

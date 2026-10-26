@@ -2,7 +2,13 @@ import type { WCIF } from "@/types/wcif";
 import type { Competition } from "@/types/wca";
 import { wcifLatestUrl } from "@/lib/wcif-api";
 import { db } from "@workspace/db";
-import { competition as competitionTable } from "@workspace/db/schema";
+import {
+  competition as competitionTable,
+  person as personTable,
+  state as stateTable,
+  team as teamTable,
+  type Team,
+} from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
 export async function getCompetitionsManagedByUser({
@@ -133,38 +139,11 @@ export async function getCompetitionLogosByIds(
   return map;
 }
 
-export interface Team {
-  name: string;
-  stateId: string;
-  description: string | null;
-  image: string | null;
-  coverImage: string | null;
-  founded: Date | null;
-  socialLinks: {
-    email?: string | undefined;
-    whatsapp?: string | undefined;
-    facebook?: string | undefined;
-    instagram?: string | undefined;
-    twitter?: string | undefined;
-    tiktok?: string | undefined;
-  } | null;
-  isActive: boolean;
-}
+export type { Team };
 
 export async function getTeams(): Promise<Team[]> {
   try {
-    const res = await fetch(`${process.env.API_URL}/teams`, {
-      next: { revalidate: 3600 },
-    });
-
-    if (!res.ok) {
-      console.error(`Error fetching teams: ${res.status} ${res.statusText}`);
-      return [];
-    }
-
-    const data = await res.json();
-
-    return Array.isArray(data) ? data : [];
+    return await db.select().from(teamTable);
   } catch (error) {
     console.error("Error fetching teams:", error);
     return [];
@@ -178,50 +157,29 @@ export interface State {
 
 export async function getStates(): Promise<State[]> {
   try {
-    const res = await fetch(`${process.env.API_URL}/states`, {
-      next: { revalidate: false },
-    });
-
-    if (!res.ok) {
-      console.error(`Error fetching states: ${res.status} ${res.statusText}`);
-      return [];
-    }
-
-    const data = await res.json();
-
-    return Array.isArray(data) ? data : [];
+    return await db
+      .select({ id: stateTable.id, name: stateTable.name })
+      .from(stateTable);
   } catch (error) {
     console.error("Error fetching states:", error);
     return [];
   }
 }
 
-export async function getCompetitorStates(competitionId: string): Promise<
-  {
-    wcaId: string;
-    stateId: string | null;
-  }[]
-> {
+export async function getCompetitorStates(
+  wcaIds: string[],
+): Promise<{ wcaId: string; stateId: string | null }[]> {
+  if (wcaIds.length === 0) {
+    return [];
+  }
+
   try {
-    const res = await fetch(
-      `${process.env.API_URL}/competitor-states/${competitionId}`,
-      {
-        next: { revalidate: 3600 },
-      },
-    );
-
-    if (!res.ok) {
-      console.error(
-        `Error fetching competitor states: ${res.status} ${res.statusText}`,
-      );
-      return [];
-    }
-
-    const data = await res.json();
-
-    return Array.isArray(data) ? data : [];
+    return await db
+      .select({ wcaId: personTable.wcaId, stateId: personTable.stateId })
+      .from(personTable)
+      .where(inArray(personTable.wcaId, wcaIds));
   } catch (error) {
-    console.error("Error fetching competitors:", error);
+    console.error("Error fetching competitor states:", error);
     return [];
   }
 }

@@ -5,5 +5,6 @@
 .env
 credentials
 tests
+tests_integration
 node_modules
 package.json
