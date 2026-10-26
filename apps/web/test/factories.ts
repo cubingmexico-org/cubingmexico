@@ -7,11 +7,15 @@ import {
   competition,
   competitionRoundDate,
   event,
+  kinchRanks,
+  nemesisStats,
   person,
   rankAverage,
   rankSingle,
   result,
   roundType,
+  streakRanks,
+  sumOfRanks,
 } from "@workspace/db/schema";
 
 type EventInsert = typeof event.$inferInsert;
@@ -31,6 +35,18 @@ export async function insertEvent(
     rank: 0,
     ...values,
   });
+}
+
+/** One event per scope bucket: official, deprecated, announced (never counted) and 333mbo (no cross-event column). */
+export async function insertScopeEvents() {
+  await insertEvent({ id: "333", name: "3x3x3 Cube", rank: 10 });
+  await insertEvent({ id: "333ft", name: "3x3x3 With Feet", rank: 996 });
+  await insertEvent({
+    id: "333mbo",
+    name: "3x3x3 Multi-Blind Old Style",
+    rank: 999,
+  });
+  await insertEvent({ id: "fto", name: "Face-Turning Octahedron", rank: 810 });
 }
 
 export async function insertPerson(
@@ -158,6 +174,49 @@ export async function insertCcResult(
       position,
     })),
   );
+}
+
+type KinchRankInsert = typeof kinchRanks.$inferInsert;
+type SumOfRanksInsert = typeof sumOfRanks.$inferInsert;
+type StreakRankInsert = typeof streakRanks.$inferInsert;
+type NemesisStatInsert = typeof nemesisStats.$inferInsert;
+
+export async function insertKinchRank(
+  values: Partial<KinchRankInsert> &
+    Pick<KinchRankInsert, "personId" | "scope">,
+) {
+  await db.insert(kinchRanks).values({
+    rank: 1,
+    overall: 0,
+    events: [],
+    ...values,
+  });
+}
+
+export async function insertSumOfRanks(
+  values: Partial<SumOfRanksInsert> &
+    Pick<SumOfRanksInsert, "personId" | "scope" | "resultType">,
+) {
+  await db.insert(sumOfRanks).values({
+    rank: 1,
+    overall: 0,
+    events: [],
+    ...values,
+  });
+}
+
+export async function insertStreakRank(
+  values: Partial<StreakRankInsert> &
+    Pick<StreakRankInsert, "personId" | "scope">,
+) {
+  await db.insert(streakRanks).values({ rank: 1, ...values });
+}
+
+export async function insertNemesisStat(
+  values: Partial<NemesisStatInsert> &
+    Pick<NemesisStatInsert, "personId" | "scope">,
+) {
+  await db.insert(nemesisStats).values(values);
 }
 
 export async function insertCompetitionRoundDate(
