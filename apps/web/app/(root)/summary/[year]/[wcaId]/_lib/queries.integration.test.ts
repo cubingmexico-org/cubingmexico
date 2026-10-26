@@ -84,6 +84,30 @@ describe("getAnnualSummary", () => {
     ).toEqual(["333"]);
   });
 
+  it("measures single and average improvements against the best before the year", async () => {
+    const summary = await getAnnualSummary(WCA_ID, 2019);
+
+    expect(summary!.personalBests).toMatchObject({
+      totalBreaks: 2,
+      singleBreaks: 1,
+      averageBreaks: 1,
+    });
+    expect(summary!.personalBests.singleImprovements).toEqual([
+      {
+        eventId: "333",
+        eventName: "333",
+        eventRank: 10,
+        before: 1500,
+        during: 1200,
+        improvement: 300,
+        improvementPercent: 20,
+      },
+    ]);
+    expect(summary!.personalBests.averageImprovements).toEqual([
+      expect.objectContaining({ before: 1700, during: 1400, improvement: 300 }),
+    ]);
+  });
+
   it("still counts a competition where only deprecated events were held", async () => {
     await insertCompetition({
       id: "FeetOnly2019",
