@@ -39,7 +39,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   try {
     const result = await triggerBackendJob(path);
-    if (result.ok) {
+    // 202: the backend started a Cloud Run Job, which revalidates these tags when it finishes.
+    if (result.ok && result.status !== 202) {
       for (const tag of OPS_JOB_CACHE_TAGS[path] ?? []) {
         revalidateTag(tag, "max");
       }

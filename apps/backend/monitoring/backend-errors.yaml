@@ -1,0 +1,22 @@
+displayName: Backend errors
+combiner: OR
+conditions:
+  # Python logging writes to stderr, which Cloud Run marks as ERROR for every line, so match the
+  # level from the log format ("%(asctime)s [%(levelname)s] ...") instead of `severity`.
+  - displayName: ERROR log line from the backend service or the update-all job
+    conditionMatchedLog:
+      filter: >-
+        (
+          (resource.type = "cloud_run_revision" AND resource.labels.service_name = "backend")
+          OR (resource.type = "cloud_run_job" AND resource.labels.job_name = "update-all")
+        )
+        AND textPayload:"[ERROR]"
+alertStrategy:
+  notificationRateLimit:
+    period: 3600s
+  autoClose: 86400s
+documentation:
+  mimeType: text/markdown
+  content: >-
+    The Flask backend or the update-all job logged an error (`log.error` / `log.exception`).
+    Open the matching entries in Logs Explorer for the traceback.

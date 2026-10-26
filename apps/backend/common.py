@@ -98,6 +98,13 @@ SOCIAL_POSTS_ENABLED = os.environ.get("SOCIAL_POSTS_ENABLED", "").lower() in (
 
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", "").rstrip("/") or None
 
+# Cloud Run Job resource name (projects/P/locations/R/jobs/J). When set, `/update-all` starts an
+# execution of it and returns right away; when unset (local dev, tests) it runs in the request.
+UPDATE_ALL_JOB = os.environ.get("UPDATE_ALL_JOB") or None
+
+# Public origin of the web app, used to revalidate its caches after data jobs.
+WEB_URL = os.environ.get("WEB_URL", "").rstrip("/") or None
+
 # Meta credentials are resolved lazily so local boot does not block on Secret Manager.
 _UNSET = object()
 _meta_page_access_token = _UNSET

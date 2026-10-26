@@ -1,0 +1,26 @@
+displayName: update-all job failed
+combiner: OR
+conditions:
+  - displayName: Failed execution of the update-all Cloud Run Job
+    conditionThreshold:
+      filter: >-
+        resource.type = "cloud_run_job"
+        AND resource.labels.job_name = "update-all"
+        AND metric.type = "run.googleapis.com/job/completed_execution_count"
+        AND metric.labels.result = "failed"
+      aggregations:
+        - alignmentPeriod: 300s
+          perSeriesAligner: ALIGN_SUM
+      comparison: COMPARISON_GT
+      thresholdValue: 0
+      duration: 0s
+      trigger:
+        count: 1
+alertStrategy:
+  autoClose: 86400s
+documentation:
+  mimeType: text/markdown
+  content: >-
+    The nightly update-all pipeline failed. The failed step and its error are on the admin ops
+    page ("Ejecuciones recientes"). Fix the cause, then resume the run from that page or with
+    `gcloud run jobs execute update-all --region=REGION --args=update-all,--resume`.

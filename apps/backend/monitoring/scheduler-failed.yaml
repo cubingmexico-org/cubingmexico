@@ -1,0 +1,19 @@
+displayName: Cloud Scheduler job failed
+combiner: OR
+conditions:
+  # Covers the nightly update-all trigger (the Cloud Run Admin API refused to start the job) and
+  # the /post-* jobs (the backend answered with an error or didn't answer in time).
+  - displayName: A Cloud Scheduler attempt failed
+    conditionMatchedLog:
+      filter: >-
+        resource.type = "cloud_scheduler_job"
+        AND severity >= ERROR
+alertStrategy:
+  notificationRateLimit:
+    period: 3600s
+  autoClose: 86400s
+documentation:
+  mimeType: text/markdown
+  content: >-
+    A Cloud Scheduler job couldn't reach its target. Check the job's last attempt in Cloud
+    Scheduler; for update-all, the job may not have run at all tonight.
