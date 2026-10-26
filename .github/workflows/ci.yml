@@ -141,8 +141,61 @@ jobs:
       - name: Build
         run: pnpm turbo run build $TURBO_FILTER
 
+  # Smoke tests against a production build of the web app. The data is seeded before
+  # `next build` because Cache Components prerender pages with what's in the database.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cubing_mexico
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cubing_mexico"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cubing_mexico
+      BETTER_AUTH_SECRET: ci-placeholder-secret-ci-placeholder-secret
+      BETTER_AUTH_URL: http://localhost:3100
+      WCA_CLIENT_ID: ci-placeholder
+      WCA_CLIENT_SECRET: ci-placeholder
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+
+      - name: Migrate and seed database
+        run: |
+          pnpm --filter @workspace/db migrate
+          pnpm --filter @workspace/db seed
+          pnpm --filter web e2e:seed
+
+      - name: Build web
+        run: pnpm turbo run build --filter=web
+
+      - name: Install Chromium
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Smoke tests
+        run: pnpm --filter web test:e2e
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-traces
+          path: apps/web/test-results
+          retention-days: 7
+
   migrate:
-    needs: [quality, integration, build]
+    needs: [quality, integration, build, e2e]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10
