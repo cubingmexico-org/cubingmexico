@@ -61,6 +61,9 @@ export const eventNames: Record<string, string> = {
 /** Deprecated events that get their own column in cross-event tables (333mbo has no Mexican results). */
 export const DEPRECATED_EVENT_IDS = ["333ft", "magic", "mmagic"] as const;
 
+/** Old-style multi-blind has no comparable national record, so Kinch skips it (`KINCH_SKIPPED_EVENTS` in the backend). */
+export const KINCH_SKIPPED_EVENT_IDS = ["333mbo"] as const;
+
 export const SPECIALTY_EVENT_IDS = [
   "333",
   "222",
