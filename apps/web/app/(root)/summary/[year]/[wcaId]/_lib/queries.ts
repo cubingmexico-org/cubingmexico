@@ -9,6 +9,7 @@ import {
   resultAttempts,
   state,
 } from "@workspace/db/schema";
+import { inOfficialEvents } from "@/lib/official-events";
 import { roundRank } from "@/lib/utils";
 import {
   and,
@@ -189,7 +190,7 @@ async function getAnnualSummaryCached(
 ): Promise<AnnualSummary | null> {
   "use cache";
   cacheLife("days");
-  cacheTag(`person-summary-v6-${year}-${wcaId}`);
+  cacheTag(`person-summary-v7-${year}-${wcaId}`);
 
   const [personRow] = await db
     .select({
@@ -221,12 +222,16 @@ async function getAnnualSummaryCached(
     gte(competition.startDate, yearStart),
     lt(competition.startDate, yearEnd),
   );
+  // Event-level counts (rounds, podiums, solves, PRs) use the official scope;
+  // competition-level ones (competitions, cubers, states) count every result.
+  const isOfficialResult = inOfficialEvents(result.eventId);
+  const yearOfficialFilter = and(yearCompFilter, isOfficialResult);
 
   const [introRow] = await db
     .select({
       competitionCount: countDistinct(result.competitionId),
-      roundCount: sql<number>`COUNT(*)::int`,
-      eventCount: countDistinct(result.eventId),
+      roundCount: sql<number>`(COUNT(*) FILTER (WHERE ${isOfficialResult}))::int`,
+      eventCount: sql<number>`(COUNT(DISTINCT ${result.eventId}) FILTER (WHERE ${isOfficialResult}))::int`,
       firstCompetitionDate: sql<string>`MIN(${competition.startDate})`,
       lastCompetitionDate: sql<string>`MAX(${competition.endDate})`,
     })
@@ -253,7 +258,7 @@ async function getAnnualSummaryCached(
     .innerJoin(event, eq(result.eventId, event.id))
     .where(
       and(
-        yearCompFilter,
+        yearOfficialFilter,
         sql`${result.roundTypeId} IN ('f', 'c')`,
         sql`${result.pos} IN (1, 2, 3)`,
         sql`${result.best} > 0`,
@@ -298,7 +303,7 @@ async function getAnnualSummaryCached(
     .innerJoin(competition, eq(result.competitionId, competition.id))
     .innerJoin(event, eq(result.eventId, event.id))
     .innerJoin(resultAttempts, eq(resultAttempts.resultId, result.id))
-    .where(yearCompFilter)
+    .where(yearOfficialFilter)
     .groupBy(result.eventId, event.name, event.rank)
     .orderBy(
       desc(
@@ -335,7 +340,7 @@ async function getAnnualSummaryCached(
     .from(result)
     .innerJoin(competition, eq(result.competitionId, competition.id))
     .innerJoin(event, eq(result.eventId, event.id))
-    .where(eq(result.personId, wcaId))
+    .where(and(eq(result.personId, wcaId), isOfficialResult))
     .orderBy(
       asc(competition.startDate),
       desc(sql`CASE

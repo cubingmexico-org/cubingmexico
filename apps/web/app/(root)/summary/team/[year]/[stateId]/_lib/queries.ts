@@ -110,7 +110,7 @@ async function getTeamAnnualSummaryCached(
 ): Promise<TeamAnnualSummary | null> {
   "use cache";
   cacheLife("days");
-  cacheTag(`team-summary-v4-${year}-${stateId}`);
+  cacheTag(`team-summary-v5-${year}-${stateId}`);
 
   const [teamRow] = await db
     .select({

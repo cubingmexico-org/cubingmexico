@@ -46,6 +46,8 @@ export function queryPodiumsRecordsSection({
   year,
   memberYearFilter,
 }: TeamSummaryContext) {
+  const isOfficialResult = inOfficialEvents(result.eventId);
+
   return Promise.all([
     // Podium aggregates
     db
@@ -60,6 +62,7 @@ export function queryPodiumsRecordsSection({
       .where(
         and(
           memberYearFilter,
+          isOfficialResult,
           inArray(result.roundTypeId, ["f", "c"]),
           inArray(result.pos, [1, 2, 3]),
           gt(result.best, 0),
@@ -83,6 +86,7 @@ export function queryPodiumsRecordsSection({
       .where(
         and(
           memberYearFilter,
+          isOfficialResult,
           inArray(result.roundTypeId, ["f", "c"]),
           inArray(result.pos, [1, 2, 3]),
           gt(result.best, 0),
@@ -114,6 +118,7 @@ export function queryPodiumsRecordsSection({
       .where(
         and(
           memberYearFilter,
+          isOfficialResult,
           inArray(result.roundTypeId, ["f", "c"]),
           inArray(result.pos, [1, 2, 3]),
           gt(result.best, 0),
@@ -164,12 +169,12 @@ export function queryPodiumsRecordsSection({
         wr: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'WR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'WR' THEN 1 ELSE 0 END))::int`,
         nar: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NAR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NAR' THEN 1 ELSE 0 END))::int`,
         nr: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NR' THEN 1 ELSE 0 END))::int`,
-        sr: sql<number>`SUM(CASE WHEN ${inOfficialEvents(result.eventId)} THEN (CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END) ELSE 0 END)::int`,
+        sr: sql<number>`SUM((CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END))::int`,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .innerJoin(person, eq(result.personId, person.wcaId))
-      .where(memberYearFilter)
+      .where(and(memberYearFilter, isOfficialResult))
       .then((rows) => rows[0]),
 
     // Top SR breakers
@@ -218,6 +223,7 @@ export function queryPodiumsRecordsSection({
       .where(
         and(
           memberYearFilter,
+          isOfficialResult,
           or(
             inArray(result.regionalSingleRecord, ["WR", "NAR", "NR"]),
             inArray(result.regionalAverageRecord, ["WR", "NAR", "NR"]),
@@ -247,6 +253,7 @@ export function queryPodiumsRecordsSection({
       .where(
         and(
           memberYearFilter,
+          isOfficialResult,
           inArray(result.roundTypeId, ["f", "c"]),
           gt(result.best, 0),
           inArray(championship.championshipType, [
@@ -269,6 +276,7 @@ export function queryPodiumsRecordsSection({
       .where(
         and(
           eq(person.stateId, stateId),
+          isOfficialResult,
           inArray(result.roundTypeId, ["f", "c"]),
           inArray(result.pos, [1, 2, 3]),
           gt(result.best, 0),

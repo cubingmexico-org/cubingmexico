@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "@workspace/db";
 import { competition, person, result } from "@workspace/db/schema";
 import { and, asc, countDistinct, eq, gt, inArray, sql } from "drizzle-orm";
+import { inOfficialEvents } from "@/lib/official-events";
 import { type TeamSummaryContext } from "./context";
 
 export function queryRosterSection({
@@ -83,6 +84,7 @@ export function queryRosterSection({
           .where(
             and(
               prevMemberYearFilter,
+              inOfficialEvents(result.eventId),
               inArray(result.roundTypeId, ["f", "c"]),
               inArray(result.pos, [1, 2, 3]),
               gt(result.best, 0),
