@@ -415,7 +415,7 @@ export function CertificateManager({
           <CompetitionInfoCard
             competition={competition}
             formattedDate={formattedDate}
-            persons={persons}
+            competitorCount={persons.length}
           />
 
           <CertificatesSummaryCard
