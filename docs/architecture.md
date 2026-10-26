@@ -43,7 +43,7 @@ flowchart LR
 
 - Single source of truth for the Postgres schema (Drizzle), migrations, and seed data.
 - The Flask backend reads and writes the same tables with raw SQL. Any schema change goes through a Drizzle migration first.
-- Schema changes and deploys: on push, the `migrate` job in CI applies migrations only after lint, tests and build pass, while Vercel deploys independently, usually before the migration runs. Every migration must work with both the old and the new code. Use expand/contract: add the new column or table in one PR, ship the code that uses it in a later PR, and drop the old one after that. The `Migrate database` workflow is only for manual re-runs.
+- Schema changes and deploys: on push, the `migrate` job in CI applies migrations only after lint, tests and build pass, while Vercel (web and organizer) and a Cloud Build trigger (backend, see its README) deploy independently, usually before the migration runs. Every migration must work with both the old and the new code. Use expand/contract: add the new column or table in one PR, ship the code that uses it in a later PR, and drop the old one after that. The `Migrate database` workflow is only for manual re-runs.
 
 **backend (Flask)** ([apps/backend](../apps/backend))
 
@@ -52,7 +52,8 @@ flowchart LR
 - Bulk recomputation across all states: state ranks, state records, Kinch, sum of ranks, streaks, nemesis stats, and competition round dates (WCIF).
 - Social posts: image rendering (PIL), captions, and publishing to Facebook and Instagram.
 - Every mutating endpoint is protected by `require_cron_auth` (bearer `CRON_SECRET`). Cloud Scheduler calls them, and so does the web superadmin panel through `BACKEND_URL`.
-- A small public read API (`/teams`, `/states`, `/persons`, `/rank/...`, `/competitor-states/...`). Nothing in this repo calls it anymore; it stays for external consumers.
+- A small public read API (`/competitions`, `/persons`, `/teams`, `/states`, `/rank/...`, `/records/...`, `/competitor-states/...`), documented on the web app's `/docs` page. Nothing in this repo calls it anymore; it stays for external consumers.
+- `/update-all` records each run's per-step progress in `job_runs`, so `/update-all/resume` can continue a failed run from the step that failed.
 
 **web (Next.js)** ([apps/web](../apps/web))
 

@@ -20,9 +20,10 @@ Flask backend that imports World Cube Association (WCA) export data, maintains c
 
 Environment variables (see `.env.example`):
 
-- `DB_URL` — PostgreSQL connection string (env or Secret Manager `db_url`; falls back to `postgresql://postgres:postgres@localhost:5432/cubing_mexico` only when `FLASK_ENV=development`)
+- `DB_URL` — PostgreSQL connection string (env or Secret Manager `db_url`; falls back to `postgresql://postgres:postgres@localhost:5432/cubing_mexico` only when `FLASK_ENV=development`). In production use Neon's pooled host (the one with `-pooler`); the direct host is only for running migrations.
 - `CRON_SECRET` — Auth secret for admin update endpoints (env or Secret Manager `cron-secret`; the local dev token is only used when `FLASK_ENV=development`). Outside development the app refuses to start if `DB_URL` or `CRON_SECRET` can't be resolved.
-- `DB_POOL_MAX` — Max pooled PostgreSQL connections per process (default: `10`)
+- `WEB_CONCURRENCY` / `GUNICORN_THREADS` — Gunicorn workers and threads per worker in the Docker image (defaults: `4` and `8`)
+- `DB_POOL_MAX` — Max pooled PostgreSQL connections per worker (default: `GUNICORN_THREADS`). Each worker has its own pool, so one instance can open up to `WEB_CONCURRENCY × DB_POOL_MAX` connections (32 with the defaults); multiply by the Cloud Run max instances when sizing the database. The total is logged at startup.
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
 - `SOCIAL_POSTS_ENABLED` — `true` to allow Meta publishes (auto + manual admin). Keep `false` in development/staging (default: off)
@@ -76,7 +77,7 @@ The app will be available at `http://localhost:5000`.
 
 ## Important API endpoints
 
-The read endpoints below are kept for external consumers. The apps in this repo read Postgres directly and don't call them.
+The read endpoints below are kept for external consumers and documented on the web app's public `/docs` page. The apps in this repo read Postgres directly and don't call them. Successful responses send `Cache-Control: public, max-age=3600` (`/competitor-states` uses 300, since it reads the live WCIF).
 
 - **Competitions**
   - `GET /competitions` — List competitions (Mexico only) with pagination and filters
@@ -89,8 +90,9 @@ The read endpoints below are kept for external consumers. The apps in this repo 
   - `GET /states` — List all states
 
 - **Ranks & Records**
-  - `GET /rank/<type>/<event_id>` — Get national ranks for a type (`single`|`average`) and event
-  - `GET /rank/<state_id>/<type>/<event_id>` — Get ranks for a state, type (`single`|`average`), and event
+  - `GET /rank/<type>/<event_id>` — Get national ranks for a type (`single`|`average`) and event, ordered by country rank
+  - `GET /rank/<state_id>/<type>/<event_id>` — Get ranks for a state, type (`single`|`average`), and event, ordered by state rank
+  - Both rank routes take `page` (default 1) and `size` (default and max 1000), and return the total in an `X-Total-Count` header. They only accept official events; `?deprecated=true` also allows the deprecated ones (rank 990–999). Unknown events or states return 404, an invalid type 400.
   - `GET /records/<state_id>` — Get state records (single and average)
 
 - **Competitors**
@@ -106,7 +108,8 @@ The read endpoints below are kept for external consumers. The apps in this repo 
   - `POST /update-streak-ranks` — Update personal-record streak ranks
   - `POST /update-nemesis-stats` — Recompute per-person nemesis counts (how many nemeses each competitor has and how many people they are the nemesis of)
   - `POST /update-cubing-contests` — Import unofficial-event results from the [Cubing Contests](https://cubingcontests.com/export) CSV export into the `cc_*` tables. Only `wca-comp` contests are kept (no meetups or CC-only competitions), either held in Mexico or with at least one Mexican competitor. Official WCA events are never imported: events in CC's WCA category (`category_id` 5) and events sharing an id with an official WCA event (`events.rank < 800`) are dropped. Skips when the export date is unchanged; `?force=true` re-imports. Results whose WCA competition isn't in `competitions` yet are skipped and the export is retried on the next run.
-  - `POST /update-all` — Run full database import plus all derived rank updates, then the Cubing Contests import (its failures are logged and don't fail the run); then publish SEMANA (after state records), RACHAS and AÑO if due
+  - `POST /update-all` — Run full database import plus all derived rank updates, then the Cubing Contests import; then publish SEMANA (after state records), RACHAS and AÑO if due. The Cubing Contests import and social posts are recorded but don't fail the run. Each run and its per-step status is stored in `job_runs` and shown on the admin ops page; the response always includes the steps. Returns 409 while another run started less than 3 hours ago is still `running` (older ones are marked failed as stale).
+  - `POST /update-all/resume` — Resume the latest `update_all` run if it failed: steps that already succeeded are skipped, and the run continues from the step that failed. Returns 404 if the latest run didn't fail.
   - `POST /post-summary-unlock` — If Dec 20+ UTC, publish the annual summary unlock graphic (idempotent; respects `SOCIAL_POSTS_ENABLED`)
   - `POST /post-weekly-digest` — Publish the current Mexico City ISO-week SEMANA digest (idempotent; run after `/update-state-records`)
   - `POST /post-year-recap` — On Dec 31 (Mexico City, retries through Jan 2), publish the AÑO year-recap carousel with the new-year greeting (idempotent)
@@ -171,6 +174,7 @@ Main tables used:
 - ranks_single, ranks_average
 - sum_of_ranks, kinch_ranks, streak_ranks, nemesis_stats
 - states, teams, events, export_metadata
+- job_runs (per-step progress of `/update-all`, used to resume failed runs)
 - social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock` | `weekly_digest` | `streaks_monthly` | `mollerz` | `nemesis` | `year_recap`)
 
 ## Automatic typed social posts
@@ -209,6 +213,16 @@ NÉMESIS compares the set of people with `nemesis_count = 0` and at least 3 even
 6. Set `SOCIAL_POSTS_ENABLED=true` on the **production** backend service only.
 
 Keep `SOCIAL_POSTS_ENABLED=false` in development/staging (and until secrets and `PUBLIC_BASE_URL` are verified in production). Image download and “mark as posted” still work when the flag is off; only Meta API calls are skipped.
+
+## Deployment
+
+The backend runs on Cloud Run. A Cloud Build trigger builds this directory's `Dockerfile` on push and deploys the image; GitHub Actions doesn't deploy it.
+
+- **Trigger:** TODO: trigger name, watched branches (`main` → production, `development` → staging?) and included paths.
+- **Service:** TODO: Cloud Run service name(s) and region, request timeout, and min/max instances.
+- **Configuration:** non-secret settings (`FLASK_ENV`, `GCP_PROJECT_ID`, `SOCIAL_POSTS_ENABLED`, `PUBLIC_BASE_URL`, `WEB_CONCURRENCY`, `GUNICORN_THREADS`, `DB_POOL_MAX`) are Cloud Run environment variables. `DB_URL`, `CRON_SECRET` and the Meta credentials come from Secret Manager (or an env var of the same name, which takes precedence), read by the service account at startup.
+- **Cron:** Cloud Scheduler calls the cron endpoints (`/update-all` and the `/post-*` jobs) with `Authorization: Bearer $CRON_SECRET`. TODO: job schedules and attempt deadlines. `/update-all` can run for many minutes, so the Scheduler deadline and the Cloud Run request timeout must both exceed it; if a run fails partway, `POST /update-all/resume` continues it.
+- **Migrations:** the backend has no migrations of its own; it uses the Drizzle schema in `packages/db`, which CI's `migrate` job applies after checks pass. The backend deploy isn't coordinated with that job, so schema changes follow the same expand/contract rule as the web apps (see [docs/architecture.md](../../docs/architecture.md)).
 
 ## Notes
 
