@@ -14,12 +14,10 @@ import {
 import { requireSuperadmin } from "@/lib/superadmin";
 import {
   clearPersonStateRanks,
-  updateStateRanks,
-} from "@/lib/update-state-ranks";
-import {
   clearPersonStateRecords,
+  updateStateRanks,
   updateStateRecords,
-} from "@/lib/update-state-records";
+} from "@/lib/state-updates";
 
 const assignPersonStateSchema = z.object({
   personId: z.string().min(1),

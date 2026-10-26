@@ -36,6 +36,6 @@ Stored data:
 - Per-event data (`state_rank`, SR markers) is computed for the `all` scope, so readers that count it must still filter by their scope.
 - Aggregate tables (`sum_of_ranks`, `kinch_ranks`, `streak_ranks`, `nemesis_stats`) have a `scope` column in their primary key. The backend jobs compute every scope, and every reader must filter on `scope`.
 
-When the same computation exists in both Python and TypeScript (for example `nemesis_stats.py` and `nemesis-queries.ts`, or `routes/admin/state.py` and `lib/update-state-*.ts`), both must filter identically.
+When the same computation exists in both Python and TypeScript (for example `nemesis_stats.py` and `nemesis-queries.ts`), both must filter identically. State ranks and records live only in `routes/admin/state.py`; the web's `lib/state-updates.ts` calls it.
 
 In test fixtures, give unofficial events a realistic rank (e.g. `insertEvent({ id: "333ft", rank: 996 })`, `insertEvent({ id: "fto", rank: 810 })`); the factory default of 0 counts as official.

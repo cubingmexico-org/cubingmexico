@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { getSessionUserId, hasTeamPermission } from "@/lib/team-auth";
 import { unauthorizedResponse } from "@/lib/api-auth";
 import { invalidateAfterStateRecordsChange } from "@/lib/cache-tags";
-import { updateStateRanks } from "@/lib/update-state-ranks";
-import { updateStateRecords } from "@/lib/update-state-records";
+import { updateStateRanks, updateStateRecords } from "@/lib/state-updates";
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {

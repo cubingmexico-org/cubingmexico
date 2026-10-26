@@ -544,11 +544,27 @@
     "cron_auth": true
   },
   {
+    "rule": "/update-state-ranks/<state_id>",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_one_state_ranks",
+    "cron_auth": true
+  },
+  {
     "rule": "/update-state-records",
     "methods": [
       "POST"
     ],
     "endpoint": "admin.update_state_records",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-state-records/<state_id>",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_one_state_records",
     "cron_auth": true
   },
   {

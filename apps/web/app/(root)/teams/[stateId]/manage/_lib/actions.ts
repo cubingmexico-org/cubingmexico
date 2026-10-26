@@ -13,12 +13,10 @@ import {
 import { requireTeamPermission } from "@/lib/team-auth";
 import {
   clearPersonStateRanks,
-  updateStateRanks,
-} from "@/lib/update-state-ranks";
-import {
   clearPersonStateRecords,
+  updateStateRanks,
   updateStateRecords,
-} from "@/lib/update-state-records";
+} from "@/lib/state-updates";
 import { person, teamMember } from "@workspace/db/schema";
 
 import { addMemberFormSchema } from "@/lib/validations";
