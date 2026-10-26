@@ -77,38 +77,6 @@ export async function updateMember(_prevState: unknown, formData: FormData) {
   }
 }
 
-export async function deleteMember(input: { id: string; stateId: string }) {
-  try {
-    await requireTeamPermission(input.stateId, "team.members");
-
-    await db.transaction(async (tx) => {
-      await tx.delete(teamMember).where(eq(teamMember.personId, input.id));
-      await tx
-        .update(person)
-        .set({ stateId: null })
-        .where(eq(person.wcaId, input.id));
-    });
-
-    await clearPersonStateRanks([input.id]);
-    await clearPersonStateRecords([input.id]);
-    await updateStateRanks(input.stateId);
-    invalidateAfterStateRanksChange(input.stateId);
-    const records = await updateStateRecords(input.stateId);
-    invalidateAfterStateRecordsChange([input.id, ...records.personIds]);
-    updateTag("persons-without-state");
-
-    return {
-      data: null,
-      error: null,
-    };
-  } catch (err) {
-    return {
-      data: null,
-      error: getErrorMessage(err),
-    };
-  }
-}
-
 export async function deleteMembers(input: { ids: string[]; stateId: string }) {
   try {
     await requireTeamPermission(input.stateId, "team.members");

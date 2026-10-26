@@ -61,33 +61,6 @@ export async function getStates() {
     .then((res) => res);
 }
 
-export async function getPersons() {
-  cacheLife("days");
-  cacheTag("persons");
-
-  return await db
-    .select({
-      wcaId: person.wcaId,
-      name: person.name,
-    })
-    .from(person)
-    .then((res) => res);
-}
-
-export async function getCompetitions() {
-  cacheLife("days");
-  cacheTag("competitions-sitemap");
-
-  return await db
-    .select({
-      id: competition.id,
-      name: competition.name,
-    })
-    .from(competition)
-    .where(eq(competition.countryId, "Mexico"))
-    .then((res) => res);
-}
-
 export async function getCurrentUserTeam({
   userId,
 }: {

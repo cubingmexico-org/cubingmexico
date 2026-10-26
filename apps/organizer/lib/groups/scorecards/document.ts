@@ -7,7 +7,6 @@ import { loadImageAsDataUrl } from "@/lib/groups/load-image-data-url";
 import {
   buildAllAssignedCardList,
   buildBlankVariantCardList,
-  buildCardList,
   cardCellContent,
   chunkRows,
   emptyCard,
@@ -17,41 +16,7 @@ import {
   resolvePaperLayout,
   scorecardBackgroundPositions,
 } from "./layout";
-import type { CardSlot, ScorecardMode } from "./types";
-
-export async function buildScorecardsDocument(
-  wcif: WCIF,
-  roundActivityCode: string,
-  mode: ScorecardMode,
-  blankCount: number,
-  competitionImageUrl?: string | null,
-  /**
-   * When provided (including `null`), use this as the background and do not
-   * fall back to fetching a remote URL inside pdfmake.
-   */
-  backgroundDataUrl?: string | null,
-): Promise<TDocumentDefinitions> {
-  const config = getCompetitionConfig(wcif);
-  const paper = resolvePaperLayout(
-    config.scorecardPaperSize,
-    config.scorecardDensity,
-  );
-  const cards = await buildCardList(
-    wcif,
-    roundActivityCode,
-    mode,
-    blankCount,
-    config,
-    paper,
-  );
-  return buildScorecardsDocumentFromCards(
-    wcif,
-    cards,
-    `Papeletas — ${roundActivityCode}`,
-    competitionImageUrl,
-    backgroundDataUrl,
-  );
-}
+import type { CardSlot } from "./types";
 
 async function buildScorecardsDocumentFromCards(
   wcif: WCIF,
@@ -155,42 +120,6 @@ async function buildScorecardsDocumentFromCards(
   }
 
   return doc;
-}
-
-export async function printScorecards(
-  wcif: WCIF,
-  roundActivityCode: string,
-  mode: ScorecardMode,
-  blankCount: number,
-  action: PrintAction,
-  competitionImageUrl?: string | null,
-): Promise<void> {
-  const config = getCompetitionConfig(wcif);
-  const remoteUrl = resolveScorecardsBackgroundUrl(config, competitionImageUrl);
-  const backgroundDataUrl = remoteUrl
-    ? await loadImageAsDataUrl(remoteUrl)
-    : null;
-
-  if (remoteUrl && !backgroundDataUrl) {
-    console.warn(
-      "No se pudo cargar la imagen de fondo; se generan papeletas sin fondo.",
-    );
-  }
-
-  const doc = await buildScorecardsDocument(
-    wcif,
-    roundActivityCode,
-    mode,
-    blankCount,
-    competitionImageUrl,
-    backgroundDataUrl,
-  );
-  const suffix = mode === "blank" ? "blank" : "assigned";
-  createGroupsPdf(
-    doc,
-    action,
-    `${wcif.id}-${roundActivityCode}-scorecards-${suffix}`,
-  );
 }
 
 async function printScorecardsFromCards(

@@ -70,13 +70,6 @@ export function tagsToContent(tags: string[]): string {
     .join(" ");
 }
 
-export function joinContent(freeText: string, tags: string[]): string {
-  const tagPart = tagsToContent(tags);
-  // Dynamic tags replace static text — never mix them
-  if (tagPart) return tagPart;
-  return freeText;
-}
-
 export function normalizeMentionTag(value: string): string | null {
   const name = value.replace(/^@/, "").trim();
   return (

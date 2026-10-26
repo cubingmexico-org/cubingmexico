@@ -1,6 +1,3 @@
-export const unknownError =
-  "An unknown error occurred. Please try again later.";
-
 /** Organización app (`apps/organizer`). Local default: http://localhost:3001 */
 export const ORGANIZER_APP_URL =
   process.env.NEXT_PUBLIC_ORGANIZER_URL ??
@@ -36,8 +33,6 @@ export const SPEEDSOLVING_AVERAGES_EVENTS = [
   "sq1",
   "pyram",
 ];
-
-export const MEAN_EVENTS = ["666", "777", "333bf", "333fm", "444bf", "555bf"];
 
 export const eventNames: Record<string, string> = {
   "333": "Cubo 3x3x3",

@@ -185,8 +185,3 @@ export function summarizeCcYear(rows: CcYearSummaryRow[]): CcYearSummary {
     podiums,
   };
 }
-
-/** Lower is better; DNF, DNS and empty values never rank. */
-export function isCcRankable(value: number): boolean {
-  return value > 0;
-}

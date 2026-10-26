@@ -562,10 +562,6 @@ export type StationsSuggestion = {
  * Suggest stations per room from field size and number of salas.
  * Multi-zone example: 90 competitors + 2 rooms → 12 total → 6 each.
  */
-export function suggestedStationsForCompetition(wcif: WCIF): number {
-  return suggestStationsBreakdown(wcif).perRoom;
-}
-
 export function suggestStationsBreakdown(wcif: WCIF): StationsSuggestion {
   const competitors = largestRound1Field(wcif);
   const roomCount = Math.max(1, listRooms(wcif).length);

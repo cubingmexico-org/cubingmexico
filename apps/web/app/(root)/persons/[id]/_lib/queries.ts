@@ -1,11 +1,7 @@
 import "server-only";
 
 export type { OrganizerLevel } from "@/lib/organizer-level";
-export type {
-  PersonalRecordWithStateRank,
-  MembershipData,
-  OrganizerStatus,
-} from "./profile";
+export type { PersonalRecordWithStateRank, OrganizerStatus } from "./profile";
 export {
   getPersonData,
   getMembershipData,

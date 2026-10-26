@@ -8,4 +8,3 @@ export interface Rank {
 }
 
 export type RankSingle = Rank;
-export type RankAverage = Rank;

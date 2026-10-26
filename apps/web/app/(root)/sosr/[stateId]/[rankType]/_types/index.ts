@@ -1,9 +1,3 @@
-export interface SumOfStateRanksEvent {
-  eventId: string;
-  stateRank: number;
-  completed: boolean;
-}
-
 export interface SumOfStateRanks {
   rank: number | null;
   personId: string;

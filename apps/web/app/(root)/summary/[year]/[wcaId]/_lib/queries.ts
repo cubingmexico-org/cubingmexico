@@ -183,13 +183,6 @@ export async function getAvailableSummaryYears(
   return years.filter((year) => isSummaryYearPublished(year));
 }
 
-export async function getLatestSummaryYear(
-  wcaId: string,
-): Promise<number | null> {
-  const years = await getAvailableSummaryYears(wcaId);
-  return years[0] ?? null;
-}
-
 async function getAnnualSummaryCached(
   wcaId: string,
   year: number,

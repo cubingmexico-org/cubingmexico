@@ -51,14 +51,6 @@ export type PersonalRecordWithStateRank = {
   average?: RecordWithStateRank;
 };
 
-export type MembershipData = {
-  numberOfSpeedsolvingAverages: number;
-  numberOfBLDFMCMeans: number;
-  hasWorldRecord: boolean;
-  hasWorldChampionshipPodium: boolean;
-  eventsWon: number;
-} | null;
-
 export type OrganizerStatus = {
   organizedCompetitionCount: number;
   level: OrganizerLevel;

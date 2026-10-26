@@ -200,15 +200,6 @@ export function buildTaskCardsDocument(wcif: WCIF): TDocumentDefinitions {
   };
 }
 
-export function printGroupSheets(
-  wcif: WCIF,
-  roundActivityCode: string,
-  action: PrintAction,
-): void {
-  const doc = buildGroupSheetsDocument(wcif, roundActivityCode);
-  createGroupsPdf(doc, action, `${wcif.id}-${roundActivityCode}-group-sheets`);
-}
-
 export function buildAllGroupSheetsDocument(wcif: WCIF): TDocumentDefinitions {
   const content: Content[] = [];
   for (const event of wcif.events) {

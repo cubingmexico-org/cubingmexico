@@ -1,6 +1,14 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
-  "include": ["files", "dependencies", "devDependencies", "unlisted"],
+  "include": [
+    "files",
+    "dependencies",
+    "devDependencies",
+    "unlisted",
+    "exports",
+    "types"
+  ],
+  "ignoreExportsUsedInFile": true,
   "workspaces": {
     "packages/icons": {
       "ignoreDependencies": ["react", "@types/react"]

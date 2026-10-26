@@ -18,21 +18,6 @@ const GLOBAL_TEMPLATES: {
   })),
 ];
 
-const templateId = (module: string): string => {
-  const template = CERTIFICATE_DESIGN_TEMPLATES.find(
-    (t) => t.module === module,
-  );
-  if (!template) {
-    throw new Error(`Missing built-in template for module ${module}`);
-  }
-  return template.id;
-};
-
-export const GLOBAL_PODIUM_TEMPLATE_ID = templateId("certificate_podium");
-export const GLOBAL_PARTICIPATION_TEMPLATE_ID = templateId(
-  "certificate_participation",
-);
-
 /**
  * Syncs the built-in Cubing México templates: upserts every bundled one and
  * deletes built-in rows that are no longer bundled.
