@@ -33,6 +33,22 @@ type Endpoint = {
 
 type Category = "competitions" | "persons" | "teams" | "ranks";
 
+const rankQueryParams: Param[] = [
+  {
+    name: "page",
+    description: "Número de página (entero, mínimo 1). Por defecto: 1.",
+  },
+  {
+    name: "size",
+    description: "Resultados por página (entero, 1–1000). Por defecto: 1000.",
+  },
+  {
+    name: "deprecated",
+    description:
+      "true para permitir eventos descontinuados (333ft, magic, mmagic, 333mbo). Sin él, solo se aceptan eventos oficiales.",
+  },
+];
+
 const endpoints: Record<Category, Endpoint[]> = {
   competitions: [
     {
@@ -70,7 +86,7 @@ const endpoints: Record<Category, Endpoint[]> = {
         },
         {
           name: "end_date",
-          description: "Fecha máxima de inicio (YYYY-MM-DD).",
+          description: "Fecha máxima de fin (YYYY-MM-DD).",
         },
         {
           name: "search",
@@ -90,7 +106,7 @@ const endpoints: Record<Category, Endpoint[]> = {
     {
       "id": "MexicoCityOpen2024",
       "name": "Mexico City Open 2024",
-      "city": "Ciudad de México",
+      "cityName": "Ciudad de México",
       "stateId": "CMX",
       "stateName": "Ciudad de México",
       "startDate": "2024-06-01",
@@ -116,7 +132,7 @@ const endpoints: Record<Category, Endpoint[]> = {
       sampleResponse: `{
   "id": "MexicoCityOpen2024",
   "name": "Mexico City Open 2024",
-  "city": "Ciudad de México",
+  "cityName": "Ciudad de México",
   "stateId": "CMX",
   "stateName": "Ciudad de México",
   "logo": "https://example.com/mexico-city-open-2024-logo.png",
@@ -289,7 +305,7 @@ const endpoints: Record<Category, Endpoint[]> = {
       path: "/rank/:type/:eventId",
       title: "Rankings nacionales",
       description:
-        "Devuelve los rankings nacionales de México para un evento y tipo (single o average).",
+        "Devuelve los rankings nacionales de México para un evento y tipo (single o average), ordenados por ranking nacional. El total de resultados viene en el encabezado X-Total-Count.",
       pathParams: [
         {
           name: "type",
@@ -300,6 +316,7 @@ const endpoints: Record<Category, Endpoint[]> = {
           description: "Id del evento WCA (por ejemplo 333, 333oh).",
         },
       ],
+      queryParams: rankQueryParams,
       curl: `curl "${BASE_URL}/rank/single/333"`,
       sampleResponse: `[
   {
@@ -323,7 +340,7 @@ const endpoints: Record<Category, Endpoint[]> = {
       path: "/rank/:stateId/:type/:eventId",
       title: "Rankings por estado",
       description:
-        "Devuelve los rankings de un estado para un evento y tipo (single o average).",
+        "Devuelve los rankings de un estado para un evento y tipo (single o average), ordenados por ranking estatal. El total de resultados viene en el encabezado X-Total-Count.",
       pathParams: [
         {
           name: "stateId",
@@ -338,6 +355,7 @@ const endpoints: Record<Category, Endpoint[]> = {
           description: "Id del evento WCA (por ejemplo 333, 333oh).",
         },
       ],
+      queryParams: rankQueryParams,
       curl: `curl "${BASE_URL}/rank/CMX/single/333"`,
       sampleResponse: `[
   {
@@ -478,6 +496,11 @@ export function ApiDocs(): React.JSX.Element {
           <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
             <li>Las respuestas son JSON con claves en camelCase.</li>
             <li>Los endpoints listados aquí no requieren autenticación.</li>
+            <li>
+              Las respuestas se pueden guardar en caché hasta una hora (los
+              datos se actualizan una vez al día); /competitor-states, hasta 5
+              minutos.
+            </li>
             <li>
               Los endpoints de escritura o administración (cron) no forman parte
               de la API pública.

@@ -7,9 +7,14 @@ from utils import (
     build_competitions_filter_query_parts,
     convert_keys_to_camel_case,
     parse_int_query_param_or_default,
+    public_cache_headers,
 )
 
 competitions_bp = Blueprint("competitions", __name__)
+competitions_bp.after_request(public_cache_headers)
+
+# Competitor states come from the live WCIF, so they go stale faster than the nightly data.
+COMPETITOR_STATES_MAX_AGE = 300
 
 
 @competitions_bp.route("/competitions", methods=["GET"])
@@ -160,6 +165,12 @@ def get_competition_by_id(competition_id):
         return jsonify({"success": False, "message": "Error fetching competition"}), 500
 
 
+def _competitor_states_response(data):
+    response = jsonify(data)
+    response.headers["Cache-Control"] = f"public, max-age={COMPETITOR_STATES_MAX_AGE}"
+    return response
+
+
 @competitions_bp.route("/competitor-states/<competition_id>", methods=["GET"])
 def get_competitor_states(competition_id):
     try:
@@ -174,7 +185,7 @@ def get_competitor_states(competition_id):
 
         if not wca_ids:
             log.warning("No WCA IDs found for competition: %s", competition_id)
-            return jsonify([])
+            return _competitor_states_response([])
 
         log.info("Found %s competitors with WCA IDs", len(wca_ids))
 
@@ -190,7 +201,7 @@ def get_competitor_states(competition_id):
                 ]
                 log.info("Fetched state data for %s competitor(s)", len(competitors_data))
 
-        return jsonify(competitors_data)
+        return _competitor_states_response(competitors_data)
 
     except requests.RequestException as e:
         log.exception("Error fetching WCIF data: %s", e)

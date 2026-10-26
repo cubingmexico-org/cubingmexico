@@ -12,6 +12,17 @@ from geopy.geocoders import Nominatim
 
 log = logging.getLogger("common")
 
+# Public read data only changes with the nightly import.
+PUBLIC_CACHE_MAX_AGE = 3600
+
+
+def public_cache_headers(response):
+    """`after_request` hook for public read blueprints; routes can set their own Cache-Control."""
+    if request.method == "GET" and response.status_code == 200 and "Cache-Control" not in response.headers:
+        response.headers["Cache-Control"] = f"public, max-age={PUBLIC_CACHE_MAX_AGE}"
+    return response
+
+
 # Set SKIP_GEOCODING=true for local imports (Nominatim rate-limits bulk reverse geocoding).
 SKIP_GEOCODING = os.environ.get("SKIP_GEOCODING", "").strip().lower() in {
     "1",

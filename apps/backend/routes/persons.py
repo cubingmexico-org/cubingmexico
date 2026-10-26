@@ -2,9 +2,10 @@ import psycopg2.extras
 from flask import Blueprint, jsonify, request
 
 from common import get_connection, log
-from utils import parse_int_query_param_or_default
+from utils import parse_int_query_param_or_default, public_cache_headers
 
 persons_bp = Blueprint("persons", __name__)
+persons_bp.after_request(public_cache_headers)
 
 
 def _rank_entry(r):
