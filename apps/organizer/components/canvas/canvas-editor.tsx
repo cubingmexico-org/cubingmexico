@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useLayoutEffect, useState } from "react";
 import { useCanvasStore } from "@/lib/canvas-store";
 import { canvasFont, ensureFontLoaded } from "@/lib/load-fonts";
 import { drawBackground, drawElement, drawGuides } from "@/lib/canvas-draw";
@@ -18,6 +18,9 @@ import {
 } from "@/lib/canvas-geometry";
 import { ZoomControls } from "./zoom-controls";
 import type { EventId } from "@/types/wcif";
+import type { CanvasElement } from "@/types/canvas";
+
+const NO_ELEMENTS: CanvasElement[] = [];
 
 interface CanvasEditorProps {
   eventIds: EventId[];
@@ -32,6 +35,8 @@ export function CanvasEditor({
   const backgroundImageBackRef = useRef<HTMLImageElement | null>(null);
   // Add cache for element images
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map());
+  // Latest drawCanvas, so async loaders and effects redraw with current state
+  const drawCanvasRef = useRef<() => void>(() => {});
 
   const {
     elements,
@@ -47,7 +52,7 @@ export function CanvasEditor({
   } = useCanvasStore();
 
   // Get elements for the active side
-  const currentElements = elements[activeSide] || [];
+  const currentElements = elements[activeSide] ?? NO_ELEMENTS;
 
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -82,8 +87,7 @@ export function CanvasEditor({
           img.src = element.imageUrl;
           img.onload = () => {
             imageCache.current.set(element.imageUrl!, img);
-            // eslint-disable-next-line react-hooks/immutability -- runs from an async onload, after drawCanvas is declared
-            drawCanvas(); // Redraw when image loads
+            drawCanvasRef.current(); // Redraw when image loads
           };
           img.onerror = () => {
             console.error(`Failed to load image: ${element.imageUrl}`);
@@ -104,7 +108,6 @@ export function CanvasEditor({
         imageCache.current.delete(url);
       }
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- prune the image cache only when elements change
   }, [currentElements]);
 
   // Redraw once the fonts used by text elements finish loading
@@ -122,12 +125,11 @@ export function CanvasEditor({
         return ensureFontLoaded(family, weight);
       }),
     ).then(() => {
-      if (!cancelled) drawCanvas();
+      if (!cancelled) drawCanvasRef.current();
     });
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- drawCanvas is recreated every render; only reload when the set of fonts changes
   }, [textFonts]);
 
   useEffect(() => {
@@ -144,13 +146,12 @@ export function CanvasEditor({
       img.onload = () => {
         targetRef.current = img;
         // Trigger a redraw after image loads
-        drawCanvas();
+        drawCanvasRef.current();
       };
     } else {
       targetRef.current = null;
-      drawCanvas();
+      drawCanvasRef.current();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- drawCanvas is recreated every render; reload only when the background changes
   }, [backgroundImage, backgroundImageBack, activeSide]);
 
   const measureText = (
@@ -198,9 +199,12 @@ export function CanvasEditor({
     drawGuides(ctx, guides);
   };
 
+  useLayoutEffect(() => {
+    drawCanvasRef.current = drawCanvas;
+  });
+
   useEffect(() => {
-    drawCanvas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- drawCanvas is recreated every render; deps list the state it reads
+    drawCanvasRef.current();
   }, [
     currentElements,
     selectedElementId,
