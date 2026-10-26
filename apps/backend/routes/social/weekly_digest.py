@@ -61,7 +61,7 @@ def weekly_digest_image(week: str):
         generated = generate_weekly_digest_png_for_week(week)
     except Exception as e:
         log.exception("Failed to generate WEEKLY_DIGEST image for %s: %s", week, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate WEEKLY_DIGEST image"}), 500
 
     if generated is None:
         return jsonify({"success": False, "message": "Invalid week"}), 400
@@ -132,7 +132,7 @@ def weekly_digest_slide_image(week: str, index: int):
         generated = generate_weekly_digest_slides_for_week(week)
     except Exception as e:
         log.exception("Failed to generate WEEKLY_DIGEST slides for %s: %s", week, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate WEEKLY_DIGEST slides"}), 500
 
     if generated is None:
         return jsonify({"success": False, "message": "Invalid week"}), 400
@@ -172,7 +172,7 @@ def publish_weekly_digest(week: str):
         result = post_weekly_digest(week)
     except Exception as e:
         log.exception("Manual WEEKLY_DIGEST publish failed for %s: %s", week, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual WEEKLY_DIGEST publish failed"}), 500
 
     if "weekly_digest_not_due" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -199,7 +199,7 @@ def mark_weekly_digest_posted(week: str):
         result = mark_typed_posted(POST_TYPE_WEEKLY_DIGEST, week, platforms)
     except Exception as e:
         log.exception("Mark WEEKLY_DIGEST posted failed for %s: %s", week, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark WEEKLY_DIGEST posted failed"}), 500
 
     if "weekly_digest_not_due" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404

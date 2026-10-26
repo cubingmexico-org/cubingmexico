@@ -22,7 +22,7 @@ def record_caption(subject_key: str):
         captions = get_record_captions(subject_key)
     except Exception as e:
         log.exception("Failed to build RECORD caption for %s: %s", subject_key, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to build RECORD caption"}), 500
 
     if captions is None:
         return jsonify({"success": False, "message": "Record not found"}), 404
@@ -46,7 +46,7 @@ def record_image(subject_key: str):
         generated = generate_record_png_for_subject(subject_key)
     except Exception as e:
         log.exception("Failed to generate RECORD image for %s: %s", subject_key, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate RECORD image"}), 500
 
     if not generated:
         return jsonify({"success": False, "message": "Record not found"}), 404
@@ -71,7 +71,7 @@ def publish_record(subject_key: str):
         result = post_record(subject_key)
     except Exception as e:
         log.exception("Manual RECORD publish failed for %s: %s", subject_key, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual RECORD publish failed"}), 500
 
     if "record_not_found" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -91,7 +91,7 @@ def mark_record_posted(subject_key: str):
         result = mark_typed_posted(POST_TYPE_RECORD, subject_key, platforms)
     except Exception as e:
         log.exception("Mark RECORD posted failed for %s: %s", subject_key, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark RECORD posted failed"}), 500
 
     if "record_not_found" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404

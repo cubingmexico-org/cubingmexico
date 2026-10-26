@@ -69,7 +69,7 @@ def summary_unlock_image(year: str):
         png = generate_summary_unlock_png_for_year(parsed)
     except Exception as e:
         log.exception("Failed to generate SUMMARY_UNLOCK image for %s: %s", year, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate SUMMARY_UNLOCK image"}), 500
 
     filename = f"resumen-{parsed}.png"
     return Response(
@@ -93,7 +93,7 @@ def publish_summary_unlock(year: str):
         result = post_summary_unlock(parsed)
     except Exception as e:
         log.exception("Manual SUMMARY_UNLOCK publish failed for %s: %s", year, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual SUMMARY_UNLOCK publish failed"}), 500
 
     if "summary_year_not_unlocked" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -119,7 +119,7 @@ def mark_summary_unlock_posted(year: str):
         result = mark_typed_posted(POST_TYPE_SUMMARY_UNLOCK, str(parsed), platforms)
     except Exception as e:
         log.exception("Mark SUMMARY_UNLOCK posted failed for %s: %s", year, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark SUMMARY_UNLOCK posted failed"}), 500
 
     if "summary_year_not_unlocked" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404

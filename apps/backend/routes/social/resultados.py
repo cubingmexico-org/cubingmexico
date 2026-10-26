@@ -23,7 +23,7 @@ def resultados_caption(competition_id: str):
         captions = get_competition_resultados_captions(competition_id)
     except Exception as e:
         log.exception("Failed to build RESULTADOS caption for %s: %s", competition_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to build RESULTADOS caption"}), 500
 
     if captions is None:
         return (
@@ -57,7 +57,7 @@ def resultados_image(competition_id: str):
         generated = generate_competition_resultados_png(competition_id)
     except Exception as e:
         log.exception("Failed to generate RESULTADOS image for %s: %s", competition_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate RESULTADOS image"}), 500
 
     if not generated:
         return (
@@ -90,7 +90,7 @@ def publish_resultados(competition_id: str):
         result = post_competition_resultados(competition_id)
     except Exception as e:
         log.exception("Manual RESULTADOS publish failed for %s: %s", competition_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual RESULTADOS publish failed"}), 500
 
     if "competition_not_found_or_not_mexico" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -111,7 +111,7 @@ def mark_resultados_posted(competition_id: str):
         result = mark_competition_posted(competition_id, platforms)
     except Exception as e:
         log.exception("Mark RESULTADOS posted failed for %s: %s", competition_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark RESULTADOS posted failed"}), 500
 
     if "competition_not_found_or_not_mexico" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404

@@ -22,7 +22,7 @@ def upcoming_caption(competition_id: str):
         captions = get_upcoming_captions(competition_id)
     except Exception as e:
         log.exception("Failed to build UPCOMING caption for %s: %s", competition_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to build UPCOMING caption"}), 500
 
     if captions is None:
         return (
@@ -55,7 +55,7 @@ def upcoming_image(competition_id: str):
         generated = generate_upcoming_png_for_competition(competition_id)
     except Exception as e:
         log.exception("Failed to generate UPCOMING image for %s: %s", competition_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate UPCOMING image"}), 500
 
     if not generated:
         return (
@@ -87,7 +87,7 @@ def publish_upcoming(competition_id: str):
         result = post_upcoming_competition(competition_id)
     except Exception as e:
         log.exception("Manual UPCOMING publish failed for %s: %s", competition_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual UPCOMING publish failed"}), 500
 
     if "competition_not_found_or_not_mexico" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -107,7 +107,7 @@ def mark_upcoming_posted(competition_id: str):
         result = mark_typed_posted(POST_TYPE_UPCOMING, competition_id, platforms)
     except Exception as e:
         log.exception("Mark UPCOMING posted failed for %s: %s", competition_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark UPCOMING posted failed"}), 500
 
     if "competition_not_found_or_not_mexico" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404

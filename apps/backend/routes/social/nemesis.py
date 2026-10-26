@@ -23,7 +23,7 @@ def nemesis_caption(wca_id: str):
         captions = get_nemesis_captions(wca_id)
     except Exception as e:
         log.exception("Failed to build NÉMESIS caption for %s: %s", wca_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to build NÉMESIS caption"}), 500
 
     if captions is None:
         return jsonify({"success": False, "message": "Nemesis-free competitor not found"}), 404
@@ -47,7 +47,7 @@ def nemesis_image(wca_id: str):
         generated = generate_nemesis_png_for_subject(wca_id)
     except Exception as e:
         log.exception("Failed to generate NÉMESIS image for %s: %s", wca_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate NÉMESIS image"}), 500
 
     if not generated:
         return jsonify({"success": False, "message": "Nemesis-free competitor not found"}), 404
@@ -70,7 +70,7 @@ def publish_nemesis(wca_id: str):
         result = post_nemesis(wca_id)
     except Exception as e:
         log.exception("Manual NÉMESIS publish failed for %s: %s", wca_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual NÉMESIS publish failed"}), 500
 
     if "nemesis_free_not_found" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -90,7 +90,7 @@ def mark_nemesis_posted(wca_id: str):
         result = mark_typed_posted(POST_TYPE_NEMESIS, wca_id, platforms)
     except Exception as e:
         log.exception("Mark NÉMESIS posted failed for %s: %s", wca_id, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark NÉMESIS posted failed"}), 500
 
     if "nemesis_free_not_found" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -106,6 +106,6 @@ def seed_nemesis():
         result = seed_nemesis_posted()
     except Exception as e:
         log.exception("NÉMESIS seed failed: %s", e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "NÉMESIS seed failed"}), 500
 
     return jsonify({"success": True, **result})

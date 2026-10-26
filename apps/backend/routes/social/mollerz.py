@@ -23,7 +23,7 @@ def mollerz_caption(subject_key: str):
         captions = get_mollerz_captions(subject_key)
     except Exception as e:
         log.exception("Failed to build MOLLERZ caption for %s: %s", subject_key, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to build MOLLERZ caption"}), 500
 
     if captions is None:
         return jsonify({"success": False, "message": "Mollerz member not found"}), 404
@@ -47,7 +47,7 @@ def mollerz_image(subject_key: str):
         generated = generate_mollerz_png_for_subject(subject_key)
     except Exception as e:
         log.exception("Failed to generate MOLLERZ image for %s: %s", subject_key, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate MOLLERZ image"}), 500
 
     if not generated:
         return jsonify({"success": False, "message": "Mollerz member not found"}), 404
@@ -72,7 +72,7 @@ def publish_mollerz(subject_key: str):
         result = post_mollerz(subject_key)
     except Exception as e:
         log.exception("Manual MOLLERZ publish failed for %s: %s", subject_key, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual MOLLERZ publish failed"}), 500
 
     if "mollerz_member_not_found" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -92,7 +92,7 @@ def mark_mollerz_posted(subject_key: str):
         result = mark_typed_posted(POST_TYPE_MOLLERZ, subject_key, platforms)
     except Exception as e:
         log.exception("Mark MOLLERZ posted failed for %s: %s", subject_key, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark MOLLERZ posted failed"}), 500
 
     if "mollerz_member_not_found" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -108,6 +108,6 @@ def seed_mollerz():
         result = seed_mollerz_posted()
     except Exception as e:
         log.exception("MOLLERZ seed failed: %s", e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "MOLLERZ seed failed"}), 500
 
     return jsonify({"success": True, **result})

@@ -59,7 +59,7 @@ def streaks_monthly_image(month: str):
         generated = generate_streaks_monthly_png_for_month(month)
     except Exception as e:
         log.exception("Failed to generate STREAKS_MONTHLY image for %s: %s", month, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate STREAKS_MONTHLY image"}), 500
 
     if generated is None:
         return jsonify({"success": False, "message": "Invalid month"}), 400
@@ -86,7 +86,7 @@ def publish_streaks_monthly(month: str):
         result = post_streaks_monthly(month)
     except Exception as e:
         log.exception("Manual STREAKS_MONTHLY publish failed for %s: %s", month, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual STREAKS_MONTHLY publish failed"}), 500
 
     if "streaks_monthly_not_due" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -113,7 +113,7 @@ def mark_streaks_monthly_posted(month: str):
         result = mark_typed_posted(POST_TYPE_STREAKS_MONTHLY, month, platforms)
     except Exception as e:
         log.exception("Mark STREAKS_MONTHLY posted failed for %s: %s", month, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark STREAKS_MONTHLY posted failed"}), 500
 
     if "streaks_monthly_not_due" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
