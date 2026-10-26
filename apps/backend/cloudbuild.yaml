@@ -1,0 +1,64 @@
+# Backend deploy, run by a Cloud Build trigger on push (see README "Deployment").
+# Lint and unit tests run first, so a failing backend is never deployed even though the
+# trigger doesn't wait for GitHub Actions. Integration tests need Postgres and stay in CI.
+#
+# Trigger settings: config file apps/backend/cloudbuild.yaml, included files
+# apps/backend/** and packages/db/drizzle/**, and the substitutions below
+# (one trigger per branch: main -> production, development -> staging).
+substitutions:
+  _REGION: us-central1
+  _SERVICE: backend
+  _JOB: update-all
+  _IMAGE: us-central1-docker.pkg.dev/${PROJECT_ID}/backend/backend
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+  dynamicSubstitutions: true
+
+steps:
+  - id: checks
+    name: ghcr.io/astral-sh/uv:0.13.5-python3.12-bookworm-slim
+    dir: apps/backend
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        uv sync --locked
+        uv run --locked ruff check .
+        uv run --locked ruff format --check .
+        uv run --locked pytest
+
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_IMAGE}:${SHORT_SHA}
+      - apps/backend
+
+  - id: push
+    name: gcr.io/cloud-builders/docker
+    args: [push, "${_IMAGE}:${SHORT_SHA}"]
+
+  - id: deploy-service
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - ${_SERVICE}
+      - --image=${_IMAGE}:${SHORT_SHA}
+      - --region=${_REGION}
+
+  # The nightly update-all job runs the same image; keep it on the version just deployed.
+  - id: update-job
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk:slim
+    entrypoint: gcloud
+    args:
+      - run
+      - jobs
+      - update
+      - ${_JOB}
+      - --image=${_IMAGE}:${SHORT_SHA}
+      - --region=${_REGION}

@@ -8,3 +8,5 @@ tests
 tests_integration
 node_modules
 package.json
+cloudbuild.yaml
+monitoring
