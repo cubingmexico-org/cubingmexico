@@ -13,18 +13,19 @@ from flask import jsonify
 
 from common import get_connection, job_response, log, require_cron_auth
 from routes.admin.blueprint import admin_bp
-from routes.admin.wca_import_steps import (
+from routes.admin.wca_import_competitions import (
     import_championships,
     import_competitions,
+    sync_mexican_competition_staff,
+)
+from routes.admin.wca_import_results import import_result_attempts, import_results
+from routes.admin.wca_import_tables import (
     import_events,
     import_formats,
     import_persons,
     import_ranks_average,
     import_ranks_single,
-    import_result_attempts,
-    import_results,
     import_round_types,
-    sync_mexican_competition_staff,
 )
 from utils import extract_first_image_url
 

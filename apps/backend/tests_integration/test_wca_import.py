@@ -6,7 +6,7 @@ import zipfile
 
 import pytest
 
-from routes.admin import wca_import_steps
+from routes.admin import wca_import_results
 from routes.admin.wca_import import process_wca_export
 
 from .factories import fetch_all
@@ -155,7 +155,7 @@ def _export_zip(files=EXPORT_FILES):
 @pytest.fixture(autouse=True)
 def no_schedule_fetch(monkeypatch):
     calls = []
-    monkeypatch.setattr(wca_import_steps, "run_update_competition_schedules", lambda: calls.append(1) or {})
+    monkeypatch.setattr(wca_import_results, "run_update_competition_schedules", lambda: calls.append(1) or {})
     return calls
 
 
