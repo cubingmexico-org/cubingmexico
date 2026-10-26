@@ -29,11 +29,11 @@ import {
 } from "@workspace/ui/components/alert";
 import type { Assignment, EventId, Person, WCIF } from "@/types/wcif";
 import { detectConflicts } from "@/lib/groups/conflicts";
+import { generateAssignmentsForRound } from "@/lib/groups/generate-assignments";
 import {
-  generateAssignmentsForRound,
   removePersonAssignment,
   setPersonAssignment,
-} from "@/lib/groups/generate-assignments";
+} from "@/lib/groups/manual-assignments";
 import { exportAssignmentsCsv, exportDraftJson } from "@/lib/groups/export";
 import {
   assignStationsForRound,

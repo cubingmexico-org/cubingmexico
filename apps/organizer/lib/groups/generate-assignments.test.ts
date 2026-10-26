@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { Activity, EventId, Person, Role, WCIF } from "@/types/wcif";
 import {
   generateAssignmentsForRound,
-  removePersonAssignment,
   roundsMissingCompetitorAssignments,
+} from "./generate-assignments";
+import {
+  removePersonAssignment,
   setPersonAssignment,
   setPersonStaffRoles,
-} from "./generate-assignments";
+} from "./manual-assignments";
 
 const ROUND = "333-r1";
 const GROUP_1 = 2;

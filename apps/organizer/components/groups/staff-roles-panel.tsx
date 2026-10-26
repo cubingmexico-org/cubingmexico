@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import type { Person, Role, WCIF } from "@/types/wcif";
-import { setPersonStaffRoles } from "@/lib/groups/generate-assignments";
+import { setPersonStaffRoles } from "@/lib/groups/manual-assignments";
 
 const TOGGLE_ROLES = [
   { value: "staff-judge" as const, label: "Juez" },

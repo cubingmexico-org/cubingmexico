@@ -25,13 +25,15 @@ import {
   type ScorecardPaperSize,
   type ScorecardsBackgroundMode,
   getCompetitionConfig,
-  listRooms,
-  populateActivityConfigsForAllRounds,
   setCompetitionConfig,
   setRoomStations,
+} from "@/lib/groups/config";
+import {
+  listRooms,
+  populateActivityConfigsForAllRounds,
   suggestInitialStaffPreview,
   suggestStationsBreakdown,
-} from "@/lib/groups/config";
+} from "@/lib/groups/config-suggestions";
 import { suggestStaffForRound } from "@/lib/groups/formulas";
 
 const SORTING_RULES: {

@@ -23,8 +23,8 @@ import {
   getRoomConfig,
   hasOrganizacionActivityConfig,
   setRoundActivityConfigs,
-  suggestedGroupsForRound,
 } from "@/lib/groups/config";
+import { suggestedGroupsForRound } from "@/lib/groups/config-suggestions";
 import { suggestStaffForRound } from "@/lib/groups/formulas";
 import { toast } from "sonner";
 
