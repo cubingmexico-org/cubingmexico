@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import {
   ChartNoAxesColumnIncreasing,
@@ -26,7 +24,6 @@ import {
   Award,
 } from "lucide-react";
 import {
-  NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
@@ -35,8 +32,8 @@ import {
   navigationMenuTriggerStyle,
 } from "@workspace/ui/components/navigation-menu";
 import { CubingMexico } from "@workspace/icons";
-import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
 import { cn } from "@workspace/ui/lib/utils";
+import { ResponsiveNavigationMenu } from "./responsive-navigation-menu";
 
 const navItemClass = cn(
   navigationMenuTriggerStyle(),
@@ -48,10 +45,8 @@ const triggerClass = cn(
 );
 
 export function HeaderNavigationMenu() {
-  const isMobile = useIsMobile();
-
   return (
-    <NavigationMenu viewport={isMobile}>
+    <ResponsiveNavigationMenu>
       <NavigationMenuList className="flex-wrap">
         <NavigationMenuItem>
           <NavigationMenuLink asChild className={navItemClass}>
@@ -287,6 +282,6 @@ export function HeaderNavigationMenu() {
           </NavigationMenuContent>
         </NavigationMenuItem>
       </NavigationMenuList>
-    </NavigationMenu>
+    </ResponsiveNavigationMenu>
   );
 }

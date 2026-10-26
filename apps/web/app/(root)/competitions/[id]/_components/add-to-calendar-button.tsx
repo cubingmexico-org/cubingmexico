@@ -1,5 +1,3 @@
-"use client";
-
 import { CalendarPlus, Download, ExternalLink } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
 import {

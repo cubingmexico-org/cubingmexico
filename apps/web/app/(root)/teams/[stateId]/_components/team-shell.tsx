@@ -1,9 +1,6 @@
-"use client";
-
 import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { buttonVariants } from "@workspace/ui/components/button";
 import {
   Avatar,
@@ -14,10 +11,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
 import { CalendarRange, MapPin, Settings, Swords, Users } from "lucide-react";
 import type { getTeamInfo } from "../_lib/queries";
-import {
-  canShowAnnualSummaryLinks,
-  getDefaultSummaryYear,
-} from "@/app/(root)/summary/_lib/summary-year";
+import { TeamTabsNav } from "./team-tabs-nav";
 
 type Team = NonNullable<Awaited<ReturnType<typeof getTeamInfo>>>;
 
@@ -26,7 +20,8 @@ type TeamShellProps = {
   team: Team;
   totalMembers: number;
   canManage: boolean;
-  isSuperadmin?: boolean;
+  /** Year the "Resumen anual" link opens, or null to hide the link. */
+  summaryYear: number | null;
   children: ReactNode;
 };
 
@@ -35,33 +30,9 @@ export function TeamShell({
   team,
   totalMembers,
   canManage,
-  isSuperadmin = false,
+  summaryYear,
   children,
 }: TeamShellProps) {
-  const pathname = usePathname();
-  const summaryYear = getDefaultSummaryYear();
-  const showAnnualSummary = canShowAnnualSummaryLinks(isSuperadmin);
-  const basePath = `/teams/${stateId}`;
-  const isManage = pathname.startsWith(`${basePath}/manage`);
-
-  const activeTab = pathname.endsWith(`${basePath}/members`)
-    ? "members"
-    : pathname.endsWith(`${basePath}/competitions`)
-      ? "competitions"
-      : pathname.endsWith(`${basePath}/statistics`)
-        ? "statistics"
-        : pathname === basePath || pathname === `${basePath}/`
-          ? "overview"
-          : null;
-
-  const tabClass = (isActive: boolean) =>
-    cn(
-      "inline-flex h-9 shrink-0 items-center justify-center rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors",
-      isActive
-        ? "bg-background text-foreground shadow-sm"
-        : "text-muted-foreground hover:text-foreground",
-    );
-
   return (
     <>
       <div className="relative h-100 overflow-hidden bg-gray-200">
@@ -123,7 +94,7 @@ export function TeamShell({
               </div>
             </div>
             <div className="flex w-full flex-wrap justify-start gap-2 sm:ml-auto sm:w-auto sm:justify-end">
-              {showAnnualSummary ? (
+              {summaryYear !== null ? (
                 <Link
                   className={cn(
                     buttonVariants({
@@ -183,40 +154,7 @@ export function TeamShell({
       </div>
 
       <div className="container mx-auto min-w-0 px-4 py-8">
-        {!isManage ? (
-          <div className="mb-8 w-full min-w-0 overflow-x-auto">
-            <div className="inline-flex min-w-full items-center justify-start gap-2 rounded-lg bg-muted p-1">
-              <Link
-                className={tabClass(activeTab === "overview")}
-                href={`/teams/${stateId}`}
-                prefetch="auto"
-              >
-                Resumen
-              </Link>
-              <Link
-                className={tabClass(activeTab === "members")}
-                href={`/teams/${stateId}/members`}
-                prefetch="auto"
-              >
-                Miembros
-              </Link>
-              <Link
-                className={tabClass(activeTab === "competitions")}
-                href={`/teams/${stateId}/competitions`}
-                prefetch="auto"
-              >
-                Competencias
-              </Link>
-              <Link
-                className={tabClass(activeTab === "statistics")}
-                href={`/teams/${stateId}/statistics`}
-                prefetch="auto"
-              >
-                Estadísticas
-              </Link>
-            </div>
-          </div>
-        ) : null}
+        <TeamTabsNav stateId={stateId} />
 
         {children}
       </div>

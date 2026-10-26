@@ -6,6 +6,10 @@ import { TeamShell } from "./team-shell";
 import { getTeamShellData } from "../_lib/queries";
 import { canManageTeam, getTeamRole } from "@/lib/team-auth";
 import { isSuperadmin } from "@/lib/superadmin";
+import {
+  canShowAnnualSummaryLinks,
+  getDefaultSummaryYear,
+} from "@/app/(root)/summary/_lib/summary-year";
 
 export async function TeamFrame({
   params,
@@ -27,12 +31,15 @@ export async function TeamFrame({
 
   const wcaId = session?.user?.wcaId || "";
   const role = await getTeamRole(stateId, wcaId);
+  const summaryYear = canShowAnnualSummaryLinks(isSuperadmin(wcaId))
+    ? getDefaultSummaryYear()
+    : null;
 
   return (
     <TeamShell
       stateId={stateId}
       canManage={canManageTeam(role)}
-      isSuperadmin={isSuperadmin(wcaId)}
+      summaryYear={summaryYear}
       {...shellData}
     >
       {children}

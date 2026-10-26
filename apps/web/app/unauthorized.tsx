@@ -1,5 +1,3 @@
-"use client";
-
 import { Button, buttonVariants } from "@workspace/ui/components/button";
 import {
   Card,
