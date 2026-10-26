@@ -3,11 +3,9 @@ from datetime import date
 import pytest
 
 import common
-from social.digest_queries import (
-    fetch_streaks_monthly_payload,
-    fetch_weekly_digest_payload,
-    fetch_year_recap_payload,
-)
+from social.digest_queries_streaks import fetch_streaks_monthly_payload
+from social.digest_queries_weekly import fetch_weekly_digest_payload
+from social.digest_queries_year import fetch_year_recap_payload
 
 from .factories import (
     insert_competition,
@@ -39,17 +37,33 @@ def digest_data(db):
     insert_competition(db, "Upcoming2024", date(2024, 3, 23), state_id="CMX")
 
     insert_result(db, "old", "Old2023", "333", "2023BETO01", best=700, round_type_id="f", pos=1)
-    official = {"round_type_id": "f", "regional_single_record": "NR", "state_single_record": "SR"}
-    insert_result(db, "a333", "Primary2024", "333", "2024ANAA01", best=500, pos=1, **official)
     insert_result(db, "b333", "Primary2024", "333", "2023BETO01", best=600, pos=2, round_type_id="f")
-    insert_result(db, "aft", "Primary2024", "333ft", "2024ANAA01", best=3000, pos=1, **official)
-    insert_result(db, "bfto", "Primary2024", "fto", "2023BETO01", best=4000, pos=1, **official)
+    # The same NR + SR single in an official, a deprecated and an announced event.
+    for result_id, event_id, person_id in [
+        ("a333", "333", "2024ANAA01"),
+        ("aft", "333ft", "2024ANAA01"),
+        ("bfto", "fto", "2023BETO01"),
+    ]:
+        insert_result(
+            db,
+            result_id,
+            "Primary2024",
+            event_id,
+            person_id,
+            best=500,
+            pos=1,
+            round_type_id="f",
+            regional_single_record="NR",
+            state_single_record="SR",
+        )
     return db
 
 
-def _payload(fetch, *args):
+def _payload(fetch, *args) -> dict:
     with common.cursor() as cur:
-        return fetch(cur, *args)
+        payload = fetch(cur, *args)
+    assert payload is not None
+    return payload
 
 
 def test_weekly_digest_counts_only_official_events(digest_data):
@@ -77,7 +91,8 @@ def test_weekly_digest_counts_only_official_events(digest_data):
 
 
 def test_weekly_digest_rejects_invalid_week_keys(digest_data):
-    assert _payload(fetch_weekly_digest_payload, "2024-12") is None
+    with common.cursor() as cur:
+        assert fetch_weekly_digest_payload(cur, "2024-12") is None
 
 
 def test_year_recap_counts_only_official_events(digest_data):

@@ -6,7 +6,7 @@ import psycopg2.extras
 
 from common import SOCIAL_POSTS_ENABLED, get_connection, log
 from social.calendar_mx import is_streaks_monthly_due, parse_month_key, streaks_monthly_key_if_due
-from social.digest_queries import fetch_streaks_monthly_payload
+from social.digest_queries_streaks import fetch_streaks_monthly_payload
 from social.poster.shared import POST_TYPE_STREAKS_MONTHLY, _already_posted, _publish_image_to_platforms
 from social.streaks_monthly_image import generate_streaks_monthly_png
 

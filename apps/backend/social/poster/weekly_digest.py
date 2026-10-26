@@ -6,7 +6,7 @@ import psycopg2.extras
 
 from common import SOCIAL_POSTS_ENABLED, get_connection, log
 from social.calendar_mx import is_weekly_digest_due, parse_iso_week_key, weekly_digest_key_if_due
-from social.digest_queries import fetch_weekly_digest_payload
+from social.digest_queries_weekly import fetch_weekly_digest_payload
 from social.poster.shared import POST_TYPE_WEEKLY_DIGEST, _already_posted, _publish_carousel_to_platforms
 from social.weekly_digest_image import (
     generate_weekly_digest_png,

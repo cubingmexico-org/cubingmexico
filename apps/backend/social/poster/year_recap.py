@@ -6,7 +6,7 @@ import psycopg2.extras
 
 from common import SOCIAL_POSTS_ENABLED, get_connection, log
 from social.calendar_mx import is_year_recap_due, year_recap_key_if_due
-from social.digest_queries import fetch_year_recap_payload
+from social.digest_queries_year import fetch_year_recap_payload
 from social.poster.shared import POST_TYPE_YEAR_RECAP, _already_posted, _publish_carousel_to_platforms
 from social.year_recap_image import generate_year_recap_slides, plan_year_recap_slides
 
