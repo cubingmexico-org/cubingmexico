@@ -30,24 +30,23 @@ from social.weekly_digest.layout import (
     _png_bytes,
     _wrap_text,
 )
-from social.weekly_digest.slides import (
+from social.weekly_digest.slide_parts import (
     UPCOMING_FOOTER_HEAD_H,
     UPCOMING_FOOTER_ROW_H,
     _content_bottom,
     _draw_thin_upcoming,
     _draw_upcoming_footer,
     _estimate_comp_block_h,
-    _render_slide,
-    _slide_competencias,
-    _slide_cover,
-    _slide_debutantes,
-    _slide_destacados,
-    _slide_numeros,
-    _slide_proximas,
     _upcoming_footer_height,
+)
+from social.weekly_digest.slides import (
+    _render_slide,
     generate_weekly_digest_png,
     generate_weekly_digest_slides,
 )
+from social.weekly_digest.slides_people import _slide_debutantes, _slide_destacados
+from social.weekly_digest.slides_upcoming import _slide_proximas
+from social.weekly_digest.slides_week import _slide_competencias, _slide_cover, _slide_numeros
 from social.weekly_digest.story import (
     KIND_ES,
     MAX_SLIDES,
