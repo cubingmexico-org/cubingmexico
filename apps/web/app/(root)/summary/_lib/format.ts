@@ -8,6 +8,16 @@ export function formatSummaryDate(iso: string): string {
   }).format(date);
 }
 
+export function teamInitials(name: string, fallback: string): string {
+  return (
+    name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 3) || fallback
+  );
+}
+
 export function championshipLabel(type: string): string {
   switch (type) {
     case "MX":

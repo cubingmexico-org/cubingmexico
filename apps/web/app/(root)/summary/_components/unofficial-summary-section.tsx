@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { CcYearSummary } from "@/lib/cubing-contests";
 import { CcEventIcon } from "@/components/cubing-contests/cc-event-icon";
 import { CcAttribution } from "@/components/cubing-contests/cc-attribution";
+import { MedalBreakdown } from "./medal-breakdown";
 import { Stat } from "./summary-stat";
 
 /** Unofficial events in the year. Never part of the official totals or share cards. */
@@ -28,12 +29,12 @@ export function UnofficialSummarySection({
         {competitionCount === 1 ? "competencia" : "competencias"}
         {podiumTotal > 0 ? (
           <>
-            , con <Stat tone="gold">{podiums.gold}</Stat>{" "}
-            {podiums.gold === 1 ? "oro" : "oros"},{" "}
-            <Stat tone="silver">{podiums.silver}</Stat>{" "}
-            {podiums.silver === 1 ? "plata" : "platas"} y{" "}
-            <Stat tone="bronze">{podiums.bronze}</Stat>{" "}
-            {podiums.bronze === 1 ? "bronce" : "bronces"}
+            , con{" "}
+            <MedalBreakdown
+              gold={podiums.gold}
+              silver={podiums.silver}
+              bronze={podiums.bronze}
+            />
           </>
         ) : null}
         .
