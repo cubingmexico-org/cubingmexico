@@ -128,7 +128,16 @@ def get_instagram_business_account_id() -> str | None:
     return _instagram_business_account_id  # type: ignore[return-value]
 
 
-DB_POOL_MAX = max(1, int(os.environ.get("DB_POOL_MAX", "10")))
+# A worker can't use more connections at once than it has threads.
+GUNICORN_THREADS = max(1, int(os.environ.get("GUNICORN_THREADS", "8")))
+WEB_CONCURRENCY = max(1, int(os.environ.get("WEB_CONCURRENCY", "1")))
+DB_POOL_MAX = max(1, int(os.environ.get("DB_POOL_MAX", str(GUNICORN_THREADS))))
+log.info(
+    "DB pool: up to %s connections per worker, %s across %s worker(s)",
+    DB_POOL_MAX,
+    DB_POOL_MAX * WEB_CONCURRENCY,
+    WEB_CONCURRENCY,
+)
 _pool: psycopg2.pool.ThreadedConnectionPool | None = None
 _pool_lock = threading.Lock()
 

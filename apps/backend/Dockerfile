@@ -27,9 +27,14 @@ USER app
 # Expose the Flask port
 EXPOSE 8080
 
+# Each worker holds its own DB pool (DB_POOL_MAX, default GUNICORN_THREADS), so an instance
+# opens up to WEB_CONCURRENCY x DB_POOL_MAX connections.
+ENV WEB_CONCURRENCY=4 \
+    GUNICORN_THREADS=8
+
 # Run the app using Gunicorn
 CMD sh -c "if [ \"$FLASK_ENV\" = \"development\" ]; then \
-    gunicorn --bind 0.0.0.0:${PORT:-8080} --reload --workers 1 --threads 8 --timeout 0 app:app; \
+    gunicorn --bind 0.0.0.0:${PORT:-8080} --reload --workers 1 --threads ${GUNICORN_THREADS} --timeout 0 app:app; \
   else \
-    gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 4 --threads 8 --timeout 300 --graceful-timeout 30 app:app; \
+    gunicorn --bind 0.0.0.0:${PORT:-8080} --workers ${WEB_CONCURRENCY} --threads ${GUNICORN_THREADS} --timeout 300 --graceful-timeout 30 app:app; \
   fi"
