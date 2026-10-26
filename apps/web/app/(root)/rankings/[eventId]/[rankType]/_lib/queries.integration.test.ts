@@ -9,6 +9,8 @@ import {
 } from "@/test/factories";
 import {
   getRankAverages,
+  getRankAveragesGenderCounts,
+  getRankAveragesStateCounts,
   getRankSingles,
   getRankSinglesGenderCounts,
   getRankSinglesStateCounts,
@@ -236,5 +238,49 @@ describe("getRankAverages", () => {
       ["2020BBBB01", 750, 1],
       ["2020AAAA01", 800, 2],
     ]);
+  });
+
+  it("ranks averages from results up to the given date", async () => {
+    await insertCompetition({
+      id: "Early2023",
+      startDate: new Date("2023-05-01T00:00:00Z"),
+    });
+    await insertCompetition({
+      id: "Late2024",
+      startDate: new Date("2024-05-01T00:00:00Z"),
+    });
+    const results = [
+      ["e1", "Early2023", "2020AAAA01", 500, 1100],
+      ["e2", "Early2023", "2020DDDD01", 450, 1000],
+      ["e3", "Early2023", "2020BBBB01", 600, -1],
+      ["l1", "Late2024", "2020AAAA01", 400, 900],
+    ] as const;
+    for (const [id, competitionId, personId, best, average] of results) {
+      await insertResult({
+        id,
+        competitionId,
+        eventId: "333",
+        personId,
+        best,
+        average,
+      });
+    }
+
+    const { data } = await getRankAverages(
+      rankInput({ asOf: "2023-12-31" }),
+      "333",
+    );
+    expect(data.map((r) => [r.personId, r.best])).toEqual([
+      ["2020DDDD01", 1000],
+      ["2020AAAA01", 1100],
+    ]);
+
+    expect(await getRankAveragesStateCounts("333", "2023-12-31")).toEqual({
+      "Ciudad de México": 1,
+      Jalisco: 1,
+    });
+    expect(await getRankAveragesGenderCounts("333", "2023-12-31")).toEqual({
+      f: 2,
+    });
   });
 });
