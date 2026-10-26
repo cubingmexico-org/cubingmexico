@@ -6,6 +6,8 @@ export default defineConfig({
     environment: "node",
     include: ["**/*.test.ts"],
     exclude: ["**/node_modules/**", "**/.next/**", "**/*.integration.test.ts"],
+    // Printables format dates in the process timezone; snapshots must not depend on the machine.
+    env: { TZ: "UTC" },
   },
   resolve: {
     alias: {
