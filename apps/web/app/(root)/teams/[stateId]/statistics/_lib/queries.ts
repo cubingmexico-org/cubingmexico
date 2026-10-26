@@ -10,7 +10,7 @@ import {
   result,
   resultAttempts,
 } from "@workspace/db/schema";
-import { and, eq, inArray, asc } from "drizzle-orm";
+import { and, eq, asc } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { roundRank } from "@/lib/utils";
 import { recordDateSql, toDateKey } from "@/lib/record-date";
@@ -76,31 +76,24 @@ export async function getTeamCompetitionEventOptions(
     .orderBy(asc(event.rank));
 }
 
-async function fetchAttemptsForResultIds(resultIds: string[]) {
+async function fetchTeamEventAttempts(stateId: string, eventId: string) {
+  const attempts = await db
+    .select({
+      resultId: resultAttempts.resultId,
+      value: resultAttempts.value,
+    })
+    .from(resultAttempts)
+    .innerJoin(result, eq(resultAttempts.resultId, result.id))
+    .innerJoin(person, eq(result.personId, person.wcaId))
+    .where(and(eq(person.stateId, stateId), eq(result.eventId, eventId)))
+    .orderBy(resultAttempts.resultId, resultAttempts.attemptNumber);
+
   const attemptsByResultId = new Map<string, number[]>();
-  const chunkSize = 500;
-
-  for (let i = 0; i < resultIds.length; i += chunkSize) {
-    const chunk = resultIds.slice(i, i + chunkSize);
-    if (chunk.length === 0) continue;
-
-    const attempts = await db
-      .select({
-        resultId: resultAttempts.resultId,
-        attemptNumber: resultAttempts.attemptNumber,
-        value: resultAttempts.value,
-      })
-      .from(resultAttempts)
-      .where(inArray(resultAttempts.resultId, chunk))
-      .orderBy(resultAttempts.resultId, resultAttempts.attemptNumber);
-
-    for (const attempt of attempts) {
-      const values = attemptsByResultId.get(attempt.resultId) ?? [];
-      values.push(attempt.value);
-      attemptsByResultId.set(attempt.resultId, values);
-    }
+  for (const attempt of attempts) {
+    const values = attemptsByResultId.get(attempt.resultId) ?? [];
+    values.push(attempt.value);
+    attemptsByResultId.set(attempt.resultId, values);
   }
-
   return attemptsByResultId;
 }
 
@@ -111,7 +104,7 @@ export async function getTeamCompetitionResults(
   cacheLife("weeks");
   cacheTag(`team-competition-results-${stateId}-${eventId}`);
 
-  const rows = await db
+  const rowsQuery = db
     .select({
       resultId: result.id,
       eventId: result.eventId,
@@ -143,13 +136,14 @@ export async function getTeamCompetitionResults(
     .where(and(eq(person.stateId, stateId), eq(result.eventId, eventId)))
     .orderBy(asc(recordDateSql), asc(result.pos), asc(result.best));
 
+  const [rows, attemptsByResultId] = await Promise.all([
+    rowsQuery,
+    fetchTeamEventAttempts(stateId, eventId),
+  ]);
+
   if (rows.length === 0) {
     return null;
   }
-
-  const attemptsByResultId = await fetchAttemptsForResultIds(
-    rows.map((row) => row.resultId),
-  );
 
   const results: TeamCompetitionResultRow[] = rows.map((row) => ({
     ...row,
