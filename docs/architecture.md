@@ -43,7 +43,7 @@ flowchart LR
 
 - Single source of truth for the Postgres schema (Drizzle), migrations, and seed data.
 - The Flask backend reads and writes the same tables with raw SQL. Any schema change goes through a Drizzle migration first.
-- Schema changes and deploys: on push, the `Migrate database` workflow and the Vercel deploy run in parallel, so every migration must work with both the old and the new code. Use expand/contract: add the new column or table first, ship the code that uses it, and drop the old one in a later PR.
+- Schema changes and deploys: on push, the `migrate` job in CI applies migrations only after lint, tests and build pass, while Vercel deploys independently, usually before the migration runs. Every migration must work with both the old and the new code. Use expand/contract: add the new column or table in one PR, ship the code that uses it in a later PR, and drop the old one after that. The `Migrate database` workflow is only for manual re-runs.
 
 **backend (Flask)** ([apps/backend](../apps/backend))
 

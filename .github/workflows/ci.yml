@@ -140,3 +140,23 @@ jobs:
 
       - name: Build
         run: pnpm turbo run build $TURBO_FILTER
+
+  migrate:
+    needs: [quality, integration, build]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: migrate-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+
+      # Use the Neon direct connection string (host without "-pooler").
+      # main → production (DATABASE_URL); development → staging (DATABASE_URL_STAGING)
+      - name: Apply Drizzle migrations
+        run: pnpm --filter @workspace/db migrate
+        env:
+          DATABASE_URL: ${{ github.ref_name == 'main' && secrets.DATABASE_URL || secrets.DATABASE_URL_STAGING }}

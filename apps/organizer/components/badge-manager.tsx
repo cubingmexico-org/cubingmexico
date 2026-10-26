@@ -37,6 +37,7 @@ import {
 } from "@workspace/ui/components/breadcrumb";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { toast } from "sonner";
 import type { ExtendedPerson, WCIF } from "@/types/wcif";
 import { Input } from "@workspace/ui/components/input";
 import { FileUploader } from "./file-uploader";
@@ -356,7 +357,13 @@ export function BadgeManager({
                     size="sm"
                     className="gap-2 transition-all"
                     onClick={async () => {
-                      await revalidateWCIF(competition.id);
+                      const result = await revalidateWCIF(competition.id);
+                      if (!result.ok) {
+                        toast.error("No se pudo actualizar", {
+                          description: result.error,
+                        });
+                        return;
+                      }
                       setLastUpdate(new Date());
                     }}
                   >

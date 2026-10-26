@@ -1,11 +1,7 @@
+# Pushes migrate through the `migrate` job in ci.yml once CI passes; this is for manual re-runs.
 name: Migrate database
 
 on:
-  push:
-    branches: [main, development]
-    paths:
-      - "packages/db/**"
-      - ".github/workflows/migrate.yml"
   workflow_dispatch:
 
 permissions:
