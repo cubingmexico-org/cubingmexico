@@ -134,7 +134,7 @@ def import_competitions(z, file_name):
     competitions = df.to_dict(orient="records")
     with get_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-            cur.execute("SELECT * FROM states")
+            cur.execute("SELECT id, name FROM states")
             states = cur.fetchall()
 
             cur.execute("SELECT id FROM delegates")

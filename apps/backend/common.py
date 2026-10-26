@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from functools import wraps
 
 import psycopg2
+import psycopg2.extras
 import psycopg2.pool
 from flask import abort, jsonify, request
 from google.cloud import secretmanager
@@ -192,6 +193,13 @@ def get_connection():
             _get_pool().putconn(conn, close=bool(conn.closed))
         else:
             conn.close()
+
+
+@contextmanager
+def cursor():
+    """Yields a NamedTupleCursor on a pooled connection, with `get_connection()`'s commit/rollback."""
+    with get_connection() as conn, conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        yield cur
 
 
 def job_response(fn, error_message):

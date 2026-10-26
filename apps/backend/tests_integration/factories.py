@@ -17,6 +17,10 @@ def insert_state(conn, state_id: str, name: str | None = None) -> None:
     _insert(conn, "states", {"id": state_id, "name": name or state_id})
 
 
+def insert_team(conn, state_id: str, name: str, **values: Any) -> None:
+    _insert(conn, "teams", {"state_id": state_id, "name": name, **values})
+
+
 def insert_event(conn, event_id: str, rank: int, *, format: str = "time") -> None:
     _insert(conn, "events", {"id": event_id, "format": format, "name": event_id, "rank": rank})
 

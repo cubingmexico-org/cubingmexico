@@ -1,6 +1,8 @@
 import pytest
 
-from .factories import insert_event, insert_person, insert_rank, insert_state
+import routes.misc
+
+from .factories import insert_event, insert_person, insert_rank, insert_state, insert_team
 
 
 @pytest.fixture
@@ -98,3 +100,47 @@ def test_errors_are_not_cached(client, ranks):
     response = client.get("/rank/XXX/single/333")
 
     assert "Cache-Control" not in response.headers
+
+
+TEAM_KEYS = {"name", "description", "image", "coverImage", "stateId", "founded", "socialLinks", "isActive"}
+
+
+def test_teams_expose_only_the_public_columns(client, db):
+    insert_state(db, "JAL", "Jalisco")
+    insert_team(db, "JAL", "Jalisco Cubing", description="Equipo")
+
+    teams = client.get("/teams").get_json()
+    assert [set(team) for team in teams] == [TEAM_KEYS]
+
+    response = client.get("/teams/JAL")
+    assert response.status_code == 200
+    assert set(response.get_json()) == TEAM_KEYS
+    assert response.get_json()["description"] == "Equipo"
+
+    assert client.get("/teams/CMX").status_code == 404
+
+
+def test_states_expose_id_and_name(client, db):
+    insert_state(db, "JAL", "Jalisco")
+
+    assert client.get("/states").get_json() == [{"id": "JAL", "name": "Jalisco"}]
+
+
+def test_state_records_list_official_events_only(client, ranks):
+    response = client.get("/records/CMX")
+
+    assert response.status_code == 200
+    records = response.get_json()
+    assert [(r["personId"], r["eventId"]) for r in records["single"]] == [("2015CCCC01", "333")]
+    assert records["average"] == []
+
+
+def test_unexpected_errors_return_a_generic_500(client, monkeypatch):
+    def broken_cursor():
+        raise RuntimeError("secret detail")
+
+    monkeypatch.setattr(routes.misc, "cursor", broken_cursor)
+
+    response = client.get("/states")
+    assert response.status_code == 500
+    assert response.get_json() == {"success": False, "message": "Internal server error"}
