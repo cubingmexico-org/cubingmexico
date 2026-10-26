@@ -252,6 +252,9 @@ importers:
       eslint:
         specifier: 'catalog:'
         version: 9.39.2(jiti@2.6.1)
+      postgres:
+        specifier: 'catalog:'
+        version: 3.4.8
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
@@ -419,6 +422,9 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/debug@4.1.12)(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.9.1)
 
   packages/db:
     dependencies:

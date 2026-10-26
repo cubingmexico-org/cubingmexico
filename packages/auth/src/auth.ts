@@ -1,46 +1,14 @@
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { customSession, genericOAuth } from "better-auth/plugins";
-
-interface WCAProfile {
-  me: {
-    id: string | number;
-    wca_id: string | null;
-    name: string;
-    avatar: {
-      url: string | null;
-      thumb_url: string | null;
-      pending_url: string;
-    };
-  };
-}
-
-/**
- * Cookie-only OAuth does not persist user.additionalFields.
- * We encode the WCA ID in the synthetic email and restore it here.
- */
-function wcaIdFromUser(user: {
-  email?: string | null;
-  wcaId?: string | null;
-}): string | null {
-  if (user.wcaId) {
-    return user.wcaId;
-  }
-
-  const email = user.email;
-  if (email?.toLowerCase().endsWith("@wca.org")) {
-    return email.slice(0, -"@wca.org".length).toUpperCase();
-  }
-
-  return null;
-}
-
-function trustedOriginsFromEnv(): string[] {
-  return (process.env.AUTH_TRUSTED_ORIGINS ?? "")
-    .split(",")
-    .map((origin: string) => origin.trim())
-    .filter(Boolean);
-}
+import {
+  tokensFromWcaResponse,
+  trustedOriginsFromEnv,
+  userFromWcaProfile,
+  wcaIdFromUser,
+  type WCAProfile,
+  type WCATokenResponse,
+} from "./wca-profile";
 
 const cookieDomain = process.env.AUTH_COOKIE_DOMAIN?.trim() || undefined;
 
@@ -114,17 +82,9 @@ const options = {
               throw new Error("Failed to retrieve WCA token");
             }
 
-            const data = await response.json();
-
-            return {
-              accessToken: data.access_token,
-              refreshToken: data.refresh_token,
-              accessTokenExpiresAt: new Date(
-                Date.now() + data.expires_in * 1000,
-              ),
-              scopes: data.scope ? data.scope.split(" ") : [],
-              raw: data,
-            };
+            return tokensFromWcaResponse(
+              (await response.json()) as WCATokenResponse,
+            );
           },
           getUserInfo: async ({ accessToken }) => {
             const response = await fetch(
@@ -136,20 +96,7 @@ const options = {
               },
             );
 
-            const data = (await response.json()) as WCAProfile;
-
-            const wcaId = data.me.wca_id || data.me.id.toString();
-            return {
-              id: wcaId,
-              wcaId,
-              name: data.me.name,
-              email: `${wcaId.toLowerCase()}@wca.org`,
-              image:
-                (data.me.avatar.url
-                  ? data.me.avatar.thumb_url
-                  : data.me.avatar.pending_url) ?? undefined,
-              emailVerified: true,
-            };
+            return userFromWcaProfile((await response.json()) as WCAProfile);
           },
         },
       ],
