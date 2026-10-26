@@ -51,7 +51,7 @@ def record_image(subject_key: str):
     if not generated:
         return jsonify({"success": False, "message": "Record not found"}), 404
 
-    png, marker = generated
+    png, _marker = generated
     safe_name = subject_key.replace(":", "-").replace("/", "-")
     filename = f"record-{safe_name}.png"
     return Response(

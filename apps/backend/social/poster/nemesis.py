@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import psycopg2.extras
 
 from common import SOCIAL_POSTS_ENABLED, get_connection, log
@@ -52,7 +54,7 @@ def get_nemesis_details(subject_key: str) -> dict | None:
 
 
 def _nemesis_captions(details: dict) -> dict[str, str]:
-    kwargs = dict(
+    kwargs: dict[str, Any] = dict(
         person_name=details["person_name"],
         person_id=details["wca_id"],
         event_count=details["event_count"],

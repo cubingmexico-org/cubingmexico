@@ -1,0 +1,13 @@
+{
+  "name": "backend",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "lint": "uv run --locked ruff check . && uv run --locked ruff format --check .",
+    "check-types": "uv sync --locked && pyright",
+    "test": "uv run --locked pytest"
+  },
+  "devDependencies": {
+    "pyright": "^1.1.414"
+  }
+}

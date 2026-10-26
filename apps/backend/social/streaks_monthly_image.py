@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from social.image_common import (
     BLACK,
@@ -12,6 +12,7 @@ from social.image_common import (
     GREEN,
     RED,
     SIZE,
+    Font,
     center_text,
     load_font,
     paste_logo,
@@ -24,7 +25,7 @@ BOTTOM_BAR = 110
 SCORE_GUTTER = 120
 
 
-def _fit_ellipsis(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
+def _fit_ellipsis(text: str, font: Font, max_width: int) -> str:
     text = (text or "").strip()
     if not text or text_width(text, font) <= max_width:
         return text

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 MX_TZ = ZoneInfo("America/Mexico_City")
@@ -44,9 +44,9 @@ _MONTHS_ES = (
 
 def mexico_city_now(now: datetime | None = None) -> datetime:
     if now is None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
     elif now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
+        now = now.replace(tzinfo=UTC)
     return now.astimezone(MX_TZ)
 
 

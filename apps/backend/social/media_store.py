@@ -7,7 +7,7 @@ request, so /tmp is not shared across replicas.
 from __future__ import annotations
 
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from psycopg2 import Binary
 
@@ -42,7 +42,7 @@ def _ensure_table(cur) -> None:
 
 
 def _purge_expired(cur, now: datetime | None = None) -> None:
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     cur.execute("DELETE FROM social_temp_media WHERE expires_at <= %s", (now,))
 
 
@@ -52,7 +52,7 @@ def put_media(
     ttl_seconds: int = TTL_SECONDS,
 ) -> str:
     token = secrets.token_urlsafe(24)
-    expires_at = datetime.now(timezone.utc) + timedelta(seconds=ttl_seconds)
+    expires_at = datetime.now(UTC) + timedelta(seconds=ttl_seconds)
     with get_connection() as conn:
         with conn.cursor() as cur:
             _ensure_table(cur)
@@ -69,7 +69,7 @@ def put_media(
 
 
 def get_media(token: str) -> tuple[bytes, str] | None:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     with get_connection() as conn:
         with conn.cursor() as cur:
             _ensure_table(cur)

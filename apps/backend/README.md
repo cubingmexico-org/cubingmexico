@@ -216,7 +216,7 @@ Keep `SOCIAL_POSTS_ENABLED=false` in development/staging (and until secrets and 
 
 ## Development
 
-- Run checks with `uv run ruff check .`, `uv run ruff format --check .` and `uv run pytest`.
+- Run checks with `pnpm lint`, `pnpm check-types` (pyright) and `pnpm test` from this directory, or through Turborepo from the repo root. They call `uv run ruff`, `pyright` and `uv run pytest`.
 - Add or upgrade dependencies with `uv add <package>` / `uv lock --upgrade-package <package>`; commit `pyproject.toml` and `uv.lock` together.
 - utils.py contains helpers: get_state_from_coordinates and convert_keys_to_camel_case.
 - Logging uses standard Python logging at INFO level.

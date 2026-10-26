@@ -24,27 +24,35 @@ NAME_MAX_SIZE = 72
 NAME_MIN_SIZE = 32
 NAME_MIN_SINGLE_LINE = 64
 
+type Font = ImageFont.FreeTypeFont | ImageFont.ImageFont
 
-def load_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+
+def load_font(size: int) -> Font:
     if FONT_PATH.exists():
         return ImageFont.truetype(str(FONT_PATH), size)
     return ImageFont.load_default()
 
 
-def text_width(text: str, font: ImageFont.ImageFont) -> int:
-    bbox = font.getbbox(text)
-    return bbox[2] - bbox[0]
+def ink_bbox(font: Font, text: str) -> tuple[int, int, int, int]:
+    """Pillow types getbbox as floats, but basic text layout always returns whole pixels."""
+    left, top, right, bottom = font.getbbox(text)
+    return int(left), int(top), int(right), int(bottom)
 
 
-def text_height(text: str, font: ImageFont.ImageFont) -> int:
-    bbox = font.getbbox(text)
-    return bbox[3] - bbox[1]
+def text_width(text: str, font: Font) -> int:
+    left, _, right, _ = ink_bbox(font, text)
+    return right - left
+
+
+def text_height(text: str, font: Font) -> int:
+    _, top, _, bottom = ink_bbox(font, text)
+    return bottom - top
 
 
 def center_text(
     draw: ImageDraw.ImageDraw,
     text: str,
-    font: ImageFont.ImageFont,
+    font: Font,
     y: int,
     fill: tuple[int, int, int, int],
 ) -> None:
@@ -55,7 +63,7 @@ def center_text(
 def draw_centered_badge(
     draw: ImageDraw.ImageDraw,
     text: str,
-    font: ImageFont.ImageFont,
+    font: Font,
     *,
     cy: int,
     fill: tuple[int, int, int, int],
@@ -68,7 +76,7 @@ def draw_centered_badge(
 
     Returns the badge bounding box (x0, y0, x1, y1).
     """
-    left, top, right, bottom = font.getbbox(text)
+    left, top, right, bottom = ink_bbox(font, text)
     ink_w = right - left
     ink_h = bottom - top
     box_w = ink_w + pad_x * 2
@@ -125,7 +133,7 @@ def dash_split(text: str) -> list[str] | None:
     return None
 
 
-def best_two_line_wrap(text: str, font: ImageFont.ImageFont, max_width: int) -> list[str] | None:
+def best_two_line_wrap(text: str, font: Font, max_width: int) -> list[str] | None:
     dash_lines = dash_split(text)
     if dash_lines:
         w1 = text_width(dash_lines[0], font)
@@ -157,7 +165,7 @@ def layout_wrapped_name(
     max_size: int = NAME_MAX_SIZE,
     min_size: int = NAME_MIN_SIZE,
     min_single_line: int = NAME_MIN_SINGLE_LINE,
-) -> tuple[ImageFont.ImageFont, list[str]]:
+) -> tuple[Font, list[str]]:
     """Pick the largest readable font; wrap to two lines when needed."""
     prefer_wrap = prefer_two_lines(text)
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from social.image_common import (
     BLACK,
@@ -13,7 +13,9 @@ from social.image_common import (
     RED,
     SIZE,
     WHITE,
+    Font,
     center_text,
+    ink_bbox,
     load_font,
     paste_logo,
     text_height,
@@ -28,7 +30,7 @@ def _draw_pair_badges(
     draw: ImageDraw.ImageDraw,
     *,
     labels: tuple[str, str],
-    font: ImageFont.ImageFont,
+    font: Font,
     cy: int,
     fill: tuple[int, int, int, int],
     text_fill: tuple[int, int, int, int],
@@ -40,7 +42,7 @@ def _draw_pair_badges(
     """Draw two equal badges centered as a pair on the horizontal midline."""
     boxes: list[tuple[int, int]] = []
     for label in labels:
-        left, top, right, bottom = font.getbbox(label)
+        left, top, right, bottom = ink_bbox(font, label)
         boxes.append((right - left + pad_x * 2, bottom - top + pad_y * 2))
 
     total_w = boxes[0][0] + gap + boxes[1][0]

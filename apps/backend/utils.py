@@ -3,6 +3,7 @@ import math
 import os
 import re
 from datetime import datetime
+from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import request
@@ -27,7 +28,8 @@ def _get_reverse():
     """Lazy Nominatim client with ~1 req/s rate limit (OSM usage policy)."""
     global _geolocator, _reverse
     if _reverse is None:
-        _geolocator = Nominatim(user_agent="cubing-mexico-web-backend", timeout=10)
+        # geopy is untyped, so pyright infers `timeout` from its sentinel default.
+        _geolocator = Nominatim(user_agent="cubing-mexico-web-backend", timeout=10)  # pyright: ignore[reportArgumentType]
         _reverse = RateLimiter(
             _geolocator.reverse,
             min_delay_seconds=1.1,
@@ -65,7 +67,7 @@ def to_camel_case(snake_str):
     return components[0] + "".join(x.title() for x in components[1:])
 
 
-def convert_keys_to_camel_case(data):
+def convert_keys_to_camel_case(data: Any) -> Any:
     if isinstance(data, dict):
         return {to_camel_case(k): convert_keys_to_camel_case(v) for k, v in data.items()}
     elif isinstance(data, list):
@@ -208,7 +210,7 @@ def parse_bool_query_param(param_name):
 
 def build_competitions_filter_query_parts():
     where_clauses = ["c.country_id = %s"]
-    query_params = ["Mexico"]
+    query_params: list[object] = ["Mexico"]
 
     state_id = request.args.get("stateId") or request.args.get("state_id")
     if state_id:

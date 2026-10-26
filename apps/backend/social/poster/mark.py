@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
 import psycopg2.extras
 
@@ -57,13 +57,7 @@ def mark_typed_posted(
     with get_connection() as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
             resolved_competition_id = competition_id
-            if post_type == POST_TYPE_RESULTADOS or require_mexico_competition:
-                comp = _competition_details(cur, subject_key)
-                if not comp:
-                    result["errors"].append("competition_not_found_or_not_mexico")
-                    return result
-                resolved_competition_id = subject_key
-            elif post_type == POST_TYPE_UPCOMING:
+            if post_type in (POST_TYPE_RESULTADOS, POST_TYPE_UPCOMING) or require_mexico_competition:
                 comp = _competition_details(cur, subject_key)
                 if not comp:
                     result["errors"].append("competition_not_found_or_not_mexico")

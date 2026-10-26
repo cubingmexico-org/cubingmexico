@@ -26,6 +26,7 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 
 - **Node.js** >= 24 (see `.nvmrc`)
 - **pnpm** 10.34.9 (defined in `packageManager`)
+- **[uv](https://docs.astral.sh/uv/)** for the Python backend (`brew install uv`); `pnpm lint`, `pnpm check-types` and `pnpm test` run the backend checks through it
 - **Docker** and Docker Compose (Postgres, migrator, and Flask backend)
 
 ### 1. Install dependencies
@@ -141,31 +142,31 @@ pnpm services:up
 
 ## Scripts
 
-| Command                        | Description                                      |
-| ------------------------------ | ------------------------------------------------ |
-| `pnpm install`                 | Install all workspace dependencies               |
-| `pnpm services:up`             | Start db + migrator + backend via Docker Compose |
-| `pnpm db:up`                   | Start Postgres only                              |
-| `pnpm db:down`                 | Stop Compose services                            |
-| `pnpm dev:web`                 | Next.js web app (Turbo)                          |
-| `pnpm dev:organizer`           | Organización app (Turbo)                         |
-| `pnpm dev`                     | All apps in development mode                     |
-| `pnpm build`                   | Build all apps and packages                      |
-| `pnpm lint`                    | Lint all apps and packages                       |
-| `pnpm check-types`             | Typecheck apps and shared packages               |
-| `pnpm test`                    | Run unit tests (web + organizer)                 |
-| `pnpm test:integration`        | Run web integration tests against Postgres       |
-| `pnpm format`                  | Format with Prettier                             |
-| `pnpm clean`                   | Remove Turbo cache, build outputs, node_modules  |
-| `pnpm --filter web db:migrate` | Apply Drizzle migrations                         |
-| `pnpm --filter web db:seed`    | Seed Mexican states                              |
-| `pnpm --filter web db:studio`  | Open Drizzle Studio                              |
+| Command                        | Description                                       |
+| ------------------------------ | ------------------------------------------------- |
+| `pnpm install`                 | Install all workspace dependencies                |
+| `pnpm services:up`             | Start db + migrator + backend via Docker Compose  |
+| `pnpm db:up`                   | Start Postgres only                               |
+| `pnpm db:down`                 | Stop Compose services                             |
+| `pnpm dev:web`                 | Next.js web app (Turbo)                           |
+| `pnpm dev:organizer`           | Organización app (Turbo)                          |
+| `pnpm dev`                     | All apps in development mode                      |
+| `pnpm build`                   | Build all apps and packages                       |
+| `pnpm lint`                    | Lint all apps and packages (ruff for backend)     |
+| `pnpm check-types`             | Typecheck apps and packages (pyright for backend) |
+| `pnpm test`                    | Run unit tests (web, organizer, backend pytest)   |
+| `pnpm test:integration`        | Run web integration tests against Postgres        |
+| `pnpm format`                  | Format with Prettier                              |
+| `pnpm clean`                   | Remove Turbo cache, build outputs, node_modules   |
+| `pnpm --filter web db:migrate` | Apply Drizzle migrations                          |
+| `pnpm --filter web db:seed`    | Seed Mexican states                               |
+| `pnpm --filter web db:studio`  | Open Drizzle Studio                               |
 
 ## Testing
 
-- **Unit tests:** `pnpm test` runs the Vitest suites for web and organizer. No database needed.
+- **Unit tests:** `pnpm test` runs the Vitest suites for web and organizer and the backend's pytest suite. No database needed.
 - **Integration tests:** `pnpm db:up && pnpm test:integration` runs `apps/web/**/*.integration.test.ts` against real Postgres. The suite creates and migrates a separate `cubing_mexico_test` database and truncates its tables before every test, so your dev data is never touched. Point it elsewhere with `TEST_DATABASE_URL`; the database name must end in `_test`. Insert test data with the helpers in `apps/web/test/factories.ts`.
-- **Backend:** `cd apps/backend && pytest`.
+- **Backend:** `pnpm --filter backend test` (or `lint` / `check-types`).
 - **TypeScript/Python parity:** state ranks and state records (SR) are computed in both `apps/web/lib` and `apps/backend/routes/admin/state.py`. Both test suites run the cases in `fixtures/parity/*.json`. If you change either rule, update those fixtures so both implementations stay in sync.
 
 ## Tech Stack

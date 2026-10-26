@@ -1,5 +1,8 @@
 """Per-file import steps for the WCA results export."""
 
+# pandas-stubs types boolean masks and Series arithmetic more strictly than the runtime behavior used here.
+# pyright: reportArgumentType=warning, reportGeneralTypeIssues=warning
+
 import io
 import re
 from datetime import datetime

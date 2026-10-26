@@ -30,12 +30,27 @@ target-version = "py312"
 extend-exclude = [".venv"]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "B"]
-# Line length is enforced by `ruff format`; long SQL literals are left intact.
-ignore = ["E501"]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = [
+  # Line length is enforced by `ruff format`; long SQL literals are left intact.
+  "E501",
+  # Nested `with conn:` / `with conn.cursor()` blocks read fine as they are.
+  "SIM117",
+  # Spanish captions use en dashes on purpose.
+  "RUF001",
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app", "common", "utils", "nemesis_stats", "routes", "social"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+exclude = [".venv", "**/__pycache__", "node_modules"]
+# psycopg2's NamedTupleCursor rows are typed as a bare NamedTuple, so every column access would be an error.
+reportAttributeAccessIssue = "warning"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

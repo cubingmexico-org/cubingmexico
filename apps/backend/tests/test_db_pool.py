@@ -49,16 +49,18 @@ def fake_pool(monkeypatch):
 
 def test_commits_and_returns_to_pool(fake_pool):
     pool = fake_pool()
-    with common.get_connection() as conn:
+    with common.get_connection():
         pass
+    conn = pool.out[0]
     assert conn.commits == 1
     assert pool.returned == [(conn, False)]
 
 
 def test_rolls_back_and_returns_on_error(fake_pool):
     pool = fake_pool()
-    with pytest.raises(ValueError), common.get_connection() as conn:
+    with pytest.raises(ValueError), common.get_connection():
         raise ValueError("boom")
+    conn = pool.out[0]
     assert conn.commits == 0
     assert conn.rollbacks == 1
     assert pool.returned == [(conn, False)]

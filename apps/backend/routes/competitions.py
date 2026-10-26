@@ -32,7 +32,8 @@ def get_competitions():
                     """,
                     tuple(query_params),
                 )
-                total = cur.fetchone().total
+                count_row = cur.fetchone()
+                total = count_row.total if count_row else 0
 
                 cur.execute(
                     f"""
@@ -43,7 +44,7 @@ def get_competitions():
                     ORDER BY c.start_date DESC, c.id DESC
                     LIMIT %s OFFSET %s
                     """,
-                    tuple(query_params + [size, offset]),
+                    (*query_params, size, offset),
                 )
                 competitions = cur.fetchall()
 

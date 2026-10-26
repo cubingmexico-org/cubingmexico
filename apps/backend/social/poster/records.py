@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import psycopg2.extras
 
 from common import SOCIAL_POSTS_ENABLED, get_connection, log
@@ -79,7 +81,7 @@ def _record_captions(marker: dict) -> dict[str, str]:
     from social.image_common import format_result_time
 
     time_text = format_result_time(marker["event_id"], marker["value"], kind=marker["kind"])
-    kwargs = dict(
+    kwargs: dict[str, Any] = dict(
         person_name=marker["person_name"],
         person_id=marker["person_id"],
         event_name=marker["event_name"],

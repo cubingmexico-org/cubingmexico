@@ -39,7 +39,8 @@ def get_persons():
                 filter_params = (state_id,) if state_id else ()
 
                 cur.execute(f"SELECT COUNT(*) FROM persons{where_clause}", filter_params)
-                total = cur.fetchone()[0]
+                count_row = cur.fetchone()
+                total = count_row[0] if count_row else 0
 
                 cur.execute(
                     f"SELECT wca_id, name, state_id FROM persons{where_clause} ORDER BY wca_id LIMIT %s OFFSET %s",

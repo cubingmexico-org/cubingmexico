@@ -5,7 +5,8 @@ from pathlib import Path
 from common import require_cron_auth
 
 SNAPSHOT = Path(__file__).parent / "snapshots" / "route_map.json"
-_CRON_AUTH_CODE = require_cron_auth(lambda: None).__code__
+# functools.wraps types the wrapper as _Wrapped, which hides its __code__.
+_CRON_AUTH_CODE = require_cron_auth(lambda: None).__code__  # pyright: ignore[reportAttributeAccessIssue]
 
 
 def _route_map(app):

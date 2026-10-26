@@ -18,6 +18,7 @@
     "WCA_CLIENT_ID",
     "WCA_CLIENT_SECRET"
   ],
+  "globalPassThroughEnv": ["NEXT_RUNTIME", "UV_*"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

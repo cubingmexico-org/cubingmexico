@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from PIL import ImageDraw, ImageFont
+from PIL import ImageDraw
 
 from social.image_common import (
     BLACK,
     CREAM,
     GREEN,
     RED,
+    Font,
     load_font,
     text_height,
     text_width,
@@ -107,8 +108,8 @@ def _draw_upcoming_footer(draw: ImageDraw.ImageDraw, payload: dict, slide_id: st
 def _estimate_comp_block_h(
     rows: list[tuple[dict, str | None]],
     *,
-    name_font: ImageFont.ImageFont,
-    meta_font: ImageFont.ImageFont,
+    name_font: Font,
+    meta_font: Font,
 ) -> int:
     h = 0
     for comp, _tag in rows:
@@ -235,7 +236,7 @@ def _slide_cover(payload: dict, *, index: int, total: int) -> bytes:
     ctx_meta_font = load_font(26)
     stats_font = load_font(32)
 
-    context: list[tuple[str, ImageFont.ImageFont, tuple]] = []
+    context: list[tuple[str, Font, tuple]] = []
     if story["kind"] != "comp" and len(comps) == 1:
         comp = comps[0]
         for line in _wrap_text(comp.get("name") or "", ctx_name_font, CONTENT_WIDTH):
@@ -984,13 +985,7 @@ def _draw_thin_upcoming(
 
     list_bottom = PANEL_BOTTOM - 48
     available = list_bottom - (panel_top + 36) - header_h
-    if len(rows) > 1:
-        row_gap = max(
-            row_gap_min,
-            (available - len(rows) * row_h) // (len(rows) - 1),
-        )
-    else:
-        row_gap = 0
+    row_gap = max(row_gap_min, (available - len(rows) * row_h) // (len(rows) - 1)) if len(rows) > 1 else 0
     block_h = header_h + len(rows) * row_h + max(0, len(rows) - 1) * row_gap
     panel_h = PANEL_BOTTOM - panel_top
     y = panel_top + max(36, (panel_h - block_h) // 2)
