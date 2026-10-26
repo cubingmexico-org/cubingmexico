@@ -7,7 +7,7 @@ from functools import wraps
 
 import psycopg2
 import psycopg2.pool
-from flask import abort, request
+from flask import abort, jsonify, request
 from google.cloud import secretmanager
 
 # Mirrors the WCA's `Event.official` scope: ranks 800-989 are announced but
@@ -176,6 +176,16 @@ def get_connection():
             _get_pool().putconn(conn, close=bool(conn.closed))
         else:
             conn.close()
+
+
+def job_response(fn, error_message):
+    """Runs a job that returns a dict (or None) and raises on failure, as a JSON response."""
+    try:
+        result = fn() or {}
+    except Exception:
+        log.exception(error_message)
+        return jsonify({"success": False, "message": error_message}), 500
+    return jsonify({"success": True, **result})
 
 
 def require_cron_auth(f):

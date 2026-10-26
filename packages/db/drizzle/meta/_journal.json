@@ -127,6 +127,13 @@
       "when": 1792855275021,
       "tag": "0017_cubing_contests",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793039928046,
+      "tag": "0018_job_runs",
+      "breakpoints": true
     }
   ]
 }

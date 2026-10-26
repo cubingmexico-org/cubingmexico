@@ -1,6 +1,10 @@
 import "server-only";
 
-export { getExportMetadata, getAdminOverviewCounts } from "./queries/overview";
+export {
+  getExportMetadata,
+  getAdminOverviewCounts,
+  getRecentJobRuns,
+} from "./queries/overview";
 export {
   getSocialPosts,
   deleteSocialPost,

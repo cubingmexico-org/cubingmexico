@@ -82,6 +82,12 @@ export const ADMIN_OPS_JOBS = [
     label: "Actualizar todo",
     description: "Ejecuta el pipeline completo (puede tardar varios minutos).",
   },
+  {
+    path: "/update-all/resume",
+    label: "Reanudar actualización completa",
+    description:
+      "Retoma la última ejecución fallida de “Actualizar todo” desde el paso que falló, sin repetir los pasos exitosos.",
+  },
 ] as const;
 
 export type AdminOpsPath = (typeof ADMIN_OPS_JOBS)[number]["path"];
@@ -95,6 +101,7 @@ export const OPS_JOB_CACHE_TAGS: Partial<Record<AdminOpsPath, string[]>> = {
   "/update-database": ["data-source-dates"],
   "/update-cubing-contests": ["cc-results", "data-source-dates"],
   "/update-all": ["cc-results", "data-source-dates"],
+  "/update-all/resume": ["cc-results", "data-source-dates"],
 };
 
 const ALLOWED_PATHS = new Set<string>(ADMIN_OPS_JOBS.map((job) => job.path));

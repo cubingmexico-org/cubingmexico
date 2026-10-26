@@ -480,6 +480,14 @@
     "cron_auth": true
   },
   {
+    "rule": "/update-all/resume",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.resume_update_all",
+    "cron_auth": true
+  },
+  {
     "rule": "/update-competition-schedules",
     "methods": [
       "POST"
