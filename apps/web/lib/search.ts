@@ -18,10 +18,15 @@ function unaccentLower(column: SQLWrapper): SQL {
   )`;
 }
 
+/** Escapes LIKE wildcards so user input matches literally (`\` is Postgres' default LIKE escape). */
+function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, "\\$&");
+}
+
 /** Accent-insensitive substring match (replaces `ilike(column, '%value%')`). */
 export function accentInsensitiveContains(
   column: SQLWrapper,
   value: string,
 ): SQL {
-  return sql`${unaccentLower(column)} LIKE ${`%${normalizeSearchText(value)}%`}`;
+  return sql`${unaccentLower(column)} LIKE ${`%${escapeLike(normalizeSearchText(value))}%`}`;
 }
