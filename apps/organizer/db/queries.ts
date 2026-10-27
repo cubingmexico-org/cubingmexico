@@ -1,7 +1,7 @@
 import type { WCIF } from "@/types/wcif";
 import type { Competition } from "@/types/wca";
 import { wcifLatestUrl } from "@/lib/wcif-api";
-import * as Sentry from "@sentry/nextjs";
+import { reportError } from "@/lib/report-error";
 import { db } from "@workspace/db";
 import {
   competition as competitionTable,
@@ -99,8 +99,7 @@ export async function getCompetitionLogoById(
     return logo || null;
   } catch (error) {
     // The logo is decorative: render without it, but still report the failure.
-    Sentry.captureException(error);
-    console.error("Error fetching competition logo:", error);
+    reportError(error, { competitionId });
     return null;
   }
 }
@@ -132,8 +131,7 @@ export async function getCompetitionLogosByIds(
       map.set(row.id, logo || null);
     }
   } catch (error) {
-    Sentry.captureException(error);
-    console.error("Error fetching competition logos:", error);
+    reportError(error);
   }
 
   return map;

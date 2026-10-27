@@ -1,6 +1,5 @@
 import "server-only";
 
-import * as Sentry from "@sentry/nextjs";
 import { updateTag } from "next/cache";
 import {
   invalidateAfterStateRanksChange,
@@ -8,6 +7,7 @@ import {
   invalidateCurrentUserTeam,
   invalidateStateMemberTags,
 } from "@/lib/cache-tags";
+import { reportError } from "@/lib/report-error";
 import {
   clearPersonStateRanks,
   clearPersonStateRecords,
@@ -51,7 +51,7 @@ export async function refreshStatesAfterRosterChange({
       }
     } catch (error) {
       ok = false;
-      Sentry.captureException(error, { extra: { stateId } });
+      reportError(error, { stateId });
     }
     invalidateAfterStateRanksChange(stateId);
     invalidateStateMemberTags(stateId);

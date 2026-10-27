@@ -5,6 +5,7 @@ import { toBlob } from "html-to-image";
 import { Share2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
+import { reportError } from "@/lib/report-error";
 
 type Props = {
   filename: string;
@@ -90,7 +91,7 @@ export function SummaryShareButton({
       downloadBlob(blob, filename);
       toast.success("Imagen descargada");
     } catch (error) {
-      console.error(error);
+      reportError(error);
       toast.error("No se pudo generar la imagen para compartir");
     } finally {
       setBusy(false);

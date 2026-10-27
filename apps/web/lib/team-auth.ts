@@ -29,25 +29,20 @@ export async function getTeamRole(
     return null;
   }
 
-  try {
-    const rows = await db
-      .select({
-        role: teamMember.role,
-      })
-      .from(person)
-      .leftJoin(teamMember, eq(person.wcaId, teamMember.personId))
-      .where(and(eq(person.stateId, stateId), eq(person.wcaId, personId)))
-      .limit(1);
+  const rows = await db
+    .select({
+      role: teamMember.role,
+    })
+    .from(person)
+    .leftJoin(teamMember, eq(person.wcaId, teamMember.personId))
+    .where(and(eq(person.stateId, stateId), eq(person.wcaId, personId)))
+    .limit(1);
 
-    const role = rows[0]?.role;
-    if (role === "admin" || role === "editor") {
-      return role;
-    }
-    return null;
-  } catch (err) {
-    console.error(err);
-    return null;
+  const role = rows[0]?.role;
+  if (role === "admin" || role === "editor") {
+    return role;
   }
+  return null;
 }
 
 export async function hasTeamPermission(

@@ -1,6 +1,9 @@
 import { connection, NextResponse } from "next/server";
+import * as z from "zod";
 import { getSessionUserId } from "@/lib/team-auth";
 import { unauthorizedResponse } from "@/lib/api-auth";
+import { reportError } from "@/lib/report-error";
+import { parseOptionalJsonBody } from "@/lib/route-input";
 import { isSuperadmin } from "@/lib/superadmin";
 import {
   fetchSocialCaption,
@@ -39,7 +42,7 @@ function upstreamStatus(status: number): number {
 }
 
 function errorResponse(error: unknown, fallback: string): NextResponse {
-  console.error(error);
+  reportError(error);
   return NextResponse.json(
     {
       success: false,
@@ -133,18 +136,18 @@ export function imageRoute<P extends string>(
   });
 }
 
+const markBodySchema = z
+  .object({ platforms: z.array(z.string().min(1)).optional() })
+  .optional();
+
 export function markRoute<P extends string>(
   options: RouteOptions<P>,
 ): SocialRouteHandler<P> {
   const { postType, label } = options;
   return socialRoute(options, async (request, key) => {
-    let platforms: string[] | undefined;
-    try {
-      const json = (await request.json()) as { platforms?: string[] };
-      platforms = json.platforms;
-    } catch {
-      platforms = undefined;
-    }
+    const input = await parseOptionalJsonBody(request, markBodySchema);
+    if (input.response) return input.response;
+    const platforms = input.data?.platforms;
 
     try {
       const result = await markSocialPosted(postType, key, platforms);

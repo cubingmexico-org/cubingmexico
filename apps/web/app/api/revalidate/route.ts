@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import * as z from "zod";
 import { hasCronAuth } from "@/lib/cron-auth";
+import { parseJsonBody } from "@/lib/route-input";
 
 /** Tags the backend may revalidate after its data jobs (see apps/backend/web_cache.py). */
 const REVALIDATABLE_TAGS = new Set(["cc-results", "data-source-dates"]);
+
+const bodySchema = z.object({
+  tags: z.array(
+    z.string().refine((tag) => REVALIDATABLE_TAGS.has(tag), {
+      message: "Invalid tags",
+    }),
+  ),
+});
 
 export async function POST(request: Request): Promise<NextResponse> {
   if (!hasCronAuth(request)) {
@@ -13,25 +23,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 
-  let tags: unknown;
-  try {
-    ({ tags } = (await request.json()) as { tags?: unknown });
-  } catch {
-    return NextResponse.json(
-      { success: false, message: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  if (
-    !Array.isArray(tags) ||
-    !tags.every((tag) => typeof tag === "string" && REVALIDATABLE_TAGS.has(tag))
-  ) {
-    return NextResponse.json(
-      { success: false, message: "Invalid tags" },
-      { status: 400 },
-    );
-  }
+  const input = await parseJsonBody(request, bodySchema);
+  if (input.response) return input.response;
+  const { tags } = input.data;
 
   for (const tag of tags) {
     revalidateTag(tag, "max");

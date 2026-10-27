@@ -139,4 +139,34 @@ describe("social route factories", () => {
       "facebook",
     ]);
   });
+
+  it("marks every platform when the mark body is empty", async () => {
+    social.markSocialPosted.mockResolvedValue({
+      ok: true,
+      status: 200,
+      body: {},
+    });
+
+    const response = await markRoute(options)(
+      new Request("http://localhost/api/admin/social/nemesis/x", {
+        method: "POST",
+      }),
+      context("k"),
+    );
+
+    expect(response.status).toBe(200);
+    expect(social.markSocialPosted).toHaveBeenCalledWith(
+      "nemesis",
+      "k",
+      undefined,
+    );
+  });
+
+  it("rejects a malformed mark body", async () => {
+    for (const body of [{ platforms: "facebook" }, { platforms: [1] }]) {
+      const response = await markRoute(options)(request(body), context("k"));
+      expect(response.status).toBe(400);
+    }
+    expect(social.markSocialPosted).not.toHaveBeenCalled();
+  });
 });

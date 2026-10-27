@@ -1,38 +1,42 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { connection } from "next/server";
+import * as z from "zod";
 import { searchSite } from "@/db/site-search";
+import { reportError } from "@/lib/report-error";
+import { parseSearchParams } from "@/lib/route-input";
 import {
   SITE_SEARCH_MAX_LENGTH,
   SITE_SEARCH_MIN_LENGTH,
 } from "@/lib/site-search-types";
 
+const searchQuerySchema = z.object({
+  q: z
+    .string()
+    .default("")
+    .pipe(
+      z
+        .string()
+        .trim()
+        .min(SITE_SEARCH_MIN_LENGTH, {
+          message: `Query must be at least ${SITE_SEARCH_MIN_LENGTH} characters`,
+        })
+        .max(SITE_SEARCH_MAX_LENGTH, {
+          message: `Query must be at most ${SITE_SEARCH_MAX_LENGTH} characters`,
+        }),
+    ),
+});
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   await connection();
 
+  const input = parseSearchParams(
+    request.nextUrl.searchParams,
+    searchQuerySchema,
+  );
+  if (input.response) return input.response;
+
   try {
-    const q = request.nextUrl.searchParams.get("q")?.trim() ?? "";
-
-    if (q.length < SITE_SEARCH_MIN_LENGTH) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Query must be at least ${SITE_SEARCH_MIN_LENGTH} characters`,
-        },
-        { status: 400 },
-      );
-    }
-
-    if (q.length > SITE_SEARCH_MAX_LENGTH) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: `Query must be at most ${SITE_SEARCH_MAX_LENGTH} characters`,
-        },
-        { status: 400 },
-      );
-    }
-
-    const data = await searchSite(q);
+    const data = await searchSite(input.data.q);
 
     return NextResponse.json(
       {
@@ -47,7 +51,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       },
     );
   } catch (error) {
-    console.error(error);
+    reportError(error);
     return NextResponse.json(
       { success: false, message: "Error searching" },
       { status: 500 },

@@ -1,6 +1,7 @@
 import { connection, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/team-auth";
 import { unauthorizedResponse } from "@/lib/api-auth";
+import { reportError } from "@/lib/report-error";
 import { isSuperadmin } from "@/lib/superadmin";
 import { fetchWeeklyDigestSlides } from "@/app/(root)/admin/_lib/social";
 
@@ -50,7 +51,7 @@ export async function GET(
       subjectKey: key,
     });
   } catch (error) {
-    console.error(error);
+    reportError(error);
     return NextResponse.json(
       {
         success: false,

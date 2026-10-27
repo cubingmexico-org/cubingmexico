@@ -1,12 +1,20 @@
 import { connection, NextResponse } from "next/server";
+import * as z from "zod";
 import { getSessionUserId } from "@/lib/team-auth";
 import { unauthorizedResponse } from "@/lib/api-auth";
+import { reportError } from "@/lib/report-error";
+import { indexParamSchema, parseParams } from "@/lib/route-input";
 import { isSuperadmin } from "@/lib/superadmin";
 import { fetchWeeklyDigestSlideImage } from "@/app/(root)/admin/_lib/social";
 
 export const maxDuration = 60;
 
 type Params = { params: Promise<{ week: string; index: string }> };
+
+const paramsSchema = z.object({
+  week: z.string().trim().min(1, { message: "week required" }),
+  index: indexParamSchema,
+});
 
 export async function GET(
   _request: Request,
@@ -19,21 +27,9 @@ export async function GET(
     return unauthorizedResponse(userId);
   }
 
-  const { week, index: indexRaw } = await params;
-  const key = week?.trim();
-  const index = Number.parseInt(indexRaw ?? "", 10);
-  if (!key) {
-    return NextResponse.json(
-      { success: false, message: "week required" },
-      { status: 400 },
-    );
-  }
-  if (!Number.isFinite(index) || index < 0) {
-    return NextResponse.json(
-      { success: false, message: "invalid slide index" },
-      { status: 400 },
-    );
-  }
+  const input = parseParams(await params, paramsSchema);
+  if (input.response) return input.response;
+  const { week: key, index } = input.data;
 
   try {
     const result = await fetchWeeklyDigestSlideImage(key, index);
@@ -58,7 +54,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error(error);
+    reportError(error);
     return NextResponse.json(
       {
         success: false,

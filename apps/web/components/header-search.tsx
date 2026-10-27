@@ -30,6 +30,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { StateLabel } from "@/components/state-flag";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { reportError } from "@/lib/report-error";
 import { filterSitePages, type SitePage } from "@/lib/site-pages";
 import {
   SITE_SEARCH_MAX_LENGTH,
@@ -113,7 +114,7 @@ export function HeaderSearch() {
       setResults(payload.data ?? EMPTY_RESULTS);
     } catch (error) {
       if (requestId !== requestIdRef.current) return;
-      console.error("Error searching:", error);
+      reportError(error);
       setResults(EMPTY_RESULTS);
     } finally {
       if (requestId === requestIdRef.current) {

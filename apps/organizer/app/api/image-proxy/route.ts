@@ -9,6 +9,7 @@ import {
   parseAllowedRedirectUrl,
   parseAllowedSourceUrl,
 } from "@/lib/image-proxy-policy";
+import { reportError } from "@/lib/report-error";
 
 const UPSTREAM_HEADERS = {
   Accept: "image/avif,image/webp,image/apng,image/*,*/*;q=0.8",
@@ -152,7 +153,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof DOMException && error.name === "TimeoutError") {
       return new NextResponse("Upstream timed out", { status: 504 });
     }
-    console.error("Image proxy error:", error);
+    reportError(error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

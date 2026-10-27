@@ -2,6 +2,7 @@
 
 import { toast } from "sonner";
 import { useCanvasStore } from "@/lib/canvas-store";
+import { reportError } from "@/lib/report-error";
 import { DEFAULT_BADGE_DESIGN } from "@/data/badges";
 import type { BadgeDesignFile } from "@/types/canvas";
 
@@ -74,7 +75,7 @@ export function useBadgeDesignIO(competitionId: string) {
         const text = await file.text();
         applyBadgeDesignJson(JSON.parse(text));
       } catch (error) {
-        console.error("Failed to import design:", error);
+        reportError(error);
         toast.error(IMPORT_ERROR_MESSAGE);
       }
     };

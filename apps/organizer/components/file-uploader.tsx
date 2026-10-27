@@ -15,6 +15,7 @@ import {
 import { Upload, X } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
+import { reportError } from "@/lib/report-error";
 
 export function FileUploader({
   files,
@@ -76,7 +77,7 @@ export function FileUploader({
         await Promise.all(uploadPromises);
       } catch (error) {
         // This handles any error that might occur outside the individual upload processes
-        console.error("Unexpected error during upload:", error);
+        reportError(error);
       }
     },
     [],

@@ -13,6 +13,7 @@ import {
 } from "@workspace/ui/components/combobox";
 import { ChevronDown } from "lucide-react";
 import * as React from "react";
+import { reportError } from "@/lib/report-error";
 
 export function PersonsCombobox({
   stateId,
@@ -81,7 +82,7 @@ export function PersonsCombobox({
           setFilteredItems(results ?? []);
           setProgress(100);
         } catch (error) {
-          console.error("Error fetching persons:", error);
+          reportError(error);
           setFilteredItems([]);
         } finally {
           setIsLoading(false);

@@ -34,6 +34,7 @@ import {
 import { and, countDistinct, eq, gt, inArray, sql } from "drizzle-orm";
 import { inScopeEvents } from "@/lib/official-events";
 import type { EventScope } from "@/lib/constants";
+import { reportError } from "@/lib/report-error";
 import { cacheLife, cacheTag } from "next/cache";
 
 type RecordWithStateRank = {
@@ -356,7 +357,7 @@ export async function getPersonAvatarFromWCA(
   try {
     return await getPersonDataFromWCA(wcaId);
   } catch (error) {
-    console.error(`Failed to fetch WCA data for person ${wcaId}`, error);
+    reportError(error, { wcaId });
     return null;
   }
 }
