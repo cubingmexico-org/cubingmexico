@@ -3,6 +3,7 @@ import {
   tokensFromWcaResponse,
   trustedOriginsFromEnv,
   userFromWcaProfile,
+  wcaAccountSubject,
   wcaIdFromUser,
   type WCAProfile,
 } from "./wca-profile";
@@ -23,10 +24,16 @@ function profile(me: Partial<WCAProfile["me"]> = {}): WCAProfile {
   };
 }
 
+describe("wcaAccountSubject", () => {
+  it("is the WCA ID, or the numeric account id without one", () => {
+    expect(wcaAccountSubject(profile())).toBe("2015ABCD01");
+    expect(wcaAccountSubject(profile({ wca_id: null }))).toBe("1234");
+  });
+});
+
 describe("userFromWcaProfile", () => {
-  it("uses the WCA ID as id and in the synthetic email", () => {
+  it("puts the WCA ID in the synthetic email", () => {
     expect(userFromWcaProfile(profile())).toEqual({
-      id: "2015ABCD01",
       wcaId: "2015ABCD01",
       name: "Ana Cubera",
       email: "2015abcd01@wca.org",
@@ -38,7 +45,6 @@ describe("userFromWcaProfile", () => {
   it("falls back to the numeric account id without a WCA ID", () => {
     const user = userFromWcaProfile(profile({ wca_id: null }));
     expect(user).toMatchObject({
-      id: "1234",
       wcaId: "1234",
       email: "1234@wca.org",
     });

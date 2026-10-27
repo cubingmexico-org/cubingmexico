@@ -10,7 +10,7 @@ const WCIF_WRITE_TIMEOUT_MS = 30_000;
 export async function requireWcaAccessToken(): Promise<string> {
   const headersList = await headers();
   const tokenData = await auth.api.getAccessToken({
-    body: { providerId: "wca" },
+    body: { useAccountCookie: true },
     headers: headersList,
   });
 

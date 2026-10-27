@@ -6,6 +6,7 @@ import {
   tokensFromWcaResponse,
   trustedOriginsFromEnv,
   userFromWcaProfile,
+  wcaAccountSubject,
   wcaIdFromUser,
   type WCAProfile,
   type WCATokenResponse,
@@ -56,9 +57,12 @@ const options = {
           clientId: process.env.WCA_CLIENT_ID || "",
           clientSecret: process.env.WCA_CLIENT_SECRET || "",
           redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/wca`,
-          discoveryUrl: wcaUrl("/.well-known/openid-configuration"),
+          // Explicit endpoints instead of discovery, which better-auth 1.7 fetches at startup.
+          authorizationUrl: wcaUrl("/oauth/authorize"),
+          tokenUrl: wcaUrl("/oauth/token"),
+          userInfoUrl: wcaUrl("/api/v0/me"),
           scopes: ["public", "manage_competitions"],
-          getToken: async ({ code, redirectURI }) => {
+          getToken: async ({ code, redirectURI, codeVerifier }) => {
             const response = await wcaFetch("/oauth/token", {
               method: "POST",
               headers: {
@@ -70,6 +74,7 @@ const options = {
                 client_secret: process.env.WCA_CLIENT_SECRET,
                 code: code,
                 redirect_uri: redirectURI,
+                code_verifier: codeVerifier,
               }),
             });
 
@@ -96,8 +101,14 @@ const options = {
               throw new Error("Failed to retrieve WCA profile");
             }
 
-            return userFromWcaProfile((await response.json()) as WCAProfile);
+            const profile = (await response.json()) as WCAProfile;
+            return { ...profile, id: profile.me.id, emailVerified: true };
           },
+          // The WCA's /me has no OIDC `sub`; keep the identity the account always had.
+          accountSubject: ({ profile }) =>
+            wcaAccountSubject(profile as unknown as WCAProfile),
+          mapProfileToUser: (profile) =>
+            userFromWcaProfile(profile as unknown as WCAProfile),
         },
       ],
     }),

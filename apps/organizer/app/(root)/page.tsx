@@ -18,7 +18,7 @@ export default async function Page(): Promise<React.JSX.Element> {
 
   const tokenData = await auth.api.getAccessToken({
     body: {
-      providerId: "wca",
+      useAccountCookie: true,
     },
     headers: headersList,
   });

@@ -50,10 +50,13 @@ export function trustedOriginsFromEnv(
 }
 
 /** Users without a WCA ID are identified by their numeric WCA account id. */
+export function wcaAccountSubject(profile: WCAProfile): string {
+  return profile.me.wca_id || profile.me.id.toString();
+}
+
 export function userFromWcaProfile(profile: WCAProfile) {
-  const wcaId = profile.me.wca_id || profile.me.id.toString();
+  const wcaId = wcaAccountSubject(profile);
   return {
-    id: wcaId,
     wcaId,
     name: profile.me.name,
     email: `${wcaId.toLowerCase()}${WCA_EMAIL_DOMAIN}`,

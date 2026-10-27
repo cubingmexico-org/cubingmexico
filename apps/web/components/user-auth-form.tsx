@@ -13,8 +13,8 @@ export function UserAuthForm(): React.JSX.Element {
   function signInWithWCA(): void {
     startTransition(async () => {
       try {
-        await authClient.signIn.oauth2({
-          providerId: "wca",
+        await authClient.signIn.social({
+          provider: "wca",
           callbackURL: "/",
         });
       } catch (error) {
