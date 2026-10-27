@@ -1,0 +1,4 @@
+CREATE INDEX "competitions_name_search_idx" ON "competitions" USING gin (translate(lower("name"), 'áàäâãéèëêíìïîóòöôõúùüûñç', 'aaaaaeeeeiiiiooooouuuunc') gin_trgm_ops);--> statement-breakpoint
+CREATE INDEX "competitions_city_search_idx" ON "competitions" USING gin (translate(lower("city_name"), 'áàäâãéèëêíìïîóòöôõúùüûñç', 'aaaaaeeeeiiiiooooouuuunc') gin_trgm_ops);--> statement-breakpoint
+CREATE INDEX "person_name_search_idx" ON "persons" USING gin (translate(lower("name"), 'áàäâãéèëêíìïîóòöôõúùüûñç', 'aaaaaeeeeiiiiooooouuuunc') gin_trgm_ops);--> statement-breakpoint
+CREATE INDEX "person_wca_id_search_idx" ON "persons" USING gin (translate(lower("wca_id"), 'áàäâãéèëêíìïîóòöôõúùüûñç', 'aaaaaeeeeiiiiooooouuuunc') gin_trgm_ops);

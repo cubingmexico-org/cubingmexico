@@ -8,6 +8,7 @@
     "./schema": "./src/schema.ts",
     "./relations": "./src/relations.ts",
     "./states": "./src/states.ts",
+    "./search-sql": "./src/search-sql.ts",
     "./env": "./src/env.ts"
   },
   "scripts": {

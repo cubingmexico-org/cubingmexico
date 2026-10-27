@@ -134,6 +134,20 @@
       "when": 1793039928046,
       "tag": "0018_job_runs",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793119415003,
+      "tag": "0019_pg_trgm",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793119431597,
+      "tag": "0020_search_trigram_indexes",
+      "breakpoints": true
     }
   ]
 }

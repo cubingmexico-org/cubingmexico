@@ -1,4 +1,4 @@
-import { type InferSelectModel } from "drizzle-orm";
+import { type InferSelectModel, sql, type SQLWrapper } from "drizzle-orm";
 import {
   pgTable,
   varchar,
@@ -14,6 +14,11 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { unaccentLower } from "./search-sql";
+
+// Site search matches `unaccentLower(column) LIKE '%q%'`; requires pg_trgm (migration 0019).
+const trigramSearchIndex = (name: string, column: SQLWrapper) =>
+  index(name).using("gin", sql`${unaccentLower(column)} gin_trgm_ops`);
 
 // WCA
 
@@ -47,6 +52,8 @@ export const competition = pgTable(
   (t) => [
     index("competitions_state_idx").on(t.stateId),
     index("competitions_date_idx").on(t.startDate, t.endDate),
+    trigramSearchIndex("competitions_name_search_idx", t.name),
+    trigramSearchIndex("competitions_city_search_idx", t.cityName),
   ],
 );
 
@@ -173,6 +180,8 @@ export const person = pgTable(
   (t) => [
     index("person_name_idx").on(t.name),
     index("person_state_idx").on(t.stateId),
+    trigramSearchIndex("person_name_search_idx", t.name),
+    trigramSearchIndex("person_wca_id_search_idx", t.wcaId),
   ],
 );
 
