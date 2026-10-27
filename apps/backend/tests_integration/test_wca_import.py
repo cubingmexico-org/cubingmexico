@@ -9,7 +9,7 @@ import pytest
 from routes.admin import wca_import_results
 from routes.admin.wca_import import process_wca_export
 
-from .factories import fetch_all
+from .factories import fetch_all, insert_state
 
 MX_COMP = "MexicoOpen2024"
 US_COMP = "USNationals2024"
@@ -212,6 +212,46 @@ def test_reimporting_the_same_export_is_a_no_op(db):
     assert _count(db, "competitions") == 2
     assert _count(db, "results") == 3
     assert _count(db, "result_attempts") == 2
+
+
+def test_reimport_updates_person_name_and_gender(db):
+    with _export_zip() as z:
+        process_wca_export(z)
+    insert_state(db, "CDM")
+    db.execute("UPDATE persons SET state_id = 'CDM', hide_from_roster = true WHERE wca_id = '2015MEXI01'")
+
+    files = dict(EXPORT_FILES)
+    files["WCA_export_persons.tsv"] = _tsv(
+        [
+            {"wca_id": "2015MEXI01", "sub_id": 1, "name": "Alex Mexicano", "country_id": "Mexico", "gender": "m"},
+            {"wca_id": "2016MEXI02", "sub_id": 1, "name": "Beto Mexicano", "country_id": "Mexico", "gender": "m"},
+        ]
+    )
+    with _export_zip(files) as z:
+        process_wca_export(z)
+
+    assert fetch_all(db, "SELECT wca_id, name, gender, state_id, hide_from_roster FROM persons ORDER BY wca_id") == [
+        {"wca_id": "2015MEXI01", "name": "Alex Mexicano", "gender": "m", "state_id": "CDM", "hide_from_roster": True},
+        {"wca_id": "2016MEXI02", "name": "Beto Mexicano", "gender": "m", "state_id": None, "hide_from_roster": False},
+    ]
+
+
+def test_only_current_person_row_is_imported(db):
+    files = dict(EXPORT_FILES)
+    files["WCA_export_persons.tsv"] = _tsv(
+        [
+            {"wca_id": "2015MEXI01", "sub_id": 2, "name": "Old Name", "country_id": "Mexico", "gender": "f"},
+            {"wca_id": "2015MEXI01", "sub_id": 1, "name": "Ana Mexicana", "country_id": "Mexico", "gender": "f"},
+            {"wca_id": "2016MEXI02", "sub_id": 1, "name": "Beto Mexicano", "country_id": "Mexico", "gender": "m"},
+        ]
+    )
+    with _export_zip(files) as z:
+        process_wca_export(z)
+
+    assert fetch_all(db, "SELECT wca_id, name FROM persons ORDER BY wca_id") == [
+        {"wca_id": "2015MEXI01", "name": "Ana Mexicana"},
+        {"wca_id": "2016MEXI02", "name": "Beto Mexicano"},
+    ]
 
 
 def test_results_with_unknown_mexican_persons_are_rejected(db):

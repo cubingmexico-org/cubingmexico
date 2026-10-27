@@ -90,7 +90,8 @@ def import_persons(z, file_name):
     persons = df.to_dict(orient="records")
     cleaned_persons = []
     for p in persons:
-        if p["country_id"] == "Mexico":
+        # Older names of a person are extra rows with sub_id > 1; sub_id 1 is the current one.
+        if p["country_id"] == "Mexico" and p["sub_id"] == 1:
             gender = p.get("gender")
             gender = None if pd.isna(gender) else str(gender)
             cleaned_persons.append({"wca_id": p["wca_id"], "name": p["name"], "gender": gender})
@@ -101,7 +102,11 @@ def import_persons(z, file_name):
                     """
                     INSERT INTO persons (wca_id, name, gender)
                     VALUES (%(wca_id)s, %(name)s, %(gender)s)
-                    ON CONFLICT DO NOTHING
+                    ON CONFLICT (wca_id) DO UPDATE
+                    SET name = EXCLUDED.name,
+                        gender = EXCLUDED.gender
+                    WHERE persons.name IS DISTINCT FROM EXCLUDED.name
+                       OR persons.gender IS DISTINCT FROM EXCLUDED.gender
                     """,
                     row,
                 )
