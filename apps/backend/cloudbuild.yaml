@@ -9,9 +9,9 @@
 # (one trigger per branch: main -> production, development -> staging).
 substitutions:
   _REGION: us-central1
-  _SERVICE: backend
+  _SERVICE: web-backend
   _JOB: update-all
-  _IMAGE: us-central1-docker.pkg.dev/${PROJECT_ID}/backend/backend
+  _IMAGE: us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/cubingmexico/web-backend
 
 options:
   logging: CLOUD_LOGGING_ONLY
@@ -19,7 +19,7 @@ options:
 
 steps:
   - id: checks
-    name: ghcr.io/astral-sh/uv:0.13.5-python3.12-bookworm-slim
+    name: ghcr.io/astral-sh/uv:0.13.5-python3.12-trixie-slim
     dir: apps/backend
     entrypoint: bash
     args:

@@ -7,7 +7,7 @@ conditions:
     conditionMatchedLog:
       filter: >-
         (
-          (resource.type = "cloud_run_revision" AND resource.labels.service_name = "backend")
+          (resource.type = "cloud_run_revision" AND resource.labels.service_name = "web-backend")
           OR (resource.type = "cloud_run_job" AND resource.labels.job_name = "update-all")
         )
         AND textPayload:"[ERROR]"
