@@ -1,6 +1,7 @@
-import { beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 import { sql } from "drizzle-orm";
 import { db } from "@workspace/db";
+import { resetSession } from "./session";
 
 vi.mock("next/cache", () => ({
   cacheTag: () => {},
@@ -9,6 +10,20 @@ vi.mock("next/cache", () => ({
   revalidatePath: () => {},
   updateTag: () => {},
 }));
+vi.mock("@/lib/auth", async () => ({
+  auth: (await import("./session")).fakeAuth,
+}));
+vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+// Outside a Next.js server, unauthorized() throws "authInterrupts not enabled" instead of its 401 error.
+vi.mock("next/navigation", async (importOriginal) => {
+  const { unauthorizedError } = await import("./session");
+  return {
+    ...(await importOriginal<typeof import("next/navigation")>()),
+    unauthorized: () => {
+      throw unauthorizedError();
+    },
+  };
+});
 
 let dataTables: string[] | null = null;
 
@@ -22,8 +37,13 @@ async function getDataTables(): Promise<string[]> {
 }
 
 beforeEach(async () => {
+  resetSession();
   const tables = await getDataTables();
   if (tables.length === 0) return;
   const list = tables.map((t) => `"public"."${t}"`).join(", ");
   await db.execute(sql.raw(`TRUNCATE ${list} RESTART IDENTITY CASCADE`));
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
