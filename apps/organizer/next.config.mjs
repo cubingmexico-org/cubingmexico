@@ -1,3 +1,6 @@
+import process from "node:process";
+import { withSentryConfig } from "@sentry/nextjs/config";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
@@ -23,4 +26,9 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Source maps upload only when SENTRY_AUTH_TOKEN (plus SENTRY_ORG and SENTRY_PROJECT) is set.
+export default withSentryConfig(nextConfig, {
+  silent: !process.env.CI,
+  telemetry: false,
+  widenClientFileUpload: true,
+});

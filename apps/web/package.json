@@ -22,6 +22,7 @@
     "@cubing/icons": "catalog:",
     "@icons-pack/react-simple-icons": "catalog:",
     "@imgly/background-removal": "^1.7.0",
+    "@sentry/nextjs": "catalog:",
     "@tanstack/react-table": "^8.21.3",
     "@uploadthing/react": "^7.3.3",
     "@vercel/analytics": "catalog:",

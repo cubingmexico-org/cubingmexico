@@ -182,6 +182,10 @@ pnpm services:up
 - **Vercel Deployment Checks:** in each Vercel project (web and organizer), open Settings → Deployment Checks and require the GitHub checks `quality`, `integration` and `build` from the `CI` workflow. Production deployments are then built as usual but only promoted to the production domain once those checks pass. Preview deployments aren't blocked.
 - **Backend:** see [Deployment in the backend README](./apps/backend/README.md#deployment) for the trigger, the Cloud Run service and the nightly `update-all` job.
 - **Migrations:** apps deploy independently of the `migrate` job, so every migration must work with both the old and the new code (expand/contract; see [docs/architecture.md](./docs/architecture.md)).
+- **Error tracking (Sentry):** web and organizer report server errors, error boundaries and `global-error` to Sentry through `@sentry/nextjs`. Create one Sentry project per app and set these in each Vercel project:
+  - `NEXT_PUBLIC_SENTRY_DSN` turns Sentry on. Without it the SDK stays off, which is how local dev and CI run.
+  - `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` upload source maps during the build, for readable stack traces. The build skips the upload when the token is missing.
+  - The shared options in each app's `lib/sentry.ts` keep traces at 5% and don't send request bodies, cookies, user info or database query data, since those can contain competitors' personal data.
 
 ## Tech Stack
 
