@@ -1,12 +1,23 @@
 import { getWCIFByCompetitionId } from "@/db/queries";
+import { competitionIdSchema } from "@/lib/certificates/requests";
+import { requireSessionUser } from "@/lib/design-access";
 import { ParticipantData } from "@/types/wcif";
 
 export async function GET(request: Request): Promise<Response> {
+  const user = await requireSessionUser();
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
-  const competitionId = searchParams.get("competitionId");
-  const wcif = await getWCIFByCompetitionId({
-    competitionId: competitionId!,
-  });
+  const parsedId = competitionIdSchema.safeParse(
+    searchParams.get("competitionId"),
+  );
+  if (!parsedId.success) {
+    return Response.json({ error: "Invalid competitionId" }, { status: 400 });
+  }
+
+  const wcif = await getWCIFByCompetitionId({ competitionId: parsedId.data });
   const persons = wcif?.persons || [];
 
   const personsWithRegistrantId = persons.filter(

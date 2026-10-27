@@ -1,4 +1,6 @@
 import { getWCIFByCompetitionId, getCompetitionById } from "@/db/queries";
+import { podiumRequestSchema } from "@/lib/certificates/requests";
+import { requireSessionUser } from "@/lib/design-access";
 import type { Event, Person, PodiumData, Result } from "@/types/wcif";
 
 // Helper function to calculate age at a specific date
@@ -17,47 +19,46 @@ function calculateAge(birthdate: string, referenceDate: Date): number {
   return age;
 }
 
-export async function GET(request: Request): Promise<Response> {
-  const { searchParams } = new URL(request.url);
-  const competitionId = searchParams.get("competitionId");
-  const filterByCountry = searchParams.get("filterByCountry") === "true";
-  const country = searchParams.get("country");
-  const template = searchParams.get("template");
-  const gender = template === "female" ? "f" : undefined;
-  const newcomer = template === "newcomer";
-
-  // Age filter parameters
-  const minAgeParam = searchParams.get("minAge");
-  const maxAgeParam = searchParams.get("maxAge");
-  const birthdatesParam = searchParams.get("birthdates");
-
-  const minAge = minAgeParam ? parseInt(minAgeParam) : undefined;
-  const maxAge = maxAgeParam ? parseInt(maxAgeParam) : undefined;
-
-  // Parse birthdate map from query parameter
-  let birthdateMap: Map<string, string> | undefined;
-  if (birthdatesParam) {
-    try {
-      const entries = JSON.parse(decodeURIComponent(birthdatesParam)) as [
-        string,
-        string,
-      ][];
-      birthdateMap = new Map(entries);
-    } catch (error) {
-      console.error("Failed to parse birthdates:", error);
-    }
+// POST rather than GET so competitors' birthdates never end up in a URL or request log.
+export async function POST(request: Request): Promise<Response> {
+  const user = await requireSessionUser();
+  if (!user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const wcif = await getWCIFByCompetitionId({
-    competitionId: competitionId!,
-  });
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON" }, { status: 400 });
+  }
+
+  const parsed = podiumRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return Response.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  const {
+    competitionId,
+    filterByCountry,
+    country,
+    template,
+    minAge,
+    maxAge,
+    birthdates,
+  } = parsed.data;
+  const gender = template === "female" ? "f" : undefined;
+  const newcomer = template === "newcomer";
+  const birthdateMap = birthdates ? new Map(birthdates) : undefined;
+
+  const wcif = await getWCIFByCompetitionId({ competitionId });
   const events = wcif?.events || [];
   const persons = wcif?.persons || [];
 
   // Get competition end date for age calculation
   let competitionEndDate: Date | undefined;
   if (template === "age" && birthdateMap) {
-    const competition = await getCompetitionById({ id: competitionId! });
+    const competition = await getCompetitionById({ id: competitionId });
     if (competition?.end_date) {
       const [endYear, endMonth, endDay] = competition.end_date
         .split("-")
@@ -81,9 +82,7 @@ export async function GET(request: Request): Promise<Response> {
       minAge !== undefined &&
       maxAge !== undefined
     ) {
-      const birthdate = birthdateMap.get(
-        person.registrantId as unknown as string,
-      );
+      const birthdate = birthdateMap.get(person.registrantId);
       if (!birthdate) return false; // Exclude if no birthdate
 
       const age = calculateAge(birthdate, competitionEndDate);
