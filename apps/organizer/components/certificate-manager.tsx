@@ -27,7 +27,8 @@ import {
 import Link from "next/link";
 import useSWR from "swr";
 import { notFound } from "next/navigation";
-import { fetcher } from "@/lib/utils";
+import { fetcher, postFetcher } from "@/lib/utils";
+import type { PodiumRequest } from "@/lib/certificates/requests";
 import type {
   ParticipantData,
   RegisteredPerson,
@@ -249,25 +250,31 @@ export function CertificateManager({
     },
   );
 
-  // Build podium API URL with age parameters when needed
-  const buildPodiumUrl = () => {
-    let url = `/api/certificates/podium?competitionId=${competition.id}&filterByCountry=${filterByCountry}&country=${competition.country_iso2}&template=${selectedTemplate}`;
-
-    if (selectedTemplate === "age" && birthdateMap && birthdateMap.size > 0) {
-      url += `&minAge=${ageRange[0]}&maxAge=${ageRange[1]}`;
-      url += `&birthdates=${encodeURIComponent(JSON.stringify(Array.from(birthdateMap.entries())))}`;
-    }
-
-    return url;
+  const podiumRequest: PodiumRequest = {
+    competitionId: competition.id,
+    filterByCountry,
+    country: competition.country_iso2,
+    template: selectedTemplate,
+    ...(selectedTemplate === "age" && birthdateMap && birthdateMap.size > 0
+      ? {
+          minAge: ageRange[0],
+          maxAge: ageRange[1],
+          birthdates: Array.from(birthdateMap.entries()),
+        }
+      : {}),
   };
 
   const {
     data: podiumsData,
     isLoading: isLoadingPodiums,
     mutate: mutatePodiums,
-  } = useSWR<PodiumData[]>(buildPodiumUrl(), fetcher, {
-    fallbackData: [],
-  });
+  } = useSWR<PodiumData[]>(
+    ["/api/certificates/podium", podiumRequest],
+    ([url, body]: [string, PodiumRequest]) => postFetcher(url, body),
+    {
+      fallbackData: [],
+    },
+  );
 
   if (isMobile) {
     return (

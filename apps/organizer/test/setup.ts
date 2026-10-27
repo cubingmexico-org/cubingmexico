@@ -6,9 +6,13 @@ import { resetFakeWca } from "./fake-wca";
 vi.mock("@/lib/auth", async () => ({
   auth: (await import("./fake-wca")).fakeAuth,
 }));
-vi.mock("@/db/queries", async () => ({
-  getCompetitionById: (await import("./fake-wca")).fakeGetCompetitionById,
-}));
+vi.mock("@/db/queries", async () => {
+  const fake = await import("./fake-wca");
+  return {
+    getCompetitionById: fake.fakeGetCompetitionById,
+    getWCIFByCompetitionId: fake.fakeGetWCIFByCompetitionId,
+  };
+});
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 
 let dataTables: string[] | null = null;

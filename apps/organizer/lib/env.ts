@@ -6,6 +6,7 @@ const envSchema = z.object({
   ...dbEnvSchema.shape,
   ...authEnvSchema.shape,
   NEXT_PUBLIC_APP_URL: z.url(),
+  NEXT_PUBLIC_SENTRY_DSN: z.url().optional(),
 });
 
 export function validateEnv(

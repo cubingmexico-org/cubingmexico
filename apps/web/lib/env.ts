@@ -9,6 +9,7 @@ const envSchema = z.object({
   CRON_SECRET: z.string().optional(),
   SUPERADMIN_WCA_IDS: z.string().optional(),
   UPLOADTHING_TOKEN: z.string().optional(),
+  NEXT_PUBLIC_SENTRY_DSN: z.url().optional(),
 });
 
 export function validateEnv(

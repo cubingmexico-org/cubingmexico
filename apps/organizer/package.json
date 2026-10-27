@@ -15,6 +15,7 @@
   "dependencies": {
     "@cubing/icons": "catalog:",
     "@icons-pack/react-simple-icons": "catalog:",
+    "@sentry/nextjs": "catalog:",
     "@tiptap/core": "^2.27.2",
     "@tiptap/extension-character-count": "^2.27.2",
     "@tiptap/extension-color": "^2.27.2",

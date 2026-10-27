@@ -8,20 +8,11 @@ import {
 } from "@workspace/ui/components/table";
 import Image from "next/image";
 import { getEvents, getPerson } from "@/db/queries";
-import {
-  formatAttemptValue,
-  formatTime,
-  formatTime333mbf,
-  getTier,
-  getTierClass,
-} from "@/lib/utils";
-import { cn } from "@workspace/ui/lib/utils";
+import { getTier } from "@/lib/utils";
 import { StateLabel } from "@/components/state-flag";
-import { Badge } from "@workspace/ui/components/badge";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { WcaMonochrome } from "@workspace/icons";
-import { Crown, Skull, Swords } from "lucide-react";
 import {
   getPersonData,
   getOrganizerStatus,
@@ -35,11 +26,12 @@ import {
   getPersonUnofficialPrs,
   getPersonUnofficialHonors,
 } from "./_lib/queries";
-import type { PersonalRecordWithStateRank } from "./_lib/queries";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
-import { formatDelegateLevel } from "@/lib/delegate-level";
 import { PersonTabs } from "./_components/person-tabs";
+import { PersonBadges } from "./_components/person-badges";
+import { PersonalRecordsTable } from "./_components/personal-records-table";
+import { PersonSummaryTables } from "./_components/person-summary-tables";
 import {
   UnofficialHonorsTables,
   UnofficialPrsTable,
@@ -55,8 +47,6 @@ import type { SearchParams } from "@/types";
 const searchParamsCache = createSearchParamsCache({
   deprecated: deprecatedParser,
 });
-
-const numberFormat = new Intl.NumberFormat("es-MX");
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -158,102 +148,22 @@ async function PersonPageContent({
     medals,
     regionalRecords,
   } = personData;
-  const isOrganizer = organizerStatus !== null;
-  const isDelegate = person.delegateStatus !== null;
-  const tier = getTier(membershipData);
   const showRecordsTab =
     regionalRecords.total > 0 || (regionalRecords.state ?? 0) > 0;
-
-  const records = events.reduce<
-    Array<{ event: string; record: PersonalRecordWithStateRank }>
-  >((accumulator, event) => {
-    const personalRecord = personalRecords[event.id];
-    if (!personalRecord) {
-      return accumulator;
-    }
-
-    accumulator.push({
-      event: event.id,
-      record: personalRecord,
-    });
-    return accumulator;
-  }, []);
-
-  const SRcount = regionalRecords.state ?? 0;
 
   return (
     <>
       <h1 className="text-center font-semibold text-2xl mb-4">
         {person.name ?? id}
       </h1>
-      <div className="w-full flex flex-wrap justify-center gap-2 mb-2">
-        {tier && <Badge className={getTierClass(tier)}>Miembro {tier}</Badge>}
-        {isDelegate && (
-          <Badge>
-            {formatDelegateLevel(person.delegateStatus, person.gender)}
-          </Badge>
-        )}
-        {isOrganizer && organizerStatus && (
-          <Badge variant="outline">
-            Organizador{person.gender === "f" ? "a" : ""}{" "}
-            {organizerStatus.level}
-          </Badge>
-        )}
-        {team && (
-          <Badge variant="outline" asChild>
-            <Link
-              href={`/teams/${team.id}`}
-              prefetch={false}
-              className="gap-1.5"
-            >
-              {team.image ? (
-                // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
-                <img
-                  src={team.image}
-                  alt=""
-                  width={14}
-                  height={14}
-                  className="size-3.5 rounded-sm object-cover"
-                />
-              ) : null}
-              {team.name}
-            </Link>
-          </Badge>
-        )}
-        <Badge variant="outline" asChild>
-          <Link
-            href={`/persons/compare?a=${id}`}
-            prefetch={false}
-            className="gap-1.5"
-          >
-            <Swords className="size-3.5" />
-            Comparar
-          </Link>
-        </Badge>
-        {nemesisStats && nemesisStats.slotCount > 0 && (
-          <Badge variant="outline" asChild>
-            <Link
-              href={`/persons/${id}?tab=nemesis`}
-              prefetch={false}
-              className="gap-1.5"
-            >
-              {nemesisStats.nemesisCount === 0 ? (
-                <>
-                  <Crown className="size-3.5" />
-                  Invict{person.gender === "f" ? "a" : "o"}
-                </>
-              ) : (
-                <>
-                  <Skull className="size-3.5" />
-                  {numberFormat.format(nemesisStats.nemesisCount)} némesis
-                </>
-              )}
-              {nemesisStats.nemesizedCount > 0 &&
-                ` · némesis de ${numberFormat.format(nemesisStats.nemesizedCount)}`}
-            </Link>
-          </Badge>
-        )}
-      </div>
+      <PersonBadges
+        wcaId={id}
+        person={person}
+        team={team}
+        tier={getTier(membershipData)}
+        organizerStatus={organizerStatus}
+        nemesisStats={nemesisStats}
+      />
       {wcaData && (
         <div className="w-full flex justify-center mb-6">
           <Image
@@ -314,170 +224,11 @@ async function PersonPageContent({
       <div className="flex justify-center mb-4">
         <DeprecatedEventsSwitch />
       </div>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Evento</TableHead>
-            {person.state && <TableHead className="text-center">SR</TableHead>}
-            <TableHead className="text-center">NR</TableHead>
-            <TableHead className="text-center">CR</TableHead>
-            <TableHead className="text-center">WR</TableHead>
-            <TableHead className="text-center">Single</TableHead>
-            <TableHead className="text-center">Average</TableHead>
-            <TableHead className="text-center">WR</TableHead>
-            <TableHead className="text-center">CR</TableHead>
-            <TableHead className="text-center">NR</TableHead>
-            {person.state && <TableHead className="text-center">SR</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {records.map((record) => (
-            <TableRow key={record.event}>
-              <TableCell>
-                <span
-                  key={record.event}
-                  className={`cubing-icon event-${record.event}`}
-                />
-                <span className="ml-2">
-                  {events.find((e) => e.id === record.event)?.name}
-                </span>
-              </TableCell>
-              {person.state && (
-                <TableCell
-                  className={cn(
-                    "text-center",
-                    record?.record?.single.stateRank === 1 &&
-                      "font-semibold text-blue-700",
-                  )}
-                >
-                  {record?.record?.single.stateRank === 0 ||
-                  record?.record?.single.stateRank === null ? (
-                    <span className="text-muted-foreground font-thin">N/A</span>
-                  ) : (
-                    record?.record?.single.stateRank
-                  )}
-                </TableCell>
-              )}
-              <TableCell
-                className={cn(
-                  "text-center",
-                  record?.record?.single.countryRank === 1 &&
-                    "font-semibold text-blue-700",
-                )}
-              >
-                {record?.record?.single.countryRank === 0 ||
-                record?.record?.single.countryRank === null ? (
-                  <span className="text-muted-foreground font-thin">N/A</span>
-                ) : (
-                  record?.record?.single.countryRank
-                )}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "text-center",
-                  record?.record?.single.continentRank === 1 &&
-                    "font-semibold text-blue-700",
-                )}
-              >
-                {record?.record?.single.continentRank === 0 ||
-                record?.record?.single.continentRank === null ? (
-                  <span className="text-muted-foreground font-thin">N/A</span>
-                ) : (
-                  record?.record?.single.continentRank
-                )}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "text-center",
-                  record?.record?.single.worldRank === 1 &&
-                    "font-semibold text-blue-700",
-                )}
-              >
-                {record?.record?.single.worldRank === 0 ||
-                record?.record?.single.worldRank === null ? (
-                  <span className="text-muted-foreground font-thin">N/A</span>
-                ) : (
-                  record?.record?.single.worldRank
-                )}
-              </TableCell>
-              <TableCell className="text-center font-semibold">
-                {record.event === "333mbf"
-                  ? formatTime333mbf(record.record.single.best)
-                  : record.event === "333fm"
-                    ? record.record.single.best
-                    : formatTime(record.record.single.best)}
-              </TableCell>
-              <TableCell className="text-center font-semibold">
-                {record?.record?.average?.best
-                  ? formatAttemptValue(
-                      record.event,
-                      record.record.average.best,
-                      "average",
-                    )
-                  : null}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "text-center",
-                  record?.record?.average?.worldRank === 1 &&
-                    "font-semibold text-blue-700",
-                )}
-              >
-                {record?.record?.average?.worldRank === 0 ||
-                record?.record?.average?.worldRank === null ? (
-                  <span className="text-muted-foreground font-thin">N/A</span>
-                ) : (
-                  record?.record?.average?.worldRank
-                )}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "text-center",
-                  record?.record?.average?.continentRank === 1 &&
-                    "font-semibold text-blue-700",
-                )}
-              >
-                {record?.record?.average?.continentRank === 0 ||
-                record?.record?.average?.continentRank === null ? (
-                  <span className="text-muted-foreground font-thin">N/A</span>
-                ) : (
-                  record?.record?.average?.continentRank
-                )}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "text-center",
-                  record?.record?.average?.countryRank === 1 &&
-                    "font-semibold text-blue-700",
-                )}
-              >
-                {record?.record?.average?.countryRank === 0 ||
-                record?.record?.average?.countryRank === null ? (
-                  <span className="text-muted-foreground font-thin">N/A</span>
-                ) : (
-                  record?.record?.average?.countryRank
-                )}
-              </TableCell>
-              {person.state && (
-                <TableCell
-                  className={cn(
-                    "text-center",
-                    record?.record?.average?.stateRank === 1 &&
-                      "font-semibold text-blue-700",
-                  )}
-                >
-                  {record?.record?.average?.stateRank === 0 ||
-                  record?.record?.average?.stateRank === null ? (
-                    <span className="text-muted-foreground font-thin">N/A</span>
-                  ) : (
-                    record?.record?.average?.stateRank
-                  )}
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      <PersonalRecordsTable
+        events={events}
+        personalRecords={personalRecords}
+        showStateRank={Boolean(person.state)}
+      />
       {unofficialPrs.length > 0 && (
         <UnofficialPrsTable
           wcaId={id}
@@ -485,54 +236,7 @@ async function PersonPageContent({
           showStateRank={Boolean(person.state)}
         />
       )}
-      <div className="grid md:grid-cols-2 grid-cols-1 gap-4 mt-6">
-        <div>
-          <h3 className="text-center font-semibold mb-2">Medallas</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-center">Oro</TableHead>
-                <TableHead className="text-center">Plata</TableHead>
-                <TableHead className="text-center">Bronce</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="text-center">{medals.gold}</TableCell>
-                <TableCell className="text-center">{medals.silver}</TableCell>
-                <TableCell className="text-center">{medals.bronze}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-        <div>
-          <h3 className="text-center font-semibold mb-2">Récords</h3>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-center">WR</TableHead>
-                <TableHead className="text-center">CR</TableHead>
-                <TableHead className="text-center">NR</TableHead>
-                <TableHead className="text-center">SR</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              <TableRow>
-                <TableCell className="text-center">
-                  {regionalRecords.world}
-                </TableCell>
-                <TableCell className="text-center">
-                  {regionalRecords.continental}
-                </TableCell>
-                <TableCell className="text-center">
-                  {regionalRecords.national}
-                </TableCell>
-                <TableCell className="text-center">{SRcount}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+      <PersonSummaryTables medals={medals} regionalRecords={regionalRecords} />
       {showUnofficialTab && (
         <UnofficialHonorsTables honors={unofficialHonors} />
       )}

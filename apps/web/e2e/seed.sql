@@ -41,3 +41,23 @@ INSERT INTO ranks_average (person_id, event_id, best, world_rank, continent_rank
   ('2099SMOK01', '333', 932, 1000, 100, 1, 1),
   ('2099SMOK02', '333', 1150, 2000, 200, 2, 1)
 ON CONFLICT DO NOTHING;
+
+-- Aggregates the backend's update-all job normally computes, in the shapes it writes them.
+INSERT INTO kinch_ranks (rank, person_id, scope, overall, events) VALUES
+  (1, '2099SMOK01', 'official', 100,
+   '[{"eventId": "333", "ratio": 100}, {"eventId": "222", "ratio": 100}]'),
+  (2, '2099SMOK02', 'official', 41.75,
+   '[{"eventId": "333", "ratio": 83.5}, {"eventId": "222", "ratio": 0}]')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO sum_of_ranks (rank, person_id, result_type, scope, overall, events) VALUES
+  (1, '2099SMOK01', 'single', 'official', 2,
+   '[{"eventId": "333", "countryRank": 1, "completed": true}, {"eventId": "222", "countryRank": 1, "completed": true}]'),
+  (2, '2099SMOK02', 'single', 'official', 4,
+   '[{"eventId": "333", "countryRank": 2, "completed": true}, {"eventId": "222", "countryRank": 2, "completed": false}]')
+ON CONFLICT DO NOTHING;
+
+INSERT INTO streak_ranks (rank, person_id, scope, current_streak, longest_streak) VALUES
+  (1, '2099SMOK01', 'official', 1, 1),
+  (2, '2099SMOK02', 'official', 1, 1)
+ON CONFLICT DO NOTHING;

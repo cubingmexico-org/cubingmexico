@@ -16,6 +16,8 @@ import {
   roundType,
   streakRanks,
   sumOfRanks,
+  team,
+  teamMember,
 } from "@workspace/db/schema";
 
 type EventInsert = typeof event.$inferInsert;
@@ -217,6 +219,18 @@ export async function insertNemesisStat(
     Pick<NemesisStatInsert, "personId" | "scope">,
 ) {
   await db.insert(nemesisStats).values(values);
+}
+
+export async function insertTeam(
+  values: Partial<typeof team.$inferInsert> & { stateId: string },
+) {
+  await db.insert(team).values({ name: `Team ${values.stateId}`, ...values });
+}
+
+export async function insertTeamMember(
+  values: Partial<typeof teamMember.$inferInsert> & { personId: string },
+) {
+  await db.insert(teamMember).values(values);
 }
 
 export async function insertCompetitionRoundDate(

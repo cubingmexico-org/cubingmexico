@@ -15,6 +15,11 @@ const PAGES: { path: string; text: string | RegExp }[] = [
   { path: "/competitions", text: /competencias/i },
   { path: "/persons/2099SMOK01", text: "Ana Smoke" },
   { path: "/teams", text: /teams/i },
+  { path: "/teams/JAL", text: "Cubing Jalisco" },
+  { path: "/kinch", text: "Beto Smoke" },
+  { path: "/sor/single", text: "Beto Smoke" },
+  { path: "/streaks", text: "Beto Smoke" },
+  { path: "/faq", text: /preguntas frecuentes/i },
 ];
 
 for (const { path, text } of PAGES) {
@@ -44,6 +49,20 @@ test("header menus list every link", async ({ page }) => {
       page.locator("[data-slot=navigation-menu-content] a"),
     ).toHaveCount(linkCount);
   }
+});
+
+// These tabs load their data through server actions the first time they open.
+test("person tabs load their data", async ({ page }) => {
+  const errors = trackPageErrors(page);
+  await page.goto("/persons/2099SMOK01");
+
+  for (const name of ["Rachas", "Podios", "Némesis"]) {
+    await page.getByRole("tab", { name, exact: true }).click();
+    const panel = page.getByRole("tabpanel");
+    await expect(panel.locator("[data-slot=skeleton]")).toHaveCount(0);
+    await expect(panel).not.toBeEmpty();
+  }
+  expect(errors).toEqual([]);
 });
 
 // The page streams, so the status is already 200 when notFound() renders the 404 UI.

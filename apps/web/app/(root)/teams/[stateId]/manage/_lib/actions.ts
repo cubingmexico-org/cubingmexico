@@ -102,10 +102,11 @@ export async function deleteMembers(input: { ids: string[]; stateId: string }) {
       error: null,
     };
   } catch (err) {
+    const error = getErrorMessage(err);
     console.error("Error deleting members", err);
     return {
       data: null,
-      error: getErrorMessage(err),
+      error,
     };
   }
 }

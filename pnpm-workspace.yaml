@@ -9,6 +9,7 @@ minimumReleaseAge: 1440
 catalog:
   "@cubing/icons": "^1.1.2"
   "@icons-pack/react-simple-icons": "^13.13.0"
+  "@sentry/nextjs": "^11.9.0"
   "@types/node": "^24.9.1"
   "@types/react": "^19.3.0"
   "@types/react-dom": "^19.3.0"
