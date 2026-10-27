@@ -1,50 +1,21 @@
-import type { ComponentType } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import type { GeoJSONProps } from "react-leaflet";
+import { createSearchParamsCache } from "nuqs/server";
 import { getStatesGeoJSON, getTeam } from "@/db/queries";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import { buttonVariants } from "@workspace/ui/components/button";
-import { cn } from "@workspace/ui/lib/utils";
-import {
-  ArrowRight,
-  Calendar,
-  ChartNoAxesCombined,
-  Mail,
-  MapPin,
-  Medal,
-} from "lucide-react";
-import {
-  SiFacebook,
-  SiInstagram,
-  SiTiktok,
-  SiWhatsapp,
-  SiX,
-} from "@icons-pack/react-simple-icons";
-import { getTeamOverviewData } from "./_lib/queries";
-import {
-  KeyStat,
-  MedalStrip,
-  NationalRecordsList,
-  TeamPersonLink,
-} from "./_components/team-profile-shared";
-import { TeamLocation } from "./_components/team-location";
-import { UnofficialStateRecordsList } from "./_components/unofficial-state-records";
 import { getCcRecords } from "@/app/(root)/unofficial/_lib/queries";
-import { getTeamUnofficialMedals } from "./_lib/unofficial";
-import { CompetitionLogo } from "@/components/competition-logo";
-import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
 import { deprecatedParser } from "@/lib/search-params";
-import { createSearchParamsCache } from "nuqs/server";
 import type { SearchParams } from "@/types";
+import { getTeamOverviewData } from "./_lib/queries";
+import { getTeamSocialLinks } from "./_lib/social-links";
+import { getTeamUnofficialMedals } from "./_lib/unofficial";
+import { TeamAboutCard } from "./_components/team-about-card";
+import { TeamAchievementsSection } from "./_components/team-achievements-section";
+import { TeamLocationCard } from "./_components/team-location-card";
+import { TeamNationalRecordsCard } from "./_components/team-national-records-card";
+import { TeamTopMembersCard } from "./_components/team-top-members-card";
+import { TeamUnofficialRecordsCard } from "./_components/team-unofficial-records-card";
+import { TeamUpcomingCompetitionsCard } from "./_components/team-upcoming-competitions-card";
 
 const searchParamsCache = createSearchParamsCache({
   deprecated: deprecatedParser,
@@ -87,405 +58,48 @@ export default async function Page({
     getTeamUnofficialMedals(stateId),
   ]);
 
-  const {
-    team,
-    medals,
-    competitionsCount,
-    activeYears,
-    totalNationalRecords,
-    nationalRecordsTeaser,
-    topMembers,
-    upcomingCompetitions,
-  } = data;
-
-  const stateFeature = statesGeoJSON?.features.find(
-    (feature) => feature.properties.id === stateId,
-  );
-  const stateGeoJSON = stateFeature
-    ? ({
-        type: "FeatureCollection",
-        features: [stateFeature],
-      } as GeoJSONProps["data"])
-    : null;
-
-  const socialLinks = [
-    team.socialLinks?.email
-      ? {
-          key: "email",
-          href: `mailto:${team.socialLinks.email}`,
-          label: "Correo",
-          icon: Mail,
-          external: false,
-        }
-      : null,
-    team.socialLinks?.whatsapp
-      ? {
-          key: "whatsapp",
-          href: `https://wa.me/${team.socialLinks.whatsapp}`,
-          label: "WhatsApp",
-          icon: SiWhatsapp,
-          external: true,
-        }
-      : null,
-    team.socialLinks?.facebook
-      ? {
-          key: "facebook",
-          href: team.socialLinks.facebook,
-          label: "Facebook",
-          icon: SiFacebook,
-          external: true,
-        }
-      : null,
-    team.socialLinks?.instagram
-      ? {
-          key: "instagram",
-          href: team.socialLinks.instagram,
-          label: "Instagram",
-          icon: SiInstagram,
-          external: true,
-        }
-      : null,
-    team.socialLinks?.tiktok
-      ? {
-          key: "tiktok",
-          href: team.socialLinks.tiktok,
-          label: "TikTok",
-          icon: SiTiktok,
-          external: true,
-        }
-      : null,
-    team.socialLinks?.twitter
-      ? {
-          key: "twitter",
-          href: team.socialLinks.twitter,
-          label: "Twitter",
-          icon: SiX,
-          external: true,
-        }
-      : null,
-  ].filter(Boolean) as Array<{
-    key: string;
-    href: string;
-    label: string;
-    icon: ComponentType<{ className?: string }>;
-    external: boolean;
-  }>;
+  const { team } = data;
 
   return (
     <div className="min-w-0 space-y-8">
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold">Logros del Team</h2>
-            <p className="text-sm text-muted-foreground">
-              Medallas y récords nacionales de sus miembros
-            </p>
-          </div>
-          <Link
-            href={`/teams/${stateId}/statistics`}
-            prefetch={false}
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "gap-1.5",
-            )}
-          >
-            <ChartNoAxesCombined className="h-4 w-4" />
-            Ver estadísticas
-          </Link>
-        </div>
-
-        <MedalStrip medals={medals} />
-
-        <div
-          className={
-            activeYears > 0
-              ? "grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
-              : "grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4"
-          }
-        >
-          <KeyStat
-            label="Podios totales"
-            value={medals.total}
-            href={`/teams/${stateId}/statistics`}
-          />
-          <KeyStat
-            label="Récords nacionales"
-            value={totalNationalRecords}
-            href={`/teams/${stateId}/statistics`}
-          />
-          <KeyStat
-            label="Competencias"
-            value={competitionsCount}
-            href={`/teams/${stateId}/competitions`}
-            className={activeYears > 0 ? undefined : "col-span-2 sm:col-span-1"}
-          />
-          {activeYears > 0 ? (
-            <KeyStat label="Años activo" value={activeYears} />
-          ) : null}
-        </div>
-
-        {unofficialMedals.total > 0 && (
-          <div className="space-y-3 pt-2">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <h3 className="text-sm font-semibold">
-                Podios en eventos no oficiales
-              </h3>
-              <Link
-                href={`/unofficial/records?state=${encodeURIComponent(team.state)}`}
-                prefetch={false}
-                className="text-sm text-link hover:text-link/80"
-              >
-                Ver récords no oficiales
-              </Link>
-            </div>
-            <MedalStrip medals={unofficialMedals} />
-          </div>
-        )}
-      </section>
+      <TeamAchievementsSection
+        stateId={stateId}
+        stateName={team.state}
+        medals={data.medals}
+        totalNationalRecords={data.totalNationalRecords}
+        competitionsCount={data.competitionsCount}
+        activeYears={data.activeYears}
+        unofficialMedals={unofficialMedals}
+      />
 
       <div className="grid min-w-0 gap-6 lg:grid-cols-3">
         <div className="min-w-0 space-y-6 lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Acerca de</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {team.description ? (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">
-                  {team.description}
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Este team aún no tiene una descripción.
-                </p>
-              )}
-
-              {socialLinks.length > 0 ? (
-                <div className="flex flex-wrap gap-2 border-t pt-4">
-                  {socialLinks.map((social) => {
-                    const Icon = social.icon;
-                    const className =
-                      "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground";
-
-                    if (social.external) {
-                      return (
-                        <Link
-                          key={social.key}
-                          href={social.href}
-                          className={className}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <Icon className="h-4 w-4" />
-                          {social.label}
-                        </Link>
-                      );
-                    }
-
-                    return (
-                      <a
-                        key={social.key}
-                        href={social.href}
-                        className={className}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {social.label}
-                      </a>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-              <CardTitle>Miembros destacados</CardTitle>
-              <Link
-                href={`/teams/${stateId}/members`}
-                prefetch={false}
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: "sm" }),
-                  "gap-1",
-                )}
-              >
-                Ver todos
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {topMembers.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Aún no hay podios registrados para este team.
-                </p>
-              ) : (
-                <ul className="divide-y rounded-lg border">
-                  {topMembers.map((member, index) => (
-                    <li
-                      key={member.wcaId}
-                      className="flex items-center gap-3 px-3 py-2.5 text-sm"
-                    >
-                      <span className="w-5 text-center tabular-nums text-muted-foreground">
-                        {index + 1}
-                      </span>
-                      <span className="min-w-0 grow truncate font-medium">
-                        <TeamPersonLink
-                          wcaId={member.wcaId}
-                          name={member.name}
-                        />
-                      </span>
-                      <span className="inline-flex items-center gap-1 tabular-nums text-muted-foreground">
-                        <Medal className="h-3.5 w-3.5 text-amber-500" />
-                        {member.podiums}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-              <CardTitle>Récords nacionales</CardTitle>
-              <Link
-                href={`/teams/${stateId}/statistics${deprecated ? "?deprecated=true" : ""}`}
-                prefetch={false}
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: "sm" }),
-                  "gap-1",
-                )}
-              >
-                Ver todos
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <DeprecatedEventsSwitch />
-              <NationalRecordsList records={nationalRecordsTeaser} />
-            </CardContent>
-          </Card>
-
-          {unofficialRecords.length > 0 && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-                <CardTitle>Récords estatales no oficiales</CardTitle>
-                <Link
-                  href={`/unofficial/records?state=${encodeURIComponent(team.state)}`}
-                  prefetch={false}
-                  className={cn(
-                    buttonVariants({ variant: "ghost", size: "sm" }),
-                    "gap-1",
-                  )}
-                >
-                  Ver todos
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </CardHeader>
-              <CardContent>
-                <UnofficialStateRecordsList records={unofficialRecords} />
-              </CardContent>
-            </Card>
-          )}
+          <TeamAboutCard
+            description={team.description}
+            socialLinks={getTeamSocialLinks(team.socialLinks)}
+          />
+          <TeamTopMembersCard stateId={stateId} topMembers={data.topMembers} />
+          <TeamNationalRecordsCard
+            stateId={stateId}
+            deprecated={deprecated}
+            records={data.nationalRecordsTeaser}
+          />
+          <TeamUnofficialRecordsCard
+            stateName={team.state}
+            records={unofficialRecords}
+          />
         </div>
 
         <div className="min-w-0 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ubicación</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TeamLocation
-                stateId={stateId}
-                stateName={team.state}
-                statesData={stateGeoJSON}
-              />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0">
-              <CardTitle>Próximas competencias</CardTitle>
-              <Link
-                href={`/teams/${stateId}/competitions`}
-                prefetch={false}
-                className={cn(
-                  buttonVariants({ variant: "ghost", size: "sm" }),
-                  "gap-1",
-                )}
-              >
-                Ver todas
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {upcomingCompetitions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  No hay competencias próximas
-                </p>
-              ) : (
-                <div className="space-y-4">
-                  {upcomingCompetitions.map((competition) => (
-                    <div
-                      key={competition.id}
-                      className="flex items-start gap-3 space-y-0"
-                    >
-                      <CompetitionLogo
-                        src={competition.logo}
-                        alt={`Logo de ${competition.name}`}
-                        size={36}
-                        className="mt-0.5 rounded-md"
-                      />
-                      <div className="min-w-0 grow space-y-1.5">
-                        <h3 className="font-semibold leading-snug">
-                          <Link
-                            prefetch={false}
-                            href={`/competitions/${competition.id}`}
-                            className="text-link hover:text-link/80"
-                          >
-                            {competition.name}
-                          </Link>
-                        </h3>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 shrink-0" />
-                            {competition.startDate.toLocaleDateString("es-ES", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              timeZone: "UTC",
-                            })}
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
-                            <span className="line-clamp-2">
-                              <ReactMarkdown
-                                components={{
-                                  a: ({ children, href }) => (
-                                    <Link
-                                      className="hover:underline"
-                                      href={href ?? ""}
-                                      target="_blank"
-                                    >
-                                      {children}
-                                    </Link>
-                                  ),
-                                  p: ({ children }) => <>{children}</>,
-                                }}
-                              >
-                                {competition.venue}
-                              </ReactMarkdown>
-                              , {competition.cityName}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <TeamLocationCard
+            stateId={stateId}
+            stateName={team.state}
+            statesGeoJSON={statesGeoJSON}
+          />
+          <TeamUpcomingCompetitionsCard
+            stateId={stateId}
+            competitions={data.upcomingCompetitions}
+          />
         </div>
       </div>
     </div>

@@ -98,6 +98,7 @@ export function Canvas({
       wcif,
       competitionId,
       competitionLogoUrl,
+      competitionEventIds: eventIds,
     });
 
     if (!canvas) return;

@@ -6,7 +6,8 @@ import {
   insertRoundType,
   insertScopeEvents,
 } from "@/test/factories";
-import { getPersonPodiumsByEvent, getPersonPrStreaks } from "./records";
+import { getPersonPodiumsByEvent } from "./podiums-by-event";
+import { getPersonPrStreaks } from "./pr-streaks";
 
 const WCA_ID = "2020STRK01";
 

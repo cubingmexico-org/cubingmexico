@@ -26,6 +26,10 @@ const DISPLAY_ONLY: Record<string, string> = {
     "one competition's results grouped by person",
   "app/(root)/persons/[id]/_lib/competitions.ts":
     "a person's results and their event picker",
+  "app/(root)/persons/[id]/_lib/record-history.ts":
+    "a person's own NR/SR results, listed per event",
+  "app/(root)/persons/[id]/_lib/championship-podiums.ts":
+    "a person's championship podiums, listed per competition",
   "app/(root)/summary/[year]/[wcaId]/_lib/queries/podiums-solves.ts":
     "callers pass a filter that already restricts to official events",
   "app/(root)/teams/[stateId]/statistics/_lib/queries.ts":
