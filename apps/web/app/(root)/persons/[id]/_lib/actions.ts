@@ -37,12 +37,24 @@ export async function loadPersonChampionshipPodiums(wcaId: string) {
   return getPersonChampionshipPodiums(requireWcaId(wcaId));
 }
 
-export async function loadPersonPrStreaks(wcaId: string) {
-  return getPersonPrStreaks(requireWcaId(wcaId));
+export async function loadPersonPrStreaks(
+  wcaId: string,
+  includeDeprecated: boolean,
+) {
+  return getPersonPrStreaks(
+    requireWcaId(wcaId),
+    eventScopeFromDeprecated(includeDeprecated === true),
+  );
 }
 
-export async function loadPersonPodiumsByEvent(wcaId: string) {
-  return getPersonPodiumsByEvent(requireWcaId(wcaId));
+export async function loadPersonPodiumsByEvent(
+  wcaId: string,
+  includeDeprecated: boolean,
+) {
+  return getPersonPodiumsByEvent(
+    requireWcaId(wcaId),
+    eventScopeFromDeprecated(includeDeprecated === true),
+  );
 }
 
 export async function loadPersonStaffCompetitions(wcaId: string) {

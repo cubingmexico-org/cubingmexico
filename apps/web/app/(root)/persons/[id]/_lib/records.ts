@@ -11,6 +11,8 @@ import {
 } from "@workspace/db/schema";
 import { and, asc, desc, eq, gt, inArray, or, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
+import type { EventScope } from "@/lib/constants";
+import { inScopeEvents } from "@/lib/official-events";
 import { recordDateSql, toDateKey } from "@/lib/record-date";
 
 export type PersonRecordHistoryEntry = {
@@ -409,6 +411,7 @@ export type PersonPodiumsByEvent = {
 
 export async function getPersonPodiumsByEvent(
   wcaId: string,
+  scope: EventScope,
 ): Promise<PersonPodiumsByEvent[]> {
   "use cache";
   cacheLife("weeks");
@@ -425,7 +428,9 @@ export async function getPersonPodiumsByEvent(
     })
     .from(result)
     .innerJoin(event, eq(result.eventId, event.id))
-    .where(eq(result.personId, wcaId))
+    .where(
+      and(eq(result.personId, wcaId), inScopeEvents(result.eventId, scope)),
+    )
     .groupBy(event.id, event.name, event.rank);
 
   return rows
@@ -480,6 +485,7 @@ function isPersonalRecord(
 
 export async function getPersonPrStreaks(
   wcaId: string,
+  scope: EventScope,
 ): Promise<PersonPrStreaks> {
   "use cache";
   cacheLife("weeks");
@@ -497,7 +503,9 @@ export async function getPersonPrStreaks(
     })
     .from(result)
     .innerJoin(competition, eq(result.competitionId, competition.id))
-    .where(eq(result.personId, wcaId))
+    .where(
+      and(eq(result.personId, wcaId), inScopeEvents(result.eventId, scope)),
+    )
     .orderBy(asc(competition.startDate), asc(result.competitionId));
 
   if (rows.length === 0) {

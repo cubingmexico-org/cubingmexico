@@ -107,11 +107,15 @@ export function PersonTabs({
   const recordHistory = useTabData(tab === "records", wcaId, () =>
     loadPersonRecordHistory(wcaId),
   );
-  const prStreaks = useTabData(tab === "pr-streaks", wcaId, () =>
-    loadPersonPrStreaks(wcaId),
+  const prStreaks = useTabData(
+    tab === "pr-streaks",
+    `${wcaId}:${includeDeprecated}`,
+    () => loadPersonPrStreaks(wcaId, includeDeprecated),
   );
-  const podiumsByEvent = useTabData(tab === "podiums", wcaId, () =>
-    loadPersonPodiumsByEvent(wcaId),
+  const podiumsByEvent = useTabData(
+    tab === "podiums",
+    `${wcaId}:${includeDeprecated}`,
+    () => loadPersonPodiumsByEvent(wcaId, includeDeprecated),
   );
   const unofficialPodiums = useTabData(
     tab === "podiums" && showUnofficialTab,

@@ -4,6 +4,7 @@ import "server-only";
 
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
+import { officialEventIdsSql } from "@/lib/official-events";
 
 export async function getPendingResultadosCompetitions(
   limit = 50,
@@ -103,6 +104,7 @@ export async function getPendingRecordPosts(
       LEFT JOIN states s ON s.id = p.state_id
       LEFT JOIN competitions c ON c.id = r.competition_id
       WHERE r.regional_single_record IN ('NR', 'NAR', 'WR')
+        AND r.event_id IN ${officialEventIdsSql}
       UNION ALL
       SELECT
         r.id || ':average' AS subject_key,
@@ -124,6 +126,7 @@ export async function getPendingRecordPosts(
       LEFT JOIN states s ON s.id = p.state_id
       LEFT JOIN competitions c ON c.id = r.competition_id
       WHERE r.regional_average_record IN ('NR', 'NAR', 'WR')
+        AND r.event_id IN ${officialEventIdsSql}
     )
     SELECT
       m.subject_key AS "subjectKey",
