@@ -16,6 +16,8 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 
 - **[@workspace/db](./packages/db)** - Shared Drizzle schema, migrations, and seed (source of truth for Postgres)
 - **[@workspace/ui](./packages/ui)** - Shared UI component library built with shadcn/ui and Radix UI
+- **[@workspace/auth](./packages/auth)** - Better Auth setup with WCA OAuth, shared by web and organizer
+- **[@workspace/wca](./packages/wca)** - WCA API client (`wcaFetch`, `wcaUrl`) with timeouts and retries
 - **[@workspace/icons](./packages/icons)** - Centralized icon components
 - **[@workspace/eslint-config](./packages/eslint-config)** - Shared ESLint configurations
 - **[@workspace/typescript-config](./packages/typescript-config)** - Shared TypeScript configurations
@@ -230,3 +232,10 @@ import { Button } from "@workspace/ui/components/button";
 - [Web hosting constraints (Vercel free tier)](./docs/web-hosting-constraints.md)
 - [Architecture: which app owns what](./docs/architecture.md)
 - [State records (SR) and WCA alignment](./docs/state-records.md)
+- [Contributing](./CONTRIBUTING.md)
+
+## License
+
+The code in this repository is released under the [MIT License](./LICENSE).
+
+The license covers the code only, not the data the apps import and show. Results from the [WCA results export](https://www.worldcubeassociation.org/export/results) remain subject to the WCA's terms, and data from the [Cubing Contests export](https://cubingcontests.com/export) is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Both sources are credited wherever their data appears.
