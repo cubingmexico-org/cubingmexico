@@ -15,6 +15,11 @@ const PAGES: { path: string; text: string | RegExp }[] = [
   { path: "/competitions", text: /competencias/i },
   { path: "/persons/2099SMOK01", text: "Ana Smoke" },
   { path: "/teams", text: /teams/i },
+  { path: "/teams/JAL", text: "Cubing Jalisco" },
+  { path: "/kinch", text: "Beto Smoke" },
+  { path: "/sor/single", text: "Beto Smoke" },
+  { path: "/streaks", text: "Beto Smoke" },
+  { path: "/faq", text: /preguntas frecuentes/i },
 ];
 
 for (const { path, text } of PAGES) {
