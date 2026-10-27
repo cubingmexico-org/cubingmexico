@@ -36,7 +36,8 @@ describe("PersonSearchSelect", () => {
   });
 
   it("searches persons and reports the chosen WCA ID", async () => {
-    fetchMock.mockResolvedValue(
+    // A Response body can only be read once, so every call gets its own.
+    fetchMock.mockImplementation(async () =>
       Response.json({
         success: true,
         data: {
@@ -50,7 +51,8 @@ describe("PersonSearchSelect", () => {
       }),
     );
     const onSelect = vi.fn();
-    const user = userEvent.setup();
+    // No pause between keystrokes, so a slow runner can't outlast the 250ms debounce mid-word.
+    const user = userEvent.setup({ delay: null });
     render(
       <PersonSearchSelect
         value={null}

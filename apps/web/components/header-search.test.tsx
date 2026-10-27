@@ -17,8 +17,8 @@ function searchResponse(data: Partial<SiteSearchResults>): Response {
   });
 }
 
-async function openSearch() {
-  const user = userEvent.setup();
+async function openSearch(options?: Parameters<typeof userEvent.setup>[0]) {
+  const user = userEvent.setup(options);
   await user.click(screen.getByRole("button", { name: "Buscar" }));
   return { user, input: screen.getByPlaceholderText(/Personas, competencias/) };
 }
@@ -47,13 +47,15 @@ describe("HeaderSearch", () => {
   });
 
   it("debounces typing into one request and opens the selected person", async () => {
-    fetchMock.mockResolvedValue(
+    // A Response body can only be read once, so every call gets its own.
+    fetchMock.mockImplementation(async () =>
       searchResponse({
         persons: [{ wcaId: "2099SMOK01", name: "Ana Smoke" }],
       }),
     );
     render(<HeaderSearch />);
-    const { user, input } = await openSearch();
+    // No pause between keystrokes, so a slow runner can't outlast the 250ms debounce mid-word.
+    const { user, input } = await openSearch({ delay: null });
 
     await user.type(input, "Ana S");
 
