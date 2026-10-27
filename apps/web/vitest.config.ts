@@ -11,6 +11,13 @@ export default defineConfig({
   // tsconfig keeps JSX for Next.js; the component tests need it compiled.
   esbuild: { jsx: "automatic" },
   test: {
+    // Report only; no thresholds. `pnpm test:coverage` writes coverage/index.html.
+    coverage: {
+      provider: "v8",
+      reporter: ["text-summary", "html"],
+      include: ["app/**", "components/**", "db/**", "hooks/**", "lib/**"],
+      exclude: ["**/*.test.{ts,tsx}", "**/*.integration.test.ts"],
+    },
     projects: [
       {
         extends: true,

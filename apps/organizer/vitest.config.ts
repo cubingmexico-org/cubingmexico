@@ -14,6 +14,13 @@ export default defineConfig({
   test: {
     // Printables format dates in the process timezone; snapshots must not depend on the machine.
     env: { TZ: "UTC" },
+    // Report only; no thresholds. `pnpm test:coverage` writes coverage/index.html.
+    coverage: {
+      provider: "v8",
+      reporter: ["text-summary", "html"],
+      include: ["app/**", "components/**", "data/**", "db/**", "lib/**"],
+      exclude: ["**/*.test.{ts,tsx}", "**/*.integration.test.ts"],
+    },
     projects: [
       {
         extends: true,
