@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-import psycopg2.extras
-
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.poster.shared import (
     CURRENT_YEAR_SUMMARY_UNLOCK_DAY,
     POST_TYPE_SUMMARY_UNLOCK,
@@ -103,7 +101,7 @@ def post_summary_unlock(year: int) -> dict:
         return result
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             skip_fb = _already_posted(cur, POST_TYPE_SUMMARY_UNLOCK, subject_key, "facebook")
             skip_ig = _already_posted(cur, POST_TYPE_SUMMARY_UNLOCK, subject_key, "instagram")
 

@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import psycopg2.extras
-
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.mollerz import fetch_mollerz_members, mollerz_subject_key, parse_mollerz_subject_key, tier_rank
 from social.mollerz_image import generate_mollerz_png
 from social.poster.shared import POST_TYPE_MOLLERZ, _already_posted, _publish_image_to_platforms, _record_post
@@ -61,7 +59,7 @@ def get_mollerz_details(subject_key: str) -> dict | None:
         return None
     wca_id, tier = parsed
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             member = fetch_mollerz_members(cur).get(wca_id)
             if not member or member["tier"] != tier:
                 return None
@@ -124,7 +122,7 @@ def post_mollerz(subject_key: str, *, details: dict | None = None) -> dict:
         return result
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             skip_fb = _already_posted(cur, POST_TYPE_MOLLERZ, subject_key, "facebook")
             skip_ig = _already_posted(cur, POST_TYPE_MOLLERZ, subject_key, "instagram")
 
@@ -205,7 +203,7 @@ def seed_mollerz_posted() -> dict:
     marked = 0
     skipped = 0
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             members = fetch_mollerz_members(cur)
             for wca_id, member in members.items():
                 subject_key = mollerz_subject_key(wca_id, member["tier"])

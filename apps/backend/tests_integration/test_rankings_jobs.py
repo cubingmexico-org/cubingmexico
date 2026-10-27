@@ -2,8 +2,8 @@ import json
 from datetime import date
 from pathlib import Path
 
-import psycopg2.extensions
 import pytest
+from psycopg.rows import tuple_row
 
 from routes.admin.rankings import _compute_nemesis_stats
 from tests_integration.factories import (
@@ -149,7 +149,7 @@ def _load_nemesis_fixture(db):
 def test_nemesis_stats_parity(db, scope):
     expected = _load_nemesis_fixture(db)
 
-    with db.cursor(cursor_factory=psycopg2.extensions.cursor) as cur:
+    with db.cursor(row_factory=tuple_row) as cur:
         _compute_nemesis_stats(cur, scope)
 
     rows = fetch_all(

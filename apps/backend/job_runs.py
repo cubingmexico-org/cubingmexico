@@ -8,8 +8,8 @@ import uuid
 from collections.abc import Collection
 from datetime import UTC, datetime
 
-import psycopg2.extras
-from psycopg2.extras import Json
+from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
 from common import get_connection
 from notifications import notify_job_failure
@@ -94,7 +94,7 @@ def start_run(job, steps, resumed_from=None):
                 INSERT INTO job_runs (id, job, status, steps, resumed_from)
                 VALUES (%s, %s, 'running', %s, %s)
                 """,
-                (run_id, job, Json(steps), resumed_from),
+                (run_id, job, Jsonb(steps), resumed_from),
             )
     return run_id
 
@@ -102,7 +102,7 @@ def start_run(job, steps, resumed_from=None):
 def record_steps(run_id, steps):
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE job_runs SET steps = %s WHERE id = %s", (Json(steps), run_id))
+            cur.execute("UPDATE job_runs SET steps = %s WHERE id = %s", (Jsonb(steps), run_id))
 
 
 def finish_run(run_id, status, steps, error=None):
@@ -115,7 +115,7 @@ def finish_run(run_id, status, steps, error=None):
                 WHERE id = %s
                 RETURNING job
                 """,
-                (status, Json(steps), error, run_id),
+                (status, Jsonb(steps), error, run_id),
             )
             row = cur.fetchone()
     if status == "failed" and row:
@@ -124,7 +124,7 @@ def finish_run(run_id, status, steps, error=None):
 
 def latest_run(job):
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(
                 """
                 SELECT id, status, steps FROM job_runs

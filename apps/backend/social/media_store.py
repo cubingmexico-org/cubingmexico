@@ -9,8 +9,6 @@ from __future__ import annotations
 import secrets
 from datetime import UTC, datetime, timedelta
 
-from psycopg2 import Binary
-
 from common import get_connection
 
 TTL_SECONDS = 10 * 60
@@ -62,7 +60,7 @@ def put_media(
                 INSERT INTO social_temp_media (token, content_type, data, expires_at)
                 VALUES (%s, %s, %s, %s)
                 """,
-                (token, content_type, Binary(data), expires_at),
+                (token, content_type, data, expires_at),
             )
         conn.commit()
     return token
@@ -87,8 +85,6 @@ def get_media(token: str) -> tuple[bytes, str] | None:
     if not row:
         return None
     data, content_type = row
-    if isinstance(data, memoryview):
-        data = data.tobytes()
     return bytes(data), content_type or "image/jpeg"
 
 

@@ -1,11 +1,8 @@
 """Competition round schedules from public WCIF."""
 
-import psycopg2
-import psycopg2.extras
 import requests
-from psycopg2.extras import execute_values
 
-from common import get_connection, job_response, log, require_cron_auth
+from common import execute_values, get_connection, job_response, log, named_row, require_cron_auth
 from routes.admin.blueprint import admin_bp
 from utils import extract_round_end_dates_from_wcif
 
@@ -56,7 +53,7 @@ def run_update_competition_schedules():
     candidates = []
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             cur.execute(
                 """
                 SELECT c.id

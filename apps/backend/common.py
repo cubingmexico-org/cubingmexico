@@ -2,30 +2,34 @@ import hmac
 import logging
 import os
 import threading
+from collections.abc import Sequence
 from contextlib import contextmanager
 from functools import wraps
+from typing import Any, LiteralString, cast
 
-import psycopg2
-import psycopg2.extras
-import psycopg2.pool
+import psycopg
 from flask import abort, jsonify, request
 from google.cloud import secretmanager
+from psycopg.rows import RowFactory, namedtuple_row
+from psycopg_pool import ConnectionPool, PoolTimeout
 
 # Mirrors the WCA's `Event.official` scope: ranks 800-989 are announced but
 # not yet official (e.g. fto), 990-999 are deprecated (333ft, magic, ...).
 OFFICIAL_EVENT_MAX_RANK = 800
-OFFICIAL_EVENTS_SUBQUERY = f"(SELECT id FROM events WHERE rank < {OFFICIAL_EVENT_MAX_RANK})"
+# Built only from the int constants above, so safe to interpolate into SQL.
+OFFICIAL_EVENTS_SUBQUERY = cast(LiteralString, f"(SELECT id FROM events WHERE rank < {OFFICIAL_EVENT_MAX_RANK})")
 DEPRECATED_EVENT_MIN_RANK = 990
 DEPRECATED_EVENT_MAX_RANK = 999
-WITH_DEPRECATED_EVENTS_SUBQUERY = (
+WITH_DEPRECATED_EVENTS_SUBQUERY = cast(
+    LiteralString,
     f"(SELECT id FROM events WHERE rank < {OFFICIAL_EVENT_MAX_RANK}"
-    f" OR rank BETWEEN {DEPRECATED_EVENT_MIN_RANK} AND {DEPRECATED_EVENT_MAX_RANK})"
+    f" OR rank BETWEEN {DEPRECATED_EVENT_MIN_RANK} AND {DEPRECATED_EVENT_MAX_RANK})",
 )
 # Derived tables store one variant per scope; "all" adds deprecated events (never fto).
 EVENT_SCOPES = ("official", "all")
 
 
-def events_subquery(scope):
+def events_subquery(scope: str) -> LiteralString:
     return WITH_DEPRECATED_EVENTS_SUBQUERY if scope == "all" else OFFICIAL_EVENTS_SUBQUERY
 
 
@@ -146,36 +150,56 @@ log.info(
     DB_POOL_MAX * WEB_CONCURRENCY,
     WEB_CONCURRENCY,
 )
-_pool: psycopg2.pool.ThreadedConnectionPool | None = None
+# How long a request waits for a free pooled connection before opening a one-off one.
+DB_POOL_CHECKOUT_TIMEOUT = 2.0
+# Production connects through Neon's pooler (PgBouncer in transaction mode), which can't
+# keep the server-side prepared statements psycopg creates for repeated queries.
+DB_CONNECT_KWARGS: dict[str, Any] = {"prepare_threshold": None}
+
+_pool: ConnectionPool | None = None
 _pool_lock = threading.Lock()
 
 
-def _get_pool() -> psycopg2.pool.ThreadedConnectionPool:
+def _get_pool() -> ConnectionPool:
     global _pool
     if _pool is None:
         with _pool_lock:
             if _pool is None:
-                _pool = psycopg2.pool.ThreadedConnectionPool(1, DB_POOL_MAX, DB_URL)
+                # Opened lazily so each gunicorn worker starts its pool threads after forking.
+                _pool = ConnectionPool(
+                    DB_URL,
+                    min_size=1,
+                    max_size=DB_POOL_MAX,
+                    kwargs=DB_CONNECT_KWARGS,
+                    check=ConnectionPool.check_connection,
+                    open=True,
+                )
     return _pool
 
 
-def _checkout():
+# psycopg's `namedtuple_row`, with rows typed `Any`: psycopg types them as a bare NamedTuple,
+# so a type checker can't see the columns either way.
+named_row = cast(RowFactory[Any], namedtuple_row)
+
+
+def connect() -> psycopg.Connection:
+    """A new, unpooled connection with the same settings as the pool's."""
+    return psycopg.connect(DB_URL, **DB_CONNECT_KWARGS)
+
+
+def _checkout() -> tuple[psycopg.Connection, bool]:
     """Returns (conn, pooled). Falls back to a one-off connection when the pool is exhausted."""
     pool = _get_pool()
     try:
-        conn = pool.getconn()
-    except psycopg2.pool.PoolError:
+        return pool.getconn(timeout=DB_POOL_CHECKOUT_TIMEOUT), True
+    except PoolTimeout:
         log.warning("DB pool exhausted (max %s); opening a one-off connection", DB_POOL_MAX)
-        return psycopg2.connect(DB_URL), False
-    if conn.closed:
-        pool.putconn(conn, close=True)
-        conn = pool.getconn()
-    return conn, True
+        return connect(), False
 
 
 @contextmanager
 def get_connection():
-    """Yields a pooled connection; commits on success, rolls back on error (same as `with psycopg2.connect()`)."""
+    """Yields a pooled connection; commits on success, rolls back on error."""
     conn, pooled = _checkout()
     try:
         yield conn
@@ -184,22 +208,43 @@ def get_connection():
         if not conn.closed:
             try:
                 conn.rollback()
-            except psycopg2.Error:
+            except psycopg.Error:
                 log.warning("Rollback failed; discarding connection", exc_info=True)
                 conn.close()
         raise
     finally:
         if pooled:
-            _get_pool().putconn(conn, close=bool(conn.closed))
+            _get_pool().putconn(conn)
         else:
             conn.close()
 
 
 @contextmanager
 def cursor():
-    """Yields a NamedTupleCursor on a pooled connection, with `get_connection()`'s commit/rollback."""
-    with get_connection() as conn, conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+    """Yields a named-tuple cursor on a pooled connection, with `get_connection()`'s commit/rollback."""
+    with get_connection() as conn, conn.cursor(row_factory=named_row) as cur:
         yield cur
+
+
+def execute_values(
+    cur: psycopg.Cursor,
+    sql: LiteralString,
+    rows: Sequence[Sequence[Any]],
+    template: LiteralString | None = None,
+    page_size: int = 100,
+) -> None:
+    """Runs `sql` with its single `VALUES %s` expanded to one row tuple per row, `page_size` rows at a time.
+
+    Like psycopg2's `execute_values`: each page is one multi-row statement, so `ON CONFLICT` behaves the same.
+    """
+    if "VALUES %s" not in sql:
+        raise ValueError("execute_values needs a single 'VALUES %s' placeholder")
+    for start in range(0, len(rows), page_size):
+        page = rows[start : start + page_size]
+        row_template = template or "(" + ", ".join(["%s"] * len(page[0])) + ")"
+        values = ", ".join([row_template] * len(page))
+        query = sql.replace("VALUES %s", f"VALUES {values}", 1)
+        cur.execute(cast(LiteralString, query), [value for row in page for value in row])
 
 
 def job_response(fn, error_message):

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import psycopg2.extras
-
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.calendar_mx import is_year_recap_due, year_recap_key_if_due
 from social.digest_queries_year import fetch_year_recap_payload
 from social.poster.shared import POST_TYPE_YEAR_RECAP, _already_posted, _publish_carousel_to_platforms
@@ -13,7 +11,7 @@ from social.year_recap_image import generate_year_recap_slides, plan_year_recap_
 
 def get_year_recap_payload(year: int) -> dict:
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             return fetch_year_recap_payload(cur, year)
 
 
@@ -110,7 +108,7 @@ def post_year_recap(year: int) -> dict:
         return result
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             skip_fb = _already_posted(cur, POST_TYPE_YEAR_RECAP, subject_key, "facebook")
             skip_ig = _already_posted(cur, POST_TYPE_YEAR_RECAP, subject_key, "instagram")
 

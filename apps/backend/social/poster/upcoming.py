@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-import psycopg2.extras
-
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.image_common import format_place_line
 from social.poster.shared import POST_TYPE_UPCOMING, _already_posted, _competition_details, _publish_image_to_platforms
 from social.upcoming_image import format_competition_date_range, format_competition_datetime, generate_upcoming_png
@@ -20,10 +18,10 @@ def _event_names_for_ids(cur, event_ids: list[str]) -> list[str]:
         """
         SELECT id, name, rank
         FROM events
-        WHERE id IN %s
+        WHERE id = ANY(%s)
         ORDER BY rank ASC, name ASC
         """,
-        (tuple(event_ids),),
+        (list(event_ids),),
     )
     by_id = {row.id: row.name for row in cur.fetchall()}
     # Preserve WCA event order when known; fall back to DB order for the rest.
@@ -128,7 +126,7 @@ def _upcoming_caption_details(comp: dict) -> dict:
     event_ids = wca.get("event_ids") or []
     if isinstance(event_ids, list) and event_ids:
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            with conn.cursor(row_factory=named_row) as cur:
                 details["event_names"] = _event_names_for_ids(cur, [str(e) for e in event_ids])
 
     limit = wca.get("competitor_limit")
@@ -148,7 +146,7 @@ def _upcoming_captions(comp: dict) -> dict[str, str]:
 
 def get_upcoming_captions(competition_id: str) -> dict[str, str] | None:
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             comp = _competition_details(cur, competition_id)
     if not comp:
         return None
@@ -159,7 +157,7 @@ def generate_upcoming_png_for_competition(
     competition_id: str,
 ) -> tuple[bytes, dict] | None:
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             comp = _competition_details(cur, competition_id)
     if not comp:
         return None
@@ -185,7 +183,7 @@ def post_upcoming_competition(competition_id: str) -> dict:
     }
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             comp = _competition_details(cur, competition_id)
             if not comp:
                 result["errors"].append("competition_not_found_or_not_mexico")
@@ -236,7 +234,7 @@ def post_new_upcoming_competitions(competition_ids: Iterable[str] | None) -> lis
 
     eligible: list[str] = []
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             for competition_id in ids:
                 cur.execute(
                     """

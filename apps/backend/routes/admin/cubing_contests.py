@@ -11,12 +11,10 @@ import json
 import zipfile
 from datetime import datetime
 
-import psycopg2.extras
 import requests
 from flask import jsonify, request
-from psycopg2.extras import execute_values
 
-from common import OFFICIAL_EVENTS_SUBQUERY, get_connection, log, require_cron_auth
+from common import OFFICIAL_EVENTS_SUBQUERY, execute_values, get_connection, log, named_row, require_cron_auth
 from routes.admin.blueprint import admin_bp
 
 CC_EXPORT_URL = "https://cubingcontests.com/api/default/export/v1/csv"
@@ -204,7 +202,7 @@ def run_update_cubing_contests(force=False):
         return {"success": False, "message": f"Failed to fetch export metadata: {e}"}, 500
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             cur.execute("SELECT value FROM export_metadata WHERE key = %s", (CC_METADATA_KEY,))
             stored = cur.fetchone()
     if not force and stored and stored.value == export_date:
@@ -220,7 +218,7 @@ def run_update_cubing_contests(force=False):
 
     candidates = list(candidate_competition_ids(data["contests"]))
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             cur.execute("SELECT id FROM competitions WHERE id = ANY(%s)", (candidates,))
             competition_ids = {row.id for row in cur.fetchall()}
             cur.execute(f"SELECT id FROM events WHERE id IN {OFFICIAL_EVENTS_SUBQUERY}")

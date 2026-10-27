@@ -3,7 +3,7 @@ import math
 import os
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, LiteralString
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import request
@@ -219,8 +219,8 @@ def parse_bool_query_param(param_name):
     raise ValueError(f"Invalid '{param_name}'. Expected one of: true, false, 1, 0, yes, no.")
 
 
-def build_competitions_filter_query_parts():
-    where_clauses = ["c.country_id = %s"]
+def build_competitions_filter_query_parts() -> tuple[list[LiteralString], list[object]]:
+    where_clauses: list[LiteralString] = ["c.country_id = %s"]
     query_params: list[object] = ["Mexico"]
 
     state_id = request.args.get("stateId") or request.args.get("state_id")

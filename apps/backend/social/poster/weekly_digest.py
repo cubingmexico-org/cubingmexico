@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import psycopg2.extras
-
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.calendar_mx import is_weekly_digest_due, parse_iso_week_key, weekly_digest_key_if_due
 from social.digest_queries_weekly import fetch_weekly_digest_payload
 from social.poster.shared import POST_TYPE_WEEKLY_DIGEST, _already_posted, _publish_carousel_to_platforms
@@ -18,7 +16,7 @@ from social.weekly_digest_image import (
 
 def get_weekly_digest_payload(week_key: str) -> dict | None:
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             return fetch_weekly_digest_payload(cur, week_key)
 
 
@@ -172,7 +170,7 @@ def post_weekly_digest(week_key: str) -> dict:
         return result
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             skip_fb = _already_posted(cur, POST_TYPE_WEEKLY_DIGEST, week_key, "facebook")
             skip_ig = _already_posted(cur, POST_TYPE_WEEKLY_DIGEST, week_key, "instagram")
 

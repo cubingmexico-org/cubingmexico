@@ -1,18 +1,16 @@
 """WCA export import: results and result attempts."""
 
 # pandas-stubs types boolean masks and Series arithmetic more strictly than the runtime behavior used here.
-# pyright: reportArgumentType=warning, reportGeneralTypeIssues=warning
+# pyright: reportArgumentType=warning, reportGeneralTypeIssues=warning, reportAttributeAccessIssue=warning
 
 import io
 from collections.abc import Iterator
 from dataclasses import dataclass
+from typing import LiteralString
 
 import pandas as pd
-import psycopg2
-import psycopg2.extras
-from psycopg2.extras import execute_values
 
-from common import get_connection, log
+from common import execute_values, get_connection, log, named_row
 from routes.admin.schedules import run_update_competition_schedules
 
 CHUNK_ROWS = 200_000
@@ -39,7 +37,7 @@ def _read_tsv_chunks(file_bytes: bytes, file_name: str, string_column: str) -> I
         yield chunk_number, df_chunk
 
 
-def _replace_table_rows(table: str, insert_sql: str, rows: list[tuple], file_name: str) -> bool:
+def _replace_table_rows(table: LiteralString, insert_sql: LiteralString, rows: list[tuple], file_name: str) -> bool:
     """Atomically replaces every row of `table`; returns False (after rolling back) on failure."""
     log.info("Proceeding with atomic update for '%s' table.", table)
     with get_connection() as conn:
@@ -63,7 +61,7 @@ def _replace_table_rows(table: str, insert_sql: str, rows: list[tuple], file_nam
                 return False
 
 
-def _clear_table(table: str) -> None:
+def _clear_table(table: LiteralString) -> None:
     with get_connection() as conn:
         with conn.cursor() as cur:
             cur.execute(f"DELETE FROM {table}")
@@ -74,7 +72,7 @@ def _mexican_person_ids_exist(file_bytes: bytes, file_name: str) -> bool:
     try:
         log.info("Pre-checking personIds in %s against the database.", file_name)
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            with conn.cursor(row_factory=named_row) as cur:
                 cur.execute("SELECT wca_id FROM persons")
                 db_person_ids = {p.wca_id for p in cur.fetchall()}
 
@@ -114,7 +112,7 @@ def _has_newer_competitions(file_bytes: bytes, file_name: str) -> bool:
     """False when the export's latest competition isn't newer than the last imported one."""
     try:
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            with conn.cursor(row_factory=named_row) as cur:
                 cur.execute("""
                     SELECT value FROM export_metadata WHERE key = 'last_competition'
                 """)
@@ -221,7 +219,7 @@ def _snapshot_social_state() -> _SocialSnapshot:
         from social.poster import fetch_mexican_competition_ids_with_results, fetch_record_markers
 
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            with conn.cursor(row_factory=named_row) as cur:
                 snapshot.mx_results = fetch_mexican_competition_ids_with_results(cur)
                 snapshot.record_markers = fetch_record_markers(cur)
         log.info(
@@ -241,7 +239,7 @@ def _snapshot_social_state() -> _SocialSnapshot:
         from social.mollerz import fetch_mollerz_members
 
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            with conn.cursor(row_factory=named_row) as cur:
                 snapshot.mollerz = fetch_mollerz_members(cur)
         log.info("Snapshot: %s Mollerz members before import.", len(snapshot.mollerz))
     except Exception as e:
@@ -320,7 +318,7 @@ def _parse_mexican_results(file_bytes: bytes, file_name: str) -> list[tuple] | N
 def _update_last_competition() -> None:
     try:
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            with conn.cursor(row_factory=named_row) as cur:
                 log.info("Finding the latest competition with results to update metadata.")
                 cur.execute(
                     """
@@ -367,7 +365,7 @@ def _post_social_updates(before: _SocialSnapshot) -> None:
             )
 
             with get_connection() as conn:
-                with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+                with conn.cursor(row_factory=named_row) as cur:
                     mx_results_after = fetch_mexican_competition_ids_with_results(cur)
                     record_markers_after = fetch_record_markers(cur)
             post_new_records(before.record_markers, record_markers_after)
@@ -381,7 +379,7 @@ def _post_social_updates(before: _SocialSnapshot) -> None:
             from social.poster import post_new_mollerz
 
             with get_connection() as conn:
-                with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+                with conn.cursor(row_factory=named_row) as cur:
                     mollerz_after = fetch_mollerz_members(cur)
             post_new_mollerz(before.mollerz, mollerz_after)
         except Exception as e:
@@ -466,7 +464,7 @@ def import_result_attempts(z, file_name):
     file_bytes = z.read(file_name)
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             cur.execute("SELECT id FROM results")
             db_result_ids = {r.id for r in cur.fetchall()}
 

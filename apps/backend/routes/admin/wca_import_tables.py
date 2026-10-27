@@ -6,10 +6,8 @@
 import io
 
 import pandas as pd
-import psycopg2
-from psycopg2.extras import execute_values
 
-from common import get_connection, log
+from common import execute_values, get_connection, log, named_row
 
 
 def import_events(z, file_name):
@@ -125,7 +123,7 @@ def import_ranks_average(z, file_name):
 
     data = df.to_dict(orient="records")
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             cur.execute("SELECT wca_id FROM persons")
             persons = cur.fetchall()
             person_ids = {p.wca_id for p in persons}
@@ -172,7 +170,7 @@ def import_ranks_single(z, file_name):
 
     data = df.to_dict(orient="records")
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             cur.execute("SELECT wca_id FROM persons")
             persons = cur.fetchall()
             person_ids = {p.wca_id for p in persons}

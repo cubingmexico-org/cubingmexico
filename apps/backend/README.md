@@ -23,7 +23,7 @@ Environment variables (see `.env.example`):
 - `DB_URL` — PostgreSQL connection string (env or Secret Manager `db_url`; falls back to `postgresql://postgres:postgres@localhost:5432/cubing_mexico` only when `FLASK_ENV=development`). In production use Neon's pooled host (the one with `-pooler`); the direct host is only for running migrations.
 - `CRON_SECRET` — Auth secret for admin update endpoints (env or Secret Manager `cron-secret`; the local dev token is only used when `FLASK_ENV=development`). Outside development the app refuses to start if `DB_URL` or `CRON_SECRET` can't be resolved.
 - `WEB_CONCURRENCY` / `GUNICORN_THREADS` — Gunicorn workers and threads per worker in the Docker image (defaults: `4` and `8`)
-- `DB_POOL_MAX` — Max pooled PostgreSQL connections per worker (default: `GUNICORN_THREADS`). Each worker has its own pool, so one instance can open up to `WEB_CONCURRENCY × DB_POOL_MAX` connections (32 with the defaults); multiply by the Cloud Run max instances when sizing the database. The total is logged at startup.
+- `DB_POOL_MAX` — Max pooled PostgreSQL connections per worker (default: `GUNICORN_THREADS`). A request that waits more than 2 seconds for a free one opens a one-off connection instead. Each worker has its own pool, so one instance can open up to `WEB_CONCURRENCY × DB_POOL_MAX` connections (32 with the defaults); multiply by the Cloud Run max instances when sizing the database. The total is logged at startup.
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
 - `UPDATE_ALL_JOB` — Cloud Run Job resource name (`projects/P/locations/R/jobs/J`) that runs the nightly pipeline. When set, `POST /update-all` and `/update-all/resume` start an execution of it and return 202; when unset (local dev, tests) they run the pipeline inside the request.
@@ -305,7 +305,8 @@ The policies match the service name `backend` and the job name `update-all`; edi
 ## Notes
 
 - The app filters and stores data primarily for Mexico.
-- Large TSV handling uses chunked validation and execute_values for bulk inserts.
+- Large TSV handling uses chunked validation and `common.execute_values` (multi-row `INSERT`s, 100 rows per statement) for bulk inserts.
+- Database access uses psycopg 3 with a `psycopg_pool.ConnectionPool` per worker (`common.get_connection()`). Server-side prepared statements are off (`prepare_threshold=None`) because Neon's pooled host runs PgBouncer in transaction mode. Pass lists to `= ANY(%s)` / `<> ALL(%s)` rather than tuples to `IN %s`, which psycopg 3 doesn't adapt, and use `common.named_row` for named-tuple rows.
 - Corruption checks prevent partial/invalid updates; metadata prevents reprocessing older exports.
 
 ## Development

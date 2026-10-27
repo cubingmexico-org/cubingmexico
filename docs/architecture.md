@@ -24,13 +24,13 @@ flowchart LR
 
   web -->|Drizzle| db
   organizer -->|Drizzle| db
-  backend -->|psycopg2| db
+  backend -->|psycopg| db
 
   web -->|"admin ops, social, state updates, CRON_SECRET"| backend
   scheduler -->|"post jobs, CRON_SECRET"| backend
   scheduler -->|"nightly, OAuth"| updateAll
   backend -->|"starts on /update-all"| updateAll
-  updateAll -->|psycopg2| db
+  updateAll -->|psycopg| db
   updateAll -->|"/api/revalidate"| web
   backend --> secrets
 

@@ -44,10 +44,10 @@ MOLLERZ_MEMBERS_SQL = """
         p.name AS person_name,
         s.name AS state_name,
         COUNT(DISTINCT CASE
-            WHEN r.event_id IN %(avg_events)s AND r.average > 0 THEN r.event_id
+            WHEN r.event_id = ANY(%(avg_events)s) AND r.average > 0 THEN r.event_id
         END) AS speedsolving_averages,
         COUNT(DISTINCT CASE
-            WHEN r.event_id IN %(mean_events)s AND r.average > 0 THEN r.event_id
+            WHEN r.event_id = ANY(%(mean_events)s) AND r.average > 0 THEN r.event_id
         END) AS bld_fmc_means,
         MAX(CASE
             WHEN r.regional_single_record = 'WR' OR r.regional_average_record = 'WR'
@@ -112,8 +112,8 @@ def fetch_mollerz_members(cur) -> dict[str, dict]:
         MOLLERZ_MEMBERS_SQL,
         {
             "official_max_rank": OFFICIAL_EVENT_MAX_RANK,
-            "avg_events": tuple(SPEEDSOLVING_AVERAGES_EVENTS),
-            "mean_events": tuple(BLD_FMC_MEANS_EVENTS),
+            "avg_events": list(SPEEDSOLVING_AVERAGES_EVENTS),
+            "mean_events": list(BLD_FMC_MEANS_EVENTS),
         },
     )
     members: dict[str, dict] = {}

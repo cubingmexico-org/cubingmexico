@@ -1,3 +1,5 @@
+from typing import LiteralString
+
 from flask import Blueprint, jsonify, request
 
 from common import cursor, log
@@ -70,10 +72,11 @@ def get_persons():
             for row in cur.fetchall():
                 person_championships.setdefault(row.person_id, set()).add(row.championship_id)
 
-            for table, target in (
+            rank_tables: tuple[tuple[LiteralString, dict], ...] = (
                 ("ranks_single", person_single_ranks),
                 ("ranks_average", person_average_ranks),
-            ):
+            )
+            for table, target in rank_tables:
                 cur.execute(
                     "SELECT person_id, event_id, best, world_rank, continent_rank, country_rank, state_rank "
                     f"FROM {table} WHERE person_id = ANY(%s)",

@@ -6,12 +6,10 @@ import zipfile
 from datetime import datetime
 
 import pandas as pd
-import psycopg2
-import psycopg2.extras
 import requests
 from flask import jsonify
 
-from common import get_connection, job_response, log, require_cron_auth
+from common import get_connection, job_response, log, named_row, require_cron_auth
 from routes.admin.blueprint import admin_bp
 from routes.admin.wca_import_competitions import (
     import_championships,
@@ -171,7 +169,7 @@ def update_existing_mexican_competitions():
 
     try:
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            with conn.cursor(row_factory=named_row) as cur:
                 cur.execute("SELECT id FROM competitions WHERE country_id = 'Mexico'")
                 existing_mexican_competitions = {row.id for row in cur.fetchall()}
 

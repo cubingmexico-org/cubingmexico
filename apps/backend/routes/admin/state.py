@@ -6,11 +6,9 @@ Both jobs run for every state after a WCA import, or for one state after a team 
 
 from itertools import groupby
 
-import psycopg2
-import psycopg2.extras
 from flask import jsonify
 
-from common import WITH_DEPRECATED_EVENTS_SUBQUERY, get_connection, job_response, log, require_cron_auth
+from common import WITH_DEPRECATED_EVENTS_SUBQUERY, get_connection, job_response, log, named_row, require_cron_auth
 from routes.admin.blueprint import admin_bp
 
 STATE_MEMBERS_SUBQUERY = "(SELECT wca_id FROM persons WHERE state_id = ANY(%s))"
@@ -169,7 +167,7 @@ def _collect_state_records(conn, value_column, regional_column, state_ids, out_i
     """Stream every state member's results in record order and tag SR per (state, event)."""
     state_condition, params = _state_filter(state_ids)
     # A server-side cursor, so the full results history is never held in memory at once.
-    with conn.cursor(name=f"state_records_{value_column}", cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+    with conn.cursor(name=f"state_records_{value_column}", row_factory=named_row) as cur:
         cur.itersize = 5000
         cur.execute(
             f"""
@@ -214,7 +212,7 @@ def run_update_state_records(state_ids=None):
     average_sr_ids = []
     member_ids = []
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             if state_ids is None:
                 log.info("Clearing all historical state record markers")
                 cur.execute("UPDATE results SET state_single_record = NULL, state_average_record = NULL")
@@ -237,7 +235,7 @@ def run_update_state_records(state_ids=None):
             _collect_state_records(conn, "average", "regional_average_record", state_ids, average_sr_ids)
 
             chunk_size = 500
-            regional_markers = tuple(REGIONAL_RECORD_MARKERS)
+            regional_markers = list(REGIONAL_RECORD_MARKERS)
             for i in range(0, len(single_sr_ids), chunk_size):
                 chunk = single_sr_ids[i : i + chunk_size]
                 cur.execute(
@@ -247,7 +245,7 @@ def run_update_state_records(state_ids=None):
                     WHERE id = ANY(%s)
                       AND (
                         regional_single_record IS NULL
-                        OR regional_single_record NOT IN %s
+                        OR regional_single_record <> ALL(%s)
                       )
                     """,
                     (chunk, regional_markers),
@@ -262,7 +260,7 @@ def run_update_state_records(state_ids=None):
                     WHERE id = ANY(%s)
                       AND (
                         regional_average_record IS NULL
-                        OR regional_average_record NOT IN %s
+                        OR regional_average_record <> ALL(%s)
                       )
                     """,
                     (chunk, regional_markers),

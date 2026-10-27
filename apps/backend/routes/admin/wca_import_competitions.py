@@ -8,9 +8,8 @@ import re
 from datetime import datetime
 
 import pandas as pd
-import psycopg2
 
-from common import get_connection, log
+from common import get_connection, log, named_row
 from utils import extract_first_image_url, get_state_from_coordinates
 
 WCA_STAFF_PATTERN = re.compile(r"\{([^}]+)\}\{mailto:([^}]+)\}")
@@ -133,7 +132,7 @@ def import_competitions(z, file_name):
     df = pd.read_csv(io.StringIO(cleaned_content), delimiter="\t", na_values=["NULL"])
     competitions = df.to_dict(orient="records")
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             cur.execute("SELECT id, name FROM states")
             states = cur.fetchall()
 
