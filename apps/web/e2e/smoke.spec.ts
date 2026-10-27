@@ -51,6 +51,20 @@ test("header menus list every link", async ({ page }) => {
   }
 });
 
+// These tabs load their data through server actions the first time they open.
+test("person tabs load their data", async ({ page }) => {
+  const errors = trackPageErrors(page);
+  await page.goto("/persons/2099SMOK01");
+
+  for (const name of ["Rachas", "Podios", "Némesis"]) {
+    await page.getByRole("tab", { name, exact: true }).click();
+    const panel = page.getByRole("tabpanel");
+    await expect(panel.locator("[data-slot=skeleton]")).toHaveCount(0);
+    await expect(panel).not.toBeEmpty();
+  }
+  expect(errors).toEqual([]);
+});
+
 // The page streams, so the status is already 200 when notFound() renders the 404 UI.
 test("unknown persons get the not-found page", async ({ page }) => {
   await page.goto("/persons/2099NONE01");

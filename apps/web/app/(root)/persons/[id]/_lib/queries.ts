@@ -10,7 +10,6 @@ export {
   getPersonAvatarFromWCA,
 } from "./profile";
 export type {
-  PersonCompetitionLocation,
   PersonStaffCompetition,
   PersonResultsByEventGroup,
   PersonResultsEventOption,

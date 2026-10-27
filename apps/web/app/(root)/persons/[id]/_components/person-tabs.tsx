@@ -8,16 +8,12 @@ import {
   useQueryState,
   useQueryStates,
 } from "nuqs";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@workspace/ui/components/tabs";
+import { Tabs, TabsContent } from "@workspace/ui/components/tabs";
 import { Badge } from "@workspace/ui/components/badge";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { cn } from "@workspace/ui/lib/utils";
 import type { GeoJSONProps } from "react-leaflet";
+import { PersonTabsList } from "./person-tabs-list";
+import { useTabData } from "./use-tab-data";
 import { PersonResultsTab } from "./results-tab";
 import { PersonResultsChartTab } from "./results-chart-tab";
 import { PersonRecordsTab } from "./records-tab";
@@ -26,23 +22,11 @@ import { PersonPrStreaksTab } from "./pr-streaks-tab";
 import { PersonPodiumsTab } from "./podiums-tab";
 import { PersonStaffCompetitionsTab } from "./staff-competitions-tab";
 import { PersonUnofficialTab } from "./unofficial-tab";
-import type { CcEventResultsGroup } from "@/lib/cubing-contests";
 import { MapContainer } from "./map-container";
 import type {
-  PersonChampionshipPodium,
-  PersonPodiumsByEvent,
-  PersonPrStreaks,
-  PersonRecordHistoryEntry,
   PersonResultsByEventGroup,
   PersonResultsEventOption,
-  PersonStaffCompetition,
-  PersonUnofficialPodiumsByEvent,
 } from "../_lib/queries";
-import type { PersonCompetitionLocation } from "../_lib/queries";
-import type {
-  NemesisReport,
-  NemesizedReport,
-} from "../../_lib/nemesis-queries";
 import { NemesesList } from "../../_components/nemeses-list";
 import { NemesizedList } from "../../_components/nemesized-list";
 import {
@@ -115,40 +99,52 @@ export function PersonTabs({
   const [loadedResults, setLoadedResults] = useState(initialResults);
   const selectedResults = loadedResults?.results ?? null;
   const loadedEventId = loadedResults?.eventId;
-  const [recordHistory, setRecordHistory] = useState<
-    PersonRecordHistoryEntry[] | null
-  >(null);
-  const [prStreaks, setPrStreaks] = useState<PersonPrStreaks | null>(null);
-  const [podiumsByEvent, setPodiumsByEvent] = useState<
-    PersonPodiumsByEvent[] | null
-  >(null);
-  const [championshipPodiums, setChampionshipPodiums] = useState<
-    PersonChampionshipPodium[] | null
-  >(null);
-  const [staffCompetitions, setStaffCompetitions] = useState<{
-    organized: PersonStaffCompetition[];
-    delegated: PersonStaffCompetition[];
-  } | null>(null);
-  const [nemeses, setNemeses] = useState<{
-    report: NemesisReport;
-    nemesized: NemesizedReport;
-    includeDeprecated: boolean;
-  } | null>(null);
   const [includeDeprecated] = useQueryState(
     "deprecated",
     parseAsBoolean.withDefault(false),
   );
-  const [unofficialResults, setUnofficialResults] = useState<
-    CcEventResultsGroup[] | null
-  >(null);
-  const [unofficialPodiums, setUnofficialPodiums] = useState<
-    PersonUnofficialPodiumsByEvent[] | null
-  >(null);
-  const [mapData, setMapData] = useState<{
-    locations: PersonCompetitionLocation[];
-    statesData: GeoJSONProps["data"] | undefined;
-    visitedStateCount: number;
-  } | null>(null);
+
+  const recordHistory = useTabData(tab === "records", wcaId, () =>
+    loadPersonRecordHistory(wcaId),
+  );
+  const prStreaks = useTabData(tab === "pr-streaks", wcaId, () =>
+    loadPersonPrStreaks(wcaId),
+  );
+  const podiumsByEvent = useTabData(tab === "podiums", wcaId, () =>
+    loadPersonPodiumsByEvent(wcaId),
+  );
+  const unofficialPodiums = useTabData(
+    tab === "podiums" && showUnofficialTab,
+    wcaId,
+    () => loadPersonUnofficialPodiums(wcaId),
+  );
+  const championshipPodiums = useTabData(
+    tab === "championship-podiums" && showChampionshipPodiumsTab,
+    wcaId,
+    () => loadPersonChampionshipPodiums(wcaId),
+  );
+  const staffCompetitions = useTabData(
+    tab === "staff-competitions" && showStaffCompetitionsTab,
+    wcaId,
+    () => loadPersonStaffCompetitions(wcaId),
+  );
+  const nemeses = useTabData(
+    tab === "nemesis",
+    `${wcaId}:${includeDeprecated}`,
+    () => loadPersonNemeses(wcaId, includeDeprecated),
+  );
+  const mapData = useTabData(tab === "map", wcaId, async () => {
+    const data = await loadPersonMapData(wcaId);
+    return {
+      ...data,
+      statesData: data.statesData as GeoJSONProps["data"] | undefined,
+    };
+  });
+  const unofficialResults = useTabData(
+    tab === "unofficial" && showUnofficialTab,
+    wcaId,
+    () => loadPersonUnofficialResults(wcaId),
+  );
 
   useEffect(() => {
     if (
@@ -167,48 +163,6 @@ export function PersonTabs({
     showUnofficialTab,
     setQuery,
   ]);
-
-  useEffect(() => {
-    if (
-      tab !== "unofficial" ||
-      !showUnofficialTab ||
-      unofficialResults !== null
-    ) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonUnofficialResults(wcaId).then((groups) => {
-        if (!cancelled) {
-          setUnofficialResults(groups);
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, unofficialResults, showUnofficialTab]);
-
-  useEffect(() => {
-    if (tab !== "podiums" || !showUnofficialTab || unofficialPodiums !== null) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonUnofficialPodiums(wcaId).then((podiums) => {
-        if (!cancelled) {
-          setUnofficialPodiums(podiums);
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, unofficialPodiums, showUnofficialTab]);
 
   useEffect(() => {
     if (
@@ -235,166 +189,10 @@ export function PersonTabs({
     };
   }, [wcaId, selectedEventId, tab, loadedEventId]);
 
-  useEffect(() => {
-    if (tab !== "records" || recordHistory !== null) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonRecordHistory(wcaId).then((history) => {
-        if (!cancelled) {
-          setRecordHistory(history);
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, recordHistory]);
-
-  useEffect(() => {
-    if (tab !== "pr-streaks" || prStreaks !== null) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonPrStreaks(wcaId).then((streaks) => {
-        if (!cancelled) {
-          setPrStreaks(streaks);
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, prStreaks]);
-
-  useEffect(() => {
-    if (tab !== "podiums" || podiumsByEvent !== null) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonPodiumsByEvent(wcaId).then((podiums) => {
-        if (!cancelled) {
-          setPodiumsByEvent(podiums);
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, podiumsByEvent]);
-
-  useEffect(() => {
-    if (
-      tab !== "championship-podiums" ||
-      !showChampionshipPodiumsTab ||
-      championshipPodiums !== null
-    ) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonChampionshipPodiums(wcaId).then((podiums) => {
-        if (!cancelled) {
-          setChampionshipPodiums(podiums);
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, championshipPodiums, showChampionshipPodiumsTab]);
-
-  useEffect(() => {
-    if (
-      tab !== "staff-competitions" ||
-      !showStaffCompetitionsTab ||
-      staffCompetitions !== null
-    ) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonStaffCompetitions(wcaId).then((staff) => {
-        if (!cancelled) {
-          setStaffCompetitions(staff);
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, staffCompetitions, showStaffCompetitionsTab]);
-
-  useEffect(() => {
-    if (
-      tab !== "nemesis" ||
-      (nemeses !== null && nemeses.includeDeprecated === includeDeprecated)
-    ) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonNemeses(wcaId, includeDeprecated).then((data) => {
-        if (!cancelled) {
-          setNemeses(data);
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, nemeses, includeDeprecated]);
-
-  useEffect(() => {
-    if (tab !== "map" || mapData !== null) {
-      return;
-    }
-
-    let cancelled = false;
-    startTransition(() => {
-      void loadPersonMapData(wcaId).then((data) => {
-        if (!cancelled) {
-          setMapData({
-            locations: data.locations,
-            statesData: data.statesData as GeoJSONProps["data"] | undefined,
-            visitedStateCount: data.visitedStateCount,
-          });
-        }
-      });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [tab, wcaId, mapData]);
-
   const hasStaffCompetitions =
     staffCompetitions !== null &&
     (staffCompetitions.organized.length > 0 ||
       staffCompetitions.delegated.length > 0);
-
-  // Always: results, chart, pr-streaks, podiums, nemesis, map
-  const tabCount =
-    6 +
-    (showRecordsTab ? 1 : 0) +
-    (showChampionshipPodiumsTab ? 1 : 0) +
-    (showStaffCompetitionsTab ? 1 : 0) +
-    (showUnofficialTab ? 1 : 0);
 
   function selectTab(nextTab: TabValue) {
     void setQuery({ tab: nextTab });
@@ -410,40 +208,12 @@ export function PersonTabs({
       onValueChange={(value) => selectTab(value as TabValue)}
       className="mt-6"
     >
-      <TabsList
-        className={cn(
-          "flex flex-col h-auto w-full gap-1.5 p-1.5",
-          "md:h-10 md:grid",
-          tabCount === 2 && "md:grid-cols-2",
-          tabCount === 3 && "md:grid-cols-3",
-          tabCount === 4 && "md:grid-cols-4",
-          tabCount === 5 && "md:grid-cols-5",
-          tabCount === 6 && "md:grid-cols-6",
-          tabCount === 7 && "md:grid-cols-7",
-          tabCount === 8 && "md:grid-cols-8",
-          tabCount === 9 && "md:grid-cols-9",
-          tabCount >= 10 && "md:grid-cols-10",
-        )}
-      >
-        <TabsTrigger value="results-by-event">Resultados</TabsTrigger>
-        <TabsTrigger value="results-chart">Gráfica</TabsTrigger>
-        {showRecordsTab && <TabsTrigger value="records">Récords</TabsTrigger>}
-        <TabsTrigger value="pr-streaks">Rachas</TabsTrigger>
-        <TabsTrigger value="podiums">Podios</TabsTrigger>
-        {showChampionshipPodiumsTab && (
-          <TabsTrigger value="championship-podiums">
-            Podios en Campeonatos
-          </TabsTrigger>
-        )}
-        <TabsTrigger value="nemesis">Némesis</TabsTrigger>
-        <TabsTrigger value="map">Mapa</TabsTrigger>
-        {showStaffCompetitionsTab && (
-          <TabsTrigger value="staff-competitions">Organización</TabsTrigger>
-        )}
-        {showUnofficialTab && (
-          <TabsTrigger value="unofficial">No oficiales</TabsTrigger>
-        )}
-      </TabsList>
+      <PersonTabsList
+        showRecordsTab={showRecordsTab}
+        showChampionshipPodiumsTab={showChampionshipPodiumsTab}
+        showStaffCompetitionsTab={showStaffCompetitionsTab}
+        showUnofficialTab={showUnofficialTab}
+      />
 
       <TabsContent value="results-by-event" className="mt-6">
         {isPending && !selectedResults ? (
@@ -517,7 +287,7 @@ export function PersonTabs({
       )}
 
       <TabsContent value="nemesis" className="mt-6">
-        {nemeses === null || nemeses.includeDeprecated !== includeDeprecated ? (
+        {nemeses === null ? (
           <Skeleton className="h-64 w-full" />
         ) : (
           <div className="flex flex-col gap-8">
