@@ -45,6 +45,27 @@ def test_size_is_capped(client, ranks):
     assert len(response.get_json()) == 4
 
 
+def test_ranks_are_unpaginated_without_page_or_size(client, ranks, monkeypatch):
+    monkeypatch.setattr(routes.misc, "MAX_RANK_PAGE_SIZE", 2)
+
+    response = client.get("/rank/single/333")
+
+    assert response.status_code == 200
+    assert response.headers["X-Total-Count"] == "4"
+    assert _person_ids(response) == ["2015AAAA01", "2015BBBB01", "2015CCCC01", "2015DDDD01"]
+
+
+@pytest.mark.parametrize("query", ["page=1", "size=2"])
+def test_page_or_size_turns_on_pagination(client, ranks, monkeypatch, query):
+    monkeypatch.setattr(routes.misc, "MAX_RANK_PAGE_SIZE", 2)
+
+    response = client.get(f"/rank/single/333?{query}")
+
+    assert response.status_code == 200
+    assert response.headers["X-Total-Count"] == "4"
+    assert _person_ids(response) == ["2015AAAA01", "2015BBBB01"]
+
+
 def test_state_ranks_are_ordered_by_state_rank(client, ranks):
     response = client.get("/rank/CMX/single/333")
 

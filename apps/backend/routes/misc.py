@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 from common import OFFICIAL_EVENTS_SUBQUERY, cursor, events_subquery, log
 from utils import (
@@ -53,8 +53,14 @@ MAX_RANK_PAGE_SIZE = 1000
 
 
 def _rank_query_params():
-    """(scope, page, size) from the query string. Raises ValueError on an invalid `deprecated`."""
+    """(scope, page, size) from the query string. Raises ValueError on an invalid `deprecated`.
+
+    Without `page` and `size`, size is None and the route returns every rank: third-party
+    clients that predate pagination rely on getting the full list.
+    """
     scope = "all" if parse_bool_query_param("deprecated") else "official"
+    if "page" not in request.args and "size" not in request.args:
+        return scope, 1, None
     page = parse_int_query_param_or_default("page", 1, min_value=1)
     size = parse_int_query_param_or_default("size", MAX_RANK_PAGE_SIZE, min_value=1, max_value=MAX_RANK_PAGE_SIZE)
     return scope, page, size
@@ -93,6 +99,7 @@ def _ranks_response(cur, *, where, params, order_by, rank_type, page, size, with
     if total == 0:
         return jsonify({"success": False, "message": "Ranks not found"}), 404
 
+    # Postgres reads LIMIT NULL as no limit.
     cur.execute(
         f"""
         SELECT rs.person_id, p.name, p.state_id, rs.event_id, rs.best,
@@ -101,7 +108,7 @@ def _ranks_response(cur, *, where, params, order_by, rank_type, page, size, with
         ORDER BY {order_by}
         LIMIT %s OFFSET %s
         """,
-        (*params, size, (page - 1) * size),
+        (*params, size, 0 if size is None else (page - 1) * size),
     )
     response = jsonify([_rank_entry(rank, rank_type, with_state) for rank in cur.fetchall()])
     response.headers["X-Total-Count"] = str(total)

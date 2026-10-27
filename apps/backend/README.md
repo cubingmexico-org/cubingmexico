@@ -101,7 +101,7 @@ The read endpoints below are kept for external consumers. The apps in this repo 
 - **Ranks & Records**
   - `GET /rank/<type>/<event_id>` — Get national ranks for a type (`single`|`average`) and event, ordered by country rank
   - `GET /rank/<state_id>/<type>/<event_id>` — Get ranks for a state, type (`single`|`average`), and event, ordered by state rank
-  - Both rank routes take `page` (default 1) and `size` (default and max 1000), and return the total in an `X-Total-Count` header. They only accept official events; `?deprecated=true` also allows the deprecated ones (rank 990–999). Unknown events or states return 404, an invalid type 400.
+  - Both rank routes return every rank unless the request sends `page` or `size`; then they paginate, with `page` defaulting to 1 and `size` defaulting to and capped at 1000. Third-party clients that predate pagination rely on the full list. The total is always in an `X-Total-Count` header. They only accept official events; `?deprecated=true` also allows the deprecated ones (rank 990–999). Unknown events or states return 404, an invalid type 400.
   - `GET /records/<state_id>` — Get state records (single and average)
 
 - **Competitors**

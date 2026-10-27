@@ -396,7 +396,7 @@
       "get": {
         "tags": ["ranks"],
         "summary": "Rankings nacionales",
-        "description": "Devuelve los rankings nacionales de México para un evento y tipo (single o average), ordenados por ranking nacional. El total de resultados viene en el encabezado X-Total-Count.",
+        "description": "Devuelve los rankings nacionales de México para un evento y tipo (single o average), ordenados por ranking nacional. Sin page ni size devuelve todos; con cualquiera de los dos, una página. El total de resultados viene en el encabezado X-Total-Count.",
         "parameters": [
           { "$ref": "#/components/parameters/rankType" },
           { "$ref": "#/components/parameters/eventId" },
@@ -406,7 +406,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Una página de rankings.",
+            "description": "Todos los rankings, o una página si se envía page o size.",
             "headers": {
               "X-Total-Count": { "$ref": "#/components/headers/X-Total-Count" }
             },
@@ -444,7 +444,7 @@
       "get": {
         "tags": ["ranks"],
         "summary": "Rankings por estado",
-        "description": "Devuelve los rankings de un estado para un evento y tipo (single o average), ordenados por ranking estatal. El total de resultados viene en el encabezado X-Total-Count.",
+        "description": "Devuelve los rankings de un estado para un evento y tipo (single o average), ordenados por ranking estatal. Sin page ni size devuelve todos; con cualquiera de los dos, una página. El total de resultados viene en el encabezado X-Total-Count.",
         "parameters": [
           { "$ref": "#/components/parameters/stateIdPath" },
           { "$ref": "#/components/parameters/rankType" },
@@ -455,7 +455,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Una página de rankings.",
+            "description": "Todos los rankings, o una página si se envía page o size.",
             "headers": {
               "X-Total-Count": { "$ref": "#/components/headers/X-Total-Count" }
             },
@@ -537,7 +537,7 @@
       "rankSize": {
         "name": "size",
         "in": "query",
-        "description": "Resultados por página (entero, 1–1000). Por defecto: 1000.",
+        "description": "Resultados por página (entero, 1–1000). Por defecto: 1000. Si no envías page ni size, la respuesta trae todos los resultados sin paginar.",
         "schema": { "type": "integer", "minimum": 1, "maximum": 1000 }
       },
       "deprecated": {
