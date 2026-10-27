@@ -1,4 +1,6 @@
+import re
 from collections import namedtuple
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,6 +14,34 @@ from common import (
 from routes.admin.rankings import _compute_streak_ranks, _kinch_query, _sum_of_ranks_query
 
 ResultRow = namedtuple("ResultRow", "person_id competition_id event_id best average")
+
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+EVENTS_JOIN = re.compile(r"\bjoin\s+events\b", re.IGNORECASE)
+SCOPE_HELPER = re.compile(r"\b(events_subquery|OFFICIAL_EVENTS_SUBQUERY|WITH_DEPRECATED_EVENTS_SUBQUERY)\b")
+# Files that join `events` only to label or order rows, never to count, rank or compare them.
+DISPLAY_ONLY = {
+    "routes/competitions.py": "one competition's event list",
+}
+
+
+def _unscoped_events_joins():
+    files = [
+        *BACKEND_ROOT.glob("*.py"),
+        *BACKEND_ROOT.glob("routes/**/*.py"),
+        *BACKEND_ROOT.glob("social/**/*.py"),
+    ]
+    return sorted(
+        path.relative_to(BACKEND_ROOT).as_posix()
+        for path in files
+        if EVENTS_JOIN.search(source := path.read_text()) and not SCOPE_HELPER.search(source)
+    )
+
+
+def test_every_events_join_is_scoped_or_display_only():
+    # .cursor/rules/official-events.mdc: queries that count, rank or compare events must apply a scope.
+    unscoped = _unscoped_events_joins()
+    assert [path for path in unscoped if path not in DISPLAY_ONLY] == []
+    assert [path for path in DISPLAY_ONLY if path not in unscoped] == [], "stale DISPLAY_ONLY entry"
 
 
 def test_events_subquery_per_scope():
