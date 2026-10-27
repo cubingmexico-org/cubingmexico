@@ -12,6 +12,9 @@ catalogs:
     '@icons-pack/react-simple-icons':
       specifier: ^13.13.0
       version: 13.13.0
+    '@playwright/test':
+      specifier: ^1.64.1
+      version: 1.64.1
     '@sentry/nextjs':
       specifier: ^11.9.0
       version: 11.9.0
@@ -249,6 +252,9 @@ importers:
         specifier: ^5.0.8
         version: 5.0.8(@types/react@19.3.0)(react@19.3.1)(use-sync-external-store@1.6.0(react@19.3.1))
     devDependencies:
+      '@playwright/test':
+        specifier: 'catalog:'
+        version: 1.64.1
       '@testing-library/dom':
         specifier: 'catalog:'
         version: 10.4.2
@@ -413,7 +419,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@playwright/test':
-        specifier: ^1.64.1
+        specifier: 'catalog:'
         version: 1.64.1
       '@testing-library/dom':
         specifier: 'catalog:'

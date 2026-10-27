@@ -65,6 +65,63 @@ test("person tabs load their data", async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
+test("header search finds a person and opens their profile", async ({
+  page,
+}) => {
+  const errors = trackPageErrors(page);
+  await page.goto("/");
+
+  const input = page.getByPlaceholder("Personas, competencias, teams…");
+  // A click that lands before hydration does nothing, so retry until the dialog opens.
+  await expect(async () => {
+    await page.getByRole("button", { name: "Buscar" }).click();
+    await expect(input).toBeVisible({ timeout: 1_000 });
+  }).toPass();
+
+  await input.fill("Ana");
+  await page.getByRole("option", { name: /Ana Smoke/ }).click();
+
+  await expect(page).toHaveURL(/\/persons\/2099SMOK01$/);
+  expect(errors).toEqual([]);
+});
+
+test("the deprecated-events switch adds 333ft to the records", async ({
+  page,
+}) => {
+  const errors = trackPageErrors(page);
+  await page.goto("/records");
+
+  // Ana holds both official records; Beto's only record is in 333ft.
+  await expect(page.getByText("Ana Smoke").first()).toBeVisible();
+  await expect(page.getByText("3x3x3 With Feet")).toHaveCount(0);
+  await expect(page.getByText("Beto Smoke")).toHaveCount(0);
+
+  const toggle = page.getByRole("switch", {
+    name: "Incluir eventos descontinuados",
+  });
+  await expect(async () => {
+    await toggle.click();
+    await expect(page).toHaveURL(/[?&]deprecated=true/, { timeout: 1_000 });
+  }).toPass();
+
+  await expect(page.getByText("3x3x3 With Feet").first()).toBeVisible();
+  await expect(page.getByText("Beto Smoke").first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("ranking links keep the deprecated scope", async ({ page }) => {
+  await page.goto("/rankings/333/single");
+  await expect(page.getByRole("link", { name: "3x3x3 With Feet" })).toHaveCount(
+    0,
+  );
+
+  await page.goto("/rankings/333/single?deprecated=true");
+  await page.getByRole("link", { name: "3x3x3 With Feet" }).click();
+
+  await expect(page).toHaveURL(/\/rankings\/333ft\/single\?deprecated=true$/);
+  await expect(page.getByText("Beto Smoke").first()).toBeVisible();
+});
+
 // The page streams, so the status is already 200 when notFound() renders the 404 UI.
 test("unknown persons get the not-found page", async ({ page }) => {
   await page.goto("/persons/2099NONE01");
