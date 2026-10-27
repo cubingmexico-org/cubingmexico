@@ -27,6 +27,7 @@ import {
   getOrganizerStatus,
   getMembershipData,
   getPersonCompetitionEventOptions,
+  getPersonCompetitionResults,
   getPersonAvatarFromWCA,
   hasPersonChampionshipPodiums,
   hasPersonStaffCompetitions,
@@ -139,6 +140,15 @@ async function PersonPageContent({
   if (!personData) {
     notFound();
   }
+
+  // The tabs open on the first event; render its results with the page instead of after hydration.
+  const defaultEventId = eventOptions[0]?.eventId;
+  const initialResults = defaultEventId
+    ? {
+        eventId: defaultEventId,
+        results: await getPersonCompetitionResults(id, defaultEventId),
+      }
+    : null;
 
   const {
     person,
@@ -530,6 +540,7 @@ async function PersonPageContent({
         wcaId={id}
         personName={person.name ?? id}
         eventOptions={eventOptions}
+        initialResults={initialResults}
         showRecordsTab={showRecordsTab}
         showChampionshipPodiumsTab={showChampionshipPodiumsTab}
         showStaffCompetitionsTab={showStaffCompetitionsTab}

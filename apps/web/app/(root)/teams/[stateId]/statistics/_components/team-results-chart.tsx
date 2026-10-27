@@ -50,6 +50,7 @@ import {
   type SolveChartTooltipRow,
 } from "@/components/solve-chart/solve-chart-tooltip-card";
 import { loadTeamCompetitionResults } from "../_lib/actions";
+import { selectedTeamResultsEventId } from "../_lib/selected-event";
 import type {
   TeamResultsByEventGroup,
   TeamResultsEventOption,
@@ -58,6 +59,11 @@ import type {
 type TeamResultsChartProps = {
   stateId: string;
   eventOptions: TeamResultsEventOption[];
+  /** Results for the event selected when the page rendered. */
+  initialResults: {
+    eventId: string;
+    results: TeamResultsByEventGroup | null;
+  } | null;
 };
 
 type SessionPoint = {
@@ -546,25 +552,22 @@ function TeamResultsChartView({
 export function TeamResultsChart({
   stateId,
   eventOptions,
+  initialResults,
 }: TeamResultsChartProps) {
-  const defaultEventId =
-    eventOptions.find((option) => option.eventId === "333")?.eventId ??
-    eventOptions[0]?.eventId ??
-    "";
-
   const [event, setEvent] = useQueryState(
     "event",
-    parseAsString.withDefault(defaultEventId),
+    parseAsString.withDefault(selectedTeamResultsEventId(eventOptions, null)),
   );
 
-  const selectedEventId =
-    eventOptions.find((option) => option.eventId === event)?.eventId ??
-    defaultEventId;
+  const selectedEventId = selectedTeamResultsEventId(eventOptions, event);
 
   const [isPending, startTransition] = useTransition();
-  const [selectedResults, setSelectedResults] =
-    useState<TeamResultsByEventGroup | null>(null);
-  const [loadedEventId, setLoadedEventId] = useState<string | null>(null);
+  const [selectedResults, setSelectedResults] = useState(
+    initialResults?.results ?? null,
+  );
+  const [loadedEventId, setLoadedEventId] = useState<string | null>(
+    initialResults?.eventId ?? null,
+  );
 
   useEffect(() => {
     if (!selectedEventId) {
@@ -572,6 +575,7 @@ export function TeamResultsChart({
       setLoadedEventId(null);
       return;
     }
+    if (loadedEventId === selectedEventId) return;
 
     let cancelled = false;
 
@@ -588,7 +592,7 @@ export function TeamResultsChart({
     return () => {
       cancelled = true;
     };
-  }, [stateId, selectedEventId]);
+  }, [stateId, selectedEventId, loadedEventId]);
 
   const isLoading =
     isPending || (selectedEventId !== "" && loadedEventId !== selectedEventId);

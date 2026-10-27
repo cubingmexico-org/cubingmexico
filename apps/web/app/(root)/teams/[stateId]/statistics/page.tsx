@@ -25,7 +25,9 @@ import { getDefaultSummaryYear } from "@/app/(root)/summary/_lib/summary-year";
 import {
   getStatisticsPageData,
   getTeamCompetitionEventOptions,
+  getTeamCompetitionResults,
 } from "./_lib/queries";
+import { selectedTeamResultsEventId } from "./_lib/selected-event";
 import {
   KeyStat,
   MedalStrip,
@@ -35,11 +37,12 @@ import { TeamResultsChart } from "./_components/team-results-chart";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
 import { deprecatedParser } from "@/lib/search-params";
-import { createSearchParamsCache } from "nuqs/server";
+import { createSearchParamsCache, parseAsString } from "nuqs/server";
 import type { SearchParams } from "@/types";
 
 const searchParamsCache = createSearchParamsCache({
   deprecated: deprecatedParser,
+  event: parseAsString,
 });
 
 type Props = {
@@ -61,7 +64,9 @@ export default async function Page(props: {
   searchParams: Promise<SearchParams>;
 }) {
   const stateId = (await props.params).stateId;
-  const { deprecated } = searchParamsCache.parse(await props.searchParams);
+  const { deprecated, event } = searchParamsCache.parse(
+    await props.searchParams,
+  );
   const [data, eventOptions, showAnnualSummary] = await Promise.all([
     getStatisticsPageData(stateId, eventScopeFromDeprecated(deprecated)),
     getTeamCompetitionEventOptions(stateId),
@@ -71,6 +76,14 @@ export default async function Page(props: {
   if (!data) {
     return notFound();
   }
+
+  const initialEventId = selectedTeamResultsEventId(eventOptions, event);
+  const initialResults = initialEventId
+    ? {
+        eventId: initialEventId,
+        results: await getTeamCompetitionResults(stateId, initialEventId),
+      }
+    : null;
 
   const {
     team,
@@ -175,7 +188,11 @@ export default async function Page(props: {
         </div>
       </section>
 
-      <TeamResultsChart stateId={stateId} eventOptions={eventOptions} />
+      <TeamResultsChart
+        stateId={stateId}
+        eventOptions={eventOptions}
+        initialResults={initialResults}
+      />
 
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">

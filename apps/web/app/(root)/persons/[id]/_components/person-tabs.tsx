@@ -73,10 +73,17 @@ const TAB_VALUES = [
 
 type TabValue = (typeof TAB_VALUES)[number];
 
+type LoadedEventResults = {
+  eventId: string;
+  results: PersonResultsByEventGroup | null;
+};
+
 type PersonTabsProps = {
   wcaId: string;
   personName: string;
   eventOptions: PersonResultsEventOption[];
+  /** Results for the default event, rendered with the page. */
+  initialResults: LoadedEventResults | null;
   showRecordsTab: boolean;
   showChampionshipPodiumsTab: boolean;
   showStaffCompetitionsTab: boolean;
@@ -87,6 +94,7 @@ export function PersonTabs({
   wcaId,
   personName,
   eventOptions,
+  initialResults,
   showRecordsTab,
   showChampionshipPodiumsTab,
   showStaffCompetitionsTab,
@@ -104,8 +112,9 @@ export function PersonTabs({
     "";
 
   const [isPending, startTransition] = useTransition();
-  const [selectedResults, setSelectedResults] =
-    useState<PersonResultsByEventGroup | null>(null);
+  const [loadedResults, setLoadedResults] = useState(initialResults);
+  const selectedResults = loadedResults?.results ?? null;
+  const loadedEventId = loadedResults?.eventId;
   const [recordHistory, setRecordHistory] = useState<
     PersonRecordHistoryEntry[] | null
   >(null);
@@ -204,7 +213,8 @@ export function PersonTabs({
   useEffect(() => {
     if (
       (tab !== "results-by-event" && tab !== "results-chart") ||
-      !selectedEventId
+      !selectedEventId ||
+      loadedEventId === selectedEventId
     ) {
       return;
     }
@@ -214,7 +224,7 @@ export function PersonTabs({
       void loadPersonCompetitionResults(wcaId, selectedEventId).then(
         (results) => {
           if (!cancelled) {
-            setSelectedResults(results);
+            setLoadedResults({ eventId: selectedEventId, results });
           }
         },
       );
@@ -223,7 +233,7 @@ export function PersonTabs({
     return () => {
       cancelled = true;
     };
-  }, [wcaId, selectedEventId, tab]);
+  }, [wcaId, selectedEventId, tab, loadedEventId]);
 
   useEffect(() => {
     if (tab !== "records" || recordHistory !== null) {
