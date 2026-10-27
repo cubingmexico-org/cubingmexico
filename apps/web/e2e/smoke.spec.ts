@@ -29,6 +29,23 @@ for (const { path, text } of PAGES) {
   });
 }
 
+// The menu is server-rendered; a link arriving as a lazy RSC chunk under an asChild slot renders nothing.
+test("header menus list every link", async ({ page }) => {
+  await page.goto("/");
+  const menus: Record<string, number> = {
+    Resultados: 12,
+    Personas: 7,
+    "Acerca de": 5,
+  };
+  for (const [name, linkCount] of Object.entries(menus)) {
+    // Radix opens these menus on hover; clicking an open trigger closes it.
+    await page.getByRole("button", { name }).hover();
+    await expect(
+      page.locator("[data-slot=navigation-menu-content] a"),
+    ).toHaveCount(linkCount);
+  }
+});
+
 // The page streams, so the status is already 200 when notFound() renders the 404 UI.
 test("unknown persons get the not-found page", async ({ page }) => {
   await page.goto("/persons/2099NONE01");
