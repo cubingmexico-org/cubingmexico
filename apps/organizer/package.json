@@ -41,7 +41,7 @@
     "better-auth": "catalog:",
     "date-fns": "catalog:",
     "drizzle-orm": "catalog:",
-    "jspdf": "^3.0.4",
+    "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lucide-react": "catalog:",
     "match-sorter": "^8.1.0",

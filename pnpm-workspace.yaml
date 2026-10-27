@@ -19,9 +19,10 @@ catalog:
   "@types/react": "^19.3.0"
   "@types/react-dom": "^19.3.0"
   "@vercel/analytics": "^1.3.2"
-  better-auth: "^1.4.18"
+  # 1.7 replaces the generic OAuth client plugin with signIn.social; migrate separately.
+  better-auth: "~1.6.33"
   date-fns: "^4.1.0"
-  drizzle-orm: "^0.44.7"
+  drizzle-orm: "^0.45.2"
   eslint: "^9.39.1"
   jsdom: "^30.1.3"
   lucide-react: "^0.548.0"
@@ -34,5 +35,28 @@ catalog:
   recharts: "^2.15.4"
   sonner: "^2.0.7"
   typescript: "^5.9.3"
-  vitest: "^3.2.4"
-  zod: "^4.1.12"
+  vitest: "^4.1.12"
+  zod: "^4.6.6"
+
+# Patched releases for vulnerable transitive dependencies (see the Dependency audit workflow).
+# Each override only matches the vulnerable versions and stays within their major, so it
+# can't pull a breaking release into a dependency. Drop one once its parent ships the fix.
+overrides:
+  "defu@<6.1.5": "^6.1.5"
+  "dompurify@>=3 <3.4.17": "^3.4.17"
+  "effect@>=3 <3.20.0": "^3.20.0"
+  "fflate@<0.8.3": "^0.8.3"
+  "linkify-it@>=5 <5.0.2": "^5.0.2"
+  "lodash@<4.18.0": "^4.18.0"
+  "markdown-it@>=14 <14.3.3": "^14.3.3"
+  "picomatch@>=4 <4.0.4": "^4.0.4"
+  "prosemirror-view@<1.42.3": "^1.42.3"
+  "source-map-js@<1.2.2": "^1.2.2"
+  "vite@>=7 <7.3.7": "^7.3.7"
+  "zod@>=4 <4.6.6": "^4.6.6"
+
+auditConfig:
+  ignoreGhsas:
+    # zod 3 has no fix. Its only user, @imgly/background-removal (latest still needs zod 3),
+    # validates its own config objects with it, never request data.
+    - GHSA-mrhx-c7xc-m3w5

@@ -7,8 +7,9 @@ afterEach(() => {
 });
 
 // jsdom lacks these browser APIs; Radix and the file upload previews call them.
-URL.createObjectURL ??= () => "blob:test";
-URL.revokeObjectURL ??= () => {};
+// Vitest's own createObjectURL shim can't read jsdom Files, so replace it outright.
+URL.createObjectURL = () => "blob:test";
+URL.revokeObjectURL = () => {};
 globalThis.ResizeObserver ??= class {
   observe() {}
   unobserve() {}
