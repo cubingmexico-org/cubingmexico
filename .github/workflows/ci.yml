@@ -9,6 +9,12 @@ on:
 permissions:
   contents: read
 
+# A new push to a pull request cancels its older run. Pushes to main and development each get
+# their own group, so they never cancel or queue behind each other (the migrate job runs on all).
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('ci-pr-{0}', github.ref) || format('ci-run-{0}', github.run_id) }}
+  cancel-in-progress: true
+
 # Vercel Remote Cache; turbo falls back to the local .turbo cache when these are unset.
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -17,6 +23,47 @@ env:
   TURBO_FILTER: ${{ github.event_name == 'pull_request' && '--affected' || '' }}
 
 jobs:
+  # Decides whether the e2e jobs run: always on pushes; on pull requests only when the app, a
+  # package it depends on, or the CI/root configuration changed.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      web: ${{ steps.affected.outputs.web }}
+      organizer: ${{ steps.affected.outputs.organizer }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        if: github.event_name == 'pull_request'
+
+      - id: affected
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            echo "organizer=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only "$BASE_REF...HEAD" | grep -qE '^(\.github/|turbo\.json$|package\.json$|pnpm-(lock|workspace)\.yaml$)'; then
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            echo "organizer=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # `...[a...b]` selects the changed packages plus every package that depends on them.
+          affected=$(pnpm exec turbo ls --filter="...[$BASE_REF...HEAD]" --output=json)
+          for app in web organizer; do
+            if echo "$affected" | jq -e --arg app "$app" '.packages.items | any(.name == $app)' > /dev/null; then
+              echo "$app=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$app=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -93,7 +140,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
+    services: &app-postgres
       postgres:
         image: postgres:16-alpine
         env:
@@ -128,10 +175,7 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-${{ github.job }}-
 
-      - name: Migrate and seed database
-        run: |
-          pnpm --filter @workspace/db migrate
-          pnpm --filter @workspace/db seed
+      - uses: ./.github/actions/db-setup
 
       # Events normally come from the WCA import; with Cache Components,
       # generateStaticParams for /rankings fails the build if it returns nothing.
@@ -144,22 +188,11 @@ jobs:
   # Smoke tests against a production build of the web app. The data is seeded before
   # `next build` because Cache Components prerender pages with what's in the database.
   e2e:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: cubing_mexico
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d cubing_mexico"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    services: *app-postgres
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cubing_mexico
       BETTER_AUTH_SECRET: ci-placeholder-secret-ci-placeholder-secret
@@ -172,11 +205,10 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Migrate and seed database
-        run: |
-          pnpm --filter @workspace/db migrate
-          pnpm --filter @workspace/db seed
-          pnpm --filter web e2e:seed
+      - uses: ./.github/actions/db-setup
+
+      - name: Seed e2e data
+        run: pnpm --filter web e2e:seed
 
       - name: Build web
         run: pnpm turbo run build --filter=web
@@ -198,22 +230,11 @@ jobs:
   # OAuth server and API on port 4010 (apps/organizer/e2e/fake-wca.ts), so sign-in runs
   # through the real Better Auth flow without the WCA.
   e2e-organizer:
+    needs: changes
+    if: needs.changes.outputs.organizer == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: cubing_mexico
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d cubing_mexico"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    services: *app-postgres
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cubing_mexico
       BETTER_AUTH_SECRET: ci-placeholder-secret-ci-placeholder-secret
@@ -230,10 +251,7 @@ jobs:
 
       - uses: ./.github/actions/setup
 
-      - name: Migrate and seed database
-        run: |
-          pnpm --filter @workspace/db migrate
-          pnpm --filter @workspace/db seed
+      - uses: ./.github/actions/db-setup
 
       - name: Build organizer
         run: pnpm turbo run build --filter=organizer
