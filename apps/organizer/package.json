@@ -36,6 +36,7 @@
     "@workspace/db": "workspace:*",
     "@workspace/icons": "workspace:*",
     "@workspace/ui": "workspace:*",
+    "@workspace/wca": "workspace:*",
     "better-auth": "catalog:",
     "date-fns": "catalog:",
     "drizzle-orm": "catalog:",

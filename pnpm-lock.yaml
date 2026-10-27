@@ -173,6 +173,9 @@ importers:
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@workspace/wca':
+        specifier: workspace:*
+        version: link:../../packages/wca
       better-auth:
         specifier: 'catalog:'
         version: 1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.44.7(@opentelemetry/api@1.10.0)(@types/pg@8.16.0)(kysely@0.28.11)(pg@8.18.0)(postgres@3.4.8))(next@16.4.1(@opentelemetry/api@1.10.0)(@playwright/test@1.64.1)(@types/node@24.10.13)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.18.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@3.2.7(@types/debug@4.1.12)(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.9.1))
@@ -306,6 +309,9 @@ importers:
       '@workspace/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@workspace/wca':
+        specifier: workspace:*
+        version: link:../../packages/wca
       better-auth:
         specifier: 'catalog:'
         version: 1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.44.7(@opentelemetry/api@1.10.0)(@types/pg@8.16.0)(kysely@0.28.11)(pg@8.18.0)(postgres@3.4.8))(next@16.4.1(@opentelemetry/api@1.10.0)(@playwright/test@1.64.1)(@types/node@24.10.13)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.18.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@3.2.7(@types/debug@4.1.12)(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.9.1))
@@ -412,6 +418,9 @@ importers:
 
   packages/auth:
     dependencies:
+      '@workspace/wca':
+        specifier: workspace:*
+        version: link:../wca
       better-auth:
         specifier: 'catalog:'
         version: 1.4.18(drizzle-kit@0.31.9)(drizzle-orm@0.44.7(@opentelemetry/api@1.10.0)(@types/pg@8.16.0)(kysely@0.28.11)(pg@8.18.0)(postgres@3.4.8))(next@16.4.1(@opentelemetry/api@1.10.0)(@playwright/test@1.64.1)(@types/node@24.10.13)(babel-plugin-react-compiler@1.0.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1))(pg@8.18.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(vitest@3.2.7(@types/debug@4.1.12)(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.9.1))
@@ -682,6 +691,27 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.9.3
+
+  packages/wca:
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.10.13
+      '@workspace/eslint-config':
+        specifier: workspace:*
+        version: link:../eslint-config
+      '@workspace/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      eslint:
+        specifier: 'catalog:'
+        version: 9.39.2(jiti@2.6.1)
+      typescript:
+        specifier: 'catalog:'
+        version: 5.9.3
+      vitest:
+        specifier: 'catalog:'
+        version: 3.2.7(@types/debug@4.1.12)(@types/node@24.10.13)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.9.1)
 
 packages:
 

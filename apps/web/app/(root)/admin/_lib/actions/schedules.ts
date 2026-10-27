@@ -7,6 +7,7 @@ import {
   result,
   roundType,
 } from "@workspace/db/schema";
+import { wcaFetch } from "@workspace/wca";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { z } from "zod";
@@ -52,8 +53,8 @@ async function getCompetitionForSchedule(competitionId: string) {
 }
 
 async function fetchPublicWcif(competitionId: string) {
-  const response = await fetch(
-    `https://www.worldcubeassociation.org/api/v0/competitions/${competitionId}/wcif/latest`,
+  const response = await wcaFetch(
+    `/api/v0/competitions/${competitionId}/wcif/latest`,
     { cache: "no-store" },
   );
   if (response.status === 404) {
