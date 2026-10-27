@@ -58,6 +58,10 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@testing-library/dom": "catalog:",
+    "@testing-library/jest-dom": "catalog:",
+    "@testing-library/react": "catalog:",
+    "@testing-library/user-event": "catalog:",
     "@types/node": "catalog:",
     "@types/papaparse": "^5.3.15",
     "@types/pdfmake": "^0.2.9",
@@ -67,6 +71,7 @@
     "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
     "eslint": "catalog:",
+    "jsdom": "catalog:",
     "postgres": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
