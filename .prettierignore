@@ -5,6 +5,7 @@ node_modules
 .turbo
 **/dist/**
 **/coverage/**
+**/coverage-integration/**
 **/public/**
 pnpm-lock.yaml
 packages/db/drizzle/**

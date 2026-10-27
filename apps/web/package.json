@@ -10,7 +10,7 @@
     "lint": "eslint . --max-warnings 0",
     "check-types": "tsc --noEmit",
     "test": "vitest run --coverage",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts --coverage",
     "test:e2e": "playwright test",
     "e2e:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f e2e/seed.sql",
     "db:generate": "pnpm --filter @workspace/db generate",

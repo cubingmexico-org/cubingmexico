@@ -21,6 +21,21 @@ export default defineConfig({
     },
     testTimeout: 20_000,
     hookTimeout: 60_000,
+    // `pnpm test:integration` writes coverage-integration/index.html and fails below these floors.
+    // Raise them as integration tests are added.
+    coverage: {
+      provider: "v8",
+      reporter: ["text-summary", "html"],
+      reportsDirectory: "coverage-integration",
+      include: ["app/**", "components/**", "db/**", "hooks/**", "lib/**"],
+      exclude: ["**/*.test.{ts,tsx}", "**/*.integration.test.ts"],
+      thresholds: {
+        statements: 19,
+        branches: 9,
+        functions: 16,
+        lines: 19,
+      },
+    },
   },
   resolve: {
     alias: {

@@ -21,6 +21,7 @@ export const nextJsConfig = [
     "build/**",
     "next-env.d.ts",
     "coverage/**",
+    "coverage-integration/**",
   ]),
   {
     ...pluginReact.configs.flat.recommended,

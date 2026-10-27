@@ -9,6 +9,7 @@ import { config as baseConfig } from "./base.js";
  *
  * @type {import("eslint").Linter.Config} */
 export const config = [
+  { ignores: ["coverage/**"] },
   ...baseConfig,
   pluginReact.configs.flat.recommended,
   {
