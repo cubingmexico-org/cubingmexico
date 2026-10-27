@@ -19,7 +19,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@workspace/ui/components/alert";
-import { teamFormAction } from "@/app/actions";
+import { teamFormAction } from "../_lib/actions";
 import { useActionState } from "react";
 import {
   SiFacebook,

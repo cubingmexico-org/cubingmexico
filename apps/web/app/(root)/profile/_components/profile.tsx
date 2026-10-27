@@ -27,7 +27,7 @@ import { StateFlag } from "@/components/state-flag";
 import { EventsCheckboxes } from "@/components/events-checkboxes";
 import { Check, Info, X } from "lucide-react";
 import { useActionState } from "react";
-import { preferencesFormAction, profileFormAction } from "@/app/actions";
+import { preferencesFormAction, profileFormAction } from "../_lib/actions";
 import {
   Tooltip,
   TooltipContent,

@@ -6,7 +6,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { uploadFiles } from "@/lib/uploadthing";
 import { UploadThingError } from "uploadthing/server";
-import { updateTeamLogoAction } from "@/app/actions";
+import { updateTeamLogoAction } from "../_lib/actions";
 
 export function ImageUploader({ stateId }: { stateId: string }) {
   const [isUploading, setIsUploading] = React.useState(false);

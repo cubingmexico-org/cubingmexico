@@ -6,7 +6,7 @@ import * as React from "react";
 import { toast } from "sonner";
 import { uploadFiles } from "@/lib/uploadthing";
 import { UploadThingError } from "uploadthing/server";
-import { updateTeamCoverAction } from "@/app/actions";
+import { updateTeamCoverAction } from "../_lib/actions";
 
 export function CoverUploader({ stateId }: { stateId: string }) {
   const [isUploading, setIsUploading] = React.useState(false);

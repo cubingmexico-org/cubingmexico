@@ -14,7 +14,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@workspace/ui/components/alert";
-import { addMemberFormAction } from "@/app/actions";
+import { addMemberFormAction } from "../_lib/actions";
 import { useActionState } from "react";
 import { DataTableSkeleton } from "@/components/data-table/data-table-skeleton";
 import {

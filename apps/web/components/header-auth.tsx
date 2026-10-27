@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { getHeaderContextAction, type HeaderContext } from "@/app/actions";
+import {
+  getHeaderContextAction,
+  type HeaderContext,
+} from "@/lib/header-context";
 import { authClient } from "@/lib/auth-client";
 import { UserAuthForm } from "./user-auth-form";
 import { UserDropdown } from "./user-dropdown";
