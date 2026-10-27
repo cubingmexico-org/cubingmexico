@@ -18,6 +18,7 @@ export function ZoomControls() {
         size="icon"
         onClick={zoomOut}
         disabled={zoom <= 0.1}
+        aria-label="Alejar"
       >
         <ZoomOut className="h-4 w-4" />
       </Button>
@@ -29,11 +30,22 @@ export function ZoomControls() {
       >
         {Math.round(zoom * 100)}%
       </Button>
-      <Button variant="ghost" size="icon" onClick={zoomIn} disabled={zoom >= 3}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={zoomIn}
+        disabled={zoom >= 3}
+        aria-label="Acercar"
+      >
         <ZoomIn className="h-4 w-4" />
       </Button>
       <div className="w-px h-6 bg-border mx-1" />
-      <Button variant="ghost" size="icon" onClick={resetZoom}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={resetZoom}
+        aria-label="Restablecer zoom"
+      >
         <Maximize2 className="h-4 w-4" />
       </Button>
     </div>

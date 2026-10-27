@@ -7,6 +7,7 @@ minimumReleaseAge: 1440
 
 # Versions shared by two or more workspace packages. Reference them with "catalog:".
 catalog:
+  "@axe-core/playwright": "^4.14.0"
   "@cubing/icons": "^1.1.2"
   "@icons-pack/react-simple-icons": "^13.13.0"
   "@playwright/test": "^1.64.1"

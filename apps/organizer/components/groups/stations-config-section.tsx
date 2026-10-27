@@ -65,13 +65,18 @@ export function StationsConfigSection({
               key={room.id}
               className="flex flex-wrap items-center gap-3 max-w-lg"
             >
-              <Label className="w-48 shrink-0 truncate" title={room.name}>
+              <Label
+                htmlFor={`stations-${room.id}`}
+                className="w-48 shrink-0 truncate"
+                title={room.name}
+              >
                 {room.name}
                 <span className="block text-xs text-muted-foreground font-normal">
                   {venueName}
                 </span>
               </Label>
               <NumberInput
+                id={`stations-${room.id}`}
                 min={0}
                 max={64}
                 className="w-28"

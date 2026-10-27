@@ -301,9 +301,9 @@ export function AssignmentsPanel({
         <h3 className="font-semibold text-sm">Asignación manual</h3>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1">
-            <Label>Persona</Label>
+            <Label htmlFor="manual-person">Persona</Label>
             <Select value={manualPersonId} onValueChange={setManualPersonId}>
-              <SelectTrigger>
+              <SelectTrigger id="manual-person">
                 <SelectValue placeholder="Seleccionar" />
               </SelectTrigger>
               <SelectContent>
@@ -316,12 +316,12 @@ export function AssignmentsPanel({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label>Grupo</Label>
+            <Label htmlFor="manual-group">Grupo</Label>
             <Select
               value={manualActivityId}
               onValueChange={setManualActivityId}
             >
-              <SelectTrigger>
+              <SelectTrigger id="manual-group">
                 <SelectValue placeholder="Seleccionar" />
               </SelectTrigger>
               <SelectContent>
@@ -334,9 +334,9 @@ export function AssignmentsPanel({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label>Rol</Label>
+            <Label htmlFor="manual-role">Rol</Label>
             <Select value={manualCode} onValueChange={setManualCode}>
-              <SelectTrigger>
+              <SelectTrigger id="manual-role">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -371,9 +371,9 @@ export function AssignmentsPanel({
           />
         </div>
         <div className="space-y-1 w-40">
-          <Label>Filtrar grupo</Label>
+          <Label htmlFor="assign-filter-group">Filtrar grupo</Label>
           <Select value={filterGroup} onValueChange={setFilterGroup}>
-            <SelectTrigger>
+            <SelectTrigger id="assign-filter-group">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

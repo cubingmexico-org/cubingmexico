@@ -7,9 +7,16 @@ import { cn } from "@workspace/ui/lib/utils";
 
 function Progress({
   className,
-  value,
+  value: rawValue,
   ...props
 }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
+  const max = props.max ?? 100;
+  // Radix rejects NaN and out-of-range values (e.g. a ratio over an empty list).
+  const value =
+    typeof rawValue === "number" && Number.isFinite(rawValue)
+      ? Math.min(Math.max(rawValue, 0), max)
+      : null;
+
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
@@ -17,6 +24,7 @@ function Progress({
         "bg-primary/20 relative h-2 w-full overflow-hidden rounded-full",
         className,
       )}
+      value={value}
       {...props}
     >
       <ProgressPrimitive.Indicator

@@ -63,6 +63,7 @@ export function CertificatesSummaryCard({
               </span>
             </div>
             <Progress
+              aria-label="Certificados de podio generados"
               value={
                 podiumsData
                   ? (Math.ceil(podiumsData.length / 3) /
@@ -89,6 +90,7 @@ export function CertificatesSummaryCard({
               </span>
             </div>
             <Progress
+              aria-label="Certificados de participación generados"
               value={
                 participantsData
                   ? (participantsData.length / persons.length) * 100

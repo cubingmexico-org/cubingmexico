@@ -19,7 +19,7 @@ function searchResponse(data: Partial<SiteSearchResults>): Response {
 
 async function openSearch(options?: Parameters<typeof userEvent.setup>[0]) {
   const user = userEvent.setup(options);
-  await user.click(screen.getByRole("button", { name: "Buscar" }));
+  await user.click(screen.getByRole("button", { name: /^Buscar…/ }));
   return { user, input: screen.getByPlaceholderText(/Personas, competencias/) };
 }
 

@@ -61,7 +61,7 @@ export function AssignmentRulesSection({
       </div>
 
       <div className="space-y-2 max-w-md">
-        <Label>Orden de competidores</Label>
+        <Label htmlFor="competitors-sorting">Orden de competidores</Label>
         <Select
           value={config.competitorsSortingRule}
           onValueChange={(v) =>
@@ -70,7 +70,7 @@ export function AssignmentRulesSection({
             })
           }
         >
-          <SelectTrigger>
+          <SelectTrigger id="competitors-sorting">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

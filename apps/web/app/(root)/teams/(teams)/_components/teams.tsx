@@ -10,6 +10,10 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@workspace/ui/components/toggle-group";
 import { Search } from "lucide-react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { normalizeSearchText } from "@/lib/search";
@@ -89,17 +93,20 @@ export function Teams({
             className="pl-8"
           />
         </div>
-        <Tabs
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          aria-label="Filtrar teams"
           value={activeTab}
           className="w-full md:w-auto"
-          onValueChange={setActiveTab}
+          onValueChange={(value) => {
+            if (value) setActiveTab(value);
+          }}
         >
-          <TabsList>
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="active">Activos</TabsTrigger>
-            <TabsTrigger value="inactive">Inactivos</TabsTrigger>
-          </TabsList>
-        </Tabs>
+          <ToggleGroupItem value="all">Todos</ToggleGroupItem>
+          <ToggleGroupItem value="active">Activos</ToggleGroupItem>
+          <ToggleGroupItem value="inactive">Inactivos</ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       <Tabs

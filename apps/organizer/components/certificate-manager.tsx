@@ -370,7 +370,7 @@ export function CertificateManager({
         <BreadcrumbList>
           <BreadcrumbItem>
             <BreadcrumbLink asChild>
-              <Link href="/">
+              <Link href="/" aria-label="Inicio">
                 <Home className="h-4 w-4" />
               </Link>
             </BreadcrumbLink>

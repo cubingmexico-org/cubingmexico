@@ -15,6 +15,7 @@ import {
 } from "@workspace/ui/components/table";
 import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
+import { eventNames } from "@/lib/constants";
 import type {
   PersonResultsByEventGroup,
   PersonResultsEventOption,
@@ -93,6 +94,8 @@ export function PersonResultsTab({
               key={group.eventId}
               type="button"
               onClick={() => onEventSelect?.(group.eventId)}
+              aria-label={eventNames[group.eventId] ?? group.eventId}
+              aria-pressed={selectedEventId === group.eventId}
               className={cn(
                 `cubing-icon event-${group.eventId} text-3xl hover:text-primary/50 transition-colors`,
                 selectedEventId === group.eventId && "text-primary",

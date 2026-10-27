@@ -41,7 +41,11 @@ export function BadgeStatusCard({
               {personCount} generados
             </span>
           </div>
-          <Progress value={100} className="h-2" />
+          <Progress
+            value={100}
+            className="h-2"
+            aria-label="Gafetes de participantes generados"
+          />
         </div>
         <div className="rounded-md bg-muted p-4">
           <div className="flex items-center justify-between">

@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { fakeCompetition } from "./fake-wca";
 import { signIn } from "./sign-in";
+import { expectNoSeriousA11yViolations } from "./a11y";
 
 const competition = fakeCompetition();
 
@@ -76,6 +77,7 @@ for (const { path, heading } of MODULE_PAGES) {
       page.getByRole("heading", { level: 1, name: heading }),
     ).toBeVisible();
     expect(errors).toEqual([]);
+    await expectNoSeriousA11yViolations(page);
   });
 }
 

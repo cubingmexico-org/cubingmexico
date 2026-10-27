@@ -106,6 +106,8 @@ export function TextProperties({ element }: { element: CanvasElement }) {
             size="icon"
             className="h-8 w-8"
             onClick={() => updateElement(element.id, { textAlign: "left" })}
+            aria-label="Alinear a la izquierda"
+            aria-pressed={element.textAlign === "left"}
           >
             <AlignLeft />
           </Button>
@@ -114,6 +116,8 @@ export function TextProperties({ element }: { element: CanvasElement }) {
             size="icon"
             className="h-8 w-8"
             onClick={() => updateElement(element.id, { textAlign: "center" })}
+            aria-label="Centrar"
+            aria-pressed={element.textAlign === "center"}
           >
             <AlignCenter />
           </Button>
@@ -122,6 +126,8 @@ export function TextProperties({ element }: { element: CanvasElement }) {
             size="icon"
             className="h-8 w-8"
             onClick={() => updateElement(element.id, { textAlign: "right" })}
+            aria-label="Alinear a la derecha"
+            aria-pressed={element.textAlign === "right"}
           >
             <AlignRight />
           </Button>

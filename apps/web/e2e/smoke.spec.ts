@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { expectNoSeriousA11yViolations } from "./a11y";
 
 /** Fails the test on uncaught client-side errors (hydration, render crashes). */
 function trackPageErrors(page: Page): Error[] {
@@ -31,6 +32,7 @@ for (const { path, text } of PAGES) {
     expect(response?.status()).toBeLessThan(400);
     await expect(page.getByText(text).first()).toBeVisible();
     expect(errors).toEqual([]);
+    await expectNoSeriousA11yViolations(page);
   });
 }
 

@@ -155,13 +155,12 @@ export function HeaderSearch() {
           "text-white hover:bg-white/10 hover:text-white",
           "h-9 gap-2 px-2.5 sm:px-3",
         )}
-        aria-label="Buscar"
       >
         <Search className="size-4" />
-        <span className="hidden sm:inline">Buscar…</span>
+        <span className="sr-only sm:not-sr-only">Buscar…</span>
         <kbd
           className={cn(
-            "pointer-events-none hidden h-5 select-none items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-white/70 sm:inline-flex",
+            "pointer-events-none hidden h-5 select-none items-center gap-1 rounded border border-white/20 bg-white/10 px-1.5 font-mono text-[10px] font-medium text-white sm:inline-flex",
             isMac === null && "invisible",
           )}
         >

@@ -127,6 +127,7 @@ export function ParticipationCertificatesTab({
                         <div
                           key={person.registrantId}
                           className="flex items-center space-x-2 rounded-md p-2 hover:bg-background/80 transition-colors cursor-pointer"
+                          role="presentation"
                           onClick={(e) => {
                             // Only trigger if clicking the container, not the checkbox or label
                             if (e.target === e.currentTarget) {

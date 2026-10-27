@@ -16,6 +16,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
+    // The home hero fades in; axe would measure contrast mid-animation.
+    contextOptions: { reducedMotion: "reduce" },
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {

@@ -127,8 +127,10 @@ export default async function Page(props: {
                 <TableCell
                   key={event.eventId}
                   className={cn(
-                    event.ratio === 0 && "text-red-500 font-semibold",
-                    event.ratio === 100 && "text-green-500 font-semibold",
+                    event.ratio === 0 &&
+                      "text-red-600 dark:text-red-400 font-semibold",
+                    event.ratio === 100 &&
+                      "text-green-700 dark:text-green-400 font-semibold",
                   )}
                 >
                   {event.ratio.toFixed(2)}

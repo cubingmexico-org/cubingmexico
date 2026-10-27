@@ -10,34 +10,48 @@ import type { Competition } from "@/types/wca";
 import { extractEmail, formatDate } from "../_lib/format";
 
 const markdownComponents: Components = {
-  h1: ({ ...props }) => (
-    <h1 {...props} className="text-2xl font-bold mt-6 mb-4" />
+  h1: ({ children, ...props }) => (
+    <h1 {...props} className="text-2xl font-bold mt-6 mb-4">
+      {children}
+    </h1>
   ),
-  h2: ({ ...props }) => (
-    <h2 {...props} className="text-xl font-bold mt-5 mb-3" />
+  h2: ({ children, ...props }) => (
+    <h2 {...props} className="text-xl font-bold mt-5 mb-3">
+      {children}
+    </h2>
   ),
-  h3: ({ ...props }) => (
-    <h3 {...props} className="text-lg font-bold mt-4 mb-2" />
+  h3: ({ children, ...props }) => (
+    <h3 {...props} className="text-lg font-bold mt-4 mb-2">
+      {children}
+    </h3>
   ),
-  h4: ({ ...props }) => (
-    <h4 {...props} className="text-base font-bold mt-3 mb-2" />
+  h4: ({ children, ...props }) => (
+    <h4 {...props} className="text-base font-bold mt-3 mb-2">
+      {children}
+    </h4>
   ),
-  h5: ({ ...props }) => (
-    <h5 {...props} className="text-sm font-semibold mt-2 mb-1" />
+  h5: ({ children, ...props }) => (
+    <h5 {...props} className="text-sm font-semibold mt-2 mb-1">
+      {children}
+    </h5>
   ),
-  h6: ({ ...props }) => (
-    <h6 {...props} className="text-xs font-semibold mt-2 mb-1" />
+  h6: ({ children, ...props }) => (
+    <h6 {...props} className="text-xs font-semibold mt-2 mb-1">
+      {children}
+    </h6>
   ),
   p: ({ ...props }) => <p {...props} className="mb-4" />,
   ul: ({ ...props }) => <ul {...props} className="list-disc ml-6 mb-4" />,
   ol: ({ ...props }) => <ol {...props} className="list-decimal ml-6 mb-4" />,
-  a: ({ ...props }) => (
+  a: ({ children, ...props }) => (
     <a
       {...props}
       className="text-blue-600 hover:underline"
       target="_blank"
       rel="noopener noreferrer"
-    />
+    >
+      {children}
+    </a>
   ),
 };
 

@@ -27,7 +27,7 @@ export function ScorecardBackgroundField({
   return (
     <div className="space-y-3 max-w-xl">
       <div className="space-y-2">
-        <Label>Imagen de fondo</Label>
+        <Label htmlFor="scorecard-background">Imagen de fondo</Label>
         <Select
           value={config.scorecardsBackgroundMode}
           onValueChange={(v) =>
@@ -36,7 +36,7 @@ export function ScorecardBackgroundField({
             })
           }
         >
-          <SelectTrigger>
+          <SelectTrigger id="scorecard-background">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -59,7 +59,7 @@ export function ScorecardBackgroundField({
           )}
         {config.scorecardsBackgroundMode === "competition" &&
           !competitionImageUrl && (
-            <p className="text-xs text-amber-600 dark:text-amber-400">
+            <p className="text-xs text-amber-700 dark:text-amber-400">
               Esta competencia no tiene logo en la base de datos; las papeletas
               saldrán sin fondo hasta que subas uno o elijas una URL.
             </p>

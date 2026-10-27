@@ -1,4 +1,5 @@
 import { cn } from "@workspace/ui/lib/utils";
+import { eventNames } from "@/lib/constants";
 
 type SolveChartEventPickerProps = {
   eventOptions: { eventId: string }[];
@@ -18,6 +19,8 @@ export function SolveChartEventPicker({
           key={group.eventId}
           type="button"
           onClick={() => onEventSelect?.(group.eventId)}
+          aria-label={eventNames[group.eventId] ?? group.eventId}
+          aria-pressed={selectedEventId === group.eventId}
           className={cn(
             `cubing-icon event-${group.eventId} text-3xl hover:text-primary/50 transition-colors`,
             selectedEventId === group.eventId && "text-primary",

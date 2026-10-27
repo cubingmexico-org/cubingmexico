@@ -212,6 +212,7 @@ export function PodiumCertificatesTab({
                   <div
                     key={eventId}
                     className="flex items-center space-x-2 rounded-md p-2 hover:bg-muted/50 transition-colors cursor-pointer"
+                    role="presentation"
                     onClick={(e) => {
                       // Only trigger if clicking the container, not the checkbox or label
                       if (e.target === e.currentTarget) {

@@ -240,7 +240,6 @@ export function DesignLibraryDialog({
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ej. Podio oficial"
                 maxLength={120}
-                autoFocus
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     void handleSave();

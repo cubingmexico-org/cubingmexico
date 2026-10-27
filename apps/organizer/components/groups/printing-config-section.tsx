@@ -35,14 +35,14 @@ export function PrintingConfigSection({
 
       <div className="grid gap-4 sm:grid-cols-2 max-w-2xl">
         <div className="space-y-2">
-          <Label>Tamaño de papeleta</Label>
+          <Label htmlFor="scorecard-paper-size">Tamaño de papeleta</Label>
           <Select
             value={config.scorecardPaperSize}
             onValueChange={(v) =>
               updateConfig({ scorecardPaperSize: v as ScorecardPaperSize })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger id="scorecard-paper-size">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -53,7 +53,7 @@ export function PrintingConfigSection({
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Densidad</Label>
+          <Label htmlFor="scorecard-density">Densidad</Label>
           <Select
             value={config.scorecardDensity}
             onValueChange={(v) =>
@@ -61,7 +61,7 @@ export function PrintingConfigSection({
             }
             disabled={config.scorecardPaperSize === "a6"}
           >
-            <SelectTrigger>
+            <SelectTrigger id="scorecard-density">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -78,14 +78,14 @@ export function PrintingConfigSection({
           )}
         </div>
         <div className="space-y-2">
-          <Label>Orden de papeletas</Label>
+          <Label htmlFor="scorecard-order">Orden de papeletas</Label>
           <Select
             value={config.scorecardOrder}
             onValueChange={(v) =>
               updateConfig({ scorecardOrder: v as ScorecardOrder })
             }
           >
-            <SelectTrigger>
+            <SelectTrigger id="scorecard-order">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

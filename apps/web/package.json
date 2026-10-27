@@ -59,6 +59,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@axe-core/playwright": "catalog:",
     "@playwright/test": "catalog:",
     "@testing-library/dom": "catalog:",
     "@testing-library/jest-dom": "catalog:",

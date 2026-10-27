@@ -208,6 +208,8 @@ export function ResultsAllView({
               <Link
                 key={eventId}
                 href={href}
+                aria-label={eventNames[eventId] ?? eventId}
+                aria-current={selectedEventId === eventId ? "page" : undefined}
                 className={cn(
                   `cubing-icon event-${eventId} text-2xl hover:text-primary/50 transition-colors`,
                   selectedEventId === eventId && "text-primary",

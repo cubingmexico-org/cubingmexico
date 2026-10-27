@@ -32,7 +32,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           WCA, por favor visite el{" "}
           <Link
             href="https://www.worldcubeassociation.org/"
-            className="text-blue-500 hover:underline"
+            className="text-link hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >

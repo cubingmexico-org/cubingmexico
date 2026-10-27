@@ -101,8 +101,10 @@ export default async function Page(props: PageProps) {
               {team.events.map((event) => (
                 <TableCell
                   className={cn(
-                    event.bestRank <= 10 && "text-green-500 font-semibold",
-                    !event.completed && "text-red-500 font-semibold",
+                    event.bestRank <= 10 &&
+                      "text-green-700 dark:text-green-400 font-semibold",
+                    !event.completed &&
+                      "text-red-600 dark:text-red-400 font-semibold",
                   )}
                   key={event.eventId}
                 >
