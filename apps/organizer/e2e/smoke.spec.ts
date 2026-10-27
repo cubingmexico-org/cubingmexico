@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Download, type Page } from "@playwright/test";
 import { fakeCompetition } from "./fake-wca";
 import { signIn } from "./sign-in";
 import { expectNoSeriousA11yViolations } from "./a11y";
@@ -57,14 +57,56 @@ test("downloads participation certificates as a PDF", async ({ page }) => {
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Descargar (4)" }).click();
-  const download = await downloadPromise;
-
-  expect(download.suggestedFilename()).toBe(
+  await expectPdfDownload(
+    await downloadPromise,
     `Certificados Participacion - ${competition.name}.pdf`,
   );
+  expect(errors).toEqual([]);
+});
+
+async function expectPdfDownload(
+  download: Download,
+  filename: string | RegExp,
+) {
+  const name = download.suggestedFilename();
+  if (typeof filename === "string") expect(name).toBe(filename);
+  else expect(name).toMatch(filename);
   const pdf = await readFile(await download.path());
   expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
   expect(pdf.length).toBeGreaterThan(1000);
+}
+
+test("downloads podium certificates as a PDF", async ({ page }) => {
+  const errors = trackPageErrors(page);
+
+  await page.goto(`/certificates/${competition.id}`);
+  await page.getByRole("tab", { name: /Certificados de Podio/ }).click();
+  await page.getByRole("button", { name: "Seleccionar todos" }).click();
+
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: /^Descargar \([1-9]\d*\)$/ }).click();
+
+  await expectPdfDownload(
+    await downloadPromise,
+    `Certificados Podio - ${competition.name}.pdf`,
+  );
+  expect(errors).toEqual([]);
+});
+
+test("exports the selected badges as a 2x2 PDF", async ({ page }) => {
+  const errors = trackPageErrors(page);
+
+  await page.goto(`/badges/${competition.id}`);
+  await page.getByRole("button", { name: "Seleccionar todos" }).click();
+  await expect(page.getByText("Ningún competidor seleccionado")).toHaveCount(0);
+
+  await page
+    .getByRole("button", { name: "Más opciones de exportación" })
+    .click();
+  const downloadPromise = page.waitForEvent("download");
+  await page.getByRole("menuitem", { name: "Exportar PDF (2x2)" }).click();
+
+  await expectPdfDownload(await downloadPromise, /_badges_2x2\.pdf$/);
   expect(errors).toEqual([]);
 });
 

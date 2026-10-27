@@ -7,24 +7,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@workspace/ui/components/card";
-import { buttonVariants } from "@workspace/ui/components/button";
-import { Award, FileText, Settings, ChevronRight, Home } from "lucide-react";
+import { Award, FileText } from "lucide-react";
 import { Competition } from "@/types/wca";
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-} from "@workspace/ui/components/breadcrumb";
-import Link from "next/link";
 import useSWR from "swr";
 import { notFound } from "next/navigation";
 import { fetcher, postFetcher } from "@/lib/utils";
@@ -38,9 +22,11 @@ import { DEFAULT_TEMPLATES } from "@/data/certificates";
 import { JSONContent } from "@tiptap/react";
 import { Margins, PageOrientation, PageSize } from "pdfmake/interfaces";
 import { CertificateManagerSkeleton } from "./certificate-manager-skeleton";
-import { toast } from "sonner";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
-import Papa from "papaparse";
+import { useBirthdatesCsv } from "./certificates/birthdates-csv";
+import { CertificatesBreadcrumb } from "./certificates/certificates-breadcrumb";
+import { MobileUnavailableCard } from "./certificates/mobile-unavailable-card";
+import { useFileDataUrl } from "./certificates/use-file-data-url";
 import {
   createCertificateRenderers,
   generateParticipantPdf,
@@ -104,9 +90,8 @@ export function CertificateManager({
   const [files, setFiles] = useState<File[]>([]);
   const [filesParticipants, setFilesParticipants] = useState<File[]>([]);
 
-  const [background, setBackground] = useState<string>();
-  const [backgroundParticipants, setBackgroundParticipants] =
-    useState<string>();
+  const background = useFileDataUrl(files);
+  const backgroundParticipants = useFileDataUrl(filesParticipants);
 
   const [selectedTemplate, setSelectedTemplate] =
     useState<CertificateTemplate>("general");
@@ -116,36 +101,11 @@ export function CertificateManager({
 
   // Age filter states
   const [csvFiles, setCsvFiles] = useState<File[]>([]);
-  const [birthdateMap, setBirthdateMap] = useState<Map<number, string>>();
+  const { birthdateMap, csvError } = useBirthdatesCsv(csvFiles);
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [tempAgeRange, setTempAgeRange] = useState<[number, number]>([0, 100]);
-  const [csvError, setCsvError] = useState<string>();
 
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    if (files.length > 0) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setBackground(e.target?.result as string);
-      };
-      reader.readAsDataURL(files[0]!);
-    } else {
-      setBackground(undefined);
-    }
-  }, [files]);
-
-  useEffect(() => {
-    if (filesParticipants.length > 0) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setBackgroundParticipants(e.target?.result as string);
-      };
-      reader.readAsDataURL(filesParticipants[0]!);
-    } else {
-      setBackgroundParticipants(undefined);
-    }
-  }, [filesParticipants]);
 
   useEffect(() => {
     // Clear selected podiums when filter changes to prevent showing outdated selections
@@ -154,89 +114,10 @@ export function CertificateManager({
     // Clear age-related state when switching away from age template
     if (selectedTemplate !== "age") {
       setCsvFiles([]);
-      setBirthdateMap(undefined);
       setAgeRange([0, 100]);
       setTempAgeRange([0, 100]);
-      setCsvError(undefined);
     }
   }, [filterByCountry, selectedTemplate]);
-
-  // CSV parsing for age filter
-  useEffect(() => {
-    if (csvFiles.length > 0) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const text = e.target?.result as string;
-        Papa.parse(text, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            try {
-              const map = new Map<number, string>();
-              let validCount = 0;
-
-              // Try different column name variations
-              const data = results.data as Array<Record<string, string>>;
-
-              for (const row of data) {
-                // Support multiple column name formats
-                const registrantId =
-                  row["Registrant Id"] ||
-                  row["registrantId"] ||
-                  row["registrant_id"];
-                const birthdate =
-                  row["Birth Date"] || row["birthdate"] || row["Birthdate"];
-
-                if (registrantId && birthdate) {
-                  // Validate date format (YYYY-MM-DD)
-                  if (/^\d{4}-\d{2}-\d{2}$/.test(birthdate)) {
-                    const id = parseInt(registrantId);
-                    if (!isNaN(id)) {
-                      map.set(id, birthdate.trim());
-                      validCount++;
-                    }
-                  }
-                }
-              }
-
-              if (validCount === 0) {
-                setCsvError("No se encontraron datos válidos en el CSV");
-                toast.error("CSV inválido", {
-                  description:
-                    "Asegúrate de que el archivo tenga columnas 'Registrant Id' y 'Birth Date' con formato YYYY-MM-DD",
-                });
-                setBirthdateMap(undefined);
-              } else {
-                setBirthdateMap(map);
-                setCsvError(undefined);
-                toast.success("CSV cargado", {
-                  description: `${validCount} competidor${validCount !== 1 ? "es" : ""} con fecha de nacimiento`,
-                });
-              }
-            } catch (error) {
-              setCsvError("Error al procesar el CSV");
-              toast.error("Error al procesar el CSV", {
-                description:
-                  error instanceof Error ? error.message : "Error desconocido",
-              });
-              setBirthdateMap(undefined);
-            }
-          },
-          error: (error: Error) => {
-            setCsvError("Error al leer el CSV");
-            toast.error("Error al leer el CSV", {
-              description: error.message,
-            });
-            setBirthdateMap(undefined);
-          },
-        });
-      };
-      reader.readAsText(csvFiles[0]!);
-    } else {
-      setBirthdateMap(undefined);
-      setCsvError(undefined);
-    }
-  }, [csvFiles]);
 
   const {
     data: participantsData,
@@ -277,41 +158,7 @@ export function CertificateManager({
   );
 
   if (isMobile) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Función no disponible en móvil
-          </CardTitle>
-          <CardDescription>
-            El gestor de certificados requiere una pantalla más grande
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Esta función está diseñada para ser utilizada en computadoras de
-            escritorio o tabletas debido a la complejidad de la interfaz y las
-            herramientas de diseño.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Por favor, accede desde un dispositivo con una pantalla más grande
-            para gestionar los certificados de{" "}
-            <span className="font-medium">{competition.name}</span>.
-          </p>
-          <Link
-            href="/"
-            className={buttonVariants({
-              variant: "default",
-              className: "w-full",
-            })}
-          >
-            <Home />
-            Volver al inicio
-          </Link>
-        </CardContent>
-      </Card>
-    );
+    return <MobileUnavailableCard competitionName={competition.name} />;
   }
 
   if (isLoadingParticipants || isLoadingPodiums) {
@@ -366,39 +213,7 @@ export function CertificateManager({
 
   return (
     <div className="space-y-6">
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/" aria-label="Inicio">
-                <Home className="h-4 w-4" />
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <ChevronRight className="h-4 w-4" />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/">Competencias</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <ChevronRight className="h-4 w-4" />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbLink className="max-w-50 truncate">
-              {competition.name}
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator>
-            <ChevronRight className="h-4 w-4" />
-          </BreadcrumbSeparator>
-          <BreadcrumbItem>
-            <BreadcrumbLink>Certificados</BreadcrumbLink>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <CertificatesBreadcrumb competitionName={competition.name} />
 
       <div className="space-y-2">
         <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tighter sm:text-4xl">

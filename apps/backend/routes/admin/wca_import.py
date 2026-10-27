@@ -5,27 +5,15 @@ import json
 import zipfile
 from datetime import datetime
 
-import pandas as pd
 import requests
 from flask import jsonify
 
 from common import get_connection, job_response, log, named_row, require_cron_auth
 from routes.admin.blueprint import admin_bp
-from routes.admin.wca_import_competitions import (
-    import_championships,
-    import_competitions,
-    sync_mexican_competition_staff,
-)
-from routes.admin.wca_import_results import import_result_attempts, import_results
-from routes.admin.wca_import_tables import (
-    import_events,
-    import_formats,
-    import_persons,
-    import_ranks_average,
-    import_ranks_single,
-    import_round_types,
-)
 from utils import extract_first_image_url
+
+# The import steps (wca_import_competitions, _results, _tables) need pandas, which takes about a
+# third of the app's startup and nothing else uses, so they're imported only when an import runs.
 
 # (connect, read) seconds; read is per-chunk inactivity, not total download time.
 WCA_EXPORT_TIMEOUT = (30, 300)
@@ -63,27 +51,38 @@ def store_wca_export_date(raw):
 
 WCA_EXPORT_URL = "https://www.worldcubeassociation.org/export/results/v2/tsv"
 
-# Results must come after persons and competitions, and attempts after results.
-WCA_EXPORT_STEPS = [
-    ("WCA_export_events.tsv", import_events),
-    ("WCA_export_formats.tsv", import_formats),
-    ("WCA_export_round_types.tsv", import_round_types),
-    ("WCA_export_persons.tsv", import_persons),
-    ("WCA_export_competitions.tsv", import_competitions),
-    ("WCA_export_championships.tsv", import_championships),
-    ("WCA_export_ranks_single.tsv", import_ranks_single),
-    ("WCA_export_ranks_average.tsv", import_ranks_average),
-    ("WCA_export_results.tsv", import_results),
-    ("WCA_export_result_attempts.tsv", import_result_attempts),
-]
-
 
 def process_wca_export(z):
     """Imports every file of an opened WCA export zip, in dependency order."""
+    from routes.admin.wca_import_competitions import import_championships, import_competitions
+    from routes.admin.wca_import_results import import_result_attempts, import_results
+    from routes.admin.wca_import_tables import (
+        import_events,
+        import_formats,
+        import_persons,
+        import_ranks_average,
+        import_ranks_single,
+        import_round_types,
+    )
+
+    # Results must come after persons and competitions, and attempts after results.
+    steps = [
+        ("WCA_export_events.tsv", import_events),
+        ("WCA_export_formats.tsv", import_formats),
+        ("WCA_export_round_types.tsv", import_round_types),
+        ("WCA_export_persons.tsv", import_persons),
+        ("WCA_export_competitions.tsv", import_competitions),
+        ("WCA_export_championships.tsv", import_championships),
+        ("WCA_export_ranks_single.tsv", import_ranks_single),
+        ("WCA_export_ranks_average.tsv", import_ranks_average),
+        ("WCA_export_results.tsv", import_results),
+        ("WCA_export_result_attempts.tsv", import_result_attempts),
+    ]
+
     results_updated = False
     available_files = set(z.namelist())
 
-    for file_name, import_step in WCA_EXPORT_STEPS:
+    for file_name, import_step in steps:
         if file_name not in available_files:
             log.warning("Expected file %s not found in zip archive. Skipping.", file_name)
             continue
@@ -131,6 +130,10 @@ def update_full_database():
 @admin_bp.route("/update-existing-mexican-competitions", methods=["POST"])
 @require_cron_auth
 def update_existing_mexican_competitions():
+    import pandas as pd
+
+    from routes.admin.wca_import_competitions import sync_mexican_competition_staff
+
     url = WCA_EXPORT_URL
     competitions_file = "WCA_export_competitions.tsv"
 

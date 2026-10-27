@@ -8,7 +8,7 @@ from common import CRON_SECRET, WEB_URL, log
 UPDATE_ALL_TAGS = ["cc-results", "data-source-dates"]
 
 
-def revalidate_web_tags(tags):
+def revalidate_web_tags(tags: list[str]) -> None:
     """Best effort: a failure is logged, never raised, since the data job itself succeeded."""
     if not WEB_URL:
         log.info("WEB_URL not set; skipping web cache revalidation")

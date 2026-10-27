@@ -3,7 +3,9 @@
 # trigger doesn't wait for GitHub Actions. Integration tests need Postgres and stay in CI.
 #
 # Trigger settings: config file apps/backend/cloudbuild.yaml, included files
-# apps/backend/** and packages/db/drizzle/**, and the substitutions below
+# apps/backend/**, packages/db/drizzle/**, packages/public-api/** and fixtures/** (the unit
+# tests read the OpenAPI spec, the parity fixtures and fixtures/schema/columns.json), and the
+# substitutions below
 # (one trigger per branch: main -> production, development -> staging).
 substitutions:
   _REGION: us-central1

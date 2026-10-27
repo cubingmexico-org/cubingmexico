@@ -97,13 +97,15 @@ jobs:
         run: pnpm turbo run lint check-types test $TURBO_FILTER
 
       # drizzle-kit generate never connects; the URL only satisfies drizzle.config.ts.
+      # columns.json feeds the backend's schema check (apps/backend/tests/test_schema_columns.py).
       - name: Migration drift
         env:
           DATABASE_URL: postgresql://unused@localhost/unused
         run: |
           pnpm --filter @workspace/db generate
-          git diff --exit-code -- packages/db/drizzle
-          test -z "$(git status --porcelain -- packages/db/drizzle)"
+          pnpm --filter @workspace/db export-columns
+          git diff --exit-code -- packages/db/drizzle fixtures/schema
+          test -z "$(git status --porcelain -- packages/db/drizzle fixtures/schema)"
 
   integration:
     runs-on: ubuntu-latest

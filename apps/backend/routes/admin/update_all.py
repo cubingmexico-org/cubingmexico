@@ -4,6 +4,8 @@ In production `/update-all` starts the `UPDATE_ALL_JOB` Cloud Run Job (see run_j
 `run_update_all` outside any HTTP request; without it, the routes run the pipeline in the request.
 """
 
+from typing import Any
+
 from flask import jsonify
 
 import job_runs
@@ -120,7 +122,7 @@ def _resume_error(latest):
     return None
 
 
-def run_update_all(resume=False):
+def run_update_all(resume: bool = False) -> tuple[dict[str, Any], int]:
     """Runs the pipeline in this process. Returns (body, HTTP status)."""
     resumed_from = None
     skipped = ()

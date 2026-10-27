@@ -29,6 +29,7 @@ const PAGES: { path: string; text: string | RegExp }[] = [
   { path: "/sor/single", text: "Beto Smoke" },
   { path: "/streaks", text: "Beto Smoke" },
   { path: "/faq", text: /preguntas frecuentes/i },
+  { path: "/docs", text: "API pública" },
 ];
 
 for (const { path, text } of PAGES) {
@@ -130,6 +131,39 @@ test("ranking links keep the deprecated scope", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/rankings\/333ft\/single\?deprecated=true$/);
   await expect(page.getByText("Beto Smoke").first()).toBeVisible();
+});
+
+// Ana beats Beto in every official slot; Beto's 333ft result only counts with deprecated events.
+test("the nemesis finder follows the event scope", async ({ page }) => {
+  const errors = trackPageErrors(page);
+
+  await page.goto("/persons/nemesis?id=2099SMOK02");
+  await expect(page.getByText(/tiene\s*1\s*némesis/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Ana Smoke" })).toBeVisible();
+
+  await page.goto("/persons/nemesis?id=2099SMOK02&deprecated=true");
+  await expect(page.getByText(/no tiene némesis/)).toBeVisible();
+  const almost = page
+    .locator("section")
+    .filter({ has: page.getByRole("heading", { name: "Casi némesis" }) });
+  await expect(almost.getByRole("link", { name: "Ana Smoke" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("the API docs render the OpenAPI spec", async ({ page, request }) => {
+  const errors = trackPageErrors(page);
+  await page.goto("/docs");
+
+  await page.getByRole("tab", { name: "Personas" }).click();
+  await page.getByRole("button", { name: /\/persons\/\{wca_id\}/ }).click();
+  await expect(
+    page.getByText('curl "https://api.cubingmexico.net/persons/2015EXAM01"'),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
+
+  const spec = await request.get("/docs/openapi.json");
+  expect(spec.ok()).toBe(true);
+  expect(await spec.json()).toMatchObject({ openapi: "3.1.0" });
 });
 
 // The page streams, so the status is already 200 when notFound() renders the 404 UI.

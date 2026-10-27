@@ -6,7 +6,7 @@
     "lint": "uv run --locked ruff check . && uv run --locked ruff format --check .",
     "check-types": "uv sync --locked && pyright",
     "test": "uv run --locked pytest",
-    "test:integration": "uv run --locked pytest tests_integration"
+    "test:integration": "uv run --locked pytest tests_integration --cov-fail-under=36"
   },
   "devDependencies": {
     "pyright": "^1.1.414"

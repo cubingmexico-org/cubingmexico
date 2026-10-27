@@ -8,18 +8,19 @@ import argparse
 import json
 import signal
 import sys
+from types import FrameType
 
 from app import create_app
 from common import log
 from routes.admin.update_all import run_update_all
 
 
-def _exit_on_sigterm(signum, _frame):
+def _exit_on_sigterm(signum: int, _frame: FrameType | None) -> None:
     log.warning("Received signal %s; stopping", signum)
     raise SystemExit(128 + signum)
 
 
-def main(argv=None):
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("job", choices=["update-all"])
     parser.add_argument("--resume", action="store_true", help="continue the latest failed run")

@@ -18,6 +18,7 @@
     "seed": "tsx src/seed.ts",
     "test:integration": "vitest run",
     "generate": "drizzle-kit generate",
+    "export-columns": "tsx src/export-columns.ts",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {

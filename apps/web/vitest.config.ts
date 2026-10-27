@@ -19,10 +19,10 @@ export default defineConfig({
       include: ["app/**", "components/**", "db/**", "hooks/**", "lib/**"],
       exclude: ["**/*.test.{ts,tsx}", "**/*.integration.test.ts"],
       thresholds: {
-        statements: 9,
-        branches: 7,
+        statements: 11,
+        branches: 8,
         functions: 7,
-        lines: 9,
+        lines: 10,
       },
     },
     projects: [

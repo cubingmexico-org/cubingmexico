@@ -5,6 +5,7 @@ import { db } from "@workspace/db";
 import { competition, team } from "@workspace/db/schema";
 import { eq, or } from "drizzle-orm";
 import { UTApi } from "uploadthing/server";
+import { serverEnv } from "@/lib/env";
 import { uploadThingFileKey } from "@/lib/uploadthing-key";
 
 async function isStillReferenced(url: string): Promise<boolean> {
@@ -31,7 +32,7 @@ export async function deleteUploadedFileIfUnused(
   url: string | null | undefined,
 ): Promise<void> {
   const key = uploadThingFileKey(url);
-  if (!key || !url || !process.env.UPLOADTHING_TOKEN) return;
+  if (!key || !url || !serverEnv().UPLOADTHING_TOKEN) return;
 
   try {
     if (await isStillReferenced(url)) return;

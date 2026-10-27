@@ -4,6 +4,7 @@ version = "0.0.1"
 requires-python = ">=3.12"
 dependencies = [
   "flask>=3.1.3",
+  "flask-limiter>=4.1.1",
   "geopy>=2.5.0",
   "google-auth>=2.56.3",
   "google-cloud-secret-manager>=2.30.0",
@@ -20,7 +21,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+  "jsonschema>=4.26.0",
   "pytest>=9.1.1",
+  "pytest-cov>=7.1.0",
   "ruff>=0.16.3",
 ]
 
@@ -43,21 +46,6 @@ ignore = [
   "RUF001",
 ]
 
-[tool.ruff.lint.isort]
-known-first-party = [
-  "app",
-  "cloud_run_jobs",
-  "common",
-  "job_runs",
-  "nemesis_stats",
-  "notifications",
-  "routes",
-  "run_job",
-  "sentry_setup",
-  "social",
-  "utils",
-  "web_cache",
-]
 
 [tool.pyright]
 pythonVersion = "3.12"
@@ -65,7 +53,18 @@ typeCheckingMode = "basic"
 venvPath = "."
 venv = ".venv"
 exclude = [".venv", "**/__pycache__", "node_modules"]
+# Modules that pass strict mode; add a module once it does.
+strict = ["app.py", "run_job.py", "web_cache.py", "sentry_setup.py", "social/calendar_mx.py"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+addopts = ["--cov", "--cov-report=term:skip-covered"]
+
+[tool.coverage.run]
+source = ["."]
+omit = ["tests/*", "tests_integration/*", ".venv/*", "monitoring/*"]
+
+[tool.coverage.report]
+# Floor for the unit suite; `test:integration` passes its own with --cov-fail-under.
+fail_under = 26

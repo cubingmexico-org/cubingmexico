@@ -1,6 +1,6 @@
 import "server-only";
 
-import { fetchBackend } from "@/lib/backend";
+import { backendConfig, fetchBackend } from "@/lib/backend";
 
 // Each stays under the `maxDuration` of the matching /api/admin/social route.
 const QUICK_TIMEOUT_MS = 25_000;
@@ -20,16 +20,8 @@ export type SocialPostType =
 
 export type CarouselPostType = "weekly_digest" | "year_recap";
 
-function backendConfig() {
-  const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
-  const cronSecret = process.env.CRON_SECRET;
-  if (!backendUrl || !cronSecret) {
-    return null;
-  }
-  return { backendUrl, cronSecret };
-}
-
-function typePath(postType: SocialPostType): string {
+/** URL segment of a post type, in the backend's /social routes and in /api/admin/social. */
+export function typePath(postType: SocialPostType): string {
   if (postType === "resultados") return "resultados";
   if (postType === "record") return "records";
   if (postType === "summary_unlock") return "summary-unlock";

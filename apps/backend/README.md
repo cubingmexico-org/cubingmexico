@@ -24,6 +24,7 @@ Environment variables (see `.env.example`):
 - `CRON_SECRET` — Auth secret for admin update endpoints (env or Secret Manager `cron-secret`; the local dev token is only used when `FLASK_ENV=development`). Outside development the app refuses to start if `DB_URL` or `CRON_SECRET` can't be resolved.
 - `WEB_CONCURRENCY` / `GUNICORN_THREADS` — Gunicorn workers and threads per worker in the Docker image (defaults: `4` and `8`)
 - `DB_POOL_MAX` — Max pooled PostgreSQL connections per worker (default: `GUNICORN_THREADS`). A request that waits more than 2 seconds for a free one opens a one-off connection instead. Each worker has its own pool, so one instance can open up to `WEB_CONCURRENCY × DB_POOL_MAX` connections (32 with the defaults); multiply by the Cloud Run max instances when sizing the database. The total is logged at startup.
+- `PUBLIC_RATE_LIMIT` — Rate limit for the public read API per client IP (default: `60 per minute`). See "Important API endpoints".
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
 - `UPDATE_ALL_JOB` — Cloud Run Job resource name (`projects/P/locations/R/jobs/J`) that runs the nightly pipeline. When set, `POST /update-all` and `/update-all/resume` start an execution of it and return 202; when unset (local dev, tests) they run the pipeline inside the request.
@@ -82,7 +83,10 @@ The app will be available at `http://localhost:5000`.
 
 ## Important API endpoints
 
-The read endpoints below are kept for external consumers and documented on the web app's public `/docs` page. The apps in this repo read Postgres directly and don't call them. Successful responses send `Cache-Control: public, max-age=3600` (`/competitor-states` uses 300, since it reads the live WCIF).
+The read endpoints below are kept for external consumers. The apps in this repo read Postgres directly and don't call them. Successful responses send `Cache-Control: public, max-age=3600` (`/competitor-states` uses 300, since it reads the live WCIF).
+
+- **Contract:** [`packages/public-api/openapi.json`](../../packages/public-api/openapi.json) (OpenAPI 3.1) is the source for the web app's `/docs` page, which also serves the raw file at `/docs/openapi.json`. Unit tests check that the spec lists exactly the public routes and that its examples match its schemas. Integration tests (`tests_integration/test_openapi_contract.py`) check real responses against it. When you add or change a public route, update the spec in the same change.
+- **Rate limit:** the public blueprints allow `PUBLIC_RATE_LIMIT` requests per client IP (default `60 per minute`, any [`limits`](https://limits.readthedocs.io/en/stable/quickstart.html#rate-limit-string-notation) string). Past the limit they return 429 with `Retry-After`. The client IP is the last `X-Forwarded-For` hop, which Cloud Run appends (`ProxyFix(x_for=1)`). Counters are in memory, per gunicorn worker on each instance, so the effective limit is a soft cap, not an exact quota. Admin and social routes aren't limited; they're behind `CRON_SECRET`.
 
 - **Competitions**
   - `GET /competitions` — List competitions (Mexico only) with pagination and filters
@@ -312,6 +316,9 @@ The policies match the service name `backend` and the job name `update-all`; edi
 ## Development
 
 - Run checks with `pnpm lint`, `pnpm check-types` (pyright) and `pnpm test` from this directory, or through Turborepo from the repo root. They call `uv run ruff`, `pyright` and `uv run pytest`.
+- Pyright runs in basic mode, plus strict mode for the modules listed in `strict` in `pyproject.toml`. Add a module there once it passes strict mode.
+- pandas and numpy are imported inside the import and nemesis jobs, not at module level, so the web service starts without them (about a third of its startup time). Keep new uses inside the functions that need them.
+- Both test suites measure coverage (`pytest-cov`) and fail below a floor: `fail_under` in `pyproject.toml` for the unit suite, `--cov-fail-under` in the `test:integration` script for the integration suite. Raise a floor when you add tests; never lower it.
 - Add or upgrade dependencies with `uv add <package>` / `uv lock --upgrade-package <package>`; commit `pyproject.toml` and `uv.lock` together.
 - utils.py contains helpers: get_state_from_coordinates and convert_keys_to_camel_case.
 - Logging uses standard Python logging at INFO level.

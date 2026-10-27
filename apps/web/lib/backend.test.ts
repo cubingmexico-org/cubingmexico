@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-const { fetchBackend, postToBackend } = await import("./backend");
+const { backendConfig, fetchBackend, postToBackend } =
+  await import("./backend");
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -45,7 +46,31 @@ describe("fetchBackend", () => {
   });
 });
 
+describe("backendConfig", () => {
+  it("trims the trailing slash", () => {
+    expect(backendConfig()).toEqual({
+      backendUrl: "https://backend.example",
+      cronSecret: "s3cret",
+    });
+  });
+
+  it("is null when either variable is unset or empty", () => {
+    vi.stubEnv("CRON_SECRET", "");
+    expect(backendConfig()).toBeNull();
+  });
+});
+
 describe("postToBackend", () => {
+  it("doesn't call the backend when it isn't configured", async () => {
+    vi.stubEnv("BACKEND_URL", "");
+
+    const response = await postToBackend("/update-all");
+
+    expect(response.ok).toBe(false);
+    expect(response.status).toBe(500);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it("reports a timed-out job as a failed 504", async () => {
     fetchMock.mockImplementation(hangUntilAborted);
 

@@ -1,6 +1,7 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalDependencies": ["fixtures/**", "packages/public-api/openapi.json"],
   "globalEnv": [
     "NODE_ENV",
     "VERCEL_ENV",

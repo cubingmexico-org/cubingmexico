@@ -1,0 +1,256 @@
+{
+  "cc_events": [
+    "format",
+    "id",
+    "name",
+    "participants",
+    "rank"
+  ],
+  "cc_persons": [
+    "id",
+    "name",
+    "region_code",
+    "wca_id"
+  ],
+  "cc_result_persons": [
+    "person_id",
+    "position",
+    "result_id"
+  ],
+  "cc_results": [
+    "attempts",
+    "average",
+    "best",
+    "competition_id",
+    "date",
+    "event_id",
+    "format_id",
+    "id",
+    "pos",
+    "round_number",
+    "round_type_id"
+  ],
+  "championships": [
+    "championship_type",
+    "competition_id",
+    "id"
+  ],
+  "competition_delegates": [
+    "competition_id",
+    "delegate_id"
+  ],
+  "competition_events": [
+    "competition_id",
+    "event_id"
+  ],
+  "competition_organizers": [
+    "competition_id",
+    "organizer_id"
+  ],
+  "competition_round_dates": [
+    "competition_id",
+    "end_date",
+    "event_id",
+    "round_type_id",
+    "source",
+    "updated_at"
+  ],
+  "competitions": [
+    "cancelled",
+    "cell_name",
+    "city_name",
+    "country_id",
+    "end_date",
+    "external_website",
+    "id",
+    "information",
+    "latitude_microdegrees",
+    "logo",
+    "longitude_microdegrees",
+    "name",
+    "start_date",
+    "state_id",
+    "venue",
+    "venue_address",
+    "venue_details"
+  ],
+  "delegates": [
+    "id",
+    "level",
+    "person_id",
+    "status"
+  ],
+  "designs": [
+    "competition_id",
+    "created_at",
+    "id",
+    "is_public",
+    "json",
+    "module",
+    "name",
+    "owner_scope",
+    "schema_version",
+    "updated_at",
+    "user_id"
+  ],
+  "events": [
+    "format",
+    "id",
+    "name",
+    "rank"
+  ],
+  "export_metadata": [
+    "key",
+    "updated_at",
+    "value"
+  ],
+  "formats": [
+    "expected_solve_count",
+    "id",
+    "name",
+    "sort_by",
+    "sort_by_second",
+    "trim_fastest_n",
+    "trim_slowest_n"
+  ],
+  "job_runs": [
+    "error",
+    "finished_at",
+    "id",
+    "job",
+    "resumed_from",
+    "started_at",
+    "status",
+    "steps"
+  ],
+  "kinch_ranks": [
+    "events",
+    "overall",
+    "person_id",
+    "rank",
+    "scope"
+  ],
+  "nemesis_stats": [
+    "event_count",
+    "nemesis_count",
+    "nemesized_count",
+    "person_id",
+    "scope",
+    "slot_count"
+  ],
+  "organizers": [
+    "id",
+    "person_id",
+    "status"
+  ],
+  "persons": [
+    "gender",
+    "hide_from_roster",
+    "name",
+    "state_id",
+    "wca_id"
+  ],
+  "ranks_average": [
+    "best",
+    "continent_rank",
+    "country_rank",
+    "event_id",
+    "person_id",
+    "state_rank",
+    "world_rank"
+  ],
+  "ranks_single": [
+    "best",
+    "continent_rank",
+    "country_rank",
+    "event_id",
+    "person_id",
+    "state_rank",
+    "world_rank"
+  ],
+  "result_attempts": [
+    "attempt_number",
+    "result_id",
+    "value"
+  ],
+  "results": [
+    "average",
+    "best",
+    "competition_id",
+    "event_id",
+    "format_id",
+    "id",
+    "person_id",
+    "pos",
+    "regional_average_record",
+    "regional_single_record",
+    "round_type_id",
+    "state_average_record",
+    "state_single_record"
+  ],
+  "round_types": [
+    "cell_name",
+    "final",
+    "id",
+    "name",
+    "rank"
+  ],
+  "social_posts": [
+    "competition_id",
+    "external_id",
+    "id",
+    "platform",
+    "post_type",
+    "posted_at",
+    "subject_key"
+  ],
+  "sponsors": [
+    "active",
+    "description",
+    "id",
+    "logo",
+    "name",
+    "social_links"
+  ],
+  "states": [
+    "id",
+    "name"
+  ],
+  "streak_ranks": [
+    "current_streak",
+    "longest_streak",
+    "person_id",
+    "rank",
+    "scope"
+  ],
+  "sum_of_ranks": [
+    "events",
+    "overall",
+    "person_id",
+    "rank",
+    "result_type",
+    "scope"
+  ],
+  "team_achievements": [
+    "date",
+    "description",
+    "state_id",
+    "title"
+  ],
+  "team_members": [
+    "achievements",
+    "person_id",
+    "role",
+    "specialties"
+  ],
+  "teams": [
+    "cover_image",
+    "description",
+    "founded",
+    "image",
+    "is_active",
+    "name",
+    "social_links",
+    "state_id"
+  ]
+}

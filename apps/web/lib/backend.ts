@@ -1,4 +1,5 @@
 import "server-only";
+import { serverEnv } from "@/lib/env";
 
 export type BackendResponse = {
   ok: boolean;
@@ -35,15 +36,26 @@ export async function fetchBackend(
   }
 }
 
+/** `BACKEND_URL` (without a trailing slash) and `CRON_SECRET`, or null when either is unset. */
+export function backendConfig(): {
+  backendUrl: string;
+  cronSecret: string;
+} | null {
+  const { BACKEND_URL, CRON_SECRET } = serverEnv();
+  if (!BACKEND_URL || !CRON_SECRET) return null;
+  return {
+    backendUrl: BACKEND_URL.replace(/\/$/, ""),
+    cronSecret: CRON_SECRET,
+  };
+}
+
 /** POSTs to a cron-protected route of the Flask backend (`BACKEND_URL`) with `CRON_SECRET`. */
 export async function postToBackend(
   path: string,
   { timeoutMs = DEFAULT_BACKEND_TIMEOUT_MS }: { timeoutMs?: number } = {},
 ): Promise<BackendResponse> {
-  const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
-  const cronSecret = process.env.CRON_SECRET;
-
-  if (!backendUrl || !cronSecret) {
+  const config = backendConfig();
+  if (!config) {
     return {
       ok: false,
       status: 500,
@@ -55,11 +67,11 @@ export async function postToBackend(
   }
 
   const response = await fetchBackend(
-    `${backendUrl}${path}`,
+    `${config.backendUrl}${path}`,
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${cronSecret}`,
+        Authorization: `Bearer ${config.cronSecret}`,
         "Content-Type": "application/json",
       },
     },

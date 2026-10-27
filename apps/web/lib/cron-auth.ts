@@ -1,9 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
+import { serverEnv } from "@/lib/env";
 
 /** True when the request carries `Authorization: Bearer $CRON_SECRET`, as the Flask backend sends. */
 export function hasCronAuth(
   request: Request,
-  cronSecret: string | undefined = process.env.CRON_SECRET,
+  cronSecret: string | undefined = serverEnv().CRON_SECRET,
 ): boolean {
   if (!cronSecret) return false;
 

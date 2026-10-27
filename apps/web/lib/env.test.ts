@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateEnv } from "@/lib/env";
+import { serverEnv, validateEnv } from "@/lib/env";
 
 const validEnv: Record<string, string | undefined> = {
   DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/cubing_mexico",
@@ -56,5 +56,33 @@ describe("validateEnv", () => {
     expect(() =>
       validateEnv({ ...validEnv, BETTER_AUTH_SECRET: "short" }),
     ).toThrow(/BETTER_AUTH_SECRET/);
+  });
+
+  it("treats an empty optional variable as unset", () => {
+    expect(() =>
+      validateEnv({ ...validEnv, BACKEND_URL: "", CRON_SECRET: "" }),
+    ).not.toThrow();
+    expect(() =>
+      validateEnv({ ...validEnv, VERCEL_ENV: "production", BACKEND_URL: "" }),
+    ).toThrow(/BACKEND_URL/);
+  });
+});
+
+describe("serverEnv", () => {
+  it("returns the server variables without requiring the rest", () => {
+    expect(
+      serverEnv({ BACKEND_URL: "https://backend.example", CRON_SECRET: "s" }),
+    ).toEqual({ BACKEND_URL: "https://backend.example", CRON_SECRET: "s" });
+  });
+
+  it("reads empty variables as unset", () => {
+    expect(serverEnv({ BACKEND_URL: "", UPLOADTHING_TOKEN: "" })).toEqual({
+      BACKEND_URL: undefined,
+      UPLOADTHING_TOKEN: undefined,
+    });
+  });
+
+  it("rejects an invalid value", () => {
+    expect(() => serverEnv({ BACKEND_URL: "backend" })).toThrow(/BACKEND_URL/);
   });
 });

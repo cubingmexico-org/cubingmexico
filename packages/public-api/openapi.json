@@ -1,0 +1,921 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "API pública de Cubing México",
+    "version": "1.0.0",
+    "description": "Documentación de la API de lectura de Cubing México. Expone datos de competencias, personas, teams, rankings y récords enfocados en México."
+  },
+  "servers": [{ "url": "https://api.cubingmexico.net" }],
+  "tags": [
+    { "name": "competitions", "description": "Competencias" },
+    { "name": "persons", "description": "Personas" },
+    { "name": "teams", "description": "Teams y estados" },
+    { "name": "ranks", "description": "Rankings y récords" }
+  ],
+  "paths": {
+    "/competitions": {
+      "get": {
+        "tags": ["competitions"],
+        "summary": "Listar competencias",
+        "description": "Lista competencias en México con paginación y filtros opcionales.",
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Resultados por página (entero, 1–100). Por defecto: 100.",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100 },
+            "example": 10
+          },
+          {
+            "name": "stateId",
+            "in": "query",
+            "description": "Filtrar por id de estado mexicano.",
+            "x-aliases": ["state_id"],
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "eventId",
+            "in": "query",
+            "description": "Incluir solo competencias que contengan el evento indicado.",
+            "x-aliases": ["event_id"],
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "description": "Filtrar por año de startDate.",
+            "schema": { "type": "integer" }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Fecha mínima de inicio (YYYY-MM-DD).",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "Fecha máxima de fin (YYYY-MM-DD).",
+            "schema": { "type": "string", "format": "date" }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Búsqueda de texto (sin distinguir mayúsculas) en nombre y ciudad.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "cancelled",
+            "in": "query",
+            "description": "Filtrar canceladas: true/false, 1/0 o yes/no.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de competencias.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitionPage"
+                },
+                "example": {
+                  "pagination": { "page": 1, "size": 10 },
+                  "total": 120,
+                  "items": [
+                    {
+                      "id": "MexicoCityOpen2024",
+                      "name": "Mexico City Open 2024",
+                      "cityName": "Ciudad de México",
+                      "countryId": "Mexico",
+                      "stateId": "CMX",
+                      "stateName": "Ciudad de México",
+                      "startDate": "Sat, 01 Jun 2024 00:00:00 GMT",
+                      "endDate": "Sun, 02 Jun 2024 00:00:00 GMT",
+                      "cancelled": false,
+                      "logo": "https://example.com/mexico-city-open-2024-logo.png"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" }
+        }
+      }
+    },
+    "/competitions/{competition_id}": {
+      "get": {
+        "tags": ["competitions"],
+        "summary": "Obtener una competencia",
+        "description": "Devuelve una competencia en México con eventos, organizadores, delegados y campeonatos relacionados. Incluye logo cuando está disponible. Si no existe o no está disponible para México, responde con success: false.",
+        "parameters": [
+          {
+            "name": "competition_id",
+            "in": "path",
+            "required": true,
+            "description": "Id de la competencia (por ejemplo MexicoCityOpen2024).",
+            "schema": { "type": "string" },
+            "example": "MexicoCityOpen2024"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "La competencia, o success: false si no está disponible para México.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    { "$ref": "#/components/schemas/CompetitionDetail" },
+                    { "$ref": "#/components/schemas/Error" }
+                  ]
+                },
+                "example": {
+                  "id": "MexicoCityOpen2024",
+                  "name": "Mexico City Open 2024",
+                  "cityName": "Ciudad de México",
+                  "countryId": "Mexico",
+                  "stateId": "CMX",
+                  "stateName": "Ciudad de México",
+                  "startDate": "Sat, 01 Jun 2024 00:00:00 GMT",
+                  "endDate": "Sun, 02 Jun 2024 00:00:00 GMT",
+                  "cancelled": false,
+                  "logo": "https://example.com/mexico-city-open-2024-logo.png",
+                  "events": [{ "eventId": "333", "eventName": "3x3x3 Cube" }],
+                  "organizers": [],
+                  "delegates": [],
+                  "championships": []
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/competitor-states/{competition_id}": {
+      "get": {
+        "tags": ["competitions"],
+        "summary": "Estados de competidores",
+        "description": "Obtiene el estado mexicano asociado a cada competidor de una competencia, a partir del WCIF público de la WCA. Se puede guardar en caché hasta 5 minutos.",
+        "parameters": [
+          {
+            "name": "competition_id",
+            "in": "path",
+            "required": true,
+            "description": "Id de la competencia.",
+            "schema": { "type": "string" },
+            "example": "MexicoCityOpen2024"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estado de cada competidor con WCA ID.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/CompetitorState" }
+                },
+                "example": [
+                  { "wcaId": "2015EXAM01", "stateId": "CMX" },
+                  { "wcaId": "2018TEST02", "stateId": "JAL" }
+                ]
+              }
+            }
+          },
+          "500": {
+            "description": "No se pudo obtener el WCIF de la WCA.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/persons": {
+      "get": {
+        "tags": ["persons"],
+        "summary": "Listar personas",
+        "description": "Lista personas con paginación. Cada elemento incluye competencias, campeonatos y rankings resumidos.",
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Resultados por página (entero, 1–100). Por defecto: 100.",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100 },
+            "example": 10
+          },
+          {
+            "name": "stateId",
+            "in": "query",
+            "description": "Filtrar por id de estado.",
+            "x-aliases": ["state_id"],
+            "schema": { "type": "string" },
+            "example": "CMX"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Página de personas.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PersonPage" },
+                "example": {
+                  "pagination": { "page": 1, "size": 10 },
+                  "total": 500,
+                  "items": [
+                    {
+                      "id": "2015EXAM01",
+                      "name": "Ejemplo Cubero",
+                      "state": "CMX",
+                      "numberOfCompetitions": 12,
+                      "competitionIds": ["MexicoCityOpen2024"],
+                      "numberOfChampionships": 1,
+                      "championshipIds": ["national_Mexico_2024"],
+                      "rank": { "singles": [], "averages": [] }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/persons/{wca_id}": {
+      "get": {
+        "tags": ["persons"],
+        "summary": "Obtener una persona",
+        "description": "Devuelve el perfil de una persona por WCA ID, con competencias, campeonatos y rankings. Responde 404 si no existe.",
+        "parameters": [
+          {
+            "name": "wca_id",
+            "in": "path",
+            "required": true,
+            "description": "WCA ID de la persona (por ejemplo 2015EXAM01).",
+            "schema": { "type": "string" },
+            "example": "2015EXAM01"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "La persona.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Person" },
+                "example": {
+                  "id": "2015EXAM01",
+                  "name": "Ejemplo Cubero",
+                  "state": "CMX",
+                  "numberOfCompetitions": 12,
+                  "competitionIds": ["MexicoCityOpen2024"],
+                  "numberOfChampionships": 1,
+                  "championshipIds": ["national_Mexico_2024"],
+                  "rank": {
+                    "singles": [
+                      {
+                        "eventId": "333",
+                        "best": 850,
+                        "rank": {
+                          "world": 1000,
+                          "continent": 50,
+                          "country": 10,
+                          "state": 1
+                        }
+                      }
+                    ],
+                    "averages": []
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/teams": {
+      "get": {
+        "tags": ["teams"],
+        "summary": "Listar teams",
+        "description": "Devuelve todos los teams estatales.",
+        "responses": {
+          "200": {
+            "description": "Todos los teams.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/Team" }
+                },
+                "example": [
+                  {
+                    "name": "Team Ciudad de México",
+                    "description": null,
+                    "image": null,
+                    "coverImage": null,
+                    "stateId": "CMX",
+                    "founded": null,
+                    "socialLinks": null,
+                    "isActive": true
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/teams/{state_id}": {
+      "get": {
+        "tags": ["teams"],
+        "summary": "Obtener un team",
+        "description": "Devuelve el team asociado a un estado. Responde 404 si no existe.",
+        "parameters": [
+          {
+            "name": "state_id",
+            "in": "path",
+            "required": true,
+            "description": "Id del estado (por ejemplo CMX, JAL).",
+            "schema": { "type": "string" },
+            "example": "CMX"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "El team.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Team" },
+                "example": {
+                  "name": "Team Ciudad de México",
+                  "description": null,
+                  "image": null,
+                  "coverImage": null,
+                  "stateId": "CMX",
+                  "founded": null,
+                  "socialLinks": null,
+                  "isActive": true
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/states": {
+      "get": {
+        "tags": ["teams"],
+        "summary": "Listar estados",
+        "description": "Devuelve la lista de estados mexicanos disponibles.",
+        "responses": {
+          "200": {
+            "description": "Todos los estados.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/State" }
+                },
+                "example": [
+                  { "id": "CMX", "name": "Ciudad de México" },
+                  { "id": "JAL", "name": "Jalisco" }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/rank/{type}/{event_id}": {
+      "get": {
+        "tags": ["ranks"],
+        "summary": "Rankings nacionales",
+        "description": "Devuelve los rankings nacionales de México para un evento y tipo (single o average), ordenados por ranking nacional. El total de resultados viene en el encabezado X-Total-Count.",
+        "parameters": [
+          { "$ref": "#/components/parameters/rankType" },
+          { "$ref": "#/components/parameters/eventId" },
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/rankSize" },
+          { "$ref": "#/components/parameters/deprecated" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Una página de rankings.",
+            "headers": {
+              "X-Total-Count": { "$ref": "#/components/headers/X-Total-Count" }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/NationalRankEntry" }
+                },
+                "example": [
+                  {
+                    "rankType": "single",
+                    "personId": "2015EXAM01",
+                    "personName": "Ejemplo Cubero",
+                    "eventId": "333",
+                    "best": 850,
+                    "stateId": "CMX",
+                    "rank": {
+                      "world": 1000,
+                      "continent": 50,
+                      "country": 10,
+                      "state": 1
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/rank/{state_id}/{type}/{event_id}": {
+      "get": {
+        "tags": ["ranks"],
+        "summary": "Rankings por estado",
+        "description": "Devuelve los rankings de un estado para un evento y tipo (single o average), ordenados por ranking estatal. El total de resultados viene en el encabezado X-Total-Count.",
+        "parameters": [
+          { "$ref": "#/components/parameters/stateIdPath" },
+          { "$ref": "#/components/parameters/rankType" },
+          { "$ref": "#/components/parameters/eventId" },
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/rankSize" },
+          { "$ref": "#/components/parameters/deprecated" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Una página de rankings.",
+            "headers": {
+              "X-Total-Count": { "$ref": "#/components/headers/X-Total-Count" }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/StateRankEntry" }
+                },
+                "example": [
+                  {
+                    "rankType": "single",
+                    "personId": "2015EXAM01",
+                    "personName": "Ejemplo Cubero",
+                    "eventId": "333",
+                    "best": 850,
+                    "rank": {
+                      "world": 1000,
+                      "continent": 50,
+                      "country": 10,
+                      "state": 1
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/records/{state_id}": {
+      "get": {
+        "tags": ["ranks"],
+        "summary": "Récords estatales",
+        "description": "Devuelve los récords estatales (rank 1) de single y average para un estado, solo en eventos oficiales.",
+        "parameters": [{ "$ref": "#/components/parameters/stateIdPath" }],
+        "responses": {
+          "200": {
+            "description": "Récords de single y average.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StateRecords" },
+                "example": {
+                  "single": [
+                    {
+                      "personId": "2015EXAM01",
+                      "personName": "Ejemplo Cubero",
+                      "eventId": "333",
+                      "eventName": "3x3x3 Cube",
+                      "best": 850,
+                      "rank": {
+                        "world": 1000,
+                        "continent": 50,
+                        "country": 10,
+                        "state": 1
+                      }
+                    }
+                  ],
+                  "average": []
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "page": {
+        "name": "page",
+        "in": "query",
+        "description": "Número de página (entero, mínimo 1). Por defecto: 1.",
+        "schema": { "type": "integer", "minimum": 1 },
+        "example": 1
+      },
+      "rankSize": {
+        "name": "size",
+        "in": "query",
+        "description": "Resultados por página (entero, 1–1000). Por defecto: 1000.",
+        "schema": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      },
+      "deprecated": {
+        "name": "deprecated",
+        "in": "query",
+        "description": "true para permitir eventos descontinuados (333ft, magic, mmagic, 333mbo). Sin él, solo se aceptan eventos oficiales.",
+        "schema": { "type": "string" }
+      },
+      "rankType": {
+        "name": "type",
+        "in": "path",
+        "required": true,
+        "description": "Tipo de ranking: single o average.",
+        "schema": { "type": "string", "enum": ["single", "average"] },
+        "example": "single"
+      },
+      "eventId": {
+        "name": "event_id",
+        "in": "path",
+        "required": true,
+        "description": "Id del evento WCA (por ejemplo 333, 333oh).",
+        "schema": { "type": "string" },
+        "example": "333"
+      },
+      "stateIdPath": {
+        "name": "state_id",
+        "in": "path",
+        "required": true,
+        "description": "Id del estado.",
+        "schema": { "type": "string" },
+        "example": "CMX"
+      }
+    },
+    "headers": {
+      "X-Total-Count": {
+        "description": "Total de resultados, sin paginar.",
+        "schema": { "type": "integer" }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Parámetros inválidos.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "No existe.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": ["success", "message"],
+        "properties": {
+          "success": { "const": false },
+          "message": { "type": "string" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "required": ["page", "size"],
+        "properties": {
+          "page": { "type": "integer" },
+          "size": { "type": "integer" }
+        },
+        "additionalProperties": false
+      },
+      "RankPositions": {
+        "type": "object",
+        "required": ["world", "continent", "country", "state"],
+        "properties": {
+          "world": { "type": "integer" },
+          "continent": { "type": "integer" },
+          "country": { "type": "integer" },
+          "state": { "type": ["integer", "null"] }
+        },
+        "additionalProperties": false
+      },
+      "Competition": {
+        "type": "object",
+        "description": "Columnas de la competencia en camelCase. Las fechas usan el formato HTTP (RFC 1123).",
+        "required": [
+          "id",
+          "name",
+          "cityName",
+          "countryId",
+          "startDate",
+          "endDate",
+          "cancelled",
+          "stateId",
+          "stateName",
+          "logo"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "cityName": { "type": "string" },
+          "countryId": { "type": "string" },
+          "information": { "type": ["string", "null"] },
+          "venue": { "type": "string" },
+          "venueAddress": { "type": ["string", "null"] },
+          "venueDetails": { "type": ["string", "null"] },
+          "externalWebsite": { "type": ["string", "null"] },
+          "cellName": { "type": "string" },
+          "startDate": { "type": "string" },
+          "endDate": { "type": "string" },
+          "cancelled": { "type": "boolean" },
+          "latitudeMicrodegrees": { "type": ["integer", "null"] },
+          "longitudeMicrodegrees": { "type": ["integer", "null"] },
+          "stateId": { "type": ["string", "null"] },
+          "stateName": { "type": ["string", "null"] },
+          "logo": { "type": ["string", "null"] }
+        }
+      },
+      "CompetitionPage": {
+        "type": "object",
+        "required": ["pagination", "total", "items"],
+        "properties": {
+          "pagination": { "$ref": "#/components/schemas/Pagination" },
+          "total": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Competition" }
+          }
+        },
+        "additionalProperties": false
+      },
+      "CompetitionPerson": {
+        "type": "object",
+        "required": ["id", "personId", "status", "personName"],
+        "properties": {
+          "id": { "type": "string" },
+          "personId": { "type": ["string", "null"] },
+          "status": { "type": ["string", "null"] },
+          "personName": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      },
+      "CompetitionDetail": {
+        "allOf": [
+          { "$ref": "#/components/schemas/Competition" },
+          {
+            "type": "object",
+            "required": ["events", "organizers", "delegates", "championships"],
+            "properties": {
+              "events": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["eventId", "eventName"],
+                  "properties": {
+                    "eventId": { "type": "string" },
+                    "eventName": { "type": ["string", "null"] }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "organizers": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/CompetitionPerson" }
+              },
+              "delegates": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/CompetitionPerson" }
+              },
+              "championships": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["id", "championshipType"],
+                  "properties": {
+                    "id": { "type": "string" },
+                    "championshipType": { "type": "string" }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            }
+          }
+        ]
+      },
+      "CompetitorState": {
+        "type": "object",
+        "required": ["wcaId", "stateId"],
+        "properties": {
+          "wcaId": { "type": "string" },
+          "stateId": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      },
+      "PersonRank": {
+        "type": "object",
+        "required": ["eventId", "best", "rank"],
+        "properties": {
+          "eventId": { "type": "string" },
+          "best": { "type": "integer" },
+          "rank": { "$ref": "#/components/schemas/RankPositions" }
+        },
+        "additionalProperties": false
+      },
+      "Person": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "state",
+          "numberOfCompetitions",
+          "competitionIds",
+          "numberOfChampionships",
+          "championshipIds",
+          "rank"
+        ],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": ["string", "null"] },
+          "state": { "type": ["string", "null"] },
+          "numberOfCompetitions": { "type": "integer" },
+          "competitionIds": { "type": "array", "items": { "type": "string" } },
+          "numberOfChampionships": { "type": "integer" },
+          "championshipIds": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "rank": {
+            "type": "object",
+            "required": ["singles", "averages"],
+            "properties": {
+              "singles": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/PersonRank" }
+              },
+              "averages": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/PersonRank" }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "PersonPage": {
+        "type": "object",
+        "required": ["pagination", "total", "items"],
+        "properties": {
+          "pagination": { "$ref": "#/components/schemas/Pagination" },
+          "total": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Person" }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Team": {
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "image",
+          "coverImage",
+          "stateId",
+          "founded",
+          "socialLinks",
+          "isActive"
+        ],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": ["string", "null"] },
+          "image": { "type": ["string", "null"] },
+          "coverImage": { "type": ["string", "null"] },
+          "stateId": { "type": "string" },
+          "founded": {
+            "type": ["string", "null"],
+            "description": "Fecha en formato HTTP (RFC 1123)."
+          },
+          "socialLinks": {
+            "type": ["object", "null"],
+            "additionalProperties": { "type": "string" }
+          },
+          "isActive": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "State": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "StateRankEntry": {
+        "type": "object",
+        "required": [
+          "rankType",
+          "personId",
+          "personName",
+          "eventId",
+          "best",
+          "rank"
+        ],
+        "properties": {
+          "rankType": { "type": "string", "enum": ["single", "average"] },
+          "personId": { "type": "string" },
+          "personName": { "type": ["string", "null"] },
+          "eventId": { "type": "string" },
+          "best": { "type": "integer" },
+          "rank": { "$ref": "#/components/schemas/RankPositions" }
+        },
+        "additionalProperties": false
+      },
+      "NationalRankEntry": {
+        "type": "object",
+        "required": [
+          "rankType",
+          "personId",
+          "personName",
+          "eventId",
+          "best",
+          "stateId",
+          "rank"
+        ],
+        "properties": {
+          "rankType": { "type": "string", "enum": ["single", "average"] },
+          "personId": { "type": "string" },
+          "personName": { "type": ["string", "null"] },
+          "eventId": { "type": "string" },
+          "best": { "type": "integer" },
+          "stateId": { "type": ["string", "null"] },
+          "rank": { "$ref": "#/components/schemas/RankPositions" }
+        },
+        "additionalProperties": false
+      },
+      "StateRecord": {
+        "type": "object",
+        "required": [
+          "personId",
+          "personName",
+          "eventId",
+          "eventName",
+          "best",
+          "rank"
+        ],
+        "properties": {
+          "personId": { "type": "string" },
+          "personName": { "type": ["string", "null"] },
+          "eventId": { "type": "string" },
+          "eventName": { "type": "string" },
+          "best": { "type": "integer" },
+          "rank": { "$ref": "#/components/schemas/RankPositions" }
+        },
+        "additionalProperties": false
+      },
+      "StateRecords": {
+        "type": "object",
+        "required": ["single", "average"],
+        "properties": {
+          "single": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/StateRecord" }
+          },
+          "average": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/StateRecord" }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
