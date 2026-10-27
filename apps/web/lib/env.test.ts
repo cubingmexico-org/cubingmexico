@@ -26,6 +26,32 @@ describe("validateEnv", () => {
     ).toThrow(/BACKEND_URL/);
   });
 
+  it("requires the backend connection in production", () => {
+    expect(() =>
+      validateEnv({ ...validEnv, VERCEL_ENV: "production" }),
+    ).toThrow(/BACKEND_URL[\s\S]*CRON_SECRET/);
+    expect(() =>
+      validateEnv({
+        ...validEnv,
+        VERCEL_ENV: "production",
+        BACKEND_URL: "https://backend.example.com",
+        CRON_SECRET: "secret",
+      }),
+    ).not.toThrow();
+  });
+
+  it("leaves the backend connection optional outside production", () => {
+    expect(() =>
+      validateEnv({ ...validEnv, VERCEL_ENV: "preview" }),
+    ).not.toThrow();
+  });
+
+  it("checks the organizer URL when it is set", () => {
+    expect(() =>
+      validateEnv({ ...validEnv, NEXT_PUBLIC_ORGANIZER_URL: "organizer" }),
+    ).toThrow(/NEXT_PUBLIC_ORGANIZER_URL/);
+  });
+
   it("rejects a short auth secret", () => {
     expect(() =>
       validateEnv({ ...validEnv, BETTER_AUTH_SECRET: "short" }),
