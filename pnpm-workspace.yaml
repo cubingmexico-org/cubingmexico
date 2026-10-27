@@ -62,3 +62,7 @@ auditConfig:
     # zod 3 has no fix. Its only user, @imgly/background-removal (latest still needs zod 3),
     # validates its own config objects with it, never request data.
     - GHSA-mrhx-c7xc-m3w5
+    # better-auth device login approval: only affects apps that enable the opt-in
+    # deviceAuthorization() plugin, which packages/auth doesn't. The fix is only in 1.7, a
+    # breaking upgrade (generic OAuth rewrite, account.issuer backfill). Drop this with it.
+    - GHSA-q84f-53jg-9ppm
