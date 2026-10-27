@@ -50,6 +50,44 @@ describe("securityHeaders", () => {
     );
   });
 
+  it("blocks violations when enforced, still reporting them", () => {
+    const headers = securityHeaders({
+      enforce: true,
+      sentryDsn: "https://abc123@o42.ingest.us.sentry.io/7",
+    });
+    expect(header(headers, "Content-Security-Policy-Report-Only")).toBe(
+      undefined,
+    );
+    const csp = header(headers, "Content-Security-Policy");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).toContain("report-uri https://o42.ingest.us.sentry.io/");
+  });
+
+  it("appends the app's extra script sources", () => {
+    const csp = header(
+      securityHeaders({ scriptSrc: ["'wasm-unsafe-eval'"] }),
+      "Content-Security-Policy-Report-Only",
+    );
+    expect(csp).toMatch(
+      /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval';/,
+    );
+  });
+
+  it("allows the Vercel toolbar only on preview deployments", () => {
+    const preview = header(
+      securityHeaders({ environment: "preview" }),
+      "Content-Security-Policy-Report-Only",
+    );
+    const production = header(
+      securityHeaders({ environment: "production" }),
+      "Content-Security-Policy-Report-Only",
+    );
+    expect(preview).toMatch(/script-src [^;]*https:\/\/vercel\.live/);
+    expect(preview).toMatch(/frame-src 'self' https:\/\/vercel\.live;/);
+    expect(production).not.toContain("vercel.live");
+    expect(production).toContain("frame-src 'self';");
+  });
+
   it("allows eval and the HMR socket only in development", () => {
     const prod = header(
       securityHeaders(),

@@ -6,10 +6,18 @@ import { expectNoSeriousA11yViolations } from "./a11y";
 
 const competition = fakeCompetition();
 
-/** Fails the test on uncaught client-side errors (hydration, render crashes). */
+/** Fails the test on uncaught client-side errors (hydration, render crashes) and CSP violations. */
 function trackPageErrors(page: Page): Error[] {
   const errors: Error[] = [];
   page.on("pageerror", (error) => errors.push(error));
+  page.on("console", (message) => {
+    if (
+      message.type() === "error" &&
+      message.text().includes("Content Security Policy")
+    ) {
+      errors.push(new Error(message.text()));
+    }
+  });
   return errors;
 }
 

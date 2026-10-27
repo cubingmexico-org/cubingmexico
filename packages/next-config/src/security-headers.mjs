@@ -29,13 +29,18 @@ export function sentryCspReportUri(dsn, environment) {
   return report.toString();
 }
 
+// Vercel injects its toolbar (comments, flags) into preview deployments.
+const VERCEL_TOOLBAR = "https://vercel.live";
+
 /**
- * Response headers for every route. The CSP is Report-Only: violations go to Sentry
- * (when a DSN is set) so the policy can be tightened and enforced once they're clean.
+ * Response headers for every route. Violations go to Sentry when a DSN is set. With
+ * `enforce` the CSP blocks them; without it the header is Report-Only.
  *
  * @param {{
  *   connectSrc?: string[];
+ *   scriptSrc?: string[];
  *   dev?: boolean;
+ *   enforce?: boolean;
  *   sentryDsn?: string;
  *   environment?: string;
  * }} [options]
@@ -43,11 +48,14 @@ export function sentryCspReportUri(dsn, environment) {
  */
 export function securityHeaders({
   connectSrc = [],
+  scriptSrc = [],
   dev = false,
+  enforce = false,
   sentryDsn,
   environment,
 } = {}) {
   const reportUri = sentryCspReportUri(sentryDsn, environment);
+  const preview = environment === "preview";
 
   /** @type {Record<string, string[]>} */
   const directives = {
@@ -57,18 +65,30 @@ export function securityHeaders({
       "'self'",
       "'unsafe-inline'",
       ...(dev ? ["'unsafe-eval'"] : []),
+      ...(preview ? [VERCEL_TOOLBAR] : []),
+      ...scriptSrc,
     ],
-    "style-src": ["'self'", "'unsafe-inline'"],
+    "style-src": [
+      "'self'",
+      "'unsafe-inline'",
+      ...(preview ? [VERCEL_TOOLBAR] : []),
+    ],
     "img-src": ["'self'", "data:", "blob:", "https:"],
-    "font-src": ["'self'", "data:"],
+    "font-src": [
+      "'self'",
+      "data:",
+      ...(preview ? [VERCEL_TOOLBAR, "https://assets.vercel.com"] : []),
+    ],
     "connect-src": [
       "'self'",
       "blob:",
       "data:",
       ...(reportUri ? [new URL(reportUri).origin] : []),
       ...(dev ? ["ws:"] : []),
+      ...(preview ? [VERCEL_TOOLBAR, "wss://ws-us3.pusher.com"] : []),
       ...connectSrc,
     ],
+    "frame-src": ["'self'", ...(preview ? [VERCEL_TOOLBAR] : [])],
     "worker-src": ["'self'", "blob:"],
     "object-src": ["'none'"],
     "base-uri": ["'self'"],
@@ -94,6 +114,11 @@ export function securityHeaders({
       key: "Permissions-Policy",
       value: "camera=(), microphone=(), geolocation=()",
     },
-    { key: "Content-Security-Policy-Report-Only", value: csp },
+    {
+      key: enforce
+        ? "Content-Security-Policy"
+        : "Content-Security-Policy-Report-Only",
+      value: csp,
+    },
   ];
 }

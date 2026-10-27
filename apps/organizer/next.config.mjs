@@ -17,6 +17,7 @@ const nextConfig = {
         source: "/:path*",
         headers: securityHeaders({
           dev: process.env.NODE_ENV === "development",
+          enforce: true,
           sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
           environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
         }),
