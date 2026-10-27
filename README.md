@@ -16,6 +16,8 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 
 - **[@workspace/db](./packages/db)** - Shared Drizzle schema, migrations, and seed (source of truth for Postgres)
 - **[@workspace/ui](./packages/ui)** - Shared UI component library built with shadcn/ui and Radix UI
+- **[@workspace/auth](./packages/auth)** - Better Auth setup with WCA OAuth, shared by web and organizer
+- **[@workspace/wca](./packages/wca)** - WCA API client (`wcaFetch`, `wcaUrl`) with timeouts and retries
 - **[@workspace/icons](./packages/icons)** - Centralized icon components
 - **[@workspace/eslint-config](./packages/eslint-config)** - Shared ESLint configurations
 - **[@workspace/typescript-config](./packages/typescript-config)** - Shared TypeScript configurations
@@ -164,11 +166,13 @@ pnpm services:up
 
 ## Testing
 
-- **Unit tests:** `pnpm test` runs the Vitest suites for web, organizer and `packages/auth`, and the backend's pytest suite. No database needed.
+- **Unit tests:** `pnpm test` runs the Vitest suites for web, organizer and the packages, and the backend's pytest suite. No database needed. In web and organizer, `*.test.ts` files run in Node and `*.test.tsx` component tests run in jsdom with Testing Library (setup in each app's `test/components-setup.ts`).
 - **Integration tests:** `pnpm db:up && pnpm test:integration` runs `apps/web/**/*.integration.test.ts` against real Postgres. The suite creates and migrates a separate `cubing_mexico_test` database and truncates its tables before every test, so your dev data is never touched. Point it elsewhere with `TEST_DATABASE_URL`; the database name must end in `_test`. Insert test data with the helpers in `apps/web/test/factories.ts`. The same command runs `apps/backend/tests_integration` (the WCA import, `/update-all` runs, the Flask state and ranking jobs, and the public read API), which recreates its own `cubing_mexico_backend_test` database from the Drizzle migrations; its helpers are in `apps/backend/tests_integration/factories.py`. It also runs the organizer's design API tests (`apps/organizer/**/*.integration.test.ts`) against their own `cubing_mexico_organizer_test` database, with the session and WCA API faked in `apps/organizer/test/fake-wca.ts`.
 - **Backend:** `pnpm --filter backend test` (or `lint` / `check-types`).
 - **Web smoke tests (Playwright):** `apps/web/e2e/*.spec.ts` load key pages of a production build and fail on errors. Pages are prerendered at build time, so seed first, then build: with `DATABASE_URL` pointing at a throwaway database, run `pnpm --filter @workspace/db migrate && pnpm --filter @workspace/db seed && pnpm --filter web e2e:seed`, then `pnpm --filter web build` and `pnpm --filter web test:e2e` (first time: `pnpm --filter web exec playwright install chromium`). CI runs the same steps in the `e2e` job.
+- **Organizer smoke tests (Playwright):** `apps/organizer/e2e/*.spec.ts` sign in through the real Better Auth flow against a fake WCA OAuth server and API (`apps/organizer/e2e/fake-wca.ts`, started by the suite on port 4010), then download a participation certificate PDF and load the badges, groups and desk pages. With `DATABASE_URL` pointing at a migrated and seeded throwaway database, build with `WCA_ORIGIN=http://localhost:4010`, `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` set to `http://localhost:3101`, and `NEXT_PUBLIC_GROUPS_ENABLED=true NEXT_PUBLIC_DESK_ENABLED=true`, then run `pnpm --filter organizer test:e2e`. CI runs the same steps in the `e2e-organizer` job.
 - **Organizer printables:** scorecards, task cards, group sheets and certificates have snapshot tests built from the WCIF in `apps/organizer/test/wcif-fixture.ts`. After an intended layout change, review the diff and update them with `pnpm --filter organizer exec vitest run -u`.
+- **Security scanning:** the `CodeQL` workflow analyzes the TypeScript, Python and workflow code on every pull request and weekly. The `Dependency audit` workflow runs `pnpm audit` (production dependencies, high and critical) and `pip-audit` (backend runtime lock) weekly and on lockfile changes; it is separate from CI so a new advisory doesn't block unrelated pull requests. CodeQL results show up under Security → Code scanning. The workflow is an advanced setup, so CodeQL's default setup must stay off in Settings → Code security, or GitHub rejects the uploads.
 - **TypeScript/Python parity:** state ranks and state records (SR) are computed only in `apps/backend/routes/admin/state.py` (the web calls its single-state routes after roster edits), but the SR rule also lives in `apps/web/lib/mark-state-records.ts`, which tags Cubing Contests UNR/USR. Both test suites run `fixtures/parity/state-records.json`. Nemesis counts are checked the same way: `fixtures/parity/nemesis.json` runs through the backend's `nemesis_stats` job and the web's nemesis queries in their integration suites. If you change either rule, update those fixtures so both implementations stay in sync.
 
 ## Deployment
@@ -186,6 +190,7 @@ pnpm services:up
   - `NEXT_PUBLIC_SENTRY_DSN` turns Sentry on. Without it the SDK stays off, which is how local dev and CI run.
   - `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` upload source maps during the build, for readable stack traces. The build skips the upload when the token is missing.
   - The shared options in each app's `lib/sentry.ts` keep traces at 5% and don't send request bodies, cookies, user info or database query data, since those can contain competitors' personal data.
+  - The backend reports to its own Sentry project (`backend`) when `SENTRY_DSN` is set on the Cloud Run service and job; see [the backend README](./apps/backend/README.md#deployment).
 
 ## Tech Stack
 
@@ -228,3 +233,10 @@ import { Button } from "@workspace/ui/components/button";
 - [Web hosting constraints (Vercel free tier)](./docs/web-hosting-constraints.md)
 - [Architecture: which app owns what](./docs/architecture.md)
 - [State records (SR) and WCA alignment](./docs/state-records.md)
+- [Contributing](./CONTRIBUTING.md)
+
+## License
+
+The code in this repository is released under the [MIT License](./LICENSE).
+
+The license covers the code only, not the data the apps import and show. Results from the [WCA results export](https://www.worldcubeassociation.org/export/results) remain subject to the WCA's terms, and data from the [Cubing Contests export](https://cubingcontests.com/export) is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Both sources are credited wherever their data appears.

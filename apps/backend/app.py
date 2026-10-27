@@ -7,6 +7,7 @@ from routes.competitions import competitions_bp
 from routes.misc import misc_bp
 from routes.persons import persons_bp
 from routes.social import social_bp
+from sentry_setup import init_sentry
 
 
 def handle_unexpected_error(error: Exception):
@@ -17,6 +18,7 @@ def handle_unexpected_error(error: Exception):
 
 
 def create_app():
+    init_sentry()
     app = Flask(__name__)
     app.register_blueprint(admin_bp)
     app.register_blueprint(competitions_bp)

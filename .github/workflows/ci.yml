@@ -194,8 +194,65 @@ jobs:
           path: apps/web/test-results
           retention-days: 7
 
+  # Smoke tests against a production build of the organizer. The suite starts a fake WCA
+  # OAuth server and API on port 4010 (apps/organizer/e2e/fake-wca.ts), so sign-in runs
+  # through the real Better Auth flow without the WCA.
+  e2e-organizer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cubing_mexico
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d cubing_mexico"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cubing_mexico
+      BETTER_AUTH_SECRET: ci-placeholder-secret-ci-placeholder-secret
+      BETTER_AUTH_URL: http://localhost:3101
+      AUTH_TRUSTED_ORIGINS: http://localhost:3101
+      WCA_CLIENT_ID: ci-placeholder
+      WCA_CLIENT_SECRET: ci-placeholder
+      WCA_ORIGIN: http://localhost:4010
+      NEXT_PUBLIC_APP_URL: http://localhost:3101
+      NEXT_PUBLIC_GROUPS_ENABLED: "true"
+      NEXT_PUBLIC_DESK_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+
+      - name: Migrate and seed database
+        run: |
+          pnpm --filter @workspace/db migrate
+          pnpm --filter @workspace/db seed
+
+      - name: Build organizer
+        run: pnpm turbo run build --filter=organizer
+
+      - name: Install Chromium
+        run: pnpm --filter organizer exec playwright install --with-deps chromium
+
+      - name: Smoke tests
+        run: pnpm --filter organizer test:e2e
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-traces-organizer
+          path: apps/organizer/test-results
+          retention-days: 7
+
   migrate:
-    needs: [quality, integration, build, e2e]
+    needs: [quality, integration, build, e2e, e2e-organizer]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 10

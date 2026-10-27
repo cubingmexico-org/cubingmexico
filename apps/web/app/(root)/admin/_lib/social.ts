@@ -1,5 +1,12 @@
 import "server-only";
 
+import { fetchBackend } from "@/lib/backend";
+
+// Each stays under the `maxDuration` of the matching /api/admin/social route.
+const QUICK_TIMEOUT_MS = 25_000;
+const IMAGE_TIMEOUT_MS = 55_000;
+const PUBLISH_TIMEOUT_MS = 115_000;
+
 export type SocialPostType =
   | "resultados"
   | "record"
@@ -66,7 +73,7 @@ export async function fetchSocialImage(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/image.png`,
     {
       method: "GET",
@@ -74,6 +81,7 @@ export async function fetchSocialImage(
         Authorization: `Bearer ${config.cronSecret}`,
       },
     },
+    IMAGE_TIMEOUT_MS,
   );
 
   if (!response.ok) {
@@ -135,7 +143,7 @@ export async function fetchWeeklyDigestSlides(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(week)}/slides`,
     {
       method: "GET",
@@ -143,6 +151,7 @@ export async function fetchWeeklyDigestSlides(
         Authorization: `Bearer ${config.cronSecret}`,
       },
     },
+    IMAGE_TIMEOUT_MS,
   );
 
   const body = await parseJsonBody(response);
@@ -194,7 +203,7 @@ export async function fetchWeeklyDigestSlideImage(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(week)}/slides/${index}/image.png`,
     {
       method: "GET",
@@ -202,6 +211,7 @@ export async function fetchWeeklyDigestSlideImage(
         Authorization: `Bearer ${config.cronSecret}`,
       },
     },
+    IMAGE_TIMEOUT_MS,
   );
 
   if (!response.ok) {
@@ -238,7 +248,7 @@ export async function publishSocialPost(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/publish`,
     {
       method: "POST",
@@ -247,6 +257,7 @@ export async function publishSocialPost(
         "Content-Type": "application/json",
       },
     },
+    PUBLISH_TIMEOUT_MS,
   );
 
   return {
@@ -273,7 +284,7 @@ export async function markSocialPosted(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/mark`,
     {
       method: "POST",
@@ -283,6 +294,7 @@ export async function markSocialPosted(
       },
       body: JSON.stringify(platforms ? { platforms } : {}),
     },
+    QUICK_TIMEOUT_MS,
   );
 
   return {
@@ -316,7 +328,7 @@ export async function fetchSocialCaption(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/caption`,
     {
       method: "GET",
@@ -324,6 +336,7 @@ export async function fetchSocialCaption(
         Authorization: `Bearer ${config.cronSecret}`,
       },
     },
+    QUICK_TIMEOUT_MS,
   );
 
   const body = await parseJsonBody(response);
