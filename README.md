@@ -187,6 +187,7 @@ pnpm services:up
   - `NEXT_PUBLIC_SENTRY_DSN` turns Sentry on. Without it the SDK stays off, which is how local dev and CI run.
   - `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` upload source maps during the build, for readable stack traces. The build skips the upload when the token is missing.
   - The shared options in each app's `lib/sentry.ts` keep traces at 5% and don't send request bodies, cookies, user info or database query data, since those can contain competitors' personal data.
+  - The backend reports to its own Sentry project when `SENTRY_DSN` is set on the Cloud Run service and job; see [the backend README](./apps/backend/README.md#configuration).
 
 ## Tech Stack
 

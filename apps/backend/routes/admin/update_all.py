@@ -80,6 +80,7 @@ def _execute(run_id, steps):
                 failed_step = name
         except BaseException:
             # SIGTERM (see run_job.py) or Ctrl+C: record the failure so the run can be resumed.
+            log.error("update-all run %s was interrupted during %s", run_id, name)
             step.update(status="failed", error="Interrupted", finishedAt=job_runs.now_iso())
             job_runs.finish_run(run_id, "failed", steps, error=f"Interrupted during {name}")
             raise
