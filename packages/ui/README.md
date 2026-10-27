@@ -75,7 +75,6 @@ Shared UI component library built with shadcn/ui, Radix UI, and Tailwind CSS for
 - `button-group` - Group of buttons
 - `toggle` - Toggle button
 - `toggle-group` - Group of toggle buttons
-- `sortable` - Drag & drop sortable list
 - `label` - Form label
 
 ## 🚀 Usage
@@ -254,7 +253,6 @@ import {
 - **Icons:** Lucide React
 - **Utilities:** clsx, tailwind-merge
 - **Forms:** React Hook Form support
-- **Drag & Drop:** dnd-kit
 - **Date:** date-fns
 - **Theme:** next-themes
 - **Carousels:** Embla Carousel
