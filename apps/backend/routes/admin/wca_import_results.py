@@ -15,59 +15,28 @@ from psycopg2.extras import execute_values
 from common import get_connection, log
 from routes.admin.schedules import run_update_competition_schedules
 
-CHUNK_SIZE = 10_000_000
+CHUNK_ROWS = 200_000
 
 
 def _read_tsv_chunks(file_bytes: bytes, file_name: str, string_column: str) -> Iterator[tuple[int, pd.DataFrame]]:
-    """Yields `(chunk_number, rows)` for each CHUNK_SIZE-byte piece of a TSV export file.
+    """Yields `(chunk_number, rows)` for each CHUNK_ROWS rows of a TSV export file.
 
-    Stops early when the first chunk has no rows. `string_column` is read as text.
+    Chunks split on row boundaries, so no row is cut in two. `string_column` is read as text.
     """
-    total_chunks = -(-len(file_bytes) // CHUNK_SIZE)
-    headers = None
-
-    for i in range(total_chunks):
-        chunk_str = file_bytes[i * CHUNK_SIZE : (i + 1) * CHUNK_SIZE].decode("utf-8", errors="ignore")
-        log.info("Validating chunk %s of %s for %s", i + 1, total_chunks, file_name)
-
-        if i == 0:
-            df_chunk = pd.read_csv(
-                io.StringIO(chunk_str),
-                delimiter="\t",
-                skip_blank_lines=True,
-                na_values=["NULL"],
-                low_memory=False,
-                dtype={string_column: str},
-            )
-            if df_chunk.empty:
-                log.warning("First chunk of %s is empty. Aborting processing.", file_name)
-                return
-            headers = df_chunk.columns.tolist()
-            log.debug("Headers extracted from first chunk: %s", headers)
-        else:
-            if headers is None:
-                log.error("Headers not available for chunk %s. Aborting processing.", i + 1)
-                return
-            df_chunk = pd.read_csv(
-                io.StringIO("\t".join(headers) + "\n" + chunk_str),
-                delimiter="\t",
-                skip_blank_lines=True,
-                na_values=["NULL"],
-                low_memory=False,
-                header=0,
-                names=headers,
-                dtype={string_column: str},
-            )
-
+    reader = pd.read_csv(
+        io.BytesIO(file_bytes),
+        delimiter="\t",
+        skip_blank_lines=True,
+        na_values=["NULL"],
+        dtype={string_column: str},
+        encoding_errors="ignore",
+        chunksize=CHUNK_ROWS,
+    )
+    for chunk_number, df_chunk in enumerate(reader, start=1):
+        log.info("Validating chunk %s of %s", chunk_number, file_name)
         if df_chunk.empty:
-            log.info("Chunk %s is empty. Skipping.", i + 1)
             continue
-
-        for col in headers:
-            if col not in df_chunk.columns:
-                df_chunk[col] = pd.NA
-
-        yield i + 1, df_chunk
+        yield chunk_number, df_chunk
 
 
 def _replace_table_rows(table: str, insert_sql: str, rows: list[tuple], file_name: str) -> bool:

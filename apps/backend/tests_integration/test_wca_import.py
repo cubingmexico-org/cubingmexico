@@ -229,6 +229,26 @@ def test_results_with_unknown_mexican_persons_are_rejected(db):
     assert _count(db, "result_attempts") == 0
 
 
+def test_rows_spanning_read_chunks_are_all_imported(db, monkeypatch):
+    monkeypatch.setattr(wca_import_results, "CHUNK_ROWS", 5)
+    results = [
+        _result(str(i), MX_COMP, "2015MEXI01" if i % 2 else "2016MEXI02", "Mexico", 700 + i) for i in range(1, 13)
+    ]
+    for result in results:
+        result["person_name"] = "Ñandú Pérez"
+    files = dict(EXPORT_FILES)
+    files["WCA_export_results.tsv"] = _tsv(results)
+    files["WCA_export_result_attempts.tsv"] = _tsv(
+        [{"value": 700 + i, "attempt_number": n, "result_id": str(i)} for i in range(1, 13) for n in (1, 2)]
+    )
+
+    with _export_zip(files) as z:
+        assert process_wca_export(z) == {"resultsUpdated": True}
+
+    assert _count(db, "results") == 12
+    assert _count(db, "result_attempts") == 24
+
+
 def test_missing_files_are_skipped(db):
     files = {name: content for name, content in EXPORT_FILES.items() if name != "WCA_export_championships.tsv"}
     with _export_zip(files) as z:
