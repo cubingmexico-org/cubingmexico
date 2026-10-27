@@ -6,8 +6,20 @@ interface ApplicationError extends Error {
 }
 
 export const fetcher = async (url: string) => {
-  const res = await fetch(url);
+  return parseResponse(await fetch(url));
+};
 
+export const postFetcher = async (url: string, body: unknown) => {
+  return parseResponse(
+    await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+  );
+};
+
+async function parseResponse(res: Response) {
   if (!res.ok) {
     const error = new Error(
       "An error occurred while fetching the data.",
@@ -20,7 +32,7 @@ export const fetcher = async (url: string) => {
   }
 
   return res.json();
-};
+}
 
 export function transformString(
   s: string,

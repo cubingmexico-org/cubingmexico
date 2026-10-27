@@ -1,8 +1,9 @@
 import { unauthorized } from "next/navigation";
+import { serverEnv } from "@/lib/env";
 import { getSessionUserId } from "@/lib/team-auth";
 
 function parseSuperadminIds(): Set<string> {
-  const raw = process.env.SUPERADMIN_WCA_IDS ?? "";
+  const raw = serverEnv().SUPERADMIN_WCA_IDS ?? "";
   return new Set(
     raw
       .split(",")

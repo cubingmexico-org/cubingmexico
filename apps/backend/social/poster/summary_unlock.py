@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-import psycopg2.extras
-
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.poster.shared import (
     CURRENT_YEAR_SUMMARY_UNLOCK_DAY,
     POST_TYPE_SUMMARY_UNLOCK,
@@ -19,11 +17,11 @@ from social.summary_unlock_image import generate_summary_unlock_png
 def is_summary_year_published(year: int, now: datetime | None = None) -> bool:
     """Past years always published; current year from Dec 20 UTC onward."""
     if now is None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
     elif now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
+        now = now.replace(tzinfo=UTC)
     else:
-        now = now.astimezone(timezone.utc)
+        now = now.astimezone(UTC)
 
     current_year = now.year
     if year < current_year:
@@ -36,11 +34,11 @@ def is_summary_year_published(year: int, now: datetime | None = None) -> bool:
 def summary_unlock_year_if_due(now: datetime | None = None) -> int | None:
     """Return the current calendar year if its summary unlock window is open."""
     if now is None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
     elif now.tzinfo is None:
-        now = now.replace(tzinfo=timezone.utc)
+        now = now.replace(tzinfo=UTC)
     else:
-        now = now.astimezone(timezone.utc)
+        now = now.astimezone(UTC)
 
     year = now.year
     if is_summary_year_published(year, now):
@@ -103,7 +101,7 @@ def post_summary_unlock(year: int) -> dict:
         return result
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             skip_fb = _already_posted(cur, POST_TYPE_SUMMARY_UNLOCK, subject_key, "facebook")
             skip_ig = _already_posted(cur, POST_TYPE_SUMMARY_UNLOCK, subject_key, "instagram")
 

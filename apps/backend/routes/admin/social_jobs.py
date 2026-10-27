@@ -32,7 +32,7 @@ def post_summary_unlock_route():
         ), (200 if success else 502)
     except Exception as e:
         log.exception("post-summary-unlock failed: %s", e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "post-summary-unlock failed"}), 500
 
 
 @admin_bp.route("/post-weekly-digest", methods=["POST"])
@@ -74,7 +74,7 @@ def post_weekly_digest_route():
         ), (200 if success else 502)
     except Exception as e:
         log.exception("post-weekly-digest failed: %s", e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "post-weekly-digest failed"}), 500
 
 
 @admin_bp.route("/post-streaks-monthly", methods=["POST"])
@@ -112,7 +112,7 @@ def post_streaks_monthly_route():
         ), (200 if success else 502)
     except Exception as e:
         log.exception("post-streaks-monthly failed: %s", e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "post-streaks-monthly failed"}), 500
 
 
 @admin_bp.route("/post-year-recap", methods=["POST"])
@@ -150,4 +150,4 @@ def post_year_recap_route():
         ), (200 if success else 502)
     except Exception as e:
         log.exception("post-year-recap failed: %s", e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "post-year-recap failed"}), 500

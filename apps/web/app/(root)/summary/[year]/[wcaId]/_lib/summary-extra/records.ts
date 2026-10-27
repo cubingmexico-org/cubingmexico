@@ -45,11 +45,11 @@ export async function computeYearRecords(
       wr: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'WR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'WR' THEN 1 ELSE 0 END))::int`,
       nar: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NAR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NAR' THEN 1 ELSE 0 END))::int`,
       nr: sql<number>`SUM((CASE WHEN ${result.regionalSingleRecord} = 'NR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.regionalAverageRecord} = 'NR' THEN 1 ELSE 0 END))::int`,
-      sr: sql<number>`SUM(CASE WHEN ${inOfficialEvents(result.eventId)} THEN (CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END) ELSE 0 END)::int`,
+      sr: sql<number>`SUM((CASE WHEN ${result.stateSingleRecord} = 'SR' THEN 1 ELSE 0 END) + (CASE WHEN ${result.stateAverageRecord} = 'SR' THEN 1 ELSE 0 END))::int`,
     })
     .from(result)
     .innerJoin(competition, eq(result.competitionId, competition.id))
-    .where(yearFilter);
+    .where(and(yearFilter, inOfficialEvents(result.eventId)));
 
   const srRows = await db
     .select({
@@ -116,6 +116,7 @@ export async function computeYearChampionshipPodiums(
         eq(result.personId, wcaId),
         gte(competition.startDate, yearStart),
         lt(competition.startDate, yearEnd),
+        isOfficialEvent,
         inArray(result.roundTypeId, ["f", "c"]),
         gt(result.best, 0),
         inArray(championship.championshipType, [
@@ -301,7 +302,7 @@ export async function computeYearPrStreak(
     })
     .from(result)
     .innerJoin(competition, eq(result.competitionId, competition.id))
-    .where(eq(result.personId, wcaId))
+    .where(and(eq(result.personId, wcaId), inOfficialEvents(result.eventId)))
     .orderBy(asc(competition.startDate), asc(result.competitionId));
 
   if (rows.length === 0) return null;

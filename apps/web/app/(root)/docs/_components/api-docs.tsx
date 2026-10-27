@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Accordion,
   AccordionContent,
@@ -12,390 +10,18 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs";
+import spec from "@workspace/public-api/openapi.json";
+import {
+  baseUrl,
+  categories,
+  type Endpoint,
+  type OpenApiSpec,
+  type Param,
+} from "../_lib/openapi";
 
-const BASE_URL = "https://api.cubingmexico.net";
-
-type Param = {
-  name: string;
-  description: string;
-};
-
-type Endpoint = {
-  method: "GET";
-  path: string;
-  title: string;
-  description: string;
-  pathParams?: Param[];
-  queryParams?: Param[];
-  curl: string;
-  sampleResponse: string;
-};
-
-type Category = "competitions" | "persons" | "teams" | "ranks";
-
-const endpoints: Record<Category, Endpoint[]> = {
-  competitions: [
-    {
-      method: "GET",
-      path: "/competitions",
-      title: "Listar competencias",
-      description:
-        "Lista competencias en México con paginación y filtros opcionales.",
-      queryParams: [
-        {
-          name: "page",
-          description: "Número de página (entero, mínimo 1). Por defecto: 1.",
-        },
-        {
-          name: "size",
-          description:
-            "Resultados por página (entero, 1–100). Por defecto: 100.",
-        },
-        {
-          name: "stateId / state_id",
-          description: "Filtrar por id de estado mexicano.",
-        },
-        {
-          name: "eventId / event_id",
-          description:
-            "Incluir solo competencias que contengan el evento indicado.",
-        },
-        {
-          name: "year",
-          description: "Filtrar por año de startDate.",
-        },
-        {
-          name: "start_date",
-          description: "Fecha mínima de inicio (YYYY-MM-DD).",
-        },
-        {
-          name: "end_date",
-          description: "Fecha máxima de inicio (YYYY-MM-DD).",
-        },
-        {
-          name: "search",
-          description:
-            "Búsqueda de texto (sin distinguir mayúsculas) en nombre y ciudad.",
-        },
-        {
-          name: "cancelled",
-          description: "Filtrar canceladas: true/false, 1/0 o yes/no.",
-        },
-      ],
-      curl: `curl "${BASE_URL}/competitions?page=1&size=10"`,
-      sampleResponse: `{
-  "pagination": { "page": 1, "size": 10 },
-  "total": 120,
-  "items": [
-    {
-      "id": "MexicoCityOpen2024",
-      "name": "Mexico City Open 2024",
-      "city": "Ciudad de México",
-      "stateId": "CMX",
-      "stateName": "Ciudad de México",
-      "startDate": "2024-06-01",
-      "endDate": "2024-06-02",
-      "logo": "https://example.com/mexico-city-open-2024-logo.png"
-    }
-  ]
-}`,
-    },
-    {
-      method: "GET",
-      path: "/competitions/:id",
-      title: "Obtener una competencia",
-      description:
-        "Devuelve una competencia en México con eventos, organizadores, delegados y campeonatos relacionados. Incluye logo cuando está disponible. Si no existe o no está disponible para México, responde con success: false.",
-      pathParams: [
-        {
-          name: "id",
-          description: "Id de la competencia (por ejemplo MexicoCityOpen2024).",
-        },
-      ],
-      curl: `curl "${BASE_URL}/competitions/MexicoCityOpen2024"`,
-      sampleResponse: `{
-  "id": "MexicoCityOpen2024",
-  "name": "Mexico City Open 2024",
-  "city": "Ciudad de México",
-  "stateId": "CMX",
-  "stateName": "Ciudad de México",
-  "logo": "https://example.com/mexico-city-open-2024-logo.png",
-  "events": [{ "eventId": "333", "eventName": "3x3x3 Cube" }],
-  "organizers": [],
-  "delegates": [],
-  "championships": []
-}`,
-    },
-    {
-      method: "GET",
-      path: "/competitor-states/:id",
-      title: "Estados de competidores",
-      description:
-        "Obtiene el estado mexicano asociado a cada competidor de una competencia, a partir del WCIF público de la WCA.",
-      pathParams: [
-        {
-          name: "id",
-          description: "Id de la competencia.",
-        },
-      ],
-      curl: `curl "${BASE_URL}/competitor-states/MexicoCityOpen2024"`,
-      sampleResponse: `[
-  { "wcaId": "2015EXAM01", "stateId": "CMX" },
-  { "wcaId": "2018TEST02", "stateId": "JAL" }
-]`,
-    },
-  ],
-  persons: [
-    {
-      method: "GET",
-      path: "/persons",
-      title: "Listar personas",
-      description:
-        "Lista personas con paginación. Cada elemento incluye competencias, campeonatos y rankings resumidos.",
-      queryParams: [
-        {
-          name: "page",
-          description: "Número de página (entero, mínimo 1). Por defecto: 1.",
-        },
-        {
-          name: "size",
-          description:
-            "Resultados por página (entero, 1–100). Por defecto: 100.",
-        },
-        {
-          name: "stateId / state_id",
-          description: "Filtrar por id de estado.",
-        },
-      ],
-      curl: `curl "${BASE_URL}/persons?page=1&size=10&stateId=CMX"`,
-      sampleResponse: `{
-  "pagination": { "page": 1, "size": 10 },
-  "total": 500,
-  "items": [
-    {
-      "id": "2015EXAM01",
-      "name": "Ejemplo Cubero",
-      "state": "CMX",
-      "numberOfCompetitions": 12,
-      "competitionIds": ["MexicoCityOpen2024"],
-      "numberOfChampionships": 1,
-      "championshipIds": ["national_Mexico_2024"],
-      "rank": {
-        "singles": [],
-        "averages": []
-      }
-    }
-  ]
-}`,
-    },
-    {
-      method: "GET",
-      path: "/persons/:wcaId",
-      title: "Obtener una persona",
-      description:
-        "Devuelve el perfil de una persona por WCA ID, con competencias, campeonatos y rankings.",
-      pathParams: [
-        {
-          name: "wcaId",
-          description: "WCA ID de la persona (por ejemplo 2015EXAM01).",
-        },
-      ],
-      curl: `curl "${BASE_URL}/persons/2015EXAM01"`,
-      sampleResponse: `{
-  "id": "2015EXAM01",
-  "name": "Ejemplo Cubero",
-  "state": "CMX",
-  "numberOfCompetitions": 12,
-  "competitionIds": ["MexicoCityOpen2024"],
-  "numberOfChampionships": 1,
-  "championshipIds": ["national_Mexico_2024"],
-  "rank": {
-    "singles": [
-      {
-        "eventId": "333",
-        "best": 850,
-        "rank": {
-          "world": 1000,
-          "continent": 50,
-          "country": 10,
-          "state": 1
-        }
-      }
-    ],
-    "averages": []
-  }
-}`,
-    },
-  ],
-  teams: [
-    {
-      method: "GET",
-      path: "/teams",
-      title: "Listar teams",
-      description: "Devuelve todos los teams estatales.",
-      curl: `curl "${BASE_URL}/teams"`,
-      sampleResponse: `[
-  {
-    "name": "Team Ciudad de México",
-    "description": null,
-    "image": null,
-    "coverImage": null,
-    "stateId": "CMX",
-    "founded": null,
-    "socialLinks": null,
-    "isActive": true
-  }
-]`,
-    },
-    {
-      method: "GET",
-      path: "/teams/:stateId",
-      title: "Obtener un team",
-      description:
-        "Devuelve el team asociado a un estado. Responde 404 si no existe.",
-      pathParams: [
-        {
-          name: "stateId",
-          description: "Id del estado (por ejemplo CMX, JAL).",
-        },
-      ],
-      curl: `curl "${BASE_URL}/teams/CMX"`,
-      sampleResponse: `{
-  "name": "Team Ciudad de México",
-  "description": null,
-  "image": null,
-  "coverImage": null,
-  "stateId": "CMX",
-  "founded": null,
-  "socialLinks": null,
-  "isActive": true
-}`,
-    },
-    {
-      method: "GET",
-      path: "/states",
-      title: "Listar estados",
-      description: "Devuelve la lista de estados mexicanos disponibles.",
-      curl: `curl "${BASE_URL}/states"`,
-      sampleResponse: `[
-  { "id": "CMX", "name": "Ciudad de México" },
-  { "id": "JAL", "name": "Jalisco" }
-]`,
-    },
-  ],
-  ranks: [
-    {
-      method: "GET",
-      path: "/rank/:type/:eventId",
-      title: "Rankings nacionales",
-      description:
-        "Devuelve los rankings nacionales de México para un evento y tipo (single o average).",
-      pathParams: [
-        {
-          name: "type",
-          description: "Tipo de ranking: single o average.",
-        },
-        {
-          name: "eventId",
-          description: "Id del evento WCA (por ejemplo 333, 333oh).",
-        },
-      ],
-      curl: `curl "${BASE_URL}/rank/single/333"`,
-      sampleResponse: `[
-  {
-    "rankType": "single",
-    "personId": "2015EXAM01",
-    "personName": "Ejemplo Cubero",
-    "eventId": "333",
-    "best": 850,
-    "stateId": "CMX",
-    "rank": {
-      "world": 1000,
-      "continent": 50,
-      "country": 10,
-      "state": 1
-    }
-  }
-]`,
-    },
-    {
-      method: "GET",
-      path: "/rank/:stateId/:type/:eventId",
-      title: "Rankings por estado",
-      description:
-        "Devuelve los rankings de un estado para un evento y tipo (single o average).",
-      pathParams: [
-        {
-          name: "stateId",
-          description: "Id del estado.",
-        },
-        {
-          name: "type",
-          description: "Tipo de ranking: single o average.",
-        },
-        {
-          name: "eventId",
-          description: "Id del evento WCA (por ejemplo 333, 333oh).",
-        },
-      ],
-      curl: `curl "${BASE_URL}/rank/CMX/single/333"`,
-      sampleResponse: `[
-  {
-    "rankType": "single",
-    "personId": "2015EXAM01",
-    "personName": "Ejemplo Cubero",
-    "eventId": "333",
-    "best": 850,
-    "rank": {
-      "world": 1000,
-      "continent": 50,
-      "country": 10,
-      "state": 1
-    }
-  }
-]`,
-    },
-    {
-      method: "GET",
-      path: "/records/:stateId",
-      title: "Récords estatales",
-      description:
-        "Devuelve los récords estatales (rank 1) de single y average para un estado.",
-      pathParams: [
-        {
-          name: "stateId",
-          description: "Id del estado.",
-        },
-      ],
-      curl: `curl "${BASE_URL}/records/CMX"`,
-      sampleResponse: `{
-  "single": [
-    {
-      "personId": "2015EXAM01",
-      "personName": "Ejemplo Cubero",
-      "eventId": "333",
-      "eventName": "3x3x3 Cube",
-      "best": 850,
-      "rank": {
-        "world": 1000,
-        "continent": 50,
-        "country": 10,
-        "state": 1
-      }
-    }
-  ],
-  "average": []
-}`,
-    },
-  ],
-};
-
-const categoryLabels: Record<Category, string> = {
-  competitions: "Competencias",
-  persons: "Personas",
-  teams: "Teams y estados",
-  ranks: "Rankings y récords",
-};
+const publicApi = spec as unknown as OpenApiSpec;
+const BASE_URL = baseUrl(publicApi);
+const CATEGORIES = categories(publicApi);
 
 function CodeBlock({ children }: { children: string }) {
   return (
@@ -431,11 +57,11 @@ function EndpointDoc({ endpoint }: { endpoint: Endpoint }) {
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">{endpoint.description}</p>
 
-      {endpoint.pathParams && endpoint.pathParams.length > 0 ? (
+      {endpoint.pathParams.length > 0 ? (
         <ParamsList title="Parámetros de ruta" params={endpoint.pathParams} />
       ) : null}
 
-      {endpoint.queryParams && endpoint.queryParams.length > 0 ? (
+      {endpoint.queryParams.length > 0 ? (
         <ParamsList
           title="Parámetros de consulta"
           params={endpoint.queryParams}
@@ -447,10 +73,12 @@ function EndpointDoc({ endpoint }: { endpoint: Endpoint }) {
         <CodeBlock>{endpoint.curl}</CodeBlock>
       </div>
 
-      <div>
-        <h4 className="text-sm font-semibold mb-2">Respuesta de ejemplo</h4>
-        <CodeBlock>{endpoint.sampleResponse}</CodeBlock>
-      </div>
+      {endpoint.sampleResponse ? (
+        <div>
+          <h4 className="text-sm font-semibold mb-2">Respuesta de ejemplo</h4>
+          <CodeBlock>{endpoint.sampleResponse}</CodeBlock>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -479,8 +107,28 @@ export function ApiDocs(): React.JSX.Element {
             <li>Las respuestas son JSON con claves en camelCase.</li>
             <li>Los endpoints listados aquí no requieren autenticación.</li>
             <li>
+              Las respuestas se pueden guardar en caché hasta una hora (los
+              datos se actualizan una vez al día); /competitor-states, hasta 5
+              minutos.
+            </li>
+            <li>
+              Hay un límite aproximado de 60 solicitudes por minuto por IP; al
+              superarlo, la API responde 429 con el encabezado Retry-After.
+            </li>
+            <li>
+              Las fechas de competencias y teams usan el formato HTTP (por
+              ejemplo &quot;Sat, 01 Jun 2024 00:00:00 GMT&quot;).
+            </li>
+            <li>
               Los endpoints de escritura o administración (cron) no forman parte
               de la API pública.
+            </li>
+            <li>
+              Especificación OpenAPI 3.1:{" "}
+              <a href="/docs/openapi.json" className="underline">
+                /docs/openapi.json
+              </a>
+              .
             </li>
             <li>
               Los datos están centrados en la comunidad de speedcubing en
@@ -489,19 +137,19 @@ export function ApiDocs(): React.JSX.Element {
           </ul>
         </div>
 
-        <Tabs defaultValue="competitions" className="w-full">
+        <Tabs defaultValue={CATEGORIES[0]?.id} className="w-full">
           <TabsList className="w-full justify-start mb-6 overflow-x-auto flex-nowrap h-auto">
-            {(Object.keys(endpoints) as Category[]).map((category) => (
-              <TabsTrigger key={category} value={category}>
-                {categoryLabels[category]}
+            {CATEGORIES.map((category) => (
+              <TabsTrigger key={category.id} value={category.id}>
+                {category.label}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          {(Object.keys(endpoints) as Category[]).map((category) => (
-            <TabsContent key={category} value={category}>
+          {CATEGORIES.map((category) => (
+            <TabsContent key={category.id} value={category.id}>
               <Accordion type="single" collapsible className="w-full">
-                {endpoints[category].map((endpoint) => (
+                {category.endpoints.map((endpoint) => (
                   <AccordionItem
                     key={`${endpoint.method}-${endpoint.path}`}
                     value={`${endpoint.method}-${endpoint.path}`}

@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import psycopg2.extras
-
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.calendar_mx import is_streaks_monthly_due, parse_month_key, streaks_monthly_key_if_due
-from social.digest_queries import fetch_streaks_monthly_payload
+from social.digest_queries_streaks import fetch_streaks_monthly_payload
 from social.poster.shared import POST_TYPE_STREAKS_MONTHLY, _already_posted, _publish_image_to_platforms
 from social.streaks_monthly_image import generate_streaks_monthly_png
 
 
 def get_streaks_monthly_payload(month_key: str) -> dict | None:
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             return fetch_streaks_monthly_payload(cur, month_key)
 
 
@@ -82,7 +80,7 @@ def post_streaks_monthly(month_key: str) -> dict:
         return result
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             skip_fb = _already_posted(cur, POST_TYPE_STREAKS_MONTHLY, month_key, "facebook")
             skip_ig = _already_posted(cur, POST_TYPE_STREAKS_MONTHLY, month_key, "instagram")
 

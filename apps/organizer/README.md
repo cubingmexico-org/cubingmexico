@@ -22,7 +22,7 @@ Product roadmap: [`docs/organizacion-roadmap.md`](../../docs/organizacion-roadma
 ### Prerequisites
 
 - Node.js >= 24
-- pnpm 10.4.1 or higher
+- pnpm 10.34.9 or higher
 - Neon Postgres `DATABASE_URL` (same database as `apps/web` / `@workspace/db`)
 
 ### Installation
@@ -33,7 +33,7 @@ From the monorepo root:
 pnpm install
 ```
 
-Copy [`apps/organizer/.env.example`](./.env.example) to `apps/organizer/.env.local` and fill in WCA OAuth, Better Auth, `API_URL`, and `DATABASE_URL`.
+Copy [`apps/organizer/.env.example`](./.env.example) to `apps/organizer/.env.local` and fill in WCA OAuth, Better Auth, and `DATABASE_URL`.
 
 ### Database
 

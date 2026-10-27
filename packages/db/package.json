@@ -7,24 +7,33 @@
     ".": "./src/index.ts",
     "./schema": "./src/schema.ts",
     "./relations": "./src/relations.ts",
-    "./states": "./src/states.ts"
+    "./states": "./src/states.ts",
+    "./search-sql": "./src/search-sql.ts",
+    "./env": "./src/env.ts"
   },
   "scripts": {
     "check-types": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
     "migrate": "tsx src/migrate.ts",
     "seed": "tsx src/seed.ts",
+    "test:integration": "vitest run",
     "generate": "drizzle-kit generate",
+    "export-columns": "tsx src/export-columns.ts",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "dotenv": "catalog:",
+    "dotenv": "^16.4.7",
     "drizzle-orm": "catalog:",
-    "postgres": "catalog:"
+    "postgres": "catalog:",
+    "zod": "catalog:"
   },
   "devDependencies": {
+    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
-    "drizzle-kit": "^0.31.5",
-    "tsx": "catalog:",
-    "typescript": "catalog:"
+    "drizzle-kit": "^0.31.10",
+    "eslint": "catalog:",
+    "tsx": "^4.20.6",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

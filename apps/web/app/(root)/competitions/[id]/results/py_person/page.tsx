@@ -6,7 +6,7 @@ import {
   getCompetitionCcResultsByPerson,
 } from "../unofficial/_lib/queries";
 import { ResultsHeader } from "../_components/results-header";
-import { ResultsByPersonView } from "../_components/results-views";
+import { ResultsByPersonView } from "../_components/results-by-person-view";
 
 export default async function Page({
   params,

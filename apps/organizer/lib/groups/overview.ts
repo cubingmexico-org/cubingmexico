@@ -3,7 +3,7 @@ import { detectConflicts } from "@/lib/groups/conflicts";
 import {
   countCompetingInEvent,
   suggestedGroupsForRound,
-} from "@/lib/groups/config";
+} from "@/lib/groups/config-suggestions";
 import {
   findRoundActivities,
   getGroupActivitiesForRound,

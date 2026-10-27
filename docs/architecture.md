@@ -11,6 +11,7 @@ flowchart LR
 
   subgraph gcp [Google Cloud]
     backend["backend (Flask, Cloud Run)"]
+    updateAll["update-all (Cloud Run Job)"]
     scheduler[Cloud Scheduler]
     secrets[Secret Manager]
   end
@@ -23,11 +24,14 @@ flowchart LR
 
   web -->|Drizzle| db
   organizer -->|Drizzle| db
-  backend -->|psycopg2| db
+  backend -->|psycopg| db
 
-  web -->|"admin ops and social, CRON_SECRET"| backend
-  organizer -->|"API_URL: teams, states"| backend
-  scheduler -->|"cron jobs, CRON_SECRET"| backend
+  web -->|"admin ops, social, state updates, CRON_SECRET"| backend
+  scheduler -->|"post jobs, CRON_SECRET"| backend
+  scheduler -->|"nightly, OAuth"| updateAll
+  backend -->|"starts on /update-all"| updateAll
+  updateAll -->|psycopg| db
+  updateAll -->|"/api/revalidate"| web
   backend --> secrets
 
   backend -->|"TSV export, WCIF"| wca
@@ -43,7 +47,8 @@ flowchart LR
 **`@workspace/db`** ([packages/db](../packages/db))
 
 - Single source of truth for the Postgres schema (Drizzle), migrations, and seed data.
-- The Flask backend reads and writes the same tables with raw SQL. Any schema change goes through a Drizzle migration first.
+- The Flask backend reads and writes the same tables with raw SQL. Any schema change goes through a Drizzle migration first. `pnpm --filter @workspace/db export-columns` writes [`fixtures/schema/columns.json`](../fixtures/schema/columns.json) from the schema (CI fails if it's stale), and the backend's `tests/test_schema_columns.py` checks every column its `INSERT`, `UPDATE` and `ON CONFLICT DO UPDATE` statements write against it. The one table the backend creates itself is `social_temp_media` (short-lived Instagram media, in `social/media_store.py`); the test fails if another `CREATE TABLE` appears.
+- Schema changes and deploys: on push, the `migrate` job in CI applies migrations only after lint, tests and build pass, while Vercel (web and organizer, promoted to production only after the CI checks pass) and a Cloud Build trigger (backend, gated on its own lint and unit tests; see its README) deploy independently, usually before the migration runs. Every migration must work with both the old and the new code. Use expand/contract: add the new column or table in one PR, ship the code that uses it in a later PR, and drop the old one after that. The `Migrate database` workflow is only for manual re-runs.
 
 **backend (Flask)** ([apps/backend](../apps/backend))
 
@@ -51,30 +56,32 @@ flowchart LR
 - Cubing Contests CSV export import (`/update-cubing-contests`, also run at the end of `/update-all`): unofficial events held at WCA competitions in Mexico or with Mexican competitors, stored in the `cc_*` tables.
 - Bulk recomputation across all states: state ranks, state records, Kinch, sum of ranks, streaks, nemesis stats, and competition round dates (WCIF).
 - Social posts: image rendering (PIL), captions, and publishing to Facebook and Instagram.
-- Every mutating endpoint is protected by `require_cron_auth` (bearer `CRON_SECRET`). Cloud Scheduler calls them, and so does the web superadmin panel through `BACKEND_URL`.
-- A small read API (`/teams`, `/states`, `/persons`, `/rank/...`) that the organizer app uses.
+- Every mutating endpoint is protected by `require_cron_auth` (bearer `CRON_SECRET`). Cloud Scheduler calls them, and so does the web app through `BACKEND_URL` (superadmin ops and social pages, and single-state updates after roster edits).
+- The nightly `/update-all` pipeline runs as a Cloud Run Job ([`run_job.py`](../apps/backend/run_job.py)) that Cloud Scheduler starts directly; `POST /update-all` starts the same job and returns 202.
+- A small public read API (`/competitions`, `/persons`, `/teams`, `/states`, `/rank/...`, `/records/...`, `/competitor-states/...`). Nothing in this repo calls it anymore; it stays for external consumers. Its contract is [`packages/public-api/openapi.json`](../packages/public-api/openapi.json), which the web app renders on `/docs` (and serves at `/docs/openapi.json`) and which the backend tests check against the routes and their real responses. The public routes are rate limited per client IP (`PUBLIC_RATE_LIMIT`, default 60 per minute).
+- `/update-all` records each run's per-step progress in `job_runs`, so `/update-all/resume` can continue a failed run from the step that failed.
 
 **web (Next.js)** ([apps/web](../apps/web))
 
 - The public site: rankings, records, persons, teams, competitions, summaries, and comparisons. Reads go straight to Postgres via Drizzle with Cache Components.
 - Auth via `@workspace/auth` (Better Auth + WCA OAuth), shared with the organizer app.
 - Team management and superadmin server actions.
-- Incremental, single-state updates when a team edits its roster: [`lib/update-state-ranks.ts`](../apps/web/lib/update-state-ranks.ts), [`lib/update-state-records.ts`](../apps/web/lib/update-state-records.ts), and `/api/update-state-ranks` / `/api/update-state-records`.
+- Single-state updates when a team edits its roster: [`lib/state-updates.ts`](../apps/web/lib/state-updates.ts) clears the moved people's markers and asks the backend to recompute the affected states (also behind `/api/update-state-ranks` / `/api/update-state-records`). Roster edits therefore need `BACKEND_URL` and `CRON_SECRET`.
+- `POST /api/revalidate` (bearer `CRON_SECRET`): the backend calls it after `update-all` to revalidate an allowlist of cache tags.
 - Superadmin "ops" and social pages that proxy to the Flask backend instead of reimplementing jobs.
 
 **organizer (Next.js)** ([apps/organizer](../apps/organizer))
 
 - Printables (certificates, badges, scorecards), the competition desk, and groups. See [organizacion-roadmap.md](./organizacion-roadmap.md).
-- Reads WCIF from the WCA, its own designs from Postgres, and teams and states from the Flask backend.
+- Reads WCIF from the WCA, and its own designs, teams, states and competitors' states from Postgres via Drizzle. It doesn't call the Flask backend.
 
 ## Known duplication
 
-State ranks and state records are computed in two places:
+State ranks and state records are computed only by the backend ([`routes/admin/state.py`](../apps/backend/routes/admin/state.py)): for every state after each WCA import, and for one state when the web calls `POST /update-state-ranks/<state_id>` and `/update-state-records/<state_id>` after a roster change.
 
-- **Python:** [`routes/admin/state.py`](../apps/backend/routes/admin/state.py) and `update_all.py`, for all states after each WCA import.
-- **TypeScript:** `apps/web/lib/update-state-ranks.ts` and `update-state-records.ts`, for one state after roster changes.
+The SR rule itself has a TypeScript copy: [`lib/mark-state-records.ts`](../apps/web/lib/mark-state-records.ts) tags UNR/USR for Cubing Contests results on the fly. Both suites run [`fixtures/parity/state-records.json`](../fixtures/parity/state-records.json) against it and `_mark_state_records`.
 
-Nemesis counts are also computed twice: [`nemesis_stats.py`](../apps/backend/nemesis_stats.py) (all pairs, fed by `update_nemesis_stats`) and `apps/web/app/(root)/persons/_lib/nemesis-queries.ts` (one person at a time).
+Nemesis counts are computed twice: [`nemesis_stats.py`](../apps/backend/nemesis_stats.py) (all pairs, fed by `update_nemesis_stats`) and `apps/web/app/(root)/persons/_lib/nemesis-queries.ts` (one person at a time). The web reads the stored counts, but computes each person's lists (nemeses, almost-nemeses, victims) and the what-if page live, since those can't be precomputed for every pair. Both integration suites check the counts against [`fixtures/parity/nemesis.json`](../fixtures/parity/nemesis.json), in both event scopes. That fixture covers ties, `333mbf`, deprecated and unofficial events, and its `expectedLists` also pins the web's lists and their closest or missing slot.
 
 Both sides must apply the same rules: tie handling, official events, the 9i2 effective date, and the marker hierarchy described in [state-records.md](./state-records.md). An event is official when `events.rank < 800`, matching the WCA's `Event.official`. Use the shared helpers (`apps/web/lib/official-events.ts`, `OFFICIAL_EVENTS_SUBQUERY` in `apps/backend/common.py`) rather than event id lists. When you change ranking or record logic, update both implementations.
 

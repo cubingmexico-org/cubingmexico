@@ -6,44 +6,106 @@ on:
   pull_request:
     branches: [main, development]
 
+permissions:
+  contents: read
+
+# A new push to a pull request cancels its older run. Pushes to main and development each get
+# their own group, so they never cancel or queue behind each other (the migrate job runs on all).
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('ci-pr-{0}', github.ref) || format('ci-run-{0}', github.run_id) }}
+  cancel-in-progress: true
+
+# Vercel Remote Cache; turbo falls back to the local .turbo cache when these are unset.
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  # On pull requests, only run tasks for packages changed since the base branch.
+  TURBO_FILTER: ${{ github.event_name == 'pull_request' && '--affected' || '' }}
+
 jobs:
+  # Decides whether the e2e jobs run: always on pushes; on pull requests only when the app, a
+  # package it depends on, or the CI/root configuration changed.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      web: ${{ steps.affected.outputs.web }}
+      organizer: ${{ steps.affected.outputs.organizer }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: github.event_name == 'pull_request'
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup
+        if: github.event_name == 'pull_request'
+
+      - id: affected
+        env:
+          BASE_REF: origin/${{ github.base_ref }}
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            echo "organizer=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if git diff --name-only "$BASE_REF...HEAD" | grep -qE '^(\.github/|turbo\.json$|package\.json$|pnpm-(lock|workspace)\.yaml$)'; then
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            echo "organizer=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # `...[a...b]` selects the changed packages plus every package that depends on them.
+          affected=$(pnpm exec turbo ls --filter="...[$BASE_REF...HEAD]" --output=json)
+          for app in web organizer; do
+            if echo "$affected" | jq -e --arg app "$app" '.packages.items | any(.name == $app)' > /dev/null; then
+              echo "$app=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "$app=false" >> "$GITHUB_OUTPUT"
+            fi
+          done
+
   quality:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          version: 10.4.1
+          # --affected diffs against the base branch.
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
+
+      # The backend's lint, check-types and test scripts run through uv.
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          node-version-file: .nvmrc
-          cache: pnpm
+          working-directory: apps/backend
 
-      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ github.job }}-
 
       - name: Format
         run: pnpm format:check
 
-      - name: Lint
-        run: pnpm lint
+      - name: Unused files and dependencies
+        run: pnpm knip
 
-      - name: Typecheck
-        run: pnpm check-types
-
-      - name: Test
-        run: pnpm test
+      - name: Lint, typecheck and test
+        run: pnpm turbo run lint check-types test $TURBO_FILTER
 
       # drizzle-kit generate never connects; the URL only satisfies drizzle.config.ts.
+      # columns.json feeds the backend's schema check (apps/backend/tests/test_schema_columns.py).
       - name: Migration drift
         env:
           DATABASE_URL: postgresql://unused@localhost/unused
         run: |
           pnpm --filter @workspace/db generate
-          git diff --exit-code -- packages/db/drizzle
-          test -z "$(git status --porcelain -- packages/db/drizzle)"
+          pnpm --filter @workspace/db export-columns
+          git diff --exit-code -- packages/db/drizzle fixtures/schema
+          test -z "$(git status --porcelain -- packages/db/drizzle fixtures/schema)"
 
   integration:
     runs-on: ubuntu-latest
@@ -65,18 +127,14 @@ jobs:
     env:
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cubing_mexico_test
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: pnpm/action-setup@v4
+      - uses: ./.github/actions/setup
+
+      # The backend suite runs through uv and creates its own *_backend_test database.
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
         with:
-          version: 10.4.1
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
+          working-directory: apps/backend
 
       - name: Integration tests
         run: pnpm test:integration
@@ -84,7 +142,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
+    services: &app-postgres
       postgres:
         image: postgres:16-alpine
         env:
@@ -106,23 +164,20 @@ jobs:
       WCA_CLIENT_SECRET: ci-placeholder
       NEXT_PUBLIC_APP_URL: http://localhost:3000
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          version: 10.4.1
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}
 
-      - uses: actions/setup-node@v4
+      - uses: ./.github/actions/setup
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          node-version-file: .nvmrc
-          cache: pnpm
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-${{ github.job }}-
 
-      - run: pnpm install --frozen-lockfile
-
-      - name: Migrate and seed database
-        run: |
-          pnpm --filter @workspace/db migrate
-          pnpm --filter @workspace/db seed
+      - uses: ./.github/actions/db-setup
 
       # Events normally come from the WCA import; with Cache Components,
       # generateStaticParams for /rankings fails the build if it returns nothing.
@@ -130,32 +185,108 @@ jobs:
         run: psql "$DATABASE_URL" -c "INSERT INTO events (id, format, name, rank) VALUES ('333', 'time', '3x3x3 Cube', 10) ON CONFLICT DO NOTHING;"
 
       - name: Build
-        run: pnpm build
+        run: pnpm turbo run build $TURBO_FILTER
 
-  backend:
+  # Smoke tests against a production build of the web app. The data is seeded before
+  # `next build` because Cache Components prerender pages with what's in the database.
+  e2e:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: apps/backend
+    timeout-minutes: 25
+    services: *app-postgres
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cubing_mexico
+      BETTER_AUTH_SECRET: ci-placeholder-secret-ci-placeholder-secret
+      BETTER_AUTH_URL: http://localhost:3100
+      WCA_CLIENT_ID: ci-placeholder
+      WCA_CLIENT_SECRET: ci-placeholder
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup
+
+      - uses: ./.github/actions/db-setup
+
+      - name: Seed e2e data
+        run: pnpm --filter web e2e:seed
+
+      - name: Build web
+        run: pnpm turbo run build --filter=web
+
+      - name: Install Chromium
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Smoke tests
+        run: pnpm --filter web test:e2e
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
         with:
-          python-version: "3.12"
-          cache: pip
-          cache-dependency-path: |
-            apps/backend/requirements.txt
-            apps/backend/requirements-dev.txt
+          name: playwright-traces
+          path: apps/web/test-results
+          retention-days: 7
 
-      - run: pip install -r requirements.txt -r requirements-dev.txt
+  # Smoke tests against a production build of the organizer. The suite starts a fake WCA
+  # OAuth server and API on port 4010 (apps/organizer/e2e/fake-wca.ts), so sign-in runs
+  # through the real Better Auth flow without the WCA.
+  e2e-organizer:
+    needs: changes
+    if: needs.changes.outputs.organizer == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services: *app-postgres
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cubing_mexico
+      BETTER_AUTH_SECRET: ci-placeholder-secret-ci-placeholder-secret
+      BETTER_AUTH_URL: http://localhost:3101
+      AUTH_TRUSTED_ORIGINS: http://localhost:3101
+      WCA_CLIENT_ID: ci-placeholder
+      WCA_CLIENT_SECRET: ci-placeholder
+      WCA_ORIGIN: http://localhost:4010
+      NEXT_PUBLIC_APP_URL: http://localhost:3101
+      NEXT_PUBLIC_GROUPS_ENABLED: "true"
+      NEXT_PUBLIC_DESK_ENABLED: "true"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Lint
-        run: ruff check .
+      - uses: ./.github/actions/setup
 
-      - name: Format
-        run: ruff format --check .
+      - uses: ./.github/actions/db-setup
 
-      - name: Test
-        run: pytest
+      - name: Build organizer
+        run: pnpm turbo run build --filter=organizer
+
+      - name: Install Chromium
+        run: pnpm --filter organizer exec playwright install --with-deps chromium
+
+      - name: Smoke tests
+        run: pnpm --filter organizer test:e2e
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: playwright-traces-organizer
+          path: apps/organizer/test-results
+          retention-days: 7
+
+  migrate:
+    needs: [quality, integration, build, e2e, e2e-organizer]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: migrate-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+
+      # Use the Neon direct connection string (host without "-pooler").
+      # main → production (DATABASE_URL); development → staging (DATABASE_URL_STAGING)
+      - name: Apply Drizzle migrations
+        run: pnpm --filter @workspace/db migrate
+        env:
+          DATABASE_URL: ${{ github.ref_name == 'main' && secrets.DATABASE_URL || secrets.DATABASE_URL_STAGING }}

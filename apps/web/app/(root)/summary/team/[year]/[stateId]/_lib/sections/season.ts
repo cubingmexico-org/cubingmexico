@@ -3,17 +3,20 @@ import "server-only";
 import { db } from "@workspace/db";
 import { competition, person, result } from "@workspace/db/schema";
 import { asc, countDistinct, desc, eq, sql } from "drizzle-orm";
+import { inOfficialEvents } from "@/lib/official-events";
 import { TOP_N, type TeamSummaryContext } from "./context";
 
 export function querySeasonSection({ memberYearFilter }: TeamSummaryContext) {
+  const isOfficialResult = inOfficialEvents(result.eventId);
+
   return Promise.all([
     // Member season intro
     db
       .select({
         activeMembers: countDistinct(result.personId),
         competitionCount: countDistinct(result.competitionId),
-        eventCount: countDistinct(result.eventId),
-        roundCount: sql<number>`COUNT(DISTINCT (${result.competitionId} || ':' || ${result.eventId} || ':' || ${result.roundTypeId}))::int`,
+        eventCount: sql<number>`(COUNT(DISTINCT ${result.eventId}) FILTER (WHERE ${isOfficialResult}))::int`,
+        roundCount: sql<number>`(COUNT(DISTINCT (${result.competitionId} || ':' || ${result.eventId} || ':' || ${result.roundTypeId})) FILTER (WHERE ${isOfficialResult}))::int`,
         firstCompetitionDate: sql<string>`MIN(${competition.startDate})`,
         lastCompetitionDate: sql<string>`MAX(${competition.endDate})`,
       })

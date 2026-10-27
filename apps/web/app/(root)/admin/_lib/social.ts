@@ -1,5 +1,12 @@
 import "server-only";
 
+import { backendConfig, fetchBackend } from "@/lib/backend";
+
+// Each stays under the `maxDuration` of the matching /api/admin/social route.
+const QUICK_TIMEOUT_MS = 25_000;
+const IMAGE_TIMEOUT_MS = 55_000;
+const PUBLISH_TIMEOUT_MS = 115_000;
+
 export type SocialPostType =
   | "resultados"
   | "record"
@@ -13,16 +20,8 @@ export type SocialPostType =
 
 export type CarouselPostType = "weekly_digest" | "year_recap";
 
-function backendConfig() {
-  const backendUrl = process.env.BACKEND_URL?.replace(/\/$/, "");
-  const cronSecret = process.env.CRON_SECRET;
-  if (!backendUrl || !cronSecret) {
-    return null;
-  }
-  return { backendUrl, cronSecret };
-}
-
-function typePath(postType: SocialPostType): string {
+/** URL segment of a post type, in the backend's /social routes and in /api/admin/social. */
+export function typePath(postType: SocialPostType): string {
   if (postType === "resultados") return "resultados";
   if (postType === "record") return "records";
   if (postType === "summary_unlock") return "summary-unlock";
@@ -66,7 +65,7 @@ export async function fetchSocialImage(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/image.png`,
     {
       method: "GET",
@@ -74,6 +73,7 @@ export async function fetchSocialImage(
         Authorization: `Bearer ${config.cronSecret}`,
       },
     },
+    IMAGE_TIMEOUT_MS,
   );
 
   if (!response.ok) {
@@ -135,7 +135,7 @@ export async function fetchWeeklyDigestSlides(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(week)}/slides`,
     {
       method: "GET",
@@ -143,6 +143,7 @@ export async function fetchWeeklyDigestSlides(
         Authorization: `Bearer ${config.cronSecret}`,
       },
     },
+    IMAGE_TIMEOUT_MS,
   );
 
   const body = await parseJsonBody(response);
@@ -194,7 +195,7 @@ export async function fetchWeeklyDigestSlideImage(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(week)}/slides/${index}/image.png`,
     {
       method: "GET",
@@ -202,6 +203,7 @@ export async function fetchWeeklyDigestSlideImage(
         Authorization: `Bearer ${config.cronSecret}`,
       },
     },
+    IMAGE_TIMEOUT_MS,
   );
 
   if (!response.ok) {
@@ -222,71 +224,6 @@ export async function fetchWeeklyDigestSlideImage(
   };
 }
 
-export async function fetchWeeklyDigestCaption(week: string): Promise<
-  | {
-      ok: true;
-      caption: string;
-      facebookCaption: string;
-      instagramCaption: string;
-    }
-  | { ok: false; status: number; body: unknown }
-> {
-  const config = backendConfig();
-  if (!config) {
-    return {
-      ok: false,
-      status: 500,
-      body: {
-        error:
-          "BACKEND_URL y CRON_SECRET deben estar configurados en el entorno.",
-      },
-    };
-  }
-
-  const response = await fetch(
-    `${config.backendUrl}/social/weekly-digest/${encodeURIComponent(week)}/caption`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${config.cronSecret}`,
-      },
-    },
-  );
-
-  const body = await parseJsonBody(response);
-  if (!response.ok) {
-    return { ok: false, status: response.status, body };
-  }
-
-  const record =
-    body && typeof body === "object" ? (body as Record<string, unknown>) : null;
-  const facebookCaption =
-    typeof record?.facebook_caption === "string"
-      ? record.facebook_caption
-      : typeof record?.caption === "string"
-        ? record.caption
-        : null;
-  const instagramCaption =
-    typeof record?.instagram_caption === "string"
-      ? record.instagram_caption
-      : facebookCaption;
-
-  if (!facebookCaption || !instagramCaption) {
-    return {
-      ok: false,
-      status: 502,
-      body: { error: "Caption missing in backend response" },
-    };
-  }
-
-  return {
-    ok: true,
-    caption: facebookCaption,
-    facebookCaption,
-    instagramCaption,
-  };
-}
-
 export async function publishSocialPost(
   postType: SocialPostType,
   subjectKey: string,
@@ -303,7 +240,7 @@ export async function publishSocialPost(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/publish`,
     {
       method: "POST",
@@ -312,6 +249,7 @@ export async function publishSocialPost(
         "Content-Type": "application/json",
       },
     },
+    PUBLISH_TIMEOUT_MS,
   );
 
   return {
@@ -338,7 +276,7 @@ export async function markSocialPosted(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/mark`,
     {
       method: "POST",
@@ -348,6 +286,7 @@ export async function markSocialPosted(
       },
       body: JSON.stringify(platforms ? { platforms } : {}),
     },
+    QUICK_TIMEOUT_MS,
   );
 
   return {
@@ -381,7 +320,7 @@ export async function fetchSocialCaption(
     };
   }
 
-  const response = await fetch(
+  const response = await fetchBackend(
     `${config.backendUrl}/social/${typePath(postType)}/${encodeURIComponent(subjectKey)}/caption`,
     {
       method: "GET",
@@ -389,6 +328,7 @@ export async function fetchSocialCaption(
         Authorization: `Bearer ${config.cronSecret}`,
       },
     },
+    QUICK_TIMEOUT_MS,
   );
 
   const body = await parseJsonBody(response);
@@ -423,27 +363,4 @@ export async function fetchSocialCaption(
     facebookCaption,
     instagramCaption,
   };
-}
-
-/** @deprecated Prefer fetchSocialImage("resultados", id) */
-export async function fetchResultadosImage(competitionId: string) {
-  return fetchSocialImage("resultados", competitionId);
-}
-
-/** @deprecated Prefer publishSocialPost("resultados", id) */
-export async function publishResultados(competitionId: string) {
-  return publishSocialPost("resultados", competitionId);
-}
-
-/** @deprecated Prefer markSocialPosted("resultados", id, platforms) */
-export async function markResultadosPosted(
-  competitionId: string,
-  platforms?: string[],
-) {
-  return markSocialPosted("resultados", competitionId, platforms);
-}
-
-/** @deprecated Prefer fetchSocialCaption("resultados", id) */
-export async function fetchResultadosCaption(competitionId: string) {
-  return fetchSocialCaption("resultados", competitionId);
 }

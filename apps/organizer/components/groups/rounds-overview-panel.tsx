@@ -45,7 +45,7 @@ import {
   statusLabel,
   type RoundStatus,
 } from "@/lib/groups/overview";
-import { ensureDefaultRoomStations } from "@/lib/groups/config";
+import { ensureDefaultRoomStations } from "@/lib/groups/config-suggestions";
 import { PrintablesPanel } from "@/components/groups/printables-panel";
 
 function statusVariant(

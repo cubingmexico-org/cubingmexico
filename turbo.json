@@ -1,50 +1,45 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalDependencies": ["fixtures/**", "packages/public-api/openapi.json"],
   "globalEnv": [
-    "CRON_SECRET",
-    "WCA_CLIENT_ID",
-    "WCA_CLIENT_SECRET",
     "NODE_ENV",
-    "DATABASE_URL",
-    "UPLOADTHING_TOKEN",
-    "API_URL",
-    "BETTER_AUTH_URL",
-    "BETTER_AUTH_SECRET",
+    "VERCEL_ENV",
     "AUTH_COOKIE_DOMAIN",
     "AUTH_TRUSTED_ORIGINS",
     "BACKEND_URL",
-    "SUPERADMIN_WCA_IDS",
+    "BETTER_AUTH_SECRET",
+    "BETTER_AUTH_URL",
+    "CRON_SECRET",
+    "DATABASE_URL",
     "NEXT_PUBLIC_APP_URL",
-    "VERCEL_ENV"
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "NEXT_PUBLIC_VERCEL_ENV",
+    "SENTRY_AUTH_TOKEN",
+    "SENTRY_ORG",
+    "SENTRY_PROJECT",
+    "SUPERADMIN_WCA_IDS",
+    "UPLOADTHING_TOKEN",
+    "WCA_ORIGIN",
+    "WCA_CLIENT_ID",
+    "WCA_CLIENT_SECRET"
   ],
+  "globalPassThroughEnv": ["CI", "E2E_PORT", "NEXT_RUNTIME", "UV_*"],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "$TURBO_DEFAULT$",
-        ".env*"
-      ],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": [".next/**", "!.next/cache/**"]
     },
     "lint": {},
     "check-types": {},
     "test": {
-      "inputs": [
-        "$TURBO_DEFAULT$"
-      ],
+      "inputs": ["$TURBO_DEFAULT$"],
       "outputs": []
     },
     "test:integration": {
       "cache": false,
-      "env": [
-        "TEST_DATABASE_URL"
-      ]
+      "env": ["TEST_DATABASE_URL"]
     },
     "dev": {
       "cache": false,

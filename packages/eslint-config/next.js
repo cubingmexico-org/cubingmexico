@@ -1,9 +1,8 @@
-import js from "@eslint/js";
 import { globalIgnores } from "eslint/config";
 import eslintConfigPrettier from "eslint-config-prettier";
-import tseslint from "typescript-eslint";
 import pluginReactHooks from "eslint-plugin-react-hooks";
 import pluginReact from "eslint-plugin-react";
+import pluginJsxA11y from "eslint-plugin-jsx-a11y";
 import globals from "globals";
 import pluginNext from "@next/eslint-plugin-next";
 import { config as baseConfig } from "./base.js";
@@ -15,15 +14,14 @@ import { config as baseConfig } from "./base.js";
  * */
 export const nextJsConfig = [
   ...baseConfig,
-  js.configs.recommended,
-  eslintConfigPrettier,
-  ...tseslint.configs.recommended,
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "coverage/**",
+    "coverage-integration/**",
   ]),
   {
     ...pluginReact.configs.flat.recommended,
@@ -34,6 +32,7 @@ export const nextJsConfig = [
       },
     },
   },
+  pluginJsxA11y.flatConfigs.recommended,
   {
     plugins: {
       "@next/next": pluginNext,
@@ -58,4 +57,5 @@ export const nextJsConfig = [
       "react/prop-types": "off",
     },
   },
+  eslintConfigPrettier,
 ];

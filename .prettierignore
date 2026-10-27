@@ -5,8 +5,10 @@ node_modules
 .turbo
 **/dist/**
 **/coverage/**
+**/coverage-integration/**
 **/public/**
 pnpm-lock.yaml
 packages/db/drizzle/**
+fixtures/schema/columns.json
 apps/backend/**
 **/next-env.d.ts

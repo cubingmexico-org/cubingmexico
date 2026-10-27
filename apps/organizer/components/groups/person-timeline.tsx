@@ -62,7 +62,7 @@ export function PersonTimeline({
   return (
     <div className="space-y-4">
       <div className="space-y-2 max-w-sm">
-        <Label>Persona</Label>
+        <Label htmlFor="timeline-person">Persona</Label>
         <Select
           value={activeId != null ? String(activeId) : undefined}
           onValueChange={(value) => {
@@ -70,7 +70,7 @@ export function PersonTimeline({
             onSelectPerson(Number(value));
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger id="timeline-person">
             <SelectValue placeholder="Seleccionar persona" />
           </SelectTrigger>
           <SelectContent>

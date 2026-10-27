@@ -16,7 +16,10 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 
 - **[@workspace/db](./packages/db)** - Shared Drizzle schema, migrations, and seed (source of truth for Postgres)
 - **[@workspace/ui](./packages/ui)** - Shared UI component library built with shadcn/ui and Radix UI
+- **[@workspace/auth](./packages/auth)** - Better Auth setup with WCA OAuth, shared by web and organizer
+- **[@workspace/wca](./packages/wca)** - WCA API client (`wcaFetch`, `wcaUrl`) with timeouts and retries
 - **[@workspace/icons](./packages/icons)** - Centralized icon components
+- **[@workspace/next-config](./packages/next-config)** - Security headers shared by the web and organizer `next.config.mjs`
 - **[@workspace/eslint-config](./packages/eslint-config)** - Shared ESLint configurations
 - **[@workspace/typescript-config](./packages/typescript-config)** - Shared TypeScript configurations
 
@@ -25,7 +28,8 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 ### Prerequisites
 
 - **Node.js** >= 24 (see `.nvmrc`)
-- **pnpm** 10.4.1 (defined in `packageManager`)
+- **pnpm** 10.34.9 (defined in `packageManager`)
+- **[uv](https://docs.astral.sh/uv/)** for the Python backend (`brew install uv`); `pnpm lint`, `pnpm check-types` and `pnpm test` run the backend checks through it
 - **Docker** and Docker Compose (Postgres, migrator, and Flask backend)
 
 ### 1. Install dependencies
@@ -141,37 +145,63 @@ pnpm services:up
 
 ## Scripts
 
-| Command                        | Description                                      |
-| ------------------------------ | ------------------------------------------------ |
-| `pnpm install`                 | Install all workspace dependencies               |
-| `pnpm services:up`             | Start db + migrator + backend via Docker Compose |
-| `pnpm db:up`                   | Start Postgres only                              |
-| `pnpm db:down`                 | Stop Compose services                            |
-| `pnpm dev:web`                 | Next.js web app (Turbo)                          |
-| `pnpm dev:organizer`           | Organización app (Turbo)                         |
-| `pnpm dev`                     | All apps in development mode                     |
-| `pnpm build`                   | Build all apps and packages                      |
-| `pnpm lint`                    | Lint all apps and packages                       |
-| `pnpm check-types`             | Typecheck apps and shared packages               |
-| `pnpm test`                    | Run unit tests (web + organizer)                 |
-| `pnpm test:integration`        | Run web integration tests against Postgres       |
-| `pnpm format`                  | Format with Prettier                             |
-| `pnpm clean`                   | Remove Turbo cache, build outputs, node_modules  |
-| `pnpm --filter web db:migrate` | Apply Drizzle migrations                         |
-| `pnpm --filter web db:seed`    | Seed Mexican states                              |
-| `pnpm --filter web db:studio`  | Open Drizzle Studio                              |
+| Command                        | Description                                            |
+| ------------------------------ | ------------------------------------------------------ |
+| `pnpm install`                 | Install all workspace dependencies                     |
+| `pnpm services:up`             | Start db + migrator + backend via Docker Compose       |
+| `pnpm db:up`                   | Start Postgres only                                    |
+| `pnpm db:down`                 | Stop Compose services                                  |
+| `pnpm dev:web`                 | Next.js web app (Turbo)                                |
+| `pnpm dev:organizer`           | Organización app (Turbo)                               |
+| `pnpm dev`                     | All apps in development mode                           |
+| `pnpm build`                   | Build all apps and packages                            |
+| `pnpm lint`                    | Lint all apps and packages (ruff for backend)          |
+| `pnpm check-types`             | Typecheck apps and packages (pyright for backend)      |
+| `pnpm test`                    | Run unit tests (web, organizer, backend pytest)        |
+| `pnpm test:integration`        | Run web and backend integration tests against Postgres |
+| `pnpm format`                  | Format with Prettier                                   |
+| `pnpm clean`                   | Remove Turbo cache, build outputs, node_modules        |
+| `pnpm --filter web db:migrate` | Apply Drizzle migrations                               |
+| `pnpm --filter web db:seed`    | Seed Mexican states                                    |
+| `pnpm --filter web db:studio`  | Open Drizzle Studio                                    |
 
 ## Testing
 
-- **Unit tests:** `pnpm test` runs the Vitest suites for web and organizer. No database needed.
-- **Integration tests:** `pnpm db:up && pnpm test:integration` runs `apps/web/**/*.integration.test.ts` against real Postgres. The suite creates and migrates a separate `cubing_mexico_test` database and truncates its tables before every test, so your dev data is never touched. Point it elsewhere with `TEST_DATABASE_URL`; the database name must end in `_test`. Insert test data with the helpers in `apps/web/test/factories.ts`.
-- **Backend:** `cd apps/backend && pytest`.
-- **TypeScript/Python parity:** state ranks and state records (SR) are computed in both `apps/web/lib` and `apps/backend/routes/admin/state.py`. Both test suites run the cases in `fixtures/parity/*.json`. If you change either rule, update those fixtures so both implementations stay in sync.
+- **Unit tests:** `pnpm test` runs the Vitest suites for web, organizer and the packages, and the backend's pytest suite. No database needed. In web and organizer, `*.test.ts` files run in Node and `*.test.tsx` component tests run in jsdom with Testing Library (setup in each app's `test/components-setup.ts`).
+- **Integration tests:** `pnpm db:up && pnpm test:integration` runs `apps/web/**/*.integration.test.ts` against real Postgres, plus a `packages/db` check that migrates and seeds an empty `cubing_mexico_db_test` database. The suite creates and migrates a separate `cubing_mexico_test` database and truncates its tables before every test, so your dev data is never touched. Point it elsewhere with `TEST_DATABASE_URL`; the database name must end in `_test`. Insert test data with the helpers in `apps/web/test/factories.ts`. The same command runs `apps/backend/tests_integration` (the WCA import, `/update-all` runs, the Flask state and ranking jobs, and the public read API), which recreates its own `cubing_mexico_backend_test` database from the Drizzle migrations; its helpers are in `apps/backend/tests_integration/factories.py`. It also runs the organizer's design API tests (`apps/organizer/**/*.integration.test.ts`) against their own `cubing_mexico_organizer_test` database, with the session and WCA API faked in `apps/organizer/test/fake-wca.ts`.
+- **Coverage:** in web, organizer and `packages/ui`, `pnpm test` runs with V8 coverage and writes an HTML report to the package's `coverage/` folder. It fails if coverage drops below the floors in its `vitest.config.ts` (set to the coverage when they were added; raise them as tests are added). The web and organizer integration suites measure coverage separately: `pnpm test:integration` writes `coverage-integration/` and enforces the floors in each app's `vitest.integration.config.ts`. Most of the web's query and action code is only covered there.
+- **UI components:** `packages/ui` runs `*.test.ts` in Node and `*.test.tsx` in jsdom with Testing Library, like the apps (setup in `packages/ui/test/components-setup.ts`).
+- **Event scopes:** `apps/web/lib/event-scope-guard.test.ts` and `apps/backend/tests/test_event_scopes.py` fail when a file joins `events` without a scope helper (see `.cursor/rules/official-events.mdc`). Display-only queries go in their `DISPLAY_ONLY` lists with a reason.
+- **Backend:** `pnpm --filter backend test` (or `lint` / `check-types`).
+- **Accessibility:** `eslint-plugin-jsx-a11y` runs as part of `pnpm lint` in web and organizer. The Playwright smoke tests also run axe (`e2e/a11y.ts`) on every page they load and fail on serious or critical WCAG 2 A/AA violations; minor and moderate ones don't fail the suite yet.
+- **Web smoke tests (Playwright):** `apps/web/e2e/*.spec.ts` load key pages of a production build and fail on errors. Pages are prerendered at build time, so seed first, then build: with `DATABASE_URL` pointing at a throwaway database, run `pnpm --filter @workspace/db migrate && pnpm --filter @workspace/db seed && pnpm --filter web e2e:seed`, then `pnpm --filter web build` and `pnpm --filter web test:e2e` (first time: `pnpm --filter web exec playwright install chromium`). CI runs the same steps in the `e2e` job.
+- **Organizer smoke tests (Playwright):** `apps/organizer/e2e/*.spec.ts` sign in through the real Better Auth flow against a fake WCA OAuth server and API (`apps/organizer/e2e/fake-wca.ts`, started by the suite on port 4010), then download a participation certificate PDF and load the badges, groups and desk pages. With `DATABASE_URL` pointing at a migrated and seeded throwaway database, build with `WCA_ORIGIN=http://localhost:4010`, `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` set to `http://localhost:3101`, and `NEXT_PUBLIC_GROUPS_ENABLED=true NEXT_PUBLIC_DESK_ENABLED=true`, then run `pnpm --filter organizer test:e2e`. CI runs the same steps in the `e2e-organizer` job.
+- **Organizer printables:** scorecards, task cards, group sheets and certificates have snapshot tests built from the WCIF in `apps/organizer/test/wcif-fixture.ts`. After an intended layout change, review the diff and update them with `pnpm --filter organizer exec vitest run -u`.
+- **Security scanning:** the `CodeQL` workflow analyzes the TypeScript, Python and workflow code on every pull request and weekly. The `Dependency audit` workflow runs `pnpm audit` (production dependencies, high and critical) and `pip-audit` (backend runtime lock) weekly and on lockfile changes; it is separate from CI so a new advisory doesn't block unrelated pull requests. CodeQL results show up under Security → Code scanning. The workflow is an advanced setup, so CodeQL's default setup must stay off in Settings → Code security, or GitHub rejects the uploads.
+- **TypeScript/Python parity:** state ranks and state records (SR) are computed only in `apps/backend/routes/admin/state.py` (the web calls its single-state routes after roster edits), but the SR rule also lives in `apps/web/lib/mark-state-records.ts`, which tags Cubing Contests UNR/USR. Both test suites run `fixtures/parity/state-records.json`. Nemesis counts are checked the same way: `fixtures/parity/nemesis.json` runs through the backend's `nemesis_stats` job and the web's nemesis queries in their integration suites. If you change either rule, update those fixtures so both implementations stay in sync.
+
+## Deployment
+
+| App             | Deployed by                                                | Gated on                                                            |
+| --------------- | ---------------------------------------------------------- | ------------------------------------------------------------------- |
+| web, organizer  | Vercel Git integration                                     | Vercel Deployment Checks (GitHub `quality`, `integration`, `build`) |
+| backend         | Cloud Build trigger running `apps/backend/cloudbuild.yaml` | ruff and unit tests inside the build                                |
+| database schema | CI `migrate` job                                           | every other CI job                                                  |
+
+- **Vercel Deployment Checks:** in each Vercel project (web and organizer), open Settings → Deployment Checks and require the GitHub checks `quality`, `integration` and `build` from the `CI` workflow. Production deployments are then built as usual but only promoted to the production domain once those checks pass. Preview deployments aren't blocked.
+- **Backend:** see [Deployment in the backend README](./apps/backend/README.md#deployment) for the trigger, the Cloud Run service and the nightly `update-all` job.
+- **Migrations:** apps deploy independently of the `migrate` job, so every migration must work with both the old and the new code (expand/contract; see [docs/architecture.md](./docs/architecture.md)).
+- **Error tracking (Sentry):** web and organizer report server errors, error boundaries and `global-error` to Sentry through `@sentry/nextjs`. Create one Sentry project per app and set these in each Vercel project:
+  - `NEXT_PUBLIC_SENTRY_DSN` turns Sentry on. Without it the SDK stays off, which is how local dev and CI run.
+  - `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` upload source maps during the build, for readable stack traces. The build skips the upload when the token is missing.
+  - The shared options in each app's `lib/sentry.ts` keep traces at 5% and don't send request bodies, cookies, user info or database query data, since those can contain competitors' personal data.
+  - The backend reports to its own Sentry project (`backend`) when `SENTRY_DSN` is set on the Cloud Run service and job; see [the backend README](./apps/backend/README.md#deployment).
+- **Security headers:** web and organizer send HSTS, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` and `nosniff` on every route, from `@workspace/next-config/security-headers`. The Content Security Policy is enforced (`enforce: true` in each app's `next.config.mjs`), so the browser blocks anything it doesn't allow. When `NEXT_PUBLIC_SENTRY_DSN` is set, violations are also reported to that app's Sentry project (they show up as CSP issues). A new third-party origin needs an entry in the app's `connectSrc` or `scriptSrc`; the web allows `'wasm-unsafe-eval'` for the logo background-removal model, and preview deployments allow the Vercel toolbar (`vercel.live`). The Playwright smoke tests fail on any CSP violation in the console. To debug a blocked resource without breaking pages, set `enforce: false` temporarily to send the header as Report-Only.
 
 ## Tech Stack
 
 - **Framework:** Next.js 16 with App Router
-- **Language:** TypeScript 5.7
+- **Language:** TypeScript 5.9
 - **Package Manager:** pnpm
 - **Build System:** Turborepo
 - **UI Components:** shadcn/ui + Radix UI
@@ -190,12 +220,12 @@ Add components to the shared UI package:
 pnpm dlx shadcn@latest add button -c packages/ui
 ```
 
-This places components in `packages/ui/src/components/ui/`.
+This places components in `packages/ui/src/components/`.
 
 ### Using UI Components
 
 ```tsx
-import { Button } from "@workspace/ui/components/ui/button";
+import { Button } from "@workspace/ui/components/button";
 ```
 
 ## Additional Resources
@@ -209,3 +239,10 @@ import { Button } from "@workspace/ui/components/ui/button";
 - [Web hosting constraints (Vercel free tier)](./docs/web-hosting-constraints.md)
 - [Architecture: which app owns what](./docs/architecture.md)
 - [State records (SR) and WCA alignment](./docs/state-records.md)
+- [Contributing](./CONTRIBUTING.md)
+
+## License
+
+The code in this repository is released under the [MIT License](./LICENSE).
+
+The license covers the code only, not the data the apps import and show. Results from the [WCA results export](https://www.worldcubeassociation.org/export/results) remain subject to the WCA's terms, and data from the [Cubing Contests export](https://cubingcontests.com/export) is licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Both sources are credited wherever their data appears.

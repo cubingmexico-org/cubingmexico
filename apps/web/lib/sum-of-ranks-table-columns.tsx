@@ -63,8 +63,10 @@ function makeEventColumn<TRow extends SumOfRanksRow>(
         <div
           className={cn(
             "flex space-x-2 justify-center",
-            rank !== undefined && rank <= 10 && "text-green-500 font-semibold",
-            !event?.completed && "text-red-500 font-semibold",
+            rank !== undefined &&
+              rank <= 10 &&
+              "text-green-700 dark:text-green-400 font-semibold",
+            !event?.completed && "text-red-600 dark:text-red-400 font-semibold",
           )}
         >
           {rank ?? "N/A"}

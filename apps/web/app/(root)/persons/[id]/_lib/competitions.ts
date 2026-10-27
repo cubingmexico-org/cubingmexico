@@ -160,7 +160,9 @@ export async function getPersonCompetitionEventOptions(wcaId: string) {
     .orderBy(event.rank);
 }
 
-export async function getPersonCompetitionLocations(wcaId: string) {
+export async function getPersonCompetitionLocations(
+  wcaId: string,
+): Promise<PersonCompetitionLocation[]> {
   "use cache";
   cacheLife("weeks");
   cacheTag(`person-competition-locations-${wcaId}`);

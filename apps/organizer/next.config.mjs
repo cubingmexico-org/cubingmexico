@@ -1,3 +1,7 @@
+import process from "node:process";
+import { withSentryConfig } from "@sentry/nextjs/config";
+import { securityHeaders } from "@workspace/next-config/security-headers";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@workspace/ui"],
@@ -9,6 +13,15 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/:path*",
+        headers: securityHeaders({
+          dev: process.env.NODE_ENV === "development",
+          enforce: true,
+          sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+          environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
+        }),
+      },
       {
         // File names are not versioned, so cache for a week instead of `immutable`.
         source: "/fonts/:path*",
@@ -23,4 +36,9 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Source maps upload only when SENTRY_AUTH_TOKEN (plus SENTRY_ORG and SENTRY_PROJECT) is set.
+export default withSentryConfig(nextConfig, {
+  silent: !process.env.CI,
+  telemetry: false,
+  widenClientFileUpload: true,
+});

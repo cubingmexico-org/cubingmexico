@@ -44,6 +44,7 @@ async function loadOswaldFont(): Promise<ArrayBuffer | null> {
       try {
         const response = await fetch(
           "https://cdn.jsdelivr.net/fontsource/fonts/oswald@5.2.5/latin-600-normal.ttf",
+          { signal: AbortSignal.timeout(5_000) },
         );
         if (!response.ok) {
           return null;
@@ -53,6 +54,12 @@ async function loadOswaldFont(): Promise<ArrayBuffer | null> {
         return null;
       }
     })();
+    // Retry on the next render instead of keeping a failed download for the instance's lifetime.
+    void fontDataPromise.then((data) => {
+      if (!data) {
+        fontDataPromise = null;
+      }
+    });
   }
   return fontDataPromise;
 }

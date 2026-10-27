@@ -5,28 +5,15 @@ import json
 import zipfile
 from datetime import datetime
 
-import pandas as pd
-import psycopg2
-import psycopg2.extras
 import requests
 from flask import jsonify
 
-from common import get_connection, log, require_cron_auth
+from common import get_connection, job_response, log, named_row, require_cron_auth
 from routes.admin.blueprint import admin_bp
-from routes.admin.wca_import_steps import (
-    import_championships,
-    import_competitions,
-    import_events,
-    import_formats,
-    import_persons,
-    import_ranks_average,
-    import_ranks_single,
-    import_result_attempts,
-    import_results,
-    import_round_types,
-    sync_mexican_competition_staff,
-)
 from utils import extract_first_image_url
+
+# The import steps (wca_import_competitions, _results, _tables) need pandas, which takes about a
+# third of the app's startup and nothing else uses, so they're imported only when an import runs.
 
 # (connect, read) seconds; read is per-chunk inactivity, not total download time.
 WCA_EXPORT_TIMEOUT = (30, 300)
@@ -62,90 +49,92 @@ def store_wca_export_date(raw):
             )
 
 
+WCA_EXPORT_URL = "https://www.worldcubeassociation.org/export/results/v2/tsv"
+
+
+def process_wca_export(z):
+    """Imports every file of an opened WCA export zip, in dependency order."""
+    from routes.admin.wca_import_competitions import import_championships, import_competitions
+    from routes.admin.wca_import_results import import_result_attempts, import_results
+    from routes.admin.wca_import_tables import (
+        import_events,
+        import_formats,
+        import_persons,
+        import_ranks_average,
+        import_ranks_single,
+        import_round_types,
+    )
+
+    # Results must come after persons and competitions, and attempts after results.
+    steps = [
+        ("WCA_export_events.tsv", import_events),
+        ("WCA_export_formats.tsv", import_formats),
+        ("WCA_export_round_types.tsv", import_round_types),
+        ("WCA_export_persons.tsv", import_persons),
+        ("WCA_export_competitions.tsv", import_competitions),
+        ("WCA_export_championships.tsv", import_championships),
+        ("WCA_export_ranks_single.tsv", import_ranks_single),
+        ("WCA_export_ranks_average.tsv", import_ranks_average),
+        ("WCA_export_results.tsv", import_results),
+        ("WCA_export_result_attempts.tsv", import_result_attempts),
+    ]
+
+    results_updated = False
+    available_files = set(z.namelist())
+
+    for file_name, import_step in steps:
+        if file_name not in available_files:
+            log.warning("Expected file %s not found in zip archive. Skipping.", file_name)
+            continue
+        if import_step is import_result_attempts and not results_updated:
+            log.info("Results table update was skipped. Skipping result attempts as well.")
+            continue
+        outcome = import_step(z, file_name)
+        if import_step is import_results and outcome:
+            results_updated = True
+
+    if "metadata.json" in available_files:
+        store_wca_export_date(z.read("metadata.json"))
+
+    return {"resultsUpdated": results_updated}
+
+
+def run_update_full_database():
+    log.info("Fetching data from %s", WCA_EXPORT_URL)
+    response = requests.get(WCA_EXPORT_URL, timeout=WCA_EXPORT_TIMEOUT)
+    response.raise_for_status()
+
+    with zipfile.ZipFile(io.BytesIO(response.content), "r") as z:
+        result = process_wca_export(z)
+
+    try:
+        from social.poster import post_summary_unlock_if_due
+
+        post_summary_unlock_if_due()
+    except Exception as e:
+        log.exception(
+            "Social SUMMARY_UNLOCK posting failed (database import succeeded): %s",
+            e,
+        )
+
+    log.info("Database updated successfully")
+    return {"message": "Database updated successfully", **result}
+
+
 @admin_bp.route("/update-database", methods=["POST"])
 @require_cron_auth
 def update_full_database():
-    url = "https://www.worldcubeassociation.org/export/results/v2/tsv"
-    try:
-        log.info("Fetching data from %s", url)
-        response = requests.get(url, timeout=WCA_EXPORT_TIMEOUT)
-        response.raise_for_status()
-    except requests.RequestException as e:
-        log.exception("Failed to fetch zip file from %s", url)
-        return jsonify({"error": f"Failed to fetch zip file: {e}"}), 500
-
-    zip_bytes = io.BytesIO(response.content)
-    try:
-        with zipfile.ZipFile(zip_bytes, "r") as z:
-            results_updated = False
-            file_processing_order = [
-                "WCA_export_events.tsv",
-                "WCA_export_formats.tsv",
-                "WCA_export_round_types.tsv",
-                "WCA_export_persons.tsv",
-                "WCA_export_competitions.tsv",
-                "WCA_export_championships.tsv",
-                "WCA_export_ranks_single.tsv",
-                "WCA_export_ranks_average.tsv",
-                "WCA_export_results.tsv",
-                "WCA_export_result_attempts.tsv",
-            ]
-
-            available_files = set(z.namelist())
-
-            for file_name in file_processing_order:
-                if file_name not in available_files:
-                    log.warning("Expected file %s not found in zip archive. Skipping.", file_name)
-                    continue
-                if file_name == "WCA_export_competitions.tsv":
-                    import_competitions(z, file_name)
-                elif file_name == "WCA_export_championships.tsv":
-                    import_championships(z, file_name)
-                elif file_name == "WCA_export_events.tsv":
-                    import_events(z, file_name)
-                elif file_name == "WCA_export_round_types.tsv":
-                    import_round_types(z, file_name)
-                elif file_name == "WCA_export_formats.tsv":
-                    import_formats(z, file_name)
-                elif file_name == "WCA_export_persons.tsv":
-                    import_persons(z, file_name)
-                elif file_name == "WCA_export_ranks_average.tsv":
-                    import_ranks_average(z, file_name)
-                elif file_name == "WCA_export_ranks_single.tsv":
-                    import_ranks_single(z, file_name)
-                elif file_name == "WCA_export_results.tsv":
-                    if import_results(z, file_name):
-                        results_updated = True
-                elif file_name == "WCA_export_result_attempts.tsv":
-                    if not results_updated:
-                        log.info("Results table update was skipped. Skipping result attempts as well.")
-                        continue
-                    import_result_attempts(z, file_name)
-
-            if "metadata.json" in available_files:
-                store_wca_export_date(z.read("metadata.json"))
-
-        try:
-            from social.poster import post_summary_unlock_if_due
-
-            post_summary_unlock_if_due()
-        except Exception as e:
-            log.exception(
-                "Social SUMMARY_UNLOCK posting failed (database import succeeded): %s",
-                e,
-            )
-
-        log.info("Database updated successfully")
-        return jsonify({"success": True, "message": "Database updated successfully"})
-    except Exception:
-        log.exception("Error updating database")
-        return jsonify({"success": False, "message": "Error updating database"}), 500
+    return job_response(run_update_full_database, "Error updating database")
 
 
 @admin_bp.route("/update-existing-mexican-competitions", methods=["POST"])
 @require_cron_auth
 def update_existing_mexican_competitions():
-    url = "https://www.worldcubeassociation.org/export/results/v2/tsv"
+    import pandas as pd
+
+    from routes.admin.wca_import_competitions import sync_mexican_competition_staff
+
+    url = WCA_EXPORT_URL
     competitions_file = "WCA_export_competitions.tsv"
 
     def normalize_value(value):
@@ -183,7 +172,7 @@ def update_existing_mexican_competitions():
 
     try:
         with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+            with conn.cursor(row_factory=named_row) as cur:
                 cur.execute("SELECT id FROM competitions WHERE country_id = 'Mexico'")
                 existing_mexican_competitions = {row.id for row in cur.fetchall()}
 

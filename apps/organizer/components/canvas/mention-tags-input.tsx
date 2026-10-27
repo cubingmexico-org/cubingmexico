@@ -70,13 +70,6 @@ export function tagsToContent(tags: string[]): string {
     .join(" ");
 }
 
-export function joinContent(freeText: string, tags: string[]): string {
-  const tagPart = tagsToContent(tags);
-  // Dynamic tags replace static text — never mix them
-  if (tagPart) return tagPart;
-  return freeText;
-}
-
 export function normalizeMentionTag(value: string): string | null {
   const name = value.replace(/^@/, "").trim();
   return (
@@ -123,16 +116,20 @@ export function MentionTagsInput({
     setHighlightedIndex(0);
   }, [query, open, content]);
 
+  // The parent's callback identity may change every render; normalize only when content changes
+  const onContentChangeRef = React.useRef(onContentChange);
+  React.useLayoutEffect(() => {
+    onContentChangeRef.current = onContentChange;
+  });
+
   // If content somehow still has free text mixed with tags, normalize once
   React.useEffect(() => {
     const currentTags = parseContentTags(content);
     if (currentTags.length === 0) return;
     const normalized = tagsToContent(currentTags);
     if (content !== normalized) {
-      onContentChange(normalized);
+      onContentChangeRef.current(normalized);
     }
-    // Only react to content changes; parent callback identity may change each render
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [content]);
 
   const closeMentionMenu = () => {

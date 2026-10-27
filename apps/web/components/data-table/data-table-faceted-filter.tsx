@@ -67,7 +67,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   );
 
   const onReset = React.useCallback(
-    (event?: React.MouseEvent) => {
+    (event?: React.MouseEvent | React.KeyboardEvent) => {
       event?.stopPropagation();
       column?.setFilterValue(undefined);
     },
@@ -84,6 +84,12 @@ export function DataTableFacetedFilter<TData, TValue>({
               aria-label={`Limpiar filtro ${title}`}
               tabIndex={0}
               onClick={onReset}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onReset(event);
+                }
+              }}
               className="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <XCircle />

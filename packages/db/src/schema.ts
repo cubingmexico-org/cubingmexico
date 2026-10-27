@@ -1,4 +1,4 @@
-import { type InferSelectModel } from "drizzle-orm";
+import { type InferSelectModel, sql, type SQLWrapper } from "drizzle-orm";
 import {
   pgTable,
   varchar,
@@ -14,6 +14,11 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { unaccentLower } from "./search-sql";
+
+// Site search matches `unaccentLower(column) LIKE '%q%'`; requires pg_trgm (migration 0019).
+const trigramSearchIndex = (name: string, column: SQLWrapper) =>
+  index(name).using("gin", sql`${unaccentLower(column)} gin_trgm_ops`);
 
 // WCA
 
@@ -47,6 +52,8 @@ export const competition = pgTable(
   (t) => [
     index("competitions_state_idx").on(t.stateId),
     index("competitions_date_idx").on(t.startDate, t.endDate),
+    trigramSearchIndex("competitions_name_search_idx", t.name),
+    trigramSearchIndex("competitions_city_search_idx", t.cityName),
   ],
 );
 
@@ -173,6 +180,8 @@ export const person = pgTable(
   (t) => [
     index("person_name_idx").on(t.name),
     index("person_state_idx").on(t.stateId),
+    trigramSearchIndex("person_name_search_idx", t.name),
+    trigramSearchIndex("person_wca_id_search_idx", t.wcaId),
   ],
 );
 
@@ -554,6 +563,34 @@ export const exportMetadata = pgTable("export_metadata", {
   value: text("value"),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+export type JobRunStep = {
+  name: string;
+  status: "pending" | "running" | "succeeded" | "failed" | "skipped";
+  startedAt: string | null;
+  finishedAt: string | null;
+  result?: unknown;
+  error?: string;
+};
+
+export const jobRun = pgTable(
+  "job_runs",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    job: varchar("job", { length: 40 }).notNull(),
+    status: varchar("status", { length: 12 })
+      .$type<"running" | "succeeded" | "failed">()
+      .notNull(),
+    steps: jsonb("steps").$type<JobRunStep[]>().notNull().default([]),
+    resumedFrom: varchar("resumed_from", { length: 36 }),
+    error: text("error"),
+    startedAt: timestamp("started_at").defaultNow().notNull(),
+    finishedAt: timestamp("finished_at"),
+  },
+  (t) => [index("job_runs_job_started_idx").on(t.job, t.startedAt)],
+);
+
+export type JobRun = InferSelectModel<typeof jobRun>;
 
 export const socialPost = pgTable(
   "social_posts",

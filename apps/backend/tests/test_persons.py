@@ -36,24 +36,16 @@ class FakeCursor:
         return self._rows
 
 
-class FakeConnection:
-    def __init__(self, cursor):
-        self._cursor = cursor
-
-    def cursor(self, **_kwargs):
-        return self._cursor
-
-
 @pytest.fixture
 def fake_db(monkeypatch):
     def _install(responses):
         cursor = FakeCursor(responses)
 
         @contextmanager
-        def fake_get_connection():
-            yield FakeConnection(cursor)
+        def fake_cursor():
+            yield cursor
 
-        monkeypatch.setattr("routes.persons.get_connection", fake_get_connection)
+        monkeypatch.setattr("routes.persons.cursor", fake_cursor)
         return cursor
 
     return _install

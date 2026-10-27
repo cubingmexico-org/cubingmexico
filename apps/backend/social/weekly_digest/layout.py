@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import io
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 from social.image_common import (
     CREAM,
@@ -12,7 +12,9 @@ from social.image_common import (
     RED,
     SIZE,
     WHITE,
+    Font,
     center_text,
+    ink_bbox,
     load_font,
     paste_logo,
     text_height,
@@ -58,7 +60,7 @@ TILE_LABEL = (245, 240, 230, 220)
 RULE = (206, 17, 38, 255)
 
 
-def _fit_ellipsis(text: str, font: ImageFont.ImageFont, max_width: int) -> str:
+def _fit_ellipsis(text: str, font: Font, max_width: int) -> str:
     text = (text or "").strip()
     if not text or text_width(text, font) <= max_width:
         return text
@@ -110,7 +112,7 @@ def _distribute_start_and_gap(
     return y, gap
 
 
-def _wrap_text(text: str, font: ImageFont.ImageFont, max_width: int, *, max_lines: int = 2) -> list[str]:
+def _wrap_text(text: str, font: Font, max_width: int, *, max_lines: int = 2) -> list[str]:
     text = (text or "").strip()
     if not text:
         return []
@@ -138,7 +140,7 @@ def _wrap_text(text: str, font: ImageFont.ImageFont, max_width: int, *, max_line
 def _draw_section_label(
     draw: ImageDraw.ImageDraw,
     label: str,
-    font: ImageFont.ImageFont,
+    font: Font,
     *,
     x: int,
     y: int,
@@ -187,14 +189,14 @@ def _draw_stat_tiles(
 def _draw_level_badge(
     draw: ImageDraw.ImageDraw,
     level: str,
-    font: ImageFont.ImageFont,
+    font: Font,
     *,
     x: int,
     cy: int,
 ) -> int:
     label = (level or "").strip().upper() or "?"
     fill = RED if label in {"WR", "NAR", "NR"} else GREEN
-    left, top, right, bottom = font.getbbox(label)
+    left, top, right, bottom = ink_bbox(font, label)
     pad_x, pad_y = 12, 8
     box_w = (right - left) + pad_x * 2
     box_h = (bottom - top) + pad_y * 2
@@ -274,7 +276,7 @@ def _png_bytes(canvas: Image.Image) -> bytes:
     return buf.getvalue()
 
 
-def _fit_headline(text: str, max_width: int, *, sizes: tuple[int, ...]) -> tuple[ImageFont.ImageFont, list[str]]:
+def _fit_headline(text: str, max_width: int, *, sizes: tuple[int, ...]) -> tuple[Font, list[str]]:
     """Largest size that wraps into two lines without truncation (else 3 lines)."""
     text = (text or "").strip() or "—"
     for size in sizes:

@@ -226,7 +226,7 @@ Organización (shell)
 └── Data
     ├── WCA public WCIF GET (today)
     ├── WCA WCIF check + subset PATCH (Phase 3b — shipped)
-    ├── Cubing México API (states / competitor-states)
+    ├── @workspace/db teams, states and competitors' states (Postgres via Drizzle)
     └── @workspace/db designs table (Phase 1 — shipped)
 ```
 

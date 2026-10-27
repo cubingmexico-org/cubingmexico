@@ -1,4 +1,4 @@
-import type { Activity, Round, WcifExtension, WCIF } from "@/types/wcif";
+import type { Round, WcifExtension, WCIF } from "@/types/wcif";
 import {
   findRoundActivities,
   getGroupActivitiesForRound,
@@ -174,12 +174,4 @@ export function extensionSourceLabel(
   source: SuggestedGroupCounts["source"],
 ): string {
   return source === "groupifier" ? "Groupifier" : "Delegate Dashboard";
-}
-
-/** Exposed for tests / debugging. */
-export function readActivityGroupifierConfig(
-  activity: Activity,
-): number | null {
-  const ext = findExtension(activity.extensions, GROUPIFIER_ACTIVITY_CONFIG);
-  return ext ? readNumericGroups(ext.data) : null;
 }

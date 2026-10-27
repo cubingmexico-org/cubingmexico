@@ -47,6 +47,11 @@ export function tagsAfterStateRanksChange(stateId: string): string[] {
   ];
 }
 
+/** The signed-in person's team shown in the header; changes with `person.stateId`. */
+export function currentUserTeamTag(wcaId: string): string {
+  return `current-user-team-${wcaId}`;
+}
+
 /** Person-scoped cache tags affected when historical SR markers change. */
 export function personStateRecordTags(personIds: string[]): string[] {
   return personIds.flatMap((wcaId) => [

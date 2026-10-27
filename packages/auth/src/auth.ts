@@ -1,46 +1,16 @@
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { customSession, genericOAuth } from "better-auth/plugins";
-
-interface WCAProfile {
-  me: {
-    id: string | number;
-    wca_id: string | null;
-    name: string;
-    avatar: {
-      url: string | null;
-      thumb_url: string | null;
-      pending_url: string;
-    };
-  };
-}
-
-/**
- * Cookie-only OAuth does not persist user.additionalFields.
- * We encode the WCA ID in the synthetic email and restore it here.
- */
-function wcaIdFromUser(user: {
-  email?: string | null;
-  wcaId?: string | null;
-}): string | null {
-  if (user.wcaId) {
-    return user.wcaId;
-  }
-
-  const email = user.email;
-  if (email?.toLowerCase().endsWith("@wca.org")) {
-    return email.slice(0, -"@wca.org".length).toUpperCase();
-  }
-
-  return null;
-}
-
-function trustedOriginsFromEnv(): string[] {
-  return (process.env.AUTH_TRUSTED_ORIGINS ?? "")
-    .split(",")
-    .map((origin: string) => origin.trim())
-    .filter(Boolean);
-}
+import { wcaFetch, wcaUrl } from "@workspace/wca";
+import {
+  tokensFromWcaResponse,
+  trustedOriginsFromEnv,
+  userFromWcaProfile,
+  wcaAccountSubject,
+  wcaIdFromUser,
+  type WCAProfile,
+  type WCATokenResponse,
+} from "./wca-profile";
 
 const cookieDomain = process.env.AUTH_COOKIE_DOMAIN?.trim() || undefined;
 
@@ -87,26 +57,26 @@ const options = {
           clientId: process.env.WCA_CLIENT_ID || "",
           clientSecret: process.env.WCA_CLIENT_SECRET || "",
           redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/callback/wca`,
-          discoveryUrl:
-            "https://www.worldcubeassociation.org/.well-known/openid-configuration",
+          // Explicit endpoints instead of discovery, which better-auth 1.7 fetches at startup.
+          authorizationUrl: wcaUrl("/oauth/authorize"),
+          tokenUrl: wcaUrl("/oauth/token"),
+          userInfoUrl: wcaUrl("/api/v0/me"),
           scopes: ["public", "manage_competitions"],
-          getToken: async ({ code, redirectURI }) => {
-            const response = await fetch(
-              "https://www.worldcubeassociation.org/oauth/token",
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  grant_type: "authorization_code",
-                  client_id: process.env.WCA_CLIENT_ID,
-                  client_secret: process.env.WCA_CLIENT_SECRET,
-                  code: code,
-                  redirect_uri: redirectURI,
-                }),
+          getToken: async ({ code, redirectURI, codeVerifier }) => {
+            const response = await wcaFetch("/oauth/token", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
               },
-            );
+              body: JSON.stringify({
+                grant_type: "authorization_code",
+                client_id: process.env.WCA_CLIENT_ID,
+                client_secret: process.env.WCA_CLIENT_SECRET,
+                code: code,
+                redirect_uri: redirectURI,
+                code_verifier: codeVerifier,
+              }),
+            });
 
             if (!response.ok) {
               const errorText = await response.text();
@@ -114,43 +84,31 @@ const options = {
               throw new Error("Failed to retrieve WCA token");
             }
 
-            const data = await response.json();
-
-            return {
-              accessToken: data.access_token,
-              refreshToken: data.refresh_token,
-              accessTokenExpiresAt: new Date(
-                Date.now() + data.expires_in * 1000,
-              ),
-              scopes: data.scope ? data.scope.split(" ") : [],
-              raw: data,
-            };
+            return tokensFromWcaResponse(
+              (await response.json()) as WCATokenResponse,
+            );
           },
           getUserInfo: async ({ accessToken }) => {
-            const response = await fetch(
-              "https://www.worldcubeassociation.org/api/v0/me",
-              {
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
+            const response = await wcaFetch("/api/v0/me", {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
               },
-            );
+            });
 
-            const data = (await response.json()) as WCAProfile;
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error("WCA Profile Error:", response.status, errorText);
+              throw new Error("Failed to retrieve WCA profile");
+            }
 
-            const wcaId = data.me.wca_id || data.me.id.toString();
-            return {
-              id: wcaId,
-              wcaId,
-              name: data.me.name,
-              email: `${wcaId.toLowerCase()}@wca.org`,
-              image:
-                (data.me.avatar.url
-                  ? data.me.avatar.thumb_url
-                  : data.me.avatar.pending_url) ?? undefined,
-              emailVerified: true,
-            };
+            const profile = (await response.json()) as WCAProfile;
+            return { ...profile, id: profile.me.id, emailVerified: true };
           },
+          // The WCA's /me has no OIDC `sub`; keep the identity the account always had.
+          accountSubject: ({ profile }) =>
+            wcaAccountSubject(profile as unknown as WCAProfile),
+          mapProfileToUser: (profile) =>
+            userFromWcaProfile(profile as unknown as WCAProfile),
         },
       ],
     }),

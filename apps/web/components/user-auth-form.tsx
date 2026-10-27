@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import * as z from "zod";
 import { toast } from "sonner";
 import { useTransition } from "react";
 import { SignInButton } from "./sign-in-button";
 import { authClient } from "@/lib/auth-client";
+import { reportError } from "@/lib/report-error";
 
 export function UserAuthForm(): React.JSX.Element {
   const [pending, startTransition] = useTransition();
@@ -13,17 +13,15 @@ export function UserAuthForm(): React.JSX.Element {
   function signInWithWCA(): void {
     startTransition(async () => {
       try {
-        await authClient.signIn.oauth2({
-          providerId: "wca",
+        await authClient.signIn.social({
+          provider: "wca",
           callbackURL: "/",
         });
       } catch (error) {
-        if (error instanceof z.ZodError) {
-          console.error(error);
-          toast.error("Failed to sign in with WCA", {
-            description: "Please try again",
-          });
-        }
+        reportError(error);
+        toast.error("Failed to sign in with WCA", {
+          description: "Please try again",
+        });
       }
     });
   }

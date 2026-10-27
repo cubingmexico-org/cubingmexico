@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { buttonVariants } from "@workspace/ui/components/button";
 import {
@@ -12,8 +9,8 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { cn } from "@workspace/ui/lib/utils";
-import { Tabs, TabsList, TabsTrigger } from "@workspace/ui/components/tabs";
 import { CompetitionLogo } from "@/components/competition-logo";
+import { ResultsTabs, type ResultsTab } from "./results-tabs";
 
 interface ResultsHeaderProps {
   competitionId: string;
@@ -33,9 +30,7 @@ export function ResultsHeader({
   logo,
   hasUnofficial = false,
 }: ResultsHeaderProps) {
-  const pathname = usePathname() || "";
-
-  const tabs = [
+  const tabs: ResultsTab[] = [
     {
       key: "podiums",
       href: `/competitions/${competitionId}/results/podiums`,
@@ -65,8 +60,6 @@ export function ResultsHeader({
         ]
       : []),
   ];
-
-  const activeTab = tabs.find((tab) => pathname === tab.path)?.key;
 
   return (
     <Card className="border-primary/10 bg-muted/20">
@@ -98,17 +91,7 @@ export function ResultsHeader({
         </div>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-3">
-        <Tabs value={activeTab} className="w-fit">
-          <TabsList className="w-fit">
-            {tabs.map((tab) => {
-              return (
-                <TabsTrigger key={tab.key} value={tab.key} asChild>
-                  <Link href={tab.href}>{tab.label}</Link>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </Tabs>
+        <ResultsTabs tabs={tabs} />
       </CardContent>
     </Card>
   );

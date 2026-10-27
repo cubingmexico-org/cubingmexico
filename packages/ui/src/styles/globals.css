@@ -19,7 +19,8 @@
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
+  /* 0.53 rather than shadcn's 0.556 so muted text on --muted passes WCAG AA (4.5:1). */
+  --muted-foreground: oklch(0.53 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
@@ -44,8 +45,8 @@
   /* Cubing México brand accents (landing / header) */
   --brand: #9a002b;
   --brand-warm: #ad4b32;
-  /* Content entity links (person / competition names) */
-  --link: #1a9e45;
+  /* Content entity links (person / competition names); dark enough for 4.5:1 on white and highlighted rows. */
+  --link: #15803d;
 }
 
 .dark {

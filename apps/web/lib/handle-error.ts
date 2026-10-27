@@ -1,7 +1,13 @@
-import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { unstable_rethrow } from "next/navigation";
 import { z } from "zod";
 
+/**
+ * Turns a caught error into a user-facing message. Next.js control-flow errors
+ * (`redirect()`, `notFound()`, `unauthorized()`, ...) are rethrown so Next handles them.
+ */
 export function getErrorMessage(err: unknown) {
+  unstable_rethrow(err);
+
   const unknownError = "Un error desconocido ha ocurrido. Inténtalo más tarde.";
 
   if (err instanceof z.ZodError) {
@@ -13,10 +19,6 @@ export function getErrorMessage(err: unknown) {
 
   if (err instanceof Error) {
     return err.message;
-  }
-
-  if (isRedirectError(err)) {
-    throw err;
   }
 
   return unknownError;

@@ -1,15 +1,26 @@
 import { connection, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import * as z from "zod";
 import { getSessionUserId } from "@/lib/team-auth";
 import { unauthorizedResponse } from "@/lib/api-auth";
+import { reportError } from "@/lib/report-error";
+import { parseJsonBody } from "@/lib/route-input";
 import { isSuperadmin } from "@/lib/superadmin";
 import {
+  type AdminOpsPath,
   isAllowedOpsPath,
   OPS_JOB_CACHE_TAGS,
 } from "@/app/(root)/admin/_lib/ops-jobs";
 import { triggerBackendJob } from "@/app/(root)/admin/_lib/ops";
 
 export const maxDuration = 300;
+
+const bodySchema = z.object({
+  path: z.custom<AdminOpsPath>(
+    (value) => typeof value === "string" && isAllowedOpsPath(value),
+    { message: "Invalid ops path" },
+  ),
+});
 
 export async function POST(request: Request): Promise<NextResponse> {
   await connection();
@@ -19,27 +30,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     return unauthorizedResponse(userId);
   }
 
-  let path: string | undefined;
-  try {
-    const json = (await request.json()) as { path?: string };
-    path = json.path;
-  } catch {
-    return NextResponse.json(
-      { success: false, message: "Invalid JSON body" },
-      { status: 400 },
-    );
-  }
-
-  if (!path || !isAllowedOpsPath(path)) {
-    return NextResponse.json(
-      { success: false, message: "Invalid ops path" },
-      { status: 400 },
-    );
-  }
+  const input = await parseJsonBody(request, bodySchema);
+  if (input.response) return input.response;
+  const { path } = input.data;
 
   try {
     const result = await triggerBackendJob(path);
-    if (result.ok) {
+    // 202: the backend started a Cloud Run Job, which revalidates these tags when it finishes.
+    if (result.ok && result.status !== 202) {
       for (const tag of OPS_JOB_CACHE_TAGS[path] ?? []) {
         revalidateTag(tag, "max");
       }
@@ -53,7 +51,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       { status: result.ok ? 200 : result.status >= 400 ? result.status : 502 },
     );
   } catch (error) {
-    console.error(error);
+    reportError(error);
     return NextResponse.json(
       {
         success: false,

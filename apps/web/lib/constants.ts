@@ -1,6 +1,3 @@
-export const unknownError =
-  "An unknown error occurred. Please try again later.";
-
 /** Organización app (`apps/organizer`). Local default: http://localhost:3001 */
 export const ORGANIZER_APP_URL =
   process.env.NEXT_PUBLIC_ORGANIZER_URL ??
@@ -37,8 +34,6 @@ export const SPEEDSOLVING_AVERAGES_EVENTS = [
   "pyram",
 ];
 
-export const MEAN_EVENTS = ["666", "777", "333bf", "333fm", "444bf", "555bf"];
-
 export const eventNames: Record<string, string> = {
   "333": "Cubo 3x3x3",
   "222": "Cubo 2x2x2",
@@ -65,6 +60,9 @@ export const eventNames: Record<string, string> = {
 
 /** Deprecated events that get their own column in cross-event tables (333mbo has no Mexican results). */
 export const DEPRECATED_EVENT_IDS = ["333ft", "magic", "mmagic"] as const;
+
+/** Old-style multi-blind has no comparable national record, so Kinch skips it (`KINCH_SKIPPED_EVENTS` in the backend). */
+export const KINCH_SKIPPED_EVENT_IDS = ["333mbo"] as const;
 
 export const SPECIALTY_EVENT_IDS = [
   "333",

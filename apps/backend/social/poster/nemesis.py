@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import psycopg2.extras
+from typing import Any
 
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.nemesis import fetch_nemesis_free
 from social.nemesis_image import generate_nemesis_png
 from social.poster.shared import POST_TYPE_NEMESIS, _already_posted, _publish_image_to_platforms, _record_post
@@ -44,7 +44,7 @@ def get_nemesis_details(subject_key: str) -> dict | None:
     if not wca_id:
         return None
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             person = fetch_nemesis_free(cur).get(wca_id)
     if not person:
         return None
@@ -52,7 +52,7 @@ def get_nemesis_details(subject_key: str) -> dict | None:
 
 
 def _nemesis_captions(details: dict) -> dict[str, str]:
-    kwargs = dict(
+    kwargs: dict[str, Any] = dict(
         person_name=details["person_name"],
         person_id=details["wca_id"],
         event_count=details["event_count"],
@@ -105,7 +105,7 @@ def post_nemesis(subject_key: str, *, details: dict | None = None) -> dict:
         return result
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             skip_fb = _already_posted(cur, POST_TYPE_NEMESIS, subject_key, "facebook")
             skip_ig = _already_posted(cur, POST_TYPE_NEMESIS, subject_key, "instagram")
 
@@ -179,7 +179,7 @@ def seed_nemesis_posted() -> dict:
     marked = 0
     skipped = 0
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             people = fetch_nemesis_free(cur)
             for wca_id in people:
                 for platform in ("facebook", "instagram"):

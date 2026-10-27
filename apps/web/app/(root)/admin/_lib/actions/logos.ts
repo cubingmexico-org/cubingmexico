@@ -6,6 +6,7 @@ import { and, desc, eq, isNull } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 import { getErrorMessage } from "@/lib/handle-error";
+import { deleteUploadedFileIfUnused } from "@/lib/uploadthing-files";
 import { requireSuperadmin } from "@/lib/superadmin";
 import { competitionIdSchema } from "./schemas";
 
@@ -77,6 +78,9 @@ export async function updateCompetitionLogo(input: {
       .where(eq(competition.id, data.competitionId));
 
     invalidateCompetitionLogoTags(data.competitionId, row.stateId);
+    if (row.logo !== data.logo) {
+      await deleteUploadedFileIfUnused(row.logo);
+    }
 
     return { data: { logo: data.logo }, error: null };
   } catch (err) {
@@ -102,6 +106,7 @@ export async function clearCompetitionLogo(input: { competitionId: string }) {
       .where(eq(competition.id, data.competitionId));
 
     invalidateCompetitionLogoTags(data.competitionId, row.stateId);
+    await deleteUploadedFileIfUnused(row.logo);
 
     return { data: null, error: null };
   } catch (err) {
@@ -193,6 +198,9 @@ export async function importCompetitionLogoFromInformation(input: {
       .where(eq(competition.id, data.competitionId));
 
     invalidateCompetitionLogoTags(data.competitionId, row.stateId);
+    if (row.logo !== sourceUrl) {
+      await deleteUploadedFileIfUnused(row.logo);
+    }
 
     return { data: { logo: sourceUrl, skipped: false as const }, error: null };
   } catch (err) {

@@ -1,128 +1,104 @@
-"""State rankings and state records (SR)."""
+"""State rankings and state records (SR).
 
-import psycopg2
-import psycopg2.extras
+Both jobs run for every state after a WCA import, or for one state after a team edits its roster
+(the web app calls the `/<state_id>` routes).
+"""
+
+from itertools import groupby
+
 from flask import jsonify
 
-from common import WITH_DEPRECATED_EVENTS_SUBQUERY, get_connection, log, require_cron_auth
+from common import WITH_DEPRECATED_EVENTS_SUBQUERY, get_connection, job_response, log, named_row, require_cron_auth
 from routes.admin.blueprint import admin_bp
 
+STATE_MEMBERS_SUBQUERY = "(SELECT wca_id FROM persons WHERE state_id = ANY(%s))"
 
-def _assign_sequential_ranks(rows):
-    """Assign 1-based state ranks in the given order (already sorted by country rank)."""
-    return [
-        {"person_id": row.person_id, "event_id": row.event_id, "state_rank": index}
-        for index, row in enumerate(rows, start=1)
-    ]
+
+def _state_filter(state_ids):
+    """SQL condition on `p.state_id` and its params: every state, or only `state_ids`."""
+    if state_ids is None:
+        return "p.state_id IS NOT NULL", ()
+    return "p.state_id = ANY(%s)", (list(state_ids),)
+
+
+def _state_exists(state_id):
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM states WHERE id = %s", (state_id,))
+            return cur.fetchone() is not None
+
+
+def _single_state_response(state_id, run, error_message):
+    if not _state_exists(state_id):
+        return jsonify({"success": False, "message": "Invalid stateId"}), 404
+    return job_response(lambda: run([state_id]), error_message)
+
+
+def _write_state_ranks(cur, table, state_ids):
+    """Number each state's people 1, 2, 3... per event in country-rank order; returns the rows written."""
+    state_condition, params = _state_filter(state_ids)
+    cur.execute(
+        f"""
+        UPDATE {table} r
+        SET state_rank = ranked.state_rank
+        FROM (
+            SELECT t.person_id,
+                   t.event_id,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY p.state_id, t.event_id
+                       ORDER BY t.country_rank, t.person_id
+                   ) AS state_rank
+            FROM {table} t
+            INNER JOIN persons p ON t.person_id = p.wca_id
+            WHERE t.country_rank <> 0
+              AND {state_condition}
+              AND t.event_id IN {WITH_DEPRECATED_EVENTS_SUBQUERY}
+        ) ranked
+        WHERE r.person_id = ranked.person_id
+          AND r.event_id = ranked.event_id
+        """,
+        params,
+    )
+    return cur.rowcount
+
+
+def run_update_state_ranks(state_ids=None):
+    """Recompute state ranks for every state, or only for the current members of `state_ids`."""
+    # One transaction: resetting and writing in separate ones would leave every state rank NULL on failure.
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            if state_ids is None:
+                cur.execute("UPDATE ranks_single SET state_rank = NULL")
+                cur.execute("UPDATE ranks_average SET state_rank = NULL")
+            else:
+                for table in ("ranks_single", "ranks_average"):
+                    cur.execute(
+                        f"UPDATE {table} SET state_rank = NULL WHERE person_id IN {STATE_MEMBERS_SUBQUERY}",
+                        (list(state_ids),),
+                    )
+            log.info("State ranks reset for ranksSingle and ranksAverage")
+
+            single_count = _write_state_ranks(cur, "ranks_single", state_ids)
+            average_count = _write_state_ranks(cur, "ranks_average", state_ids)
+
+    log.info("State rankings updated successfully (singles=%s, averages=%s)", single_count, average_count)
+    return {
+        "message": "State rankings updated successfully",
+        "singleCount": single_count,
+        "averageCount": average_count,
+    }
 
 
 @admin_bp.route("/update-state-ranks", methods=["POST"])
 @require_cron_auth
 def update_state_ranks():
-    try:
-        with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                cur.execute("UPDATE ranks_single SET state_rank = NULL")
-                cur.execute("UPDATE ranks_average SET state_rank = NULL")
-                log.info("State ranks reset for ranksSingle and ranksAverage")
+    return job_response(run_update_state_ranks, "Error updating state rankings")
 
-                cur.execute("SELECT id, name FROM states")
-                states = cur.fetchall()
 
-                cur.execute(f"SELECT id FROM events WHERE id IN {WITH_DEPRECATED_EVENTS_SUBQUERY}")
-                events = cur.fetchall()
-
-                single_updates = []
-                average_updates = []
-                log.info("Starting computation of stateRank values for each state and event")
-
-                for state_row in states:
-                    state_name = state_row.name
-                    log.info("Processing state: %s", state_name)
-
-                    for event_row in events:
-                        cur.execute(
-                            """
-                            SELECT rs.person_id, rs.event_id
-                            FROM ranks_single rs
-                            INNER JOIN persons p ON rs.person_id = p.wca_id
-                            LEFT JOIN states st ON p.state_id = st.id
-                            WHERE rs.country_rank <> 0
-                              AND rs.event_id = %s
-                              AND st.name = %s
-                            ORDER BY rs.country_rank ASC
-                            """,
-                            (event_row.id, state_name),
-                        )
-                        single_updates.extend(_assign_sequential_ranks(cur.fetchall()))
-
-                        cur.execute(
-                            """
-                            SELECT ra.person_id, ra.event_id
-                            FROM ranks_average ra
-                            INNER JOIN persons p ON ra.person_id = p.wca_id
-                            LEFT JOIN states st ON p.state_id = st.id
-                            WHERE ra.country_rank <> 0
-                              AND ra.event_id = %s
-                              AND st.name = %s
-                            ORDER BY ra.country_rank ASC
-                            """,
-                            (event_row.id, state_name),
-                        )
-                        average_updates.extend(_assign_sequential_ranks(cur.fetchall()))
-
-                log.info(
-                    "Computed %s single_updates and %s average_updates",
-                    len(single_updates),
-                    len(average_updates),
-                )
-
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "CREATE TEMP TABLE tmp_updates (person_id text, event_id text, state_rank int) ON COMMIT DROP"
-                )
-
-                psycopg2.extras.execute_values(
-                    cur,
-                    "INSERT INTO tmp_updates (person_id, event_id, state_rank) VALUES %s",
-                    [(u["person_id"], u["event_id"], u["state_rank"]) for u in single_updates],
-                )
-
-                cur.execute(
-                    """
-                    UPDATE ranks_single rs
-                    SET state_rank = tmp_updates.state_rank
-                    FROM tmp_updates
-                    WHERE rs.person_id = tmp_updates.person_id
-                    AND rs.event_id = tmp_updates.event_id
-                """
-                )
-
-                cur.execute(
-                    "CREATE TEMP TABLE tmp_avg_updates (person_id text, event_id text, state_rank int) ON COMMIT DROP"
-                )
-                psycopg2.extras.execute_values(
-                    cur,
-                    "INSERT INTO tmp_avg_updates (person_id, event_id, state_rank) VALUES %s",
-                    [(u["person_id"], u["event_id"], u["state_rank"]) for u in average_updates],
-                )
-
-                cur.execute(
-                    """
-                    UPDATE ranks_average ra
-                    SET state_rank = tmp_avg_updates.state_rank
-                    FROM tmp_avg_updates
-                    WHERE ra.person_id = tmp_avg_updates.person_id
-                    AND ra.event_id = tmp_avg_updates.event_id
-                """
-                )
-
-        log.info("State rankings updated successfully")
-        return jsonify({"success": True, "message": "State rankings updated successfully"})
-    except Exception:
-        log.exception("Error updating state rankings")
-        return jsonify({"success": False, "message": "Error updating state rankings"}), 500
+@admin_bp.route("/update-state-ranks/<state_id>", methods=["POST"])
+@require_cron_auth
+def update_one_state_ranks(state_id):
+    return _single_state_response(state_id, run_update_state_ranks, "Error updating state rankings")
 
 
 REGIONAL_RECORD_MARKERS = frozenset({"NR", "NAR", "WR"})
@@ -187,145 +163,131 @@ def _mark_state_records(rows, out_ids):
     flush_day()
 
 
-@admin_bp.route("/update-state-records", methods=["POST"])
-@require_cron_auth
-def update_state_records():
-    """Recompute historical state record markers (SR) on results using current state membership."""
+def _collect_state_records(conn, value_column, regional_column, state_ids, out_ids):
+    """Stream every state member's results in record order and tag SR per (state, event)."""
+    state_condition, params = _state_filter(state_ids)
+    # A server-side cursor, so the full results history is never held in memory at once.
+    with conn.cursor(name=f"state_records_{value_column}", row_factory=named_row) as cur:
+        cur.itersize = 5000
+        cur.execute(
+            f"""
+            SELECT r.id,
+                   p.state_id,
+                   r.event_id,
+                   r.{value_column} AS value,
+                   COALESCE(crd.end_date, c.start_date) AS record_date,
+                   r.{regional_column} AS regional_record
+            FROM results r
+            INNER JOIN persons p ON r.person_id = p.wca_id
+            INNER JOIN competitions c ON r.competition_id = c.id
+            LEFT JOIN round_types rt ON r.round_type_id = rt.id
+            LEFT JOIN competition_round_dates crd
+              ON crd.competition_id = r.competition_id
+             AND crd.event_id = r.event_id
+             AND crd.round_type_id = r.round_type_id
+            WHERE {state_condition}
+              AND r.event_id IN {WITH_DEPRECATED_EVENTS_SUBQUERY}
+              AND r.{value_column} > 0
+            ORDER BY p.state_id ASC,
+                     r.event_id ASC,
+                     COALESCE(crd.end_date, c.start_date) ASC,
+                     c.id ASC,
+                     COALESCE(rt.rank, 0) ASC,
+                     r.{value_column} ASC,
+                     r.id ASC
+            """,
+            params,
+        )
+        for _, rows in groupby(cur, key=lambda row: (row.state_id, row.event_id)):
+            _mark_state_records(rows, out_ids)
+
+
+def run_update_state_records(state_ids=None):
+    """Recompute historical state record markers (SR) on results using current state membership.
+
+    With `state_ids`, only the current members of those states are cleared and retagged, and their
+    ids are returned as `personIds` so the caller can invalidate their pages.
+    """
     single_sr_ids = []
     average_sr_ids = []
-    try:
-        with get_connection() as conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+    member_ids = []
+    with get_connection() as conn:
+        with conn.cursor(row_factory=named_row) as cur:
+            if state_ids is None:
                 log.info("Clearing all historical state record markers")
+                cur.execute("UPDATE results SET state_single_record = NULL, state_average_record = NULL")
+            else:
+                log.info("Clearing historical state record markers for %s", state_ids)
+                cur.execute(
+                    f"""
+                    UPDATE results
+                    SET state_single_record = NULL, state_average_record = NULL
+                    WHERE person_id IN {STATE_MEMBERS_SUBQUERY}
+                    """,
+                    (list(state_ids),),
+                )
+
+                cur.execute("SELECT wca_id FROM persons WHERE state_id = ANY(%s)", (list(state_ids),))
+                member_ids = [row.wca_id for row in cur.fetchall()]
+
+            log.info("Computing historical state records")
+            _collect_state_records(conn, "best", "regional_single_record", state_ids, single_sr_ids)
+            _collect_state_records(conn, "average", "regional_average_record", state_ids, average_sr_ids)
+
+            chunk_size = 500
+            regional_markers = list(REGIONAL_RECORD_MARKERS)
+            for i in range(0, len(single_sr_ids), chunk_size):
+                chunk = single_sr_ids[i : i + chunk_size]
                 cur.execute(
                     """
                     UPDATE results
-                    SET state_single_record = NULL,
-                        state_average_record = NULL
-                    """
+                    SET state_single_record = 'SR'
+                    WHERE id = ANY(%s)
+                      AND (
+                        regional_single_record IS NULL
+                        OR regional_single_record <> ALL(%s)
+                      )
+                    """,
+                    (chunk, regional_markers),
                 )
 
-                cur.execute("SELECT id, name FROM states")
-                states = cur.fetchall()
+            for i in range(0, len(average_sr_ids), chunk_size):
+                chunk = average_sr_ids[i : i + chunk_size]
+                cur.execute(
+                    """
+                    UPDATE results
+                    SET state_average_record = 'SR'
+                    WHERE id = ANY(%s)
+                      AND (
+                        regional_average_record IS NULL
+                        OR regional_average_record <> ALL(%s)
+                      )
+                    """,
+                    (chunk, regional_markers),
+                )
 
-                cur.execute(f"SELECT id FROM events WHERE id IN {WITH_DEPRECATED_EVENTS_SUBQUERY}")
-                events = cur.fetchall()
+    log.info(
+        "State records updated successfully (singles=%s, averages=%s)",
+        len(single_sr_ids),
+        len(average_sr_ids),
+    )
+    result = {
+        "message": "State records updated successfully",
+        "singleCount": len(single_sr_ids),
+        "averageCount": len(average_sr_ids),
+    }
+    if state_ids is not None:
+        result["personIds"] = member_ids
+    return result
 
-                for state_row in states:
-                    state_id = state_row.id
-                    log.info("Computing historical state records for state: %s", state_row.name)
 
-                    cur.execute(
-                        "SELECT wca_id FROM persons WHERE state_id = %s",
-                        (state_id,),
-                    )
-                    person_rows = cur.fetchall()
-                    person_ids = [p.wca_id for p in person_rows]
-                    if not person_ids:
-                        continue
+@admin_bp.route("/update-state-records", methods=["POST"])
+@require_cron_auth
+def update_state_records():
+    return job_response(run_update_state_records, "Error updating state records")
 
-                    for event_row in events:
-                        event_id = event_row.id
 
-                        cur.execute(
-                            """
-                            SELECT r.id,
-                                   r.best AS value,
-                                   COALESCE(crd.end_date, c.start_date) AS record_date,
-                                   r.regional_single_record AS regional_record
-                            FROM results r
-                            INNER JOIN competitions c ON r.competition_id = c.id
-                            LEFT JOIN round_types rt ON r.round_type_id = rt.id
-                            LEFT JOIN competition_round_dates crd
-                              ON crd.competition_id = r.competition_id
-                             AND crd.event_id = r.event_id
-                             AND crd.round_type_id = r.round_type_id
-                            WHERE r.event_id = %s
-                              AND r.person_id = ANY(%s)
-                              AND r.best > 0
-                            ORDER BY COALESCE(crd.end_date, c.start_date) ASC,
-                                     c.id ASC,
-                                     COALESCE(rt.rank, 0) ASC,
-                                     r.best ASC,
-                                     r.id ASC
-                            """,
-                            (event_id, person_ids),
-                        )
-                        _mark_state_records(cur.fetchall(), single_sr_ids)
-
-                        cur.execute(
-                            """
-                            SELECT r.id,
-                                   r.average AS value,
-                                   COALESCE(crd.end_date, c.start_date) AS record_date,
-                                   r.regional_average_record AS regional_record
-                            FROM results r
-                            INNER JOIN competitions c ON r.competition_id = c.id
-                            LEFT JOIN round_types rt ON r.round_type_id = rt.id
-                            LEFT JOIN competition_round_dates crd
-                              ON crd.competition_id = r.competition_id
-                             AND crd.event_id = r.event_id
-                             AND crd.round_type_id = r.round_type_id
-                            WHERE r.event_id = %s
-                              AND r.person_id = ANY(%s)
-                              AND r.average > 0
-                            ORDER BY COALESCE(crd.end_date, c.start_date) ASC,
-                                     c.id ASC,
-                                     COALESCE(rt.rank, 0) ASC,
-                                     r.average ASC,
-                                     r.id ASC
-                            """,
-                            (event_id, person_ids),
-                        )
-                        _mark_state_records(cur.fetchall(), average_sr_ids)
-
-                chunk_size = 500
-                regional_markers = tuple(REGIONAL_RECORD_MARKERS)
-                for i in range(0, len(single_sr_ids), chunk_size):
-                    chunk = single_sr_ids[i : i + chunk_size]
-                    cur.execute(
-                        """
-                        UPDATE results
-                        SET state_single_record = 'SR'
-                        WHERE id = ANY(%s)
-                          AND (
-                            regional_single_record IS NULL
-                            OR regional_single_record NOT IN %s
-                          )
-                        """,
-                        (chunk, regional_markers),
-                    )
-
-                for i in range(0, len(average_sr_ids), chunk_size):
-                    chunk = average_sr_ids[i : i + chunk_size]
-                    cur.execute(
-                        """
-                        UPDATE results
-                        SET state_average_record = 'SR'
-                        WHERE id = ANY(%s)
-                          AND (
-                            regional_average_record IS NULL
-                            OR regional_average_record NOT IN %s
-                          )
-                        """,
-                        (chunk, regional_markers),
-                    )
-
-                conn.commit()
-
-        log.info(
-            "State records updated successfully (singles=%s, averages=%s)",
-            len(single_sr_ids),
-            len(average_sr_ids),
-        )
-        return jsonify(
-            {
-                "success": True,
-                "message": "State records updated successfully",
-                "singleCount": len(single_sr_ids),
-                "averageCount": len(average_sr_ids),
-            }
-        )
-    except Exception as e:
-        log.exception("Error updating state records: %s", e)
-        return jsonify({"success": False, "message": "Error updating state records"}), 500
+@admin_bp.route("/update-state-records/<state_id>", methods=["POST"])
+@require_cron_auth
+def update_one_state_records(state_id):
+    return _single_state_response(state_id, run_update_state_records, "Error updating state records")

@@ -1,17 +1,17 @@
 """Derived rankings: sum of ranks, Kinch, PR streaks, nemesis stats."""
 
-import psycopg2
-import psycopg2.extras
-from flask import jsonify
-from psycopg2.extras import execute_values
+from psycopg.types.json import Jsonb
 
 from common import (
     EVENT_SCOPES,
     KINCH_SKIPPED_EVENTS,
     SINGLE_EVENTS,
     events_subquery,
+    execute_values,
     get_connection,
+    job_response,
     log,
+    named_row,
     require_cron_auth,
 )
 from nemesis_stats import compute_nemesis_stats
@@ -67,7 +67,7 @@ def _compute_sum_of_ranks(cur, result_type, scope):
     persons = cur.fetchall()
     log.info("Fetched %s record(s) for %s results (%s)", len(persons), result_type, scope)
     rows_to_insert = [
-        (rank, row.wca_id, result_type, scope, row.overall, psycopg2.extras.Json(row.events))
+        (rank, row.wca_id, result_type, scope, row.overall, Jsonb(row.events))
         for rank, row in enumerate(persons, start=1)
     ]
     if rows_to_insert:
@@ -81,24 +81,21 @@ def _compute_sum_of_ranks(cur, result_type, scope):
         )
 
 
+def run_update_sum_of_ranks():
+    log.info("Starting sum of ranks update")
+    for scope in EVENT_SCOPES:
+        for result_type in ("single", "average"):
+            with get_connection() as conn:
+                with conn.cursor(row_factory=named_row) as cur:
+                    _compute_sum_of_ranks(cur, result_type, scope)
+    log.info("Sum of ranks updated successfully")
+    return {"message": "Sum of ranks updated successfully"}
+
+
 @admin_bp.route("/update-sum-of-ranks", methods=["POST"])
 @require_cron_auth
 def update_sum_of_ranks():
-    try:
-        log.info("Starting sum of ranks update")
-
-        for scope in EVENT_SCOPES:
-            for result_type in ("single", "average"):
-                with get_connection() as conn:
-                    with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                        _compute_sum_of_ranks(cur, result_type, scope)
-                    conn.commit()
-
-        log.info("Sum of ranks updated successfully")
-        return jsonify({"success": True, "message": "Sum of ranks updated successfully"})
-    except Exception as e:
-        log.exception("Error updating sum of ranks: %s", e)
-        return jsonify({"success": False, "message": "Error updating sum of ranks"}), 500
+    return job_response(run_update_sum_of_ranks, "Error updating sum of ranks")
 
 
 def _kinch_query(scope):
@@ -196,8 +193,7 @@ def _compute_kinch_ranks(cur, scope):
     persons = cur.fetchall()
     log.info("Fetched %s record(s) for kinch ranks (%s)", len(persons), scope)
     rows_to_insert = [
-        (rank, row.id, scope, row.overall, psycopg2.extras.Json(row.events))
-        for rank, row in enumerate(persons, start=1)
+        (rank, row.id, scope, row.overall, Jsonb(row.events)) for rank, row in enumerate(persons, start=1)
     ]
     if rows_to_insert:
         execute_values(
@@ -210,23 +206,20 @@ def _compute_kinch_ranks(cur, scope):
         )
 
 
+def run_update_kinch_ranks():
+    log.info("Starting kinch ranks update")
+    for scope in EVENT_SCOPES:
+        with get_connection() as conn:
+            with conn.cursor(row_factory=named_row) as cur:
+                _compute_kinch_ranks(cur, scope)
+    log.info("Kinch ranks updated successfully")
+    return {"message": "Kinch ranks updated successfully"}
+
+
 @admin_bp.route("/update-kinch-ranks", methods=["POST"])
 @require_cron_auth
 def update_kinch_ranks():
-    try:
-        log.info("Starting kinch ranks update")
-
-        for scope in EVENT_SCOPES:
-            with get_connection() as conn:
-                with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                    _compute_kinch_ranks(cur, scope)
-                conn.commit()
-
-        log.info("Kinch ranks updated successfully")
-        return jsonify({"success": True, "message": "Kinch ranks updated successfully"})
-    except Exception as e:
-        log.exception("Error updating kinch ranks: %s", e)
-        return jsonify({"success": False, "message": "Error updating kinch ranks"}), 500
+    return job_response(run_update_kinch_ranks, "Error updating kinch ranks")
 
 
 def _is_personal_record(event_id, result, records):
@@ -341,23 +334,20 @@ def _compute_streak_ranks(cur, scope):
     log.info("Inserted %s streak_ranks record(s) (%s)", len(rows_to_insert), scope)
 
 
+def run_update_streak_ranks():
+    log.info("Starting streak ranks update")
+    for scope in EVENT_SCOPES:
+        with get_connection() as conn:
+            with conn.cursor(row_factory=named_row) as cur:
+                _compute_streak_ranks(cur, scope)
+    log.info("Streak ranks updated successfully")
+    return {"message": "Streak ranks updated successfully"}
+
+
 @admin_bp.route("/update-streak-ranks", methods=["POST"])
 @require_cron_auth
 def update_streak_ranks():
-    try:
-        log.info("Starting streak ranks update")
-
-        for scope in EVENT_SCOPES:
-            with get_connection() as conn:
-                with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                    _compute_streak_ranks(cur, scope)
-                conn.commit()
-
-        log.info("Streak ranks updated successfully")
-        return jsonify({"success": True, "message": "Streak ranks updated successfully"})
-    except Exception as e:
-        log.exception("Error updating streak ranks: %s", e)
-        return jsonify({"success": False, "message": "Error updating streak ranks"}), 500
+    return job_response(run_update_streak_ranks, "Error updating streak ranks")
 
 
 def _compute_nemesis_stats(cur, scope):
@@ -393,45 +383,44 @@ def _compute_nemesis_stats(cur, scope):
     log.info("Inserted %s nemesis_stats record(s) (%s)", len(rows_to_insert), scope)
 
 
+def run_update_nemesis_stats():
+    log.info("Starting nemesis stats update")
+
+    try:
+        from social.nemesis import fetch_nemesis_free_ids
+
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                nemesis_free_before = fetch_nemesis_free_ids(cur)
+    except Exception as e:
+        log.warning("Could not snapshot nemesis-free competitors: %s", e)
+        nemesis_free_before = None
+
+    for scope in EVENT_SCOPES:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                _compute_nemesis_stats(cur, scope)
+
+    if nemesis_free_before is not None:
+        try:
+            from social.nemesis import fetch_nemesis_free
+            from social.poster import post_new_nemesis_free
+
+            with get_connection() as conn:
+                with conn.cursor(row_factory=named_row) as cur:
+                    nemesis_free_after = fetch_nemesis_free(cur)
+            post_new_nemesis_free(nemesis_free_before, nemesis_free_after)
+        except Exception as e:
+            log.exception(
+                "Social NÉMESIS posting failed (nemesis stats update succeeded): %s",
+                e,
+            )
+
+    log.info("Nemesis stats updated successfully")
+    return {"message": "Nemesis stats updated successfully"}
+
+
 @admin_bp.route("/update-nemesis-stats", methods=["POST"])
 @require_cron_auth
 def update_nemesis_stats():
-    try:
-        log.info("Starting nemesis stats update")
-
-        try:
-            from social.nemesis import fetch_nemesis_free_ids
-
-            with get_connection() as conn:
-                with conn.cursor() as cur:
-                    nemesis_free_before = fetch_nemesis_free_ids(cur)
-        except Exception as e:
-            log.warning("Could not snapshot nemesis-free competitors: %s", e)
-            nemesis_free_before = None
-
-        for scope in EVENT_SCOPES:
-            with get_connection() as conn:
-                with conn.cursor() as cur:
-                    _compute_nemesis_stats(cur, scope)
-                conn.commit()
-
-        if nemesis_free_before is not None:
-            try:
-                from social.nemesis import fetch_nemesis_free
-                from social.poster import post_new_nemesis_free
-
-                with get_connection() as conn:
-                    with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
-                        nemesis_free_after = fetch_nemesis_free(cur)
-                post_new_nemesis_free(nemesis_free_before, nemesis_free_after)
-            except Exception as e:
-                log.exception(
-                    "Social NÉMESIS posting failed (nemesis stats update succeeded): %s",
-                    e,
-                )
-
-        log.info("Nemesis stats updated successfully")
-        return jsonify({"success": True, "message": "Nemesis stats updated successfully"})
-    except Exception as e:
-        log.exception("Error updating nemesis stats: %s", e)
-        return jsonify({"success": False, "message": "Error updating nemesis stats"}), 500
+    return job_response(run_update_nemesis_stats, "Error updating nemesis stats")

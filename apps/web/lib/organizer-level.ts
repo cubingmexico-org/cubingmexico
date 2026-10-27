@@ -48,15 +48,6 @@ export function getOrganizerLevelFilterOptions(
   }));
 }
 
-export function toOrganizerLevelFilter(
-  level: OrganizerLevel,
-): OrganizerLevelFilter {
-  if (level === "Experta") return "Experto";
-  if (level === "Maestra") return "Maestro";
-  if (level === "Inactiva") return "Inactivo";
-  return level;
-}
-
 export function getOrganizerLevel(
   competitionCount: number,
   gender: string | null,
@@ -79,20 +70,6 @@ export function getOrganizerLevel(
     return isFemale ? "Maestra" : "Maestro";
   }
   return "Leyenda";
-}
-
-export function organizerLevelSql(
-  competitionCountExpr: SQL,
-  genderExpr: SQL,
-): SQL<string> {
-  return sql<string>`CASE
-    WHEN ${competitionCountExpr} = 0 THEN CASE WHEN ${genderExpr} = 'f' THEN 'Inactiva' ELSE 'Inactivo' END
-    WHEN ${competitionCountExpr} = 1 THEN 'Debutante'
-    WHEN ${competitionCountExpr} = 2 THEN 'Super'
-    WHEN ${competitionCountExpr} <= 4 THEN CASE WHEN ${genderExpr} = 'f' THEN 'Experta' ELSE 'Experto' END
-    WHEN ${competitionCountExpr} = 5 THEN CASE WHEN ${genderExpr} = 'f' THEN 'Maestra' ELSE 'Maestro' END
-    ELSE 'Leyenda'
-  END`;
 }
 
 export function organizerLevelFilterSql(

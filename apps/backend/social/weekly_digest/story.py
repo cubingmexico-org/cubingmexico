@@ -41,10 +41,8 @@ def _comp_meta(comp: dict) -> str:
     date_bit = _comp_date_line(comp)
     city = (comp.get("city_name") or "").strip().rstrip(".")
     state = (comp.get("state_name") or "").strip()
-    if city and state and city.lower() == state.lower():
-        place = city
-    else:
-        place = format_place_line(city or None, state or None)
+    same_name = city and state and city.lower() == state.lower()
+    place = city if same_name else format_place_line(city or None, state or None)
     return " · ".join(p for p in (date_bit, place) if p)
 
 

@@ -1,0 +1,11 @@
+name: Database setup
+description: Apply the Drizzle migrations and seed the reference data into the job's DATABASE_URL.
+
+runs:
+  using: composite
+  steps:
+    - name: Migrate and seed database
+      shell: bash
+      run: |
+        pnpm --filter @workspace/db migrate
+        pnpm --filter @workspace/db seed

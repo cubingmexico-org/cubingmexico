@@ -1,5 +1,6 @@
 import { updateTag } from "next/cache";
 import {
+  currentUserTeamTag,
   personStateRecordTags,
   stateMemberTags,
   tagsAfterStateRanksChange,
@@ -11,6 +12,12 @@ export {
   stateMemberTags,
   tagsAfterStateRanksChange,
 } from "@/lib/cache-tag-names";
+
+export function invalidateCurrentUserTeam(personIds: string[]) {
+  for (const wcaId of personIds) {
+    updateTag(currentUserTeamTag(wcaId));
+  }
+}
 
 export function invalidateAfterStateRanksChange(stateId: string) {
   for (const tag of tagsAfterStateRanksChange(stateId)) {

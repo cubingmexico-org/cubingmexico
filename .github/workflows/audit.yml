@@ -1,0 +1,47 @@
+name: Dependency audit
+
+# Known vulnerabilities in the locked dependencies. Kept out of ci.yml so a new
+# upstream advisory doesn't block unrelated pull requests; Renovate does the upgrades.
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  pull_request:
+    paths:
+      - pnpm-lock.yaml
+      - apps/backend/uv.lock
+      - .github/workflows/audit.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup
+
+      - name: pnpm audit (production dependencies, high and critical)
+        run: pnpm audit --prod --audit-level high
+
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          working-directory: apps/backend
+
+      # The export pins every package with hashes, so pip-audit checks exactly what's deployed.
+      - name: pip-audit (backend runtime dependencies)
+        run: |
+          uv export --locked --no-dev --format requirements-txt -o "$RUNNER_TEMP/requirements.txt"
+          uvx pip-audit --disable-pip --requirement "$RUNNER_TEMP/requirements.txt"

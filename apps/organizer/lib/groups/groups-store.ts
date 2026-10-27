@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import type { WCIF } from "@/types/wcif";
 import { deepCloneWcif } from "@/lib/groups/wcif-schedule";
-import { ensureDefaultRoomStations } from "@/lib/groups/config";
+import { ensureDefaultRoomStations } from "@/lib/groups/config-suggestions";
 
 interface GroupsStore {
   originalWcif: WCIF | null;

@@ -83,6 +83,10 @@ export type TeamTopMember = {
   podiums: number;
 };
 
+export type TeamOverviewData = NonNullable<
+  Awaited<ReturnType<typeof getTeamOverviewData>>
+>;
+
 export async function getTeamOverviewData(
   stateId: string,
   scope: EventScope = "official",

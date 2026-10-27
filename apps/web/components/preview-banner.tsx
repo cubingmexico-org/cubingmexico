@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { serverEnv } from "@/lib/env";
 
 export function PreviewBanner() {
-  if (process.env.VERCEL_ENV !== "preview") return null;
+  if (serverEnv().VERCEL_ENV !== "preview") return null;
 
   return (
     <div className="w-full bg-amber-500 px-4 py-1 text-center text-xs text-black">

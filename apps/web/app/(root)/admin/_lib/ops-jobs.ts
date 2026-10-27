@@ -80,7 +80,14 @@ export const ADMIN_OPS_JOBS = [
   {
     path: "/update-all",
     label: "Actualizar todo",
-    description: "Ejecuta el pipeline completo (puede tardar varios minutos).",
+    description:
+      "Ejecuta el pipeline completo. En producción arranca un Cloud Run Job y responde de inmediato; el progreso aparece en “Ejecuciones recientes”.",
+  },
+  {
+    path: "/update-all/resume",
+    label: "Reanudar actualización completa",
+    description:
+      "Retoma la última ejecución fallida de “Actualizar todo” desde el paso que falló, sin repetir los pasos exitosos.",
   },
 ] as const;
 
@@ -89,12 +96,14 @@ export type AdminOpsPath = (typeof ADMIN_OPS_JOBS)[number]["path"];
 /**
  * Cache tags to revalidate after a job succeeds. The backend can't reach the
  * Next cache, so pages prerendered before an import would otherwise keep
- * stale data until their cache life ends.
+ * stale data until their cache life ends. When `/update-all` runs as a Cloud
+ * Run Job (202), the job revalidates its tags through `/api/revalidate`.
  */
 export const OPS_JOB_CACHE_TAGS: Partial<Record<AdminOpsPath, string[]>> = {
   "/update-database": ["data-source-dates"],
   "/update-cubing-contests": ["cc-results", "data-source-dates"],
   "/update-all": ["cc-results", "data-source-dates"],
+  "/update-all/resume": ["cc-results", "data-source-dates"],
 };
 
 const ALLOWED_PATHS = new Set<string>(ADMIN_OPS_JOBS.map((job) => job.path));

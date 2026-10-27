@@ -16,16 +16,36 @@ import {
 } from "@/lib/wca-wcif";
 import type { WCIF } from "@/types/wcif";
 
-export async function revalidateWCIF(competitionId: string): Promise<void> {
+export type ActionResult = { ok: true } | { ok: false; error: string };
+
+function bustWcifCache(competitionId: string): void {
   updateTag(`wcif-${competitionId}`);
 }
 
-export type PushGroupsResult = { ok: true } | { ok: false; error: string };
+export async function revalidateWCIF(
+  competitionId: string,
+): Promise<ActionResult> {
+  const user = await requireSessionUser();
+  if (!user) {
+    return { ok: false, error: "Debes iniciar sesión." };
+  }
+
+  const access = await assertManagesCompetition(user.id, competitionId);
+  if (!access.ok) {
+    return {
+      ok: false,
+      error: "No tienes permiso para administrar esta competencia.",
+    };
+  }
+
+  bustWcifCache(competitionId);
+  return { ok: true };
+}
 
 export async function pushGroupsWcif(
   competitionId: string,
   draftWcif: WCIF,
-): Promise<PushGroupsResult> {
+): Promise<ActionResult> {
   try {
     if (!GROUPS_ENABLED) {
       return { ok: false, error: "Grupos no está disponible." };
@@ -81,7 +101,7 @@ export async function pushGroupsWcif(
       return { ok: false, error: patched.error };
     }
 
-    await revalidateWCIF(competitionId);
+    bustWcifCache(competitionId);
     return { ok: true };
   } catch (e) {
     return {

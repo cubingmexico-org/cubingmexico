@@ -10,7 +10,6 @@ import type {
   getCompetitionsStatusCounts,
 } from "../_lib/queries";
 import { getColumns } from "./competitions-table-columns";
-// import { getEventsIcon } from "../_lib/utils";
 
 interface CompetitionsTableProps {
   promises: Promise<

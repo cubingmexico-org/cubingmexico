@@ -1,12 +1,4 @@
-import type { Activity, EventId, WCIF } from "@/types/wcif";
-
-/** Round activity code, e.g. `333-r1`. */
-export function roundActivityCode(
-  eventId: EventId | string,
-  roundNumber: number,
-): string {
-  return `${eventId}-r${roundNumber}`;
-}
+import type { Activity, WCIF } from "@/types/wcif";
 
 /** Parse `333-r1` → { eventId, roundNumber }. */
 export function parseRoundActivityCode(
@@ -34,13 +26,6 @@ export function parseGroupNumber(activityCode: string): number | null {
 /** Round id from events[].rounds is typically `333-r1`. */
 export function roundIdToActivityCode(roundId: string): string {
   return roundId;
-}
-
-export function eventIdFromRoundId(roundId: string): EventId | string {
-  const parsed = parseRoundActivityCode(roundId);
-  if (parsed) return parsed.eventId;
-  const [eventId] = roundId.split("-");
-  return eventId ?? roundId;
 }
 
 export function deepCloneWcif(wcif: WCIF): WCIF {

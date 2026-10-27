@@ -105,7 +105,11 @@ export function ExportBadgesButtonGroup({
       </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="pl-2!">
+          <Button
+            variant="outline"
+            className="pl-2!"
+            aria-label="Más opciones de exportación"
+          >
             <ChevronDownIcon />
           </Button>
         </DropdownMenuTrigger>

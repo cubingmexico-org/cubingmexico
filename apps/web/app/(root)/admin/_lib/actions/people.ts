@@ -6,20 +6,12 @@ import { and, eq, inArray, isNull } from "drizzle-orm";
 import { updateTag } from "next/cache";
 import { z } from "zod";
 import { getErrorMessage } from "@/lib/handle-error";
-import {
-  invalidateAfterStateRanksChange,
-  invalidateAfterStateRecordsChange,
-  invalidateStateMemberTags,
-} from "@/lib/cache-tags";
+import { invalidateStateMemberTags } from "@/lib/cache-tags";
 import { requireSuperadmin } from "@/lib/superadmin";
 import {
-  clearPersonStateRanks,
-  updateStateRanks,
-} from "@/lib/update-state-ranks";
-import {
-  clearPersonStateRecords,
-  updateStateRecords,
-} from "@/lib/update-state-records";
+  refreshStatesAfterRosterChange,
+  ROSTER_REFRESH_PENDING,
+} from "@/lib/roster-refresh";
 
 const assignPersonStateSchema = z.object({
   personId: z.string().min(1),
@@ -55,54 +47,6 @@ const applyPersonStateGuessesSchema = z.object({
     .max(100),
 });
 
-async function recomputeStateSideEffects(
-  personId: string,
-  previousStateId: string | null,
-  nextStateId: string | null,
-) {
-  await clearPersonStateRanks([personId]);
-  await clearPersonStateRecords([personId]);
-
-  if (previousStateId && previousStateId !== nextStateId) {
-    await updateStateRanks(previousStateId);
-    invalidateAfterStateRanksChange(previousStateId);
-    const previousRecords = await updateStateRecords(previousStateId);
-    invalidateAfterStateRecordsChange(previousRecords.personIds);
-    invalidateStateMemberTags(previousStateId);
-  }
-
-  if (nextStateId) {
-    await updateStateRanks(nextStateId);
-    invalidateAfterStateRanksChange(nextStateId);
-    const newRecords = await updateStateRecords(nextStateId);
-    invalidateAfterStateRecordsChange([personId, ...newRecords.personIds]);
-    invalidateStateMemberTags(nextStateId);
-  }
-
-  updateTag(`profile-person-${personId}`);
-  updateTag(`person-page-${personId}`);
-  updateTag(`person-data-wca-${personId}`);
-  updateTag("persons-without-state");
-}
-
-function invalidateAfterBulkStateAssign(
-  personIds: string[],
-  stateIds: string[],
-) {
-  for (const stateId of stateIds) {
-    invalidateAfterStateRanksChange(stateId);
-    invalidateStateMemberTags(stateId);
-  }
-
-  for (const personId of personIds) {
-    updateTag(`profile-person-${personId}`);
-    updateTag(`person-page-${personId}`);
-    updateTag(`person-data-wca-${personId}`);
-  }
-
-  updateTag("persons-without-state");
-}
-
 export async function assignPersonState(input: {
   personId: string;
   stateId: string | null;
@@ -119,38 +63,43 @@ export async function assignPersonState(input: {
       .limit(1);
 
     if (existing.length === 0) {
-      return { data: null, error: "Persona no encontrada" };
+      return { data: null, error: "Persona no encontrada", warning: null };
     }
 
     const previousStateId = existing[0]?.stateId ?? null;
 
-    await db
-      .update(person)
-      .set({ stateId: data.stateId })
-      .where(eq(person.wcaId, data.personId));
+    await db.transaction(async (tx) => {
+      await tx
+        .update(person)
+        .set({ stateId: data.stateId })
+        .where(eq(person.wcaId, data.personId));
 
-    if (data.stateId && data.role !== undefined) {
-      await db
-        .insert(teamMember)
-        .values({
-          personId: data.personId,
-          role: data.role,
-        })
-        .onConflictDoUpdate({
-          target: [teamMember.personId],
-          set: { role: data.role },
-        });
-    }
+      if (data.stateId && data.role !== undefined) {
+        await tx
+          .insert(teamMember)
+          .values({
+            personId: data.personId,
+            role: data.role,
+          })
+          .onConflictDoUpdate({
+            target: [teamMember.personId],
+            set: { role: data.role },
+          });
+      }
+    });
 
-    await recomputeStateSideEffects(
-      data.personId,
-      previousStateId,
-      data.stateId,
-    );
+    const { ok } = await refreshStatesAfterRosterChange({
+      stateIds: [previousStateId, data.stateId],
+      personIds: [data.personId],
+    });
 
-    return { data: null, error: null };
+    return {
+      data: null,
+      error: null,
+      warning: ok ? null : ROSTER_REFRESH_PENDING,
+    };
   } catch (err) {
-    return { data: null, error: getErrorMessage(err) };
+    return { data: null, error: getErrorMessage(err), warning: null };
   }
 }
 
@@ -177,7 +126,11 @@ export async function applyPersonStateGuesses(input: {
 
     for (const stateId of requestedStateIds) {
       if (!validStateIds.has(stateId)) {
-        return { data: null, error: `Estado inválido: ${stateId}` };
+        return {
+          data: null,
+          error: `Estado inválido: ${stateId}`,
+          warning: null,
+        };
       }
     }
 
@@ -195,6 +148,7 @@ export async function applyPersonStateGuesses(input: {
           stateIds: [] as string[],
         },
         error: null,
+        warning: null,
       };
     }
 
@@ -217,20 +171,10 @@ export async function applyPersonStateGuesses(input: {
     const appliedPersonIds = [...appliedByState.values()].flat();
     const affectedStateIds = [...appliedByState.keys()];
 
-    await clearPersonStateRanks(appliedPersonIds);
-    await clearPersonStateRecords(appliedPersonIds);
-
-    const recordPersonIds = new Set<string>(appliedPersonIds);
-    for (const stateId of affectedStateIds) {
-      await updateStateRanks(stateId);
-      const records = await updateStateRecords(stateId);
-      for (const id of records.personIds) {
-        recordPersonIds.add(id);
-      }
-    }
-
-    invalidateAfterBulkStateAssign(appliedPersonIds, affectedStateIds);
-    invalidateAfterStateRecordsChange([...recordPersonIds]);
+    const { ok } = await refreshStatesAfterRosterChange({
+      stateIds: affectedStateIds,
+      personIds: appliedPersonIds,
+    });
 
     return {
       data: {
@@ -239,9 +183,10 @@ export async function applyPersonStateGuesses(input: {
         stateIds: affectedStateIds,
       },
       error: null,
+      warning: ok ? null : ROSTER_REFRESH_PENDING,
     };
   } catch (err) {
-    return { data: null, error: getErrorMessage(err) };
+    return { data: null, error: getErrorMessage(err), warning: null };
   }
 }
 

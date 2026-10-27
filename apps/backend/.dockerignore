@@ -1,0 +1,13 @@
+.venv
+**/__pycache__
+.pytest_cache
+.coverage
+.ruff_cache
+.env
+credentials
+tests
+tests_integration
+node_modules
+package.json
+cloudbuild.yaml
+monitoring

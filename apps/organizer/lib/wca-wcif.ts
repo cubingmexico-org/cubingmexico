@@ -2,11 +2,15 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import type { WCIF } from "@/types/wcif";
 import { wcifCheckUrl, wcifLatestUrl, wcifPatchUrl } from "@/lib/wcif-api";
+import { wcaFetch } from "@workspace/wca";
+
+// The WCA validates and saves the whole WCIF, which takes a while for large competitions.
+const WCIF_WRITE_TIMEOUT_MS = 30_000;
 
 export async function requireWcaAccessToken(): Promise<string> {
   const headersList = await headers();
   const tokenData = await auth.api.getAccessToken({
-    body: { providerId: "wca" },
+    body: { useAccountCookie: true },
     headers: headersList,
   });
 
@@ -23,7 +27,7 @@ export async function getAuthorizedWcif(
   competitionId: string,
   token: string,
 ): Promise<WCIF> {
-  const res = await fetch(wcifLatestUrl(competitionId), {
+  const res = await wcaFetch(wcifLatestUrl(competitionId), {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -48,8 +52,9 @@ export async function checkWcif(
   token: string,
   payload: unknown,
 ): Promise<WcifCheckResult> {
-  const res = await fetch(wcifCheckUrl(), {
+  const res = await wcaFetch(wcifCheckUrl(), {
     method: "PUT",
+    timeoutMs: WCIF_WRITE_TIMEOUT_MS,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -92,8 +97,9 @@ export async function patchWcif(
   token: string,
   payload: unknown,
 ): Promise<WcifPatchResult> {
-  const res = await fetch(wcifPatchUrl(competitionId), {
+  const res = await wcaFetch(wcifPatchUrl(competitionId), {
     method: "PATCH",
+    timeoutMs: WCIF_WRITE_TIMEOUT_MS,
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

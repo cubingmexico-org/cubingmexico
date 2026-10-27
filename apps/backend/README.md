@@ -11,20 +11,27 @@ Flask backend that imports World Cube Association (WCA) export data, maintains c
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.12 (see `.python-version`)
+- [uv](https://docs.astral.sh/uv/) (dependencies are declared in `pyproject.toml` and locked in `uv.lock`)
 - PostgreSQL
 - Google Cloud project with Secret Manager access
-- pip dependencies (see requirements.txt)
 
 ## Configuration
 
 Environment variables (see `.env.example`):
 
-- `DB_URL` — PostgreSQL connection string (env or Secret Manager `db_url`; falls back to `postgresql://postgres:postgres@localhost:5432/cubing_mexico` only when `FLASK_ENV=development`)
+- `DB_URL` — PostgreSQL connection string (env or Secret Manager `db_url`; falls back to `postgresql://postgres:postgres@localhost:5432/cubing_mexico` only when `FLASK_ENV=development`). In production use Neon's pooled host (the one with `-pooler`); the direct host is only for running migrations.
 - `CRON_SECRET` — Auth secret for admin update endpoints (env or Secret Manager `cron-secret`; the local dev token is only used when `FLASK_ENV=development`). Outside development the app refuses to start if `DB_URL` or `CRON_SECRET` can't be resolved.
-- `DB_POOL_MAX` — Max pooled PostgreSQL connections per process (default: `10`)
+- `WEB_CONCURRENCY` / `GUNICORN_THREADS` — Gunicorn workers and threads per worker in the Docker image (defaults: `4` and `8`)
+- `DB_POOL_MAX` — Max pooled PostgreSQL connections per worker (default: `GUNICORN_THREADS`). A request that waits more than 2 seconds for a free one opens a one-off connection instead. Each worker has its own pool, so one instance can open up to `WEB_CONCURRENCY × DB_POOL_MAX` connections (32 with the defaults); multiply by the Cloud Run max instances when sizing the database. The total is logged at startup.
+- `PUBLIC_RATE_LIMIT` — Rate limit for the public read API per client IP (default: `60 per minute`). See "Important API endpoints".
 - `GCP_PROJECT_ID` — Google Cloud project id (default: `cubing-mexico`)
 - `FLASK_ENV` — `development` or `production`
+- `UPDATE_ALL_JOB` — Cloud Run Job resource name (`projects/P/locations/R/jobs/J`) that runs the nightly pipeline. When set, `POST /update-all` and `/update-all/resume` start an execution of it and return 202; when unset (local dev, tests) they run the pipeline inside the request.
+- `WEB_URL` — Public origin of the web app (e.g. `https://www.cubingmexico.net`). After a successful `update-all`, the backend calls its `POST /api/revalidate` with `CRON_SECRET` so cached pages pick up the new data. Unset skips it.
+- `JOB_FAILURE_WEBHOOK_URL` — Slack or Discord incoming-webhook URL. When a `job_runs` run (such as `update-all`) finishes as failed, the backend posts the failed step and error there. Unset disables it. Store it as a secret and expose it to the job and the service as an env var.
+- `SENTRY_DSN` — Sentry project DSN for the backend. Unset keeps Sentry off (local dev, tests, CI). When set, every `log.error` / `log.exception` becomes a Sentry event (unhandled route errors, failed and interrupted `update-all` steps, social post failures); tracing is off and no request bodies, cookies, user info, query data or local variables are sent. See [`sentry_setup.py`](./sentry_setup.py).
+- `SENTRY_ENVIRONMENT` — Environment name shown in Sentry, e.g. `production` or `staging` (default: `production`)
 - `SOCIAL_POSTS_ENABLED` — `true` to allow Meta publishes (auto + manual admin). Keep `false` in development/staging (default: off)
 - `PUBLIC_BASE_URL` — Public HTTPS origin of this backend (required for Instagram `image_url`, e.g. `https://api.example.com`)
 - `META_PAGE_ACCESS_TOKEN` — Long-lived Facebook Page access token (or Secret Manager `meta-page-access-token`)
@@ -61,20 +68,25 @@ If you want to run Python directly while using PostgreSQL in Docker (from monore
 # 1. Start Postgres and apply shared migrations/seed
 docker compose up db migrator --build
 
-# 2. Install Python dependencies
-pip install -r requirements.txt
+# 2. Install Python dependencies (creates .venv, including the dev group)
+uv sync
 
 # 3. Copy environment file
 cp .env.example .env
 
 # 4. Load env and run Flask backend
 set -a; source .env; set +a
-python app.py
+uv run python app.py
 ```
 
 The app will be available at `http://localhost:5000`.
 
 ## Important API endpoints
+
+The read endpoints below are kept for external consumers. The apps in this repo read Postgres directly and don't call them. Successful responses send `Cache-Control: public, max-age=3600` (`/competitor-states` uses 300, since it reads the live WCIF).
+
+- **Contract:** [`packages/public-api/openapi.json`](../../packages/public-api/openapi.json) (OpenAPI 3.1) is the source for the web app's `/docs` page, which also serves the raw file at `/docs/openapi.json`. Unit tests check that the spec lists exactly the public routes and that its examples match its schemas. Integration tests (`tests_integration/test_openapi_contract.py`) check real responses against it. When you add or change a public route, update the spec in the same change.
+- **Rate limit:** the public blueprints allow `PUBLIC_RATE_LIMIT` requests per client IP (default `60 per minute`, any [`limits`](https://limits.readthedocs.io/en/stable/quickstart.html#rate-limit-string-notation) string). Past the limit they return 429 with `Retry-After`. The client IP is the last `X-Forwarded-For` hop, which Cloud Run appends (`ProxyFix(x_for=1)`). Counters are in memory, per gunicorn worker on each instance, so the effective limit is a soft cap, not an exact quota. Admin and social routes aren't limited; they're behind `CRON_SECRET`.
 
 - **Competitions**
   - `GET /competitions` — List competitions (Mexico only) with pagination and filters
@@ -87,8 +99,9 @@ The app will be available at `http://localhost:5000`.
   - `GET /states` — List all states
 
 - **Ranks & Records**
-  - `GET /rank/<type>/<event_id>` — Get national ranks for a type (`single`|`average`) and event
-  - `GET /rank/<state_id>/<type>/<event_id>` — Get ranks for a state, type (`single`|`average`), and event
+  - `GET /rank/<type>/<event_id>` — Get national ranks for a type (`single`|`average`) and event, ordered by country rank
+  - `GET /rank/<state_id>/<type>/<event_id>` — Get ranks for a state, type (`single`|`average`), and event, ordered by state rank
+  - Both rank routes return every rank unless the request sends `page` or `size`; then they paginate, with `page` defaulting to 1 and `size` defaulting to and capped at 1000. Third-party clients that predate pagination rely on the full list. The total is always in an `X-Total-Count` header. They only accept official events; `?deprecated=true` also allows the deprecated ones (rank 990–999). Unknown events or states return 404, an invalid type 400.
   - `GET /records/<state_id>` — Get state records (single and average)
 
 - **Competitors**
@@ -99,12 +112,14 @@ The app will be available at `http://localhost:5000`.
   - `POST /update-database` — Update the full database from WCA exports, and store the export's `export_date` (`export_metadata.wca_export_date`) for the footer's WCA attribution
   - `POST /update-state-ranks` — Update state ranks
   - `POST /update-state-records` — Update historical state record markers (SR)
+  - `POST /update-state-ranks/<state_id>` and `POST /update-state-records/<state_id>` — Same, for the current members of one state. The web app calls them when a team edits its roster; the records route also returns the members' `personIds` so the web can invalidate their pages. 404 for an unknown state.
   - `POST /update-sum-of-ranks` — Update sum of ranks
   - `POST /update-kinch-ranks` — Update Kinch ranks
   - `POST /update-streak-ranks` — Update personal-record streak ranks
   - `POST /update-nemesis-stats` — Recompute per-person nemesis counts (how many nemeses each competitor has and how many people they are the nemesis of)
   - `POST /update-cubing-contests` — Import unofficial-event results from the [Cubing Contests](https://cubingcontests.com/export) CSV export into the `cc_*` tables. Only `wca-comp` contests are kept (no meetups or CC-only competitions), either held in Mexico or with at least one Mexican competitor. Official WCA events are never imported: events in CC's WCA category (`category_id` 5) and events sharing an id with an official WCA event (`events.rank < 800`) are dropped. Skips when the export date is unchanged; `?force=true` re-imports. Results whose WCA competition isn't in `competitions` yet are skipped and the export is retried on the next run.
-  - `POST /update-all` — Run full database import plus all derived rank updates, then the Cubing Contests import (its failures are logged and don't fail the run); then publish SEMANA (after state records), RACHAS and AÑO if due
+  - `POST /update-all` — Run full database import plus all derived rank updates, then the Cubing Contests import; then publish SEMANA (after state records), RACHAS and AÑO if due. The Cubing Contests import and social posts are recorded but don't fail the run. Each run and its per-step status is stored in `job_runs` and shown on the admin ops page. With `UPDATE_ALL_JOB` set it starts the Cloud Run Job and returns 202 with the execution name; otherwise it runs in the request and the response includes the steps. Returns 409 while another run started less than 3 hours ago is still `running` (older ones are marked failed as stale).
+  - `POST /update-all/resume` — Resume the latest `update_all` run if it failed or crashed (a `running` row older than 3 hours, or one interrupted by SIGTERM): steps that already succeeded are skipped, and the run continues from the step that failed or was running. Returns 404 if there's nothing to resume and 409 if a run is in progress. Like `/update-all`, it starts the Cloud Run Job when `UPDATE_ALL_JOB` is set.
   - `POST /post-summary-unlock` — If Dec 20+ UTC, publish the annual summary unlock graphic (idempotent; respects `SOCIAL_POSTS_ENABLED`)
   - `POST /post-weekly-digest` — Publish the current Mexico City ISO-week SEMANA digest (idempotent; run after `/update-state-records`)
   - `POST /post-year-recap` — On Dec 31 (Mexico City, retries through Jan 2), publish the AÑO year-recap carousel with the new-year greeting (idempotent)
@@ -169,6 +184,7 @@ Main tables used:
 - ranks_single, ranks_average
 - sum_of_ranks, kinch_ranks, streak_ranks, nemesis_stats
 - states, teams, events, export_metadata
+- job_runs (per-step progress of `/update-all`, used to resume failed runs)
 - social_posts (Facebook / Instagram typed post ledger: `resultados` | `record` | `upcoming` | `summary_unlock` | `weekly_digest` | `streaks_monthly` | `mollerz` | `nemesis` | `year_recap`)
 
 ## Automatic typed social posts
@@ -208,14 +224,102 @@ NÉMESIS compares the set of people with `nemesis_count = 0` and at least 3 even
 
 Keep `SOCIAL_POSTS_ENABLED=false` in development/staging (and until secrets and `PUBLIC_BASE_URL` are verified in production). Image download and “mark as posted” still work when the flag is off; only Meta API calls are skipped.
 
+## Deployment
+
+The backend runs on Cloud Run. A Cloud Build trigger runs [`cloudbuild.yaml`](./cloudbuild.yaml) on push; GitHub Actions doesn't deploy it. The build runs `ruff` and the unit tests before building, so a backend that fails them is never deployed, then deploys the service and points the `update-all` job at the new image.
+
+- **Triggers:** one per branch (`main` → production, `development` → staging), each with config file `apps/backend/cloudbuild.yaml`, included files `apps/backend/**` and `packages/db/drizzle/**`, and its own `_SERVICE`, `_JOB`, `_REGION` and `_IMAGE` substitutions. To move an existing inline trigger to the file, compare it with `gcloud builds triggers describe <trigger>` first so no flag is lost.
+- **Service:** keep the request timeout well above the slowest admin endpoint (the full pipeline no longer runs in a request); `gunicorn --timeout 300` in the `Dockerfile` caps how long a worker may block.
+- **Configuration:** non-secret settings (`FLASK_ENV`, `GCP_PROJECT_ID`, `SOCIAL_POSTS_ENABLED`, `PUBLIC_BASE_URL`, `WEB_CONCURRENCY`, `GUNICORN_THREADS`, `DB_POOL_MAX`) are Cloud Run environment variables. `DB_URL`, `CRON_SECRET` and the Meta credentials come from Secret Manager (or an env var of the same name, which takes precedence), read by the service account at startup.
+- **Error tracking:** errors go to the `backend` project in the `cubingmexico` Sentry organization (Project Settings → Client Keys has the DSN). A DSN only allows sending events, so it's a plain env var rather than a secret. Set it on both the service and the `update-all` job, with `SENTRY_ENVIRONMENT` per branch (`production` for `main`, `staging` for `development`): `gcloud run services update $SERVICE --region=$REGION --update-env-vars=SENTRY_DSN=https://...,SENTRY_ENVIRONMENT=production`, and the same with `gcloud run jobs update $JOB`.
+- **Cron:** Cloud Scheduler starts the nightly `update-all` Cloud Run Job (below) and calls the `/post-*` endpoints with `Authorization: Bearer $CRON_SECRET`.
+- **Migrations:** the backend has no migrations of its own; it uses the Drizzle schema in `packages/db`, which CI's `migrate` job applies after checks pass. The backend deploy isn't coordinated with that job, so schema changes follow the same expand/contract rule as the web apps (see [docs/architecture.md](../../docs/architecture.md)).
+
+### Nightly update-all (Cloud Run Job)
+
+The pipeline can run longer than Cloud Scheduler's 30-minute limit for HTTP targets, so it runs as a Cloud Run Job built from the same image: [`run_job.py`](./run_job.py) runs `run_update_all` outside any HTTP request, exits non-zero when the run fails, and marks the run failed on SIGTERM (task timeout or cancellation) so it can be resumed.
+
+```mermaid
+flowchart LR
+  scheduler[CloudScheduler] -->|"OAuth, jobs:run"| job["Cloud Run Job: run_job.py update-all"]
+  ops[WebOpsPage] -->|"POST /update-all"| service[CloudRunService]
+  service -->|"jobs:run, returns 202"| job
+  job --> runs[(job_runs)]
+  job -->|"POST /api/revalidate"| web[WebApp]
+  ops -->|reads| runs
+```
+
+One-time setup (replace the variables; the job reuses the service's image, env vars and secrets):
+
+```bash
+PROJECT=cubing-mexico
+REGION=us-central1            # the backend service's region
+SERVICE=backend               # the backend Cloud Run service
+JOB=update-all
+SA=$(gcloud run services describe $SERVICE --region=$REGION --format='value(spec.template.spec.serviceAccountName)')
+IMAGE=$(gcloud run services describe $SERVICE --region=$REGION --format='value(spec.template.spec.containers[0].image)')
+
+# The job: `python run_job.py update-all`. Resumes override only the args (`update-all --resume`).
+gcloud run jobs create $JOB --region=$REGION --image=$IMAGE --service-account=$SA \
+  --command=python,run_job.py --args=update-all \
+  --task-timeout=2h --max-retries=0 --memory=2Gi \
+  --set-env-vars=FLASK_ENV=production,GCP_PROJECT_ID=$PROJECT,SOCIAL_POSTS_ENABLED=true,PUBLIC_BASE_URL=https://...,WEB_URL=https://...
+
+# The service starts executions (POST /update-all from the ops page); resumes override the args.
+gcloud run jobs add-iam-policy-binding $JOB --region=$REGION \
+  --member=serviceAccount:$SA --role=roles/run.jobsExecutorWithOverrides
+gcloud run services update $SERVICE --region=$REGION \
+  --update-env-vars=UPDATE_ALL_JOB=projects/$PROJECT/locations/$REGION/jobs/$JOB,WEB_URL=https://...
+
+# Nightly trigger: Cloud Scheduler calls the Cloud Run Admin API directly with an OAuth token.
+gcloud scheduler jobs create http update-all-nightly --location=$REGION \
+  --schedule="0 6 * * *" --time-zone=America/Mexico_City \
+  --uri="https://run.googleapis.com/v2/projects/$PROJECT/locations/$REGION/jobs/$JOB:run" \
+  --http-method=POST --oauth-service-account-email=$SA \
+  --max-retry-attempts=0
+```
+
+Then pause or delete the old Scheduler job that POSTed to `/update-all` (it had a 20-minute attempt deadline and no retries). `jobs:run` returns as soon as the execution starts, so the default attempt deadline is enough.
+
+- `/update-all/resume` overrides the execution's args with `["update-all", "--resume"]`, so the job's command must stay `python run_job.py` with the job name in the args.
+- Keep `--task-timeout` above the longest run (`job_runs` has durations) and below the 3-hour stale threshold in `job_runs.py`.
+- When the image changes, the job must be updated too (`gcloud run jobs update $JOB --image=...`); `cloudbuild.yaml` does it on every deploy.
+- If a run fails or is interrupted, resume it from the admin ops page or with `gcloud run jobs execute $JOB --region=$REGION --args=update-all,--resume`.
+
+### Monitoring and alerts
+
+Failures reach people two ways, without any extra vendor:
+
+- **Chat:** with `JOB_FAILURE_WEBHOOK_URL` set, every failed `update-all` run posts its failed step and error to Slack or Discord ([`notifications.py`](./notifications.py)).
+- **Cloud Monitoring:** the alert policies in [`monitoring/`](./monitoring) cover a failed `update-all` execution, any `[ERROR]` log line from the service or the job, and failed Cloud Scheduler attempts (including a night where the job never started).
+
+Create an email notification channel once, then the policies (re-run `create` after editing a file; delete the old policy first, or use `policies update` with its name):
+
+```bash
+CHANNEL=$(gcloud beta monitoring channels create --display-name="Cubing México ops" \
+  --type=email --channel-labels=email_address=ops@example.com --format='value(name)')
+
+for policy in apps/backend/monitoring/*.yaml; do
+  gcloud alpha monitoring policies create --policy-from-file="$policy" --notification-channels="$CHANNEL"
+done
+```
+
+The policies match the service name `backend` and the job name `update-all`; edit the filters if yours differ.
+
 ## Notes
 
 - The app filters and stores data primarily for Mexico.
-- Large TSV handling uses chunked validation and execute_values for bulk inserts.
+- Large TSV handling uses chunked validation and `common.execute_values` (multi-row `INSERT`s, 100 rows per statement) for bulk inserts.
+- Database access uses psycopg 3 with a `psycopg_pool.ConnectionPool` per worker (`common.get_connection()`). Server-side prepared statements are off (`prepare_threshold=None`) because Neon's pooled host runs PgBouncer in transaction mode. Pass lists to `= ANY(%s)` / `<> ALL(%s)` rather than tuples to `IN %s`, which psycopg 3 doesn't adapt, and use `common.named_row` for named-tuple rows.
 - Corruption checks prevent partial/invalid updates; metadata prevents reprocessing older exports.
 
 ## Development
 
+- Run checks with `pnpm lint`, `pnpm check-types` (pyright) and `pnpm test` from this directory, or through Turborepo from the repo root. They call `uv run ruff`, `pyright` and `uv run pytest`.
+- Pyright runs in basic mode, plus strict mode for the modules listed in `strict` in `pyproject.toml`. Add a module there once it passes strict mode.
+- pandas and numpy are imported inside the import and nemesis jobs, not at module level, so the web service starts without them (about a third of its startup time). Keep new uses inside the functions that need them.
+- Both test suites measure coverage (`pytest-cov`) and fail below a floor: `fail_under` in `pyproject.toml` for the unit suite, `--cov-fail-under` in the `test:integration` script for the integration suite. Raise a floor when you add tests; never lower it.
+- Add or upgrade dependencies with `uv add <package>` / `uv lock --upgrade-package <package>`; commit `pyproject.toml` and `uv.lock` together.
 - utils.py contains helpers: get_state_from_coordinates and convert_keys_to_camel_case.
 - Logging uses standard Python logging at INFO level.
 

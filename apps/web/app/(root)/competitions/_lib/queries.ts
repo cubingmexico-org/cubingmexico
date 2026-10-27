@@ -7,7 +7,6 @@ import {
   state,
   type State,
   event,
-  type Event,
   competitionEvent,
   championship,
   result,
@@ -25,7 +24,6 @@ import {
   lte,
   eq,
 } from "drizzle-orm";
-import { isOfficialEvent } from "@/lib/official-events";
 import { accentInsensitiveContains } from "@/lib/search";
 import { type GetCompetitionsSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
@@ -216,33 +214,6 @@ export async function getCompetitionsStateCounts() {
           return acc;
         },
         {} as Record<State["name"], number>,
-      ),
-    );
-}
-
-export async function getCompetitionsEventCounts() {
-  cacheLife("days");
-  cacheTag("competitions-event-counts");
-
-  return await db
-    .select({
-      event: event.name,
-      count: count(),
-    })
-    .from(competitionEvent)
-    .innerJoin(event, eq(competitionEvent.eventId, event.id))
-    .innerJoin(competition, eq(competitionEvent.competitionId, competition.id))
-    .where(and(eq(competition.countryId, "Mexico"), isOfficialEvent))
-    .groupBy(event.name, event.rank)
-    .having(gt(count(), 0))
-    .orderBy(event.rank) // Changed to order by event.rank
-    .then((res) =>
-      res.reduce(
-        (acc, { event, count }) => {
-          acc[event] = count;
-          return acc;
-        },
-        {} as Record<Event["name"], number>,
       ),
     );
 }

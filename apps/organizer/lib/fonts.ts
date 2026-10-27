@@ -141,11 +141,6 @@ export const BADGE_SYSTEM_FONTS = [
 
 export const fontFamilies = BUNDLED_FONTS.map((f) => f.family);
 
-export const fonts = BUNDLED_FONTS.map((f) => ({
-  value: f.family,
-  label: f.family,
-}));
-
 /** pdfmake's built-in default font, used by any text without an explicit `font`. */
 const PDF_DEFAULT_FONT = "Roboto";
 

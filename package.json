@@ -9,24 +9,25 @@
     "dev:organizer": "turbo dev --filter=organizer",
     "lint": "turbo lint",
     "check-types": "turbo check-types",
+    "knip": "knip",
     "test": "turbo test",
     "test:integration": "turbo test:integration",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,md}\"",
+    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
     "clean": "rm -rf .turbo node_modules apps/*/node_modules apps/*/.next apps/*/.turbo packages/*/node_modules packages/*/dist packages/*/.turbo",
     "db:up": "docker compose up db -d",
     "db:down": "docker compose down",
     "services:up": "docker compose up --build -d"
   },
   "devDependencies": {
-    "@workspace/eslint-config": "workspace:*",
     "@workspace/typescript-config": "workspace:*",
+    "knip": "^5.88.1",
     "prettier": "^3.6.2",
     "turbo": "^2.5.5",
     "typescript": "catalog:"
   },
-  "packageManager": "pnpm@10.4.1",
+  "packageManager": "pnpm@10.34.9",
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   }
 }

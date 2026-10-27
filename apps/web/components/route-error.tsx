@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import Link from "next/link";
 import { Button } from "@workspace/ui/components/button";
 import { Home, RefreshCw, AlertTriangle, Send } from "lucide-react";
@@ -13,6 +14,7 @@ export type RouteErrorProps = {
 export function RouteError({ error, retry }: RouteErrorProps) {
   useEffect(() => {
     console.error("Application error:", error);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

@@ -30,7 +30,3 @@ export const searchParamsCache = createSearchParamsCache({
 export type GetSORSinglesSchema = Awaited<
   ReturnType<typeof searchParamsCache.parse>
 >;
-
-export type GetSORAveragesSchema = Awaited<
-  ReturnType<typeof searchParamsCache.parse>
->;

@@ -149,35 +149,6 @@ export function collectAssignedScorecards(
   });
 }
 
-export function defaultBlankCount(
-  wcif: WCIF,
-  roundActivityCode: string,
-): number {
-  const parsed = parseRoundActivityCode(roundActivityCode);
-  if (!parsed) return 16;
-  if (parsed.roundNumber <= 1) {
-    try {
-      return Math.max(
-        collectAssignedScorecards(wcif, roundActivityCode).length,
-        8,
-      );
-    } catch {
-      return 16;
-    }
-  }
-  const prevCode = `${parsed.eventId}-r${parsed.roundNumber - 1}`;
-  try {
-    return Math.max(collectAssignedScorecards(wcif, prevCode).length, 8);
-  } catch {
-    const competing = wcif.persons.filter(
-      (p) =>
-        p.registration?.isCompeting &&
-        (p.registration.eventIds ?? []).includes(parsed.eventId as never),
-    ).length;
-    return Math.max(Math.ceil(competing / 2), 8);
-  }
-}
-
 type ScorecardVariant = {
   key: string;
   eventId: string;

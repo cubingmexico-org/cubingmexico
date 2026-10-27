@@ -8,8 +8,6 @@ This must match the per-person query in the web app
 
 from collections import defaultdict
 
-import numpy as np
-
 ROW_CHUNK = 1024
 
 
@@ -20,6 +18,9 @@ def compute_nemesis_stats(entries):
     best > 0. Returns a list of
     (person_id, nemesis_count, nemesized_count, event_count, slot_count).
     """
+    # Imported here so the web service doesn't load numpy at startup; only this job uses it.
+    import numpy as np
+
     slots = defaultdict(list)
     person_index = {}
     person_events = defaultdict(set)

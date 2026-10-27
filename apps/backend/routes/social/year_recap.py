@@ -77,7 +77,7 @@ def year_recap_slide_image(year: str, index: int):
         slides, payload = generate_year_recap_slides_for_year(parsed)
     except Exception as e:
         log.exception("Failed to generate YEAR_RECAP slides for %s: %s", parsed, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Failed to generate YEAR_RECAP slides"}), 500
 
     if payload.get("is_empty") or not slides:
         return jsonify({"success": False, "message": "Year recap empty"}), 404
@@ -111,7 +111,7 @@ def publish_year_recap(year: str):
         result = post_year_recap(parsed)
     except Exception as e:
         log.exception("Manual YEAR_RECAP publish failed for %s: %s", parsed, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Manual YEAR_RECAP publish failed"}), 500
 
     if "year_recap_not_due" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404
@@ -137,7 +137,7 @@ def mark_year_recap_posted(year: str):
         result = mark_typed_posted(POST_TYPE_YEAR_RECAP, str(parsed), platforms)
     except Exception as e:
         log.exception("Mark YEAR_RECAP posted failed for %s: %s", parsed, e)
-        return jsonify({"success": False, "message": str(e)}), 500
+        return jsonify({"success": False, "message": "Mark YEAR_RECAP posted failed"}), 500
 
     if "year_recap_not_due" in result.get("errors", []):
         return jsonify({"success": False, **result}), 404

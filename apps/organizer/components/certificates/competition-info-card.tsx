@@ -12,17 +12,16 @@ import { Separator } from "@workspace/ui/components/separator";
 import { Users, Calendar, MapPin } from "lucide-react";
 import { Competition } from "@/types/wca";
 import Link from "next/link";
-import type { RegisteredPerson } from "@/types/wcif";
 import { WcaMonochrome } from "@workspace/icons";
 
 export function CompetitionInfoCard({
   competition,
   formattedDate,
-  persons,
+  competitorCount,
 }: {
   competition: Competition;
   formattedDate: string;
-  persons: RegisteredPerson[];
+  competitorCount: number;
 }) {
   return (
     <Card>
@@ -58,7 +57,7 @@ export function CompetitionInfoCard({
         <div className="flex items-start gap-2">
           <Users className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
           <span className="text-sm">
-            {persons.length}/{competition.competitor_limit} competidores
+            {competitorCount}/{competition.competitor_limit} competidores
           </span>
         </div>
         <Separator />

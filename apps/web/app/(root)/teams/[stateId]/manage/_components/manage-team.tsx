@@ -30,7 +30,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@workspace/ui/lib/utils";
-import { deleteTeamCoverAction, deleteTeamLogoAction } from "@/app/actions";
+import { deleteTeamCoverAction, deleteTeamLogoAction } from "../_lib/actions";
 import { ImageUploader } from "./image-uploader";
 import { CoverUploader } from "./cover-uploader";
 import { getMembers, getMembersGenderCounts } from "../../_lib/queries";

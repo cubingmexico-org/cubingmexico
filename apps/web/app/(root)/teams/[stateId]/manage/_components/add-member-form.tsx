@@ -14,7 +14,7 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@workspace/ui/components/alert";
-import { addMemberFormAction } from "@/app/actions";
+import { addMemberFormAction } from "../_lib/actions";
 import { useActionState } from "react";
 import { DataTableSkeleton } from "@/components/data-table/data-table-skeleton";
 import {
@@ -54,6 +54,7 @@ export function AddMemberForm({
     },
     success: false,
     errors: null,
+    warning: null,
   });
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export function AddMemberForm({
               Éxito
             </AlertTitle>
             <AlertDescription className="text-green-700 dark:text-green-400">
-              Miembro añadido exitosamente.
+              {state.warning ?? "Miembro añadido exitosamente."}
             </AlertDescription>
           </Alert>
         </div>

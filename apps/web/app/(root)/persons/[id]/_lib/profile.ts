@@ -15,6 +15,7 @@ import {
   state,
   team,
 } from "@workspace/db/schema";
+import { wcaFetch } from "@workspace/wca";
 import {
   SPEEDSOLVING_AVERAGES_EVENTS,
   BLD_FMC_MEANS_EVENTS,
@@ -33,6 +34,7 @@ import {
 import { and, countDistinct, eq, gt, inArray, sql } from "drizzle-orm";
 import { inScopeEvents } from "@/lib/official-events";
 import type { EventScope } from "@/lib/constants";
+import { reportError } from "@/lib/report-error";
 import { cacheLife, cacheTag } from "next/cache";
 
 type RecordWithStateRank = {
@@ -50,14 +52,6 @@ export type PersonalRecordWithStateRank = {
   single: RecordWithStateRank;
   average?: RecordWithStateRank;
 };
-
-export type MembershipData = {
-  numberOfSpeedsolvingAverages: number;
-  numberOfBLDFMCMeans: number;
-  hasWorldRecord: boolean;
-  hasWorldChampionshipPodium: boolean;
-  eventsWon: number;
-} | null;
 
 export type OrganizerStatus = {
   organizedCompetitionCount: number;
@@ -341,9 +335,7 @@ export async function getPersonDataFromWCA(
   cacheLife("weeks");
   cacheTag(`person-data-wca-${wcaId}`);
 
-  const response = await fetch(
-    `https://www.worldcubeassociation.org/api/v0/persons/${wcaId}`,
-  );
+  const response = await wcaFetch(`/api/v0/persons/${wcaId}`);
 
   if (response.status === 404) {
     return null;
@@ -365,7 +357,7 @@ export async function getPersonAvatarFromWCA(
   try {
     return await getPersonDataFromWCA(wcaId);
   } catch (error) {
-    console.error(`Failed to fetch WCA data for person ${wcaId}`, error);
+    reportError(error, { wcaId });
     return null;
   }
 }

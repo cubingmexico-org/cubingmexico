@@ -3,6 +3,7 @@ import math
 import os
 import re
 from datetime import datetime
+from typing import Any, LiteralString
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import request
@@ -10,6 +11,17 @@ from geopy.extra.rate_limiter import RateLimiter
 from geopy.geocoders import Nominatim
 
 log = logging.getLogger("common")
+
+# Public read data only changes with the nightly import.
+PUBLIC_CACHE_MAX_AGE = 3600
+
+
+def public_cache_headers(response):
+    """`after_request` hook for public read blueprints; routes can set their own Cache-Control."""
+    if request.method == "GET" and response.status_code == 200 and "Cache-Control" not in response.headers:
+        response.headers["Cache-Control"] = f"public, max-age={PUBLIC_CACHE_MAX_AGE}"
+    return response
+
 
 # Set SKIP_GEOCODING=true for local imports (Nominatim rate-limits bulk reverse geocoding).
 SKIP_GEOCODING = os.environ.get("SKIP_GEOCODING", "").strip().lower() in {
@@ -27,7 +39,8 @@ def _get_reverse():
     """Lazy Nominatim client with ~1 req/s rate limit (OSM usage policy)."""
     global _geolocator, _reverse
     if _reverse is None:
-        _geolocator = Nominatim(user_agent="cubing-mexico-web-backend", timeout=10)
+        # geopy is untyped, so pyright infers `timeout` from its sentinel default.
+        _geolocator = Nominatim(user_agent="cubing-mexico-web-backend", timeout=10)  # pyright: ignore[reportArgumentType]
         _reverse = RateLimiter(
             _geolocator.reverse,
             min_delay_seconds=1.1,
@@ -65,7 +78,7 @@ def to_camel_case(snake_str):
     return components[0] + "".join(x.title() for x in components[1:])
 
 
-def convert_keys_to_camel_case(data):
+def convert_keys_to_camel_case(data: Any) -> Any:
     if isinstance(data, dict):
         return {to_camel_case(k): convert_keys_to_camel_case(v) for k, v in data.items()}
     elif isinstance(data, list):
@@ -206,9 +219,9 @@ def parse_bool_query_param(param_name):
     raise ValueError(f"Invalid '{param_name}'. Expected one of: true, false, 1, 0, yes, no.")
 
 
-def build_competitions_filter_query_parts():
-    where_clauses = ["c.country_id = %s"]
-    query_params = ["Mexico"]
+def build_competitions_filter_query_parts() -> tuple[list[LiteralString], list[object]]:
+    where_clauses: list[LiteralString] = ["c.country_id = %s"]
+    query_params: list[object] = ["Mexico"]
 
     state_id = request.args.get("stateId") or request.args.get("state_id")
     if state_id:

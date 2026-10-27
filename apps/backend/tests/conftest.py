@@ -5,9 +5,9 @@ os.environ["CRON_SECRET"] = "test-secret"
 os.environ["DB_URL"] = "postgresql://test:test@localhost:1/test"
 os.environ.setdefault("SOCIAL_POSTS_ENABLED", "false")
 
-import pytest  # noqa: E402
+import pytest
 
-from app import create_app  # noqa: E402
+from app import create_app
 
 AUTH_HEADERS = {"Authorization": "Bearer test-secret"}
 

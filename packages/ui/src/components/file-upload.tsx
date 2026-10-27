@@ -555,7 +555,7 @@ function FileUploadRoot(props: FileUploadRootProps) {
 
         if (onUpload) {
           requestAnimationFrame(() => {
-            onFilesUpload(acceptedFiles);
+            void onFilesUpload(acceptedFiles);
           });
         }
       }

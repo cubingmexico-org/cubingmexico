@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Download, Eraser, Shuffle, Hash, Trash2 } from "lucide-react";
+import { Download, Eraser, Shuffle, Hash } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
@@ -14,26 +14,17 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table";
-import { Badge } from "@workspace/ui/components/badge";
-import {
   Alert,
   AlertDescription,
   AlertTitle,
 } from "@workspace/ui/components/alert";
-import type { Assignment, EventId, Person, WCIF } from "@/types/wcif";
+import type { EventId, WCIF } from "@/types/wcif";
 import { detectConflicts } from "@/lib/groups/conflicts";
+import { generateAssignmentsForRound } from "@/lib/groups/generate-assignments";
 import {
-  generateAssignmentsForRound,
   removePersonAssignment,
   setPersonAssignment,
-} from "@/lib/groups/generate-assignments";
+} from "@/lib/groups/manual-assignments";
 import { exportAssignmentsCsv, exportDraftJson } from "@/lib/groups/export";
 import {
   assignStationsForRound,
@@ -45,25 +36,9 @@ import {
   getGroupActivitiesForRound,
   parseGroupNumber,
 } from "@/lib/groups/wcif-schedule";
-
-const ASSIGNMENT_CODES = [
-  { value: "competitor", label: "Competidor" },
-  { value: "staff-judge", label: "Juez" },
-  { value: "staff-scrambler", label: "Mezclador" },
-  { value: "staff-runner", label: "Corredor" },
-] as const;
-
-function codeLabel(code: string): string {
-  return ASSIGNMENT_CODES.find((c) => c.value === code)?.label ?? code;
-}
-
-type Row = {
-  person: Person;
-  assignment: Assignment;
-  groupNumber: number | null;
-  roomName: string;
-  activityName: string;
-};
+import { assignmentRows, filterAssignmentRows } from "./assignment-rows";
+import { AssignmentsTable } from "./assignments-table";
+import { ManualAssignmentForm } from "./manual-assignment-form";
 
 export function AssignmentsPanel({
   wcif,
@@ -79,9 +54,6 @@ export function AssignmentsPanel({
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState<string>("all");
   const [error, setError] = useState<string | null>(null);
-  const [manualPersonId, setManualPersonId] = useState<string>("");
-  const [manualActivityId, setManualActivityId] = useState<string>("");
-  const [manualCode, setManualCode] = useState<string>("competitor");
 
   const groups = useMemo(
     () => getGroupActivitiesForRound(wcif, roundActivityCode),
@@ -91,11 +63,6 @@ export function AssignmentsPanel({
     () => new Set(groups.map((g) => g.activity.id)),
     [groups],
   );
-  const groupById = useMemo(() => {
-    const map = new Map(groups.map((g) => [g.activity.id, g]));
-    return map;
-  }, [groups]);
-
   const eventId = roundActivityCode.replace(/-r\d+$/, "") as EventId;
 
   const conflicts = useMemo(
@@ -103,46 +70,15 @@ export function AssignmentsPanel({
     [wcif, roundActivityCode],
   );
 
-  const rows: Row[] = useMemo(() => {
-    const list: Row[] = [];
-    for (const person of wcif.persons) {
-      for (const assignment of person.assignments ?? []) {
-        const group = groupById.get(assignment.activityId);
-        if (!group) continue;
-        list.push({
-          person,
-          assignment,
-          groupNumber: parseGroupNumber(group.activity.activityCode),
-          roomName: group.roomName,
-          activityName: group.activity.name,
-        });
-      }
-    }
-    return list.sort((a, b) => {
-      const g = (a.groupNumber ?? 0) - (b.groupNumber ?? 0);
-      if (g !== 0) return g;
-      if (a.assignment.assignmentCode !== b.assignment.assignmentCode) {
-        return a.assignment.assignmentCode.localeCompare(
-          b.assignment.assignmentCode,
-        );
-      }
-      return a.person.name.localeCompare(b.person.name, "es");
-    });
-  }, [wcif.persons, groupById]);
+  const rows = useMemo(
+    () => assignmentRows(wcif.persons, groups),
+    [wcif.persons, groups],
+  );
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return rows.filter((row) => {
-      if (filterGroup !== "all" && String(row.groupNumber) !== filterGroup) {
-        return false;
-      }
-      if (!q) return true;
-      return (
-        row.person.name.toLowerCase().includes(q) ||
-        (row.person.wcaId?.toLowerCase().includes(q) ?? false)
-      );
-    });
-  }, [rows, search, filterGroup]);
+  const filtered = useMemo(
+    () => filterAssignmentRows(rows, search, filterGroup),
+    [rows, search, filterGroup],
+  );
 
   const competingPeople = useMemo(
     () =>
@@ -177,27 +113,25 @@ export function AssignmentsPanel({
     }
   };
 
-  const handleManualAssign = () => {
-    if (!manualPersonId || !manualActivityId) {
-      toast.error("Selecciona persona y grupo");
-      return;
-    }
-    const activityId = Number(manualActivityId);
+  const handleManualAssign = ({
+    wcaUserId,
+    activityId,
+    assignmentCode,
+  }: {
+    wcaUserId: number;
+    activityId: number;
+    assignmentCode: string;
+  }) =>
     run(
       () =>
         setPersonAssignment(
           wcif,
-          { wcaUserId: Number(manualPersonId) },
-          {
-            activityId,
-            stationNumber: null,
-            assignmentCode: manualCode,
-          },
+          { wcaUserId },
+          { activityId, stationNumber: null, assignmentCode },
           groupIds,
         ),
       "Asignación manual aplicada",
     );
-  };
 
   return (
     <div className="space-y-4">
@@ -297,68 +231,11 @@ export function AssignmentsPanel({
         </Alert>
       )}
 
-      <div className="rounded-lg border p-4 space-y-3">
-        <h3 className="font-semibold text-sm">Asignación manual</h3>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-1">
-            <Label>Persona</Label>
-            <Select value={manualPersonId} onValueChange={setManualPersonId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {competingPeople.map((p) => (
-                  <SelectItem key={p.wcaUserId} value={String(p.wcaUserId)}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label>Grupo</Label>
-            <Select
-              value={manualActivityId}
-              onValueChange={setManualActivityId}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar" />
-              </SelectTrigger>
-              <SelectContent>
-                {groups.map((g) => (
-                  <SelectItem key={g.activity.id} value={String(g.activity.id)}>
-                    G{parseGroupNumber(g.activity.activityCode)} · {g.roomName}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <Label>Rol</Label>
-            <Select value={manualCode} onValueChange={setManualCode}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ASSIGNMENT_CODES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>
-                    {c.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-end">
-            <Button
-              type="button"
-              className="w-full"
-              onClick={handleManualAssign}
-            >
-              Asignar
-            </Button>
-          </div>
-        </div>
-      </div>
+      <ManualAssignmentForm
+        people={competingPeople}
+        groups={groups}
+        onAssign={handleManualAssign}
+      />
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1 grow max-w-sm">
@@ -371,9 +248,9 @@ export function AssignmentsPanel({
           />
         </div>
         <div className="space-y-1 w-40">
-          <Label>Filtrar grupo</Label>
+          <Label htmlFor="assign-filter-group">Filtrar grupo</Label>
           <Select value={filterGroup} onValueChange={setFilterGroup}>
-            <SelectTrigger>
+            <SelectTrigger id="assign-filter-group">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -391,93 +268,22 @@ export function AssignmentsPanel({
         </div>
       </div>
 
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>Grupo</TableHead>
-              <TableHead>Sala</TableHead>
-              <TableHead>Rol</TableHead>
-              <TableHead>Estación</TableHead>
-              <TableHead className="w-24" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filtered.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="text-center text-muted-foreground"
-                >
-                  Sin asignaciones
-                </TableCell>
-              </TableRow>
-            ) : (
-              filtered.map((row) => (
-                <TableRow
-                  key={`${row.person.wcaUserId}-${row.assignment.activityId}-${row.assignment.assignmentCode}`}
-                >
-                  <TableCell>
-                    <div className="font-medium">{row.person.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {row.person.wcaId ?? "—"}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">G{row.groupNumber}</Badge>
-                  </TableCell>
-                  <TableCell>{row.roomName}</TableCell>
-                  <TableCell>
-                    {codeLabel(row.assignment.assignmentCode)}
-                  </TableCell>
-                  <TableCell className="tabular-nums">
-                    {row.assignment.stationNumber ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        title="Quitar asignación"
-                        onClick={() =>
-                          run(() =>
-                            removePersonAssignment(
-                              wcif,
-                              { wcaUserId: row.person.wcaUserId },
-                              row.assignment.activityId,
-                              row.assignment.assignmentCode,
-                            ),
-                          )
-                        }
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        title="Vaciar este grupo"
-                        onClick={() =>
-                          run(() =>
-                            clearGroupAssignments(
-                              wcif,
-                              row.assignment.activityId,
-                            ),
-                          )
-                        }
-                      >
-                        <Eraser className="size-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <AssignmentsTable
+        rows={filtered}
+        onRemove={(row) =>
+          run(() =>
+            removePersonAssignment(
+              wcif,
+              { wcaUserId: row.person.wcaUserId },
+              row.assignment.activityId,
+              row.assignment.assignmentCode,
+            ),
+          )
+        }
+        onClearGroup={(activityId) =>
+          run(() => clearGroupAssignments(wcif, activityId))
+        }
+      />
     </div>
   );
 }

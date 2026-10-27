@@ -6,7 +6,7 @@ import {
   BLD_FMC_MEANS_EVENTS,
   SPEEDSOLVING_AVERAGES_EVENTS,
 } from "@/lib/constants";
-import { isOfficialEvent } from "@/lib/official-events";
+import { isOfficialEvent, officialEventIdsSql } from "@/lib/official-events";
 import { getTier } from "@/lib/utils";
 import { and, countDistinct, eq, gt, inArray, lte, sql } from "drizzle-orm";
 import type { MollerzConditions, RankProgressRow, YearMollerz } from "./types";
@@ -34,6 +34,7 @@ async function getAsOfPersonRanks(
       FROM results r
       INNER JOIN competitions c ON c.id = r.competition_id
       WHERE r.person_id = ${wcaId}
+        AND r.event_id IN ${officialEventIdsSql}
         AND r.${valueCol} > 0
         AND c.start_date <= ${asOfIso}
       GROUP BY r.event_id

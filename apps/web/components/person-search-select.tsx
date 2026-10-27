@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { reportError } from "@/lib/report-error";
 import type {
   SiteSearchPerson,
   SiteSearchResults,
@@ -62,7 +63,7 @@ export function PersonSearchSelect({
       setPersons(payload.data?.persons ?? []);
     } catch (error) {
       if (requestId !== requestIdRef.current) return;
-      console.error("Error searching persons:", error);
+      reportError(error);
       setPersons([]);
     } finally {
       if (requestId === requestIdRef.current) {

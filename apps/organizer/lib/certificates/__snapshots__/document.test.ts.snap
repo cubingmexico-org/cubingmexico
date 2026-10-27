@@ -1,0 +1,604 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`certificate documents > fills participation certificates with a results table 1`] = `
+{
+  "background": [Function],
+  "content": [
+    {
+      "pageBreak": "",
+      "stack": [
+        {
+          "alignment": "center",
+          "style": "paragraph",
+          "text": [
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Constancia para ",
+            },
+            {
+              "bold": true,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Beto Martínez",
+            },
+          ],
+        },
+        {
+          "columns": [
+            {
+              "text": "",
+              "width": "*",
+            },
+            {
+              "layout": "lightHorizontalLines",
+              "table": {
+                "body": [
+                  [
+                    [
+                      [
+                        {
+                          "alignment": "left",
+                          "style": "paragraph",
+                          "text": [
+                            {
+                              "bold": undefined,
+                              "color": "#000000",
+                              "font": "Roboto",
+                              "fontSize": 12.468,
+                              "text": "Evento",
+                            },
+                          ],
+                        },
+                      ],
+                    ],
+                    [
+                      [
+                        {
+                          "alignment": "left",
+                          "style": "paragraph",
+                          "text": [
+                            {
+                              "bold": undefined,
+                              "color": "#000000",
+                              "font": "Roboto",
+                              "fontSize": 12.468,
+                              "text": "Resultado",
+                            },
+                          ],
+                        },
+                      ],
+                    ],
+                    [
+                      [
+                        {
+                          "alignment": "left",
+                          "style": "paragraph",
+                          "text": [
+                            {
+                              "bold": undefined,
+                              "color": "#000000",
+                              "font": "Roboto",
+                              "fontSize": 12.468,
+                              "text": "Posición",
+                            },
+                          ],
+                        },
+                      ],
+                    ],
+                  ],
+                  [
+                    [
+                      {
+                        "alignment": "left",
+                        "style": "paragraph",
+                        "text": [
+                          {
+                            "bold": false,
+                            "color": "#000000",
+                            "font": "Roboto",
+                            "fontSize": 12.468,
+                            "text": "3x3x3",
+                          },
+                        ],
+                      },
+                    ],
+                    [
+                      {
+                        "alignment": "left",
+                        "style": "paragraph",
+                        "text": [
+                          {
+                            "bold": false,
+                            "color": "#000000",
+                            "font": "Roboto",
+                            "fontSize": 12.468,
+                            "text": "15.32",
+                          },
+                        ],
+                      },
+                    ],
+                    [
+                      {
+                        "alignment": "left",
+                        "style": "paragraph",
+                        "text": [
+                          {
+                            "bold": false,
+                            "color": "#000000",
+                            "font": "Roboto",
+                            "fontSize": 12.468,
+                            "text": "3",
+                          },
+                        ],
+                      },
+                    ],
+                  ],
+                  [
+                    [
+                      {
+                        "alignment": "left",
+                        "style": "paragraph",
+                        "text": [
+                          {
+                            "bold": false,
+                            "color": "#000000",
+                            "font": "Roboto",
+                            "fontSize": 12.468,
+                            "text": "3x3x3 A Ciegas",
+                          },
+                        ],
+                      },
+                    ],
+                    [
+                      {
+                        "alignment": "left",
+                        "style": "paragraph",
+                        "text": [
+                          {
+                            "bold": false,
+                            "color": "#000000",
+                            "font": "Roboto",
+                            "fontSize": 12.468,
+                            "text": "DNF",
+                          },
+                        ],
+                      },
+                    ],
+                    [
+                      {
+                        "alignment": "left",
+                        "style": "paragraph",
+                        "text": [
+                          {
+                            "bold": false,
+                            "color": "#000000",
+                            "font": "Roboto",
+                            "fontSize": 12.468,
+                            "text": "",
+                          },
+                        ],
+                      },
+                    ],
+                  ],
+                ],
+                "headerRows": 1,
+              },
+              "width": "auto",
+            },
+            {
+              "text": "",
+              "width": "*",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "info": {
+    "author": "Cubing México",
+    "title": "Certificados - Printables Open 2025",
+  },
+  "language": "es",
+  "pageMargins": [
+    40,
+    40,
+    40,
+    40,
+  ],
+  "pageOrientation": "landscape",
+  "pageSize": "LETTER",
+  "styles": {
+    "header1": {
+      "fontSize": 33.231,
+      "lineHeight": 1,
+    },
+    "header2": {
+      "fontSize": 24.923,
+      "lineHeight": 1,
+    },
+    "header3": {
+      "fontSize": 20.769,
+      "lineHeight": 1,
+    },
+    "header4": {
+      "fontSize": 16.615,
+      "lineHeight": 1,
+    },
+    "header5": {
+      "fontSize": 14.538,
+      "lineHeight": 1,
+    },
+    "header6": {
+      "fontSize": 12.462,
+      "lineHeight": 1,
+    },
+    "paragraph": {
+      "fontSize": 12.462,
+      "lineHeight": 1,
+    },
+  },
+}
+`;
+
+exports[`certificate documents > fills podium certificates, one page each 1`] = `
+{
+  "background": [Function],
+  "content": [
+    {
+      "pageBreak": "after",
+      "stack": [
+        {
+          "alignment": "center",
+          "style": "header1",
+          "text": [
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 24.936,
+              "text": "ANA LÓPEZ",
+            },
+          ],
+        },
+        {
+          "alignment": "center",
+          "style": "paragraph",
+          "text": [
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Obtuvo el ",
+            },
+            {
+              "bold": true,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Primer",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": " lugar en ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "3x3x3",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": " con un ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "un promedio",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": " de ",
+            },
+            {
+              "bold": true,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "8.45",
+            },
+          ],
+        },
+        {
+          "alignment": "left",
+          "style": "paragraph",
+          "text": " ",
+        },
+        {
+          "alignment": "right",
+          "style": "paragraph",
+          "text": [
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Printables Open 2025",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": ", ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Ciudad de México",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": ", ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "15 y 16 de marzo de 2025",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": ". Delegados: ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Delia Delegada",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": ". Organizadores: ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Óscar Organizador y Olga Organizadora",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      "pageBreak": "",
+      "stack": [
+        {
+          "alignment": "center",
+          "style": "header1",
+          "text": [
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 24.936,
+              "text": "CARLA NÚÑEZ",
+            },
+          ],
+        },
+        {
+          "alignment": "center",
+          "style": "paragraph",
+          "text": [
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Obtuvo el ",
+            },
+            {
+              "bold": true,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Segundo",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": " lugar en ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "3x3x3 A Ciegas",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": " con un ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "un mejor tiempo",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": " de ",
+            },
+            {
+              "bold": true,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "1:01.23",
+            },
+          ],
+        },
+        {
+          "alignment": "left",
+          "style": "paragraph",
+          "text": " ",
+        },
+        {
+          "alignment": "right",
+          "style": "paragraph",
+          "text": [
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Printables Open 2025",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": ", ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Ciudad de México",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": ", ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "15 y 16 de marzo de 2025",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": ". Delegados: ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Delia Delegada",
+            },
+            {
+              "bold": undefined,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": ". Organizadores: ",
+            },
+            {
+              "bold": false,
+              "color": "#000000",
+              "font": "Roboto",
+              "fontSize": 12.468,
+              "text": "Óscar Organizador y Olga Organizadora",
+            },
+          ],
+        },
+      ],
+    },
+  ],
+  "info": {
+    "author": "Cubing México",
+    "title": "Certificados - Printables Open 2025",
+  },
+  "language": "es",
+  "pageMargins": [
+    40,
+    40,
+    40,
+    40,
+  ],
+  "pageOrientation": "landscape",
+  "pageSize": "LETTER",
+  "styles": {
+    "header1": {
+      "fontSize": 33.231,
+      "lineHeight": 1,
+    },
+    "header2": {
+      "fontSize": 24.923,
+      "lineHeight": 1,
+    },
+    "header3": {
+      "fontSize": 20.769,
+      "lineHeight": 1,
+    },
+    "header4": {
+      "fontSize": 16.615,
+      "lineHeight": 1,
+    },
+    "header5": {
+      "fontSize": 14.538,
+      "lineHeight": 1,
+    },
+    "header6": {
+      "fontSize": 12.462,
+      "lineHeight": 1,
+    },
+    "paragraph": {
+      "fontSize": 12.462,
+      "lineHeight": 1,
+    },
+  },
+}
+`;

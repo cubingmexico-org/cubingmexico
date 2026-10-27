@@ -1,5 +1,3 @@
-"use client";
-
 import { StateLabel } from "@/components/state-flag";
 import { getTier, getTierClass } from "@/lib/utils";
 import type { Tier } from "@/types";

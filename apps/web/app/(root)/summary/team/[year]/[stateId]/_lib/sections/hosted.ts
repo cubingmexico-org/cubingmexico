@@ -20,6 +20,7 @@ import {
   ne,
   sql,
 } from "drizzle-orm";
+import { inOfficialEvents, isOfficialEvent } from "@/lib/official-events";
 import { TOP_N, type TeamSummaryContext } from "./context";
 
 export function queryHostedSection({
@@ -84,7 +85,7 @@ export function queryHostedSection({
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .innerJoin(event, eq(result.eventId, event.id))
-      .where(hostedYearFilter)
+      .where(and(hostedYearFilter, isOfficialEvent))
       .groupBy(result.eventId, event.name, event.rank)
       .orderBy(
         desc(
@@ -104,7 +105,7 @@ export function queryHostedSection({
       .from(resultAttempts)
       .innerJoin(result, eq(resultAttempts.resultId, result.id))
       .innerJoin(competition, eq(result.competitionId, competition.id))
-      .where(hostedYearFilter)
+      .where(and(hostedYearFilter, inOfficialEvents(result.eventId)))
       .then((rows) => rows[0]),
 
     // Visitors from other Mexican states

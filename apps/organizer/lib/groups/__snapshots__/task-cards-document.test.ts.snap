@@ -1,0 +1,621 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`group sheets > prints one page per group of a round, with competitors and staff 1`] = `
+{
+  "content": [
+    {
+      "pageBreak": "after",
+      "stack": [
+        {
+          "color": "#555",
+          "fontSize": 9,
+          "text": "Printables Open 2025",
+        },
+        {
+          "bold": true,
+          "fontSize": 13,
+          "margin": [
+            0,
+            2,
+            0,
+            2,
+          ],
+          "text": "Hoja de grupo — 333 — Ronda 1",
+        },
+        {
+          "fontSize": 11,
+          "margin": [
+            0,
+            0,
+            0,
+            8,
+          ],
+          "text": "Grupo 1 · Sala Principal",
+        },
+        {
+          "style": "section",
+          "text": "Competidores",
+        },
+        {
+          "layout": "lightHorizontalLines",
+          "margin": [
+            0,
+            0,
+            0,
+            10,
+          ],
+          "table": {
+            "body": [
+              [
+                {
+                  "style": "th",
+                  "text": "Est.",
+                },
+                {
+                  "style": "th",
+                  "text": "Nombre",
+                },
+                {
+                  "style": "th",
+                  "text": "WCA ID",
+                },
+                {
+                  "style": "th",
+                  "text": "Firma",
+                },
+              ],
+              [
+                "1",
+                "Ana López",
+                "2015LOPE01",
+                "",
+              ],
+              [
+                "2",
+                "Beto Martínez (贝托)",
+                "2016MART02",
+                "",
+              ],
+            ],
+            "headerRows": 1,
+            "widths": [
+              30,
+              "*",
+              70,
+              40,
+            ],
+          },
+        },
+        {
+          "style": "section",
+          "text": "Voluntarios",
+        },
+        {
+          "fontSize": 9,
+          "ul": [
+            "Carla Núñez — Juez",
+            "Diego Ramírez — Corredor",
+          ],
+        },
+      ],
+    },
+    {
+      "stack": [
+        {
+          "color": "#555",
+          "fontSize": 9,
+          "text": "Printables Open 2025",
+        },
+        {
+          "bold": true,
+          "fontSize": 13,
+          "margin": [
+            0,
+            2,
+            0,
+            2,
+          ],
+          "text": "Hoja de grupo — 333 — Ronda 1",
+        },
+        {
+          "fontSize": 11,
+          "margin": [
+            0,
+            0,
+            0,
+            8,
+          ],
+          "text": "Grupo 2 · Sala Principal",
+        },
+        {
+          "style": "section",
+          "text": "Competidores",
+        },
+        {
+          "layout": "lightHorizontalLines",
+          "margin": [
+            0,
+            0,
+            0,
+            10,
+          ],
+          "table": {
+            "body": [
+              [
+                {
+                  "style": "th",
+                  "text": "Est.",
+                },
+                {
+                  "style": "th",
+                  "text": "Nombre",
+                },
+                {
+                  "style": "th",
+                  "text": "WCA ID",
+                },
+                {
+                  "style": "th",
+                  "text": "Firma",
+                },
+              ],
+              [
+                "1",
+                "Carla Núñez",
+                "2019NUNE01",
+                "",
+              ],
+              [
+                "2",
+                "Diego Ramírez",
+                "",
+                "",
+              ],
+            ],
+            "headerRows": 1,
+            "widths": [
+              30,
+              "*",
+              70,
+              40,
+            ],
+          },
+        },
+        {
+          "style": "section",
+          "text": "Voluntarios",
+        },
+        {
+          "fontSize": 9,
+          "ul": [
+            "Ana López — Juez",
+            "Beto Martínez (贝托) — Mezclador",
+          ],
+        },
+      ],
+    },
+  ],
+  "defaultStyle": {
+    "font": "Roboto",
+    "fontSize": 9,
+  },
+  "info": {
+    "author": "Cubing México",
+    "title": "Hojas de grupo — 333 — Ronda 1",
+  },
+  "language": "es",
+  "pageMargins": [
+    36,
+    36,
+    36,
+    36,
+  ],
+  "pageSize": "LETTER",
+  "styles": {
+    "section": {
+      "bold": true,
+      "fontSize": 10,
+      "margin": [
+        0,
+        4,
+        0,
+        4,
+      ],
+    },
+    "th": {
+      "bold": true,
+      "fontSize": 8,
+    },
+  },
+}
+`;
+
+exports[`task cards > prints one page per person with their timeline 1`] = `
+{
+  "content": [
+    {
+      "pageBreak": "after",
+      "stack": [
+        {
+          "color": "#555",
+          "fontSize": 8,
+          "text": "Printables Open 2025",
+        },
+        {
+          "bold": true,
+          "fontSize": 11,
+          "margin": [
+            0,
+            2,
+            0,
+            2,
+          ],
+          "text": "Tarjeta de tareas",
+        },
+        {
+          "bold": true,
+          "fontSize": 13,
+          "text": "Ana López",
+        },
+        {
+          "fontSize": 9,
+          "margin": [
+            0,
+            0,
+            0,
+            6,
+          ],
+          "text": "2015LOPE01",
+        },
+        {
+          "layout": "lightHorizontalLines",
+          "table": {
+            "body": [
+              [
+                {
+                  "style": "th",
+                  "text": "Hora",
+                },
+                {
+                  "style": "th",
+                  "text": "Actividad",
+                },
+                {
+                  "style": "th",
+                  "text": "Sala",
+                },
+                {
+                  "style": "th",
+                  "text": "Rol",
+                },
+                {
+                  "style": "th",
+                  "text": "Est.",
+                },
+              ],
+              [
+                "sáb 04:00 p.m.",
+                "333-r1-g1 (G1)",
+                "Sala Principal",
+                "Competidor",
+                "1",
+              ],
+              [
+                "sáb 04:30 p.m.",
+                "333-r1-g2 (G2)",
+                "Sala Principal",
+                "Juez",
+                "—",
+              ],
+              [
+                "sáb 06:00 p.m.",
+                "333bf-r1-g1 (G1)",
+                "Sala Principal",
+                "Competidor",
+                "1",
+              ],
+            ],
+            "headerRows": 1,
+            "widths": [
+              70,
+              "*",
+              50,
+              40,
+              45,
+            ],
+          },
+        },
+      ],
+    },
+    {
+      "pageBreak": "after",
+      "stack": [
+        {
+          "color": "#555",
+          "fontSize": 8,
+          "text": "Printables Open 2025",
+        },
+        {
+          "bold": true,
+          "fontSize": 11,
+          "margin": [
+            0,
+            2,
+            0,
+            2,
+          ],
+          "text": "Tarjeta de tareas",
+        },
+        {
+          "bold": true,
+          "fontSize": 13,
+          "text": "Beto Martínez (贝托)",
+        },
+        {
+          "fontSize": 9,
+          "margin": [
+            0,
+            0,
+            0,
+            6,
+          ],
+          "text": "2016MART02",
+        },
+        {
+          "layout": "lightHorizontalLines",
+          "table": {
+            "body": [
+              [
+                {
+                  "style": "th",
+                  "text": "Hora",
+                },
+                {
+                  "style": "th",
+                  "text": "Actividad",
+                },
+                {
+                  "style": "th",
+                  "text": "Sala",
+                },
+                {
+                  "style": "th",
+                  "text": "Rol",
+                },
+                {
+                  "style": "th",
+                  "text": "Est.",
+                },
+              ],
+              [
+                "sáb 04:00 p.m.",
+                "333-r1-g1 (G1)",
+                "Sala Principal",
+                "Competidor",
+                "2",
+              ],
+              [
+                "sáb 04:30 p.m.",
+                "333-r1-g2 (G2)",
+                "Sala Principal",
+                "Mezclador",
+                "—",
+              ],
+            ],
+            "headerRows": 1,
+            "widths": [
+              70,
+              "*",
+              50,
+              40,
+              45,
+            ],
+          },
+        },
+      ],
+    },
+    {
+      "pageBreak": "after",
+      "stack": [
+        {
+          "color": "#555",
+          "fontSize": 8,
+          "text": "Printables Open 2025",
+        },
+        {
+          "bold": true,
+          "fontSize": 11,
+          "margin": [
+            0,
+            2,
+            0,
+            2,
+          ],
+          "text": "Tarjeta de tareas",
+        },
+        {
+          "bold": true,
+          "fontSize": 13,
+          "text": "Carla Núñez",
+        },
+        {
+          "fontSize": 9,
+          "margin": [
+            0,
+            0,
+            0,
+            6,
+          ],
+          "text": "2019NUNE01",
+        },
+        {
+          "layout": "lightHorizontalLines",
+          "table": {
+            "body": [
+              [
+                {
+                  "style": "th",
+                  "text": "Hora",
+                },
+                {
+                  "style": "th",
+                  "text": "Actividad",
+                },
+                {
+                  "style": "th",
+                  "text": "Sala",
+                },
+                {
+                  "style": "th",
+                  "text": "Rol",
+                },
+                {
+                  "style": "th",
+                  "text": "Est.",
+                },
+              ],
+              [
+                "sáb 04:00 p.m.",
+                "333-r1-g1 (G1)",
+                "Sala Principal",
+                "Juez",
+                "—",
+              ],
+              [
+                "sáb 04:30 p.m.",
+                "333-r1-g2 (G2)",
+                "Sala Principal",
+                "Competidor",
+                "1",
+              ],
+              [
+                "sáb 06:00 p.m.",
+                "333bf-r1-g1 (G1)",
+                "Sala Principal",
+                "Competidor",
+                "2",
+              ],
+            ],
+            "headerRows": 1,
+            "widths": [
+              70,
+              "*",
+              50,
+              40,
+              45,
+            ],
+          },
+        },
+      ],
+    },
+    {
+      "stack": [
+        {
+          "color": "#555",
+          "fontSize": 8,
+          "text": "Printables Open 2025",
+        },
+        {
+          "bold": true,
+          "fontSize": 11,
+          "margin": [
+            0,
+            2,
+            0,
+            2,
+          ],
+          "text": "Tarjeta de tareas",
+        },
+        {
+          "bold": true,
+          "fontSize": 13,
+          "text": "Diego Ramírez",
+        },
+        {
+          "fontSize": 9,
+          "margin": [
+            0,
+            0,
+            0,
+            6,
+          ],
+          "text": "ID 4",
+        },
+        {
+          "layout": "lightHorizontalLines",
+          "table": {
+            "body": [
+              [
+                {
+                  "style": "th",
+                  "text": "Hora",
+                },
+                {
+                  "style": "th",
+                  "text": "Actividad",
+                },
+                {
+                  "style": "th",
+                  "text": "Sala",
+                },
+                {
+                  "style": "th",
+                  "text": "Rol",
+                },
+                {
+                  "style": "th",
+                  "text": "Est.",
+                },
+              ],
+              [
+                "sáb 04:00 p.m.",
+                "333-r1-g1 (G1)",
+                "Sala Principal",
+                "Corredor",
+                "—",
+              ],
+              [
+                "sáb 04:30 p.m.",
+                "333-r1-g2 (G2)",
+                "Sala Principal",
+                "Competidor",
+                "2",
+              ],
+            ],
+            "headerRows": 1,
+            "widths": [
+              70,
+              "*",
+              50,
+              40,
+              45,
+            ],
+          },
+        },
+      ],
+    },
+  ],
+  "defaultStyle": {
+    "font": "Roboto",
+    "fontSize": 9,
+  },
+  "info": {
+    "author": "Cubing México",
+    "title": "Tarjetas de tareas — Printables Open 2025",
+  },
+  "language": "es",
+  "pageMargins": [
+    36,
+    36,
+    36,
+    36,
+  ],
+  "pageSize": "LETTER",
+  "styles": {
+    "th": {
+      "bold": true,
+      "fontSize": 8,
+    },
+  },
+}
+`;

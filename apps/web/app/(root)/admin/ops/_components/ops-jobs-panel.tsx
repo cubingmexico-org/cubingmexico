@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import {
@@ -24,6 +25,7 @@ import {
 import { ADMIN_OPS_JOBS, type AdminOpsPath } from "../../_lib/ops-jobs";
 
 export function OpsJobsPanel() {
+  const router = useRouter();
   const [pendingPath, setPendingPath] = React.useState<AdminOpsPath | null>(
     null,
   );
@@ -48,6 +50,13 @@ export function OpsJobsPanel() {
         return;
       }
 
+      if (data.status === 202) {
+        toast.success(
+          `Job ${path} iniciado. Su progreso aparece en “Ejecuciones recientes”.`,
+        );
+        router.refresh();
+        return;
+      }
       toast.success(`Job ${path} completado`);
     } catch (error) {
       toast.error(

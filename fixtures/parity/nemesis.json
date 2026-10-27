@@ -1,0 +1,1238 @@
+{
+  "description": "Nemesis counts per person and event scope. Checked by apps/backend/tests_integration/test_rankings_jobs.py (nemesis_stats job) and apps/web/app/(root)/persons/_lib/nemesis-parity.integration.test.ts (getNemesisReport / getNemesizedReport). B is a nemesis of A when B is strictly better in every slot (event, single|average) where A has a result. `expectedLists` is checked by the web test only (the backend stores counts): ids sorted by WCA id, with the `closest` slot for nemeses and victims and the `missing` slot for almost-nemeses and almost-victims.",
+  "events": [
+    {
+      "id": "333",
+      "rank": 10
+    },
+    {
+      "id": "222",
+      "rank": 20
+    },
+    {
+      "id": "333mbf",
+      "rank": 170
+    },
+    {
+      "id": "333ft",
+      "rank": 996
+    },
+    {
+      "id": "fto",
+      "rank": 810
+    }
+  ],
+  "persons": [
+    "2020AAAA01",
+    "2020BBBB01",
+    "2020CCCC01",
+    "2020DDDD01",
+    "2020EEEE01",
+    "2020FFFF01",
+    "2020GGGG01",
+    "2020HHHH01",
+    "2020IIII01",
+    "2020JJJJ01"
+  ],
+  "ranks": [
+    {
+      "personId": "2020AAAA01",
+      "type": "single",
+      "eventId": "333",
+      "best": 800
+    },
+    {
+      "personId": "2020AAAA01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1000
+    },
+    {
+      "personId": "2020AAAA01",
+      "type": "single",
+      "eventId": "222",
+      "best": 300
+    },
+    {
+      "personId": "2020BBBB01",
+      "type": "single",
+      "eventId": "333",
+      "best": 900
+    },
+    {
+      "personId": "2020BBBB01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1100
+    },
+    {
+      "personId": "2020BBBB01",
+      "type": "single",
+      "eventId": "222",
+      "best": 400
+    },
+    {
+      "personId": "2020CCCC01",
+      "type": "single",
+      "eventId": "333",
+      "best": 800
+    },
+    {
+      "personId": "2020CCCC01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1200
+    },
+    {
+      "personId": "2020DDDD01",
+      "type": "single",
+      "eventId": "333",
+      "best": 950
+    },
+    {
+      "personId": "2020DDDD01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1300
+    },
+    {
+      "personId": "2020DDDD01",
+      "type": "single",
+      "eventId": "333ft",
+      "best": 2000
+    },
+    {
+      "personId": "2020EEEE01",
+      "type": "single",
+      "eventId": "333",
+      "best": 1000
+    },
+    {
+      "personId": "2020EEEE01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1400
+    },
+    {
+      "personId": "2020EEEE01",
+      "type": "single",
+      "eventId": "333ft",
+      "best": 1500
+    },
+    {
+      "personId": "2020FFFF01",
+      "type": "single",
+      "eventId": "333",
+      "best": 2000
+    },
+    {
+      "personId": "2020FFFF01",
+      "type": "single",
+      "eventId": "fto",
+      "best": 100
+    },
+    {
+      "personId": "2020GGGG01",
+      "type": "single",
+      "eventId": "333",
+      "best": 800
+    },
+    {
+      "personId": "2020GGGG01",
+      "type": "average",
+      "eventId": "333",
+      "best": 1000
+    },
+    {
+      "personId": "2020GGGG01",
+      "type": "single",
+      "eventId": "222",
+      "best": 300
+    },
+    {
+      "personId": "2020HHHH01",
+      "type": "single",
+      "eventId": "333",
+      "best": 700
+    },
+    {
+      "personId": "2020HHHH01",
+      "type": "average",
+      "eventId": "333",
+      "best": 950
+    },
+    {
+      "personId": "2020HHHH01",
+      "type": "single",
+      "eventId": "222",
+      "best": 250
+    },
+    {
+      "personId": "2020HHHH01",
+      "type": "single",
+      "eventId": "333mbf",
+      "best": 970360001
+    },
+    {
+      "personId": "2020IIII01",
+      "type": "single",
+      "eventId": "333",
+      "best": 1500
+    },
+    {
+      "personId": "2020IIII01",
+      "type": "single",
+      "eventId": "333mbf",
+      "best": 980360001
+    },
+    {
+      "personId": "2020JJJJ01",
+      "type": "single",
+      "eventId": "222",
+      "best": 350
+    }
+  ],
+  "expected": {
+    "official": {
+      "2020AAAA01": {
+        "nemesisCount": 1,
+        "nemesizedCount": 5,
+        "slotCount": 3
+      },
+      "2020BBBB01": {
+        "nemesisCount": 3,
+        "nemesizedCount": 3,
+        "slotCount": 3
+      },
+      "2020CCCC01": {
+        "nemesisCount": 1,
+        "nemesizedCount": 3,
+        "slotCount": 2
+      },
+      "2020DDDD01": {
+        "nemesisCount": 5,
+        "nemesizedCount": 2,
+        "slotCount": 2
+      },
+      "2020EEEE01": {
+        "nemesisCount": 6,
+        "nemesizedCount": 1,
+        "slotCount": 2
+      },
+      "2020FFFF01": {
+        "nemesisCount": 8,
+        "nemesizedCount": 0,
+        "slotCount": 1
+      },
+      "2020GGGG01": {
+        "nemesisCount": 1,
+        "nemesizedCount": 5,
+        "slotCount": 3
+      },
+      "2020HHHH01": {
+        "nemesisCount": 0,
+        "nemesizedCount": 9,
+        "slotCount": 4
+      },
+      "2020IIII01": {
+        "nemesisCount": 1,
+        "nemesizedCount": 1,
+        "slotCount": 2
+      },
+      "2020JJJJ01": {
+        "nemesisCount": 3,
+        "nemesizedCount": 0,
+        "slotCount": 1
+      }
+    },
+    "all": {
+      "2020AAAA01": {
+        "nemesisCount": 1,
+        "nemesizedCount": 3,
+        "slotCount": 3
+      },
+      "2020BBBB01": {
+        "nemesisCount": 3,
+        "nemesizedCount": 1,
+        "slotCount": 3
+      },
+      "2020CCCC01": {
+        "nemesisCount": 1,
+        "nemesizedCount": 1,
+        "slotCount": 2
+      },
+      "2020DDDD01": {
+        "nemesisCount": 0,
+        "nemesizedCount": 1,
+        "slotCount": 3
+      },
+      "2020EEEE01": {
+        "nemesisCount": 0,
+        "nemesizedCount": 1,
+        "slotCount": 3
+      },
+      "2020FFFF01": {
+        "nemesisCount": 8,
+        "nemesizedCount": 0,
+        "slotCount": 1
+      },
+      "2020GGGG01": {
+        "nemesisCount": 1,
+        "nemesizedCount": 3,
+        "slotCount": 3
+      },
+      "2020HHHH01": {
+        "nemesisCount": 0,
+        "nemesizedCount": 7,
+        "slotCount": 4
+      },
+      "2020IIII01": {
+        "nemesisCount": 1,
+        "nemesizedCount": 1,
+        "slotCount": 2
+      },
+      "2020JJJJ01": {
+        "nemesisCount": 3,
+        "nemesizedCount": 0,
+        "slotCount": 1
+      }
+    }
+  },
+  "expectedLists": {
+    "official": {
+      "2020AAAA01": {
+        "nemeses": [
+          {
+            "wcaId": "2020HHHH01",
+            "type": "average",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020BBBB01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020JJJJ01",
+            "type": "single",
+            "eventId": "222"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020BBBB01": {
+        "nemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "average",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020CCCC01": {
+        "nemeses": [
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "victims": [
+          {
+            "wcaId": "2020DDDD01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020DDDD01": {
+        "nemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020EEEE01": {
+        "nemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020FFFF01": {
+        "nemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [],
+        "almostVictims": []
+      },
+      "2020GGGG01": {
+        "nemeses": [
+          {
+            "wcaId": "2020HHHH01",
+            "type": "average",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020BBBB01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020JJJJ01",
+            "type": "single",
+            "eventId": "222"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020HHHH01": {
+        "nemeses": [],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020JJJJ01",
+            "type": "single",
+            "eventId": "222"
+          }
+        ],
+        "almostVictims": []
+      },
+      "2020IIII01": {
+        "nemeses": [
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ],
+        "victims": [
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": []
+      },
+      "2020JJJJ01": {
+        "nemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "222"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "222"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "222"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [],
+        "almostVictims": []
+      }
+    },
+    "all": {
+      "2020AAAA01": {
+        "nemeses": [
+          {
+            "wcaId": "2020HHHH01",
+            "type": "average",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020BBBB01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020JJJJ01",
+            "type": "single",
+            "eventId": "222"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020BBBB01": {
+        "nemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "average",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020CCCC01": {
+        "nemeses": [
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "victims": [
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020DDDD01": {
+        "nemeses": [],
+        "almostNemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333ft"
+          }
+        ],
+        "victims": [
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020EEEE01": {
+        "nemeses": [],
+        "almostNemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333ft"
+          }
+        ],
+        "victims": [
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020FFFF01": {
+        "nemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [],
+        "almostVictims": []
+      },
+      "2020GGGG01": {
+        "nemeses": [
+          {
+            "wcaId": "2020HHHH01",
+            "type": "average",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020BBBB01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020JJJJ01",
+            "type": "single",
+            "eventId": "222"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ]
+      },
+      "2020HHHH01": {
+        "nemeses": [],
+        "almostNemeses": [],
+        "victims": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "average",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020IIII01",
+            "type": "single",
+            "eventId": "333"
+          },
+          {
+            "wcaId": "2020JJJJ01",
+            "type": "single",
+            "eventId": "222"
+          }
+        ],
+        "almostVictims": [
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333ft"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333ft"
+          }
+        ]
+      },
+      "2020IIII01": {
+        "nemeses": [
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostNemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020BBBB01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020CCCC01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020DDDD01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020EEEE01",
+            "type": "single",
+            "eventId": "333mbf"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "333mbf"
+          }
+        ],
+        "victims": [
+          {
+            "wcaId": "2020FFFF01",
+            "type": "single",
+            "eventId": "333"
+          }
+        ],
+        "almostVictims": []
+      },
+      "2020JJJJ01": {
+        "nemeses": [
+          {
+            "wcaId": "2020AAAA01",
+            "type": "single",
+            "eventId": "222"
+          },
+          {
+            "wcaId": "2020GGGG01",
+            "type": "single",
+            "eventId": "222"
+          },
+          {
+            "wcaId": "2020HHHH01",
+            "type": "single",
+            "eventId": "222"
+          }
+        ],
+        "almostNemeses": [],
+        "victims": [],
+        "almostVictims": []
+      }
+    }
+  }
+}

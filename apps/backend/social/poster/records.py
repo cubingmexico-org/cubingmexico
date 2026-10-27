@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import psycopg2.extras
+from typing import Any
 
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.poster.shared import POST_TYPE_RECORD, _already_posted, _publish_image_to_platforms, fetch_record_markers
 from social.records_image import generate_record_png
 from social.upcoming_image import format_competition_date
@@ -79,7 +79,7 @@ def _record_captions(marker: dict) -> dict[str, str]:
     from social.image_common import format_result_time
 
     time_text = format_result_time(marker["event_id"], marker["value"], kind=marker["kind"])
-    kwargs = dict(
+    kwargs: dict[str, Any] = dict(
         person_name=marker["person_name"],
         person_id=marker["person_id"],
         event_name=marker["event_name"],
@@ -100,7 +100,7 @@ def _record_captions(marker: dict) -> dict[str, str]:
 
 def get_record_details(subject_key: str) -> dict | None:
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             markers = fetch_record_markers(cur)
     return markers.get(subject_key)
 
@@ -140,7 +140,7 @@ def post_record(subject_key: str) -> dict:
     }
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             markers = fetch_record_markers(cur)
             marker = markers.get(subject_key)
             if not marker:

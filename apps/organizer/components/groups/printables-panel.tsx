@@ -88,12 +88,12 @@ export function PrintablesPanel({
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <div className="space-y-1 w-44">
-            <Label>Modo</Label>
+            <Label htmlFor="printables-mode">Modo</Label>
             <Select
               value={mode}
               onValueChange={(v) => setMode(v as ScorecardMode)}
             >
-              <SelectTrigger>
+              <SelectTrigger id="printables-mode">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

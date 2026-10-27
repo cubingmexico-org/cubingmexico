@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from typing import Iterable
+from collections.abc import Iterable
 
-import psycopg2.extras
-
-from common import SOCIAL_POSTS_ENABLED, get_connection, log
+from common import SOCIAL_POSTS_ENABLED, get_connection, log, named_row
 from social.poster.mark import mark_typed_posted
 from social.poster.shared import (
     POST_TYPE_RESULTADOS,
@@ -46,7 +44,7 @@ def _resultados_caption(comp: dict, *, include_link: bool = True) -> str:
 
 def get_competition_resultados_captions(competition_id: str) -> dict[str, str] | None:
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             comp = _competition_details(cur, competition_id)
     if not comp:
         return None
@@ -69,7 +67,7 @@ def get_competition_resultados_caption(
 
 def generate_competition_resultados_png(competition_id: str) -> tuple[bytes, dict] | None:
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             comp = _competition_details(cur, competition_id)
     if not comp:
         return None
@@ -96,7 +94,7 @@ def post_competition_resultados(competition_id: str) -> dict:
     }
 
     with get_connection() as conn:
-        with conn.cursor(cursor_factory=psycopg2.extras.NamedTupleCursor) as cur:
+        with conn.cursor(row_factory=named_row) as cur:
             comp = _competition_details(cur, competition_id)
             if not comp:
                 result["errors"].append("competition_not_found_or_not_mexico")

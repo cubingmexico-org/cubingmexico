@@ -4,6 +4,7 @@
 node_modules
 .pnp
 .pnp.js
+.pnpm-store
 
 # Local env files
 .env
@@ -14,6 +15,10 @@ node_modules
 
 # Testing
 coverage
+coverage-integration
+test-results/
+playwright-report/
+**/e2e/.auth/
 
 # Turbo
 .turbo

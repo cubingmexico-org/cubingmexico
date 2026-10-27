@@ -1,6 +1,7 @@
 import { connection, NextResponse } from "next/server";
 import { getSessionUserId } from "@/lib/team-auth";
 import { unauthorizedResponse } from "@/lib/api-auth";
+import { reportError } from "@/lib/report-error";
 import { isSuperadmin } from "@/lib/superadmin";
 import { deleteSocialPost } from "@/app/(root)/admin/_lib/queries";
 
@@ -37,7 +38,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, data: deleted });
   } catch (error) {
-    console.error(error);
+    reportError(error);
     return NextResponse.json(
       {
         success: false,
