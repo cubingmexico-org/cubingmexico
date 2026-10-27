@@ -1,30 +1,24 @@
 "use server";
 
+import { getCurrentUserTeam } from "@/db/queries";
 import {
   addMember,
-  deleteTeamCover,
-  deleteTeamLogo,
-  getCurrentUserTeam,
   saveProfile,
   saveProfileSpecialties,
   saveTeam,
   updateTeamCover,
   updateTeamLogo,
-} from "@/db/queries";
+} from "@/db/mutations";
+import { deleteUploadedFileIfUnused } from "@/lib/uploadthing-files";
+import { uploadThingFileKey } from "@/lib/uploadthing-key";
 import { getErrorMessage } from "@/lib/handle-error";
-import {
-  invalidateAfterStateRanksChange,
-  invalidateAfterStateRecordsChange,
-  invalidateStateMemberTags,
-} from "@/lib/cache-tags";
+import { invalidateStateMemberTags } from "@/lib/cache-tags";
 import { getSessionUserId, requireTeamPermission } from "@/lib/team-auth";
 import { isSuperadmin } from "@/lib/superadmin";
 import {
-  clearPersonStateRanks,
-  clearPersonStateRecords,
-  updateStateRanks,
-  updateStateRecords,
-} from "@/lib/state-updates";
+  refreshStatesAfterRosterChange,
+  ROSTER_REFRESH_PENDING,
+} from "@/lib/roster-refresh";
 import {
   addMemberFormSchema,
   preferencesFormSchema,
@@ -38,16 +32,19 @@ import { updateTag } from "next/cache";
 import { unauthorized } from "next/navigation";
 import { z } from "zod";
 
-export async function getCurrentUserTeamAction(userId: string) {
-  return getCurrentUserTeam({ userId });
-}
+export type HeaderContext = {
+  team: { id: string; name: string } | null;
+  isSuperadmin: boolean;
+};
 
-export async function isSuperadminAction(wcaId: string) {
-  const sessionUserId = await getSessionUserId();
-  if (!sessionUserId || sessionUserId !== wcaId) {
-    return false;
+/** The signed-in person's team and superadmin flag, read from the session. */
+export async function getHeaderContextAction(): Promise<HeaderContext | null> {
+  const wcaId = await getSessionUserId();
+  if (!wcaId) {
+    return null;
   }
-  return isSuperadmin(wcaId);
+  const team = await getCurrentUserTeam({ userId: wcaId });
+  return { team: team ?? null, isSuperadmin: isSuperadmin(wcaId) };
 }
 
 export async function profileFormAction(
@@ -66,36 +63,44 @@ export async function profileFormAction(
       unauthorized();
     }
 
-    const existing = await db
+    const [existing] = await db
       .select({ stateId: person.stateId })
       .from(person)
       .where(eq(person.wcaId, data.personId))
       .limit(1);
 
-    const previousStateId = existing[0]?.stateId ?? null;
+    if (!existing) {
+      return {
+        defaultValues,
+        success: false,
+        errors: "No encontramos tu perfil de la WCA.",
+        warning: null,
+      };
+    }
+
+    // Changing an existing state goes through a superadmin (assignPersonState).
+    if (existing.stateId) {
+      return {
+        defaultValues: {
+          stateId: existing.stateId,
+          personId: data.personId,
+        },
+        success: false,
+        errors:
+          "Ya tienes un estado asignado. Contacta a un administrador para cambiarlo.",
+        warning: null,
+      };
+    }
 
     await saveProfile({
       stateId: data.stateId,
       personId: data.personId,
     });
 
-    updateTag(`profile-person-${data.personId}`);
-    updateTag(`person-page-${data.personId}`);
-
-    await clearPersonStateRanks([data.personId]);
-    await clearPersonStateRecords([data.personId]);
-
-    if (previousStateId && previousStateId !== data.stateId) {
-      await updateStateRanks(previousStateId);
-      invalidateAfterStateRanksChange(previousStateId);
-      const previousRecords = await updateStateRecords(previousStateId);
-      invalidateAfterStateRecordsChange(previousRecords.personIds);
-    }
-
-    await updateStateRanks(data.stateId);
-    invalidateAfterStateRanksChange(data.stateId);
-    const newRecords = await updateStateRecords(data.stateId);
-    invalidateAfterStateRecordsChange([data.personId, ...newRecords.personIds]);
+    const { ok } = await refreshStatesAfterRosterChange({
+      stateIds: [data.stateId],
+      personIds: [data.personId],
+    });
 
     return {
       defaultValues: {
@@ -104,6 +109,7 @@ export async function profileFormAction(
       },
       success: true,
       errors: null,
+      warning: ok ? null : ROSTER_REFRESH_PENDING,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -111,6 +117,7 @@ export async function profileFormAction(
         defaultValues,
         success: false,
         errors: getErrorMessage(error),
+        warning: null,
       };
     }
 
@@ -267,6 +274,27 @@ export async function addMemberFormAction(
       ? data.specialties.split(",").map((speciality) => speciality.trim())
       : null;
 
+    const [candidate] = await db
+      .select({ stateId: person.stateId })
+      .from(person)
+      .where(eq(person.wcaId, data.personId))
+      .limit(1);
+
+    // Moving someone out of another team goes through a superadmin (assignPersonState).
+    if (
+      !candidate ||
+      (candidate.stateId && candidate.stateId !== data.stateId)
+    ) {
+      return {
+        defaultValues,
+        success: false,
+        errors: candidate
+          ? "Esta persona ya pertenece a otro team."
+          : "Persona no encontrada.",
+        warning: null,
+      };
+    }
+
     await addMember({
       stateId: data.stateId,
       personId: data.personId,
@@ -274,12 +302,10 @@ export async function addMemberFormAction(
       achievements: null,
     });
 
-    await updateStateRanks(data.stateId);
-    invalidateAfterStateRanksChange(data.stateId);
-    const records = await updateStateRecords(data.stateId);
-    invalidateAfterStateRecordsChange(records.personIds);
-    invalidateStateMemberTags(data.stateId);
-    updateTag("persons-without-state");
+    const { ok } = await refreshStatesAfterRosterChange({
+      stateIds: [data.stateId],
+      personIds: [data.personId],
+    });
 
     return {
       defaultValues: {
@@ -289,6 +315,7 @@ export async function addMemberFormAction(
       },
       success: true,
       errors: null,
+      warning: ok ? null : ROSTER_REFRESH_PENDING,
     };
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -296,6 +323,7 @@ export async function addMemberFormAction(
         defaultValues,
         success: false,
         errors: getErrorMessage(error),
+        warning: null,
       };
     }
 
@@ -304,42 +332,17 @@ export async function addMemberFormAction(
 }
 
 export async function deleteTeamLogoAction(stateId: string) {
-  await requireTeamPermission(stateId, "team.media");
-
-  try {
-    await deleteTeamLogo({
-      stateId,
-    });
-
-    updateTag(`team-info-${stateId}`);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error("Failed to delete team logo in database");
-    throw error;
-  }
+  return updateTeamLogoAction(stateId, null);
 }
 
 export async function deleteTeamCoverAction(stateId: string) {
-  await requireTeamPermission(stateId, "team.media");
-
-  try {
-    await deleteTeamCover({
-      stateId,
-    });
-
-    updateTag(`team-info-${stateId}`);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error("Failed to delete team cover in database");
-    throw error;
-  }
+  return updateTeamCoverAction(stateId, null);
 }
+
+const teamImageSchema = z
+  .string()
+  .refine((url) => uploadThingFileKey(url) !== null, "Imagen no válida")
+  .nullable();
 
 export async function updateTeamLogoAction(
   stateId: string,
@@ -347,21 +350,18 @@ export async function updateTeamLogoAction(
 ) {
   await requireTeamPermission(stateId, "team.media");
 
-  try {
-    await updateTeamLogo({
-      stateId,
-      image,
-    });
-
-    updateTag(`team-info-${stateId}`);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error("Failed to update team logo in database");
-    throw error;
+  const previous = await updateTeamLogo({
+    stateId,
+    image: teamImageSchema.parse(image),
+  });
+  updateTag(`team-info-${stateId}`);
+  if (previous !== image) {
+    await deleteUploadedFileIfUnused(previous);
   }
+
+  return {
+    success: true,
+  };
 }
 
 export async function updateTeamCoverAction(
@@ -370,19 +370,16 @@ export async function updateTeamCoverAction(
 ) {
   await requireTeamPermission(stateId, "team.media");
 
-  try {
-    await updateTeamCover({
-      stateId,
-      coverImage,
-    });
-
-    updateTag(`team-info-${stateId}`);
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error("Failed to update team cover in database");
-    throw error;
+  const previous = await updateTeamCover({
+    stateId,
+    coverImage: teamImageSchema.parse(coverImage),
+  });
+  updateTag(`team-info-${stateId}`);
+  if (previous !== coverImage) {
+    await deleteUploadedFileIfUnused(previous);
   }
+
+  return {
+    success: true,
+  };
 }

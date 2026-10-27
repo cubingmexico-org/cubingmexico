@@ -51,7 +51,7 @@ export function DeleteMembersDialog({
 
   function onDelete() {
     startDeleteTransition(async () => {
-      const { error } = await deleteMembers({
+      const { error, warning } = await deleteMembers({
         ids: members.map((task) => task.wcaId),
         stateId,
       });
@@ -62,7 +62,11 @@ export function DeleteMembersDialog({
       }
 
       props.onOpenChange?.(false);
-      toast.success("Miembros eliminados");
+      if (warning) {
+        toast.warning(warning);
+      } else {
+        toast.success("Miembros eliminados");
+      }
       onSuccess?.();
     });
   }

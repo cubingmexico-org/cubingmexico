@@ -48,7 +48,7 @@ export function MembersTableActionBar({
   const onMemberDelete = React.useCallback(() => {
     setCurrentAction("delete");
     startTransition(async () => {
-      const { error } = await deleteMembers({
+      const { error, warning } = await deleteMembers({
         ids: rows.map((row) => row.original.wcaId),
         stateId,
       });
@@ -56,6 +56,9 @@ export function MembersTableActionBar({
       if (error) {
         toast.error(error);
         return;
+      }
+      if (warning) {
+        toast.warning(warning);
       }
       table.toggleAllRowsSelected(false);
     });

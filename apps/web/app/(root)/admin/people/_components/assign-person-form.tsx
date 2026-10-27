@@ -93,7 +93,11 @@ export function AssignPersonForm({ states }: { states: StateOption[] }) {
       return;
     }
 
-    toast.success("Persona actualizada");
+    if (result.warning) {
+      toast.warning(result.warning);
+    } else {
+      toast.success("Persona actualizada");
+    }
     setSelected(null);
     setSearch("");
     setResults([]);
@@ -215,7 +219,11 @@ export function AssignPersonForm({ states }: { states: StateOption[] }) {
                   toast.error(result.error);
                   return;
                 }
-                toast.success("Estado eliminado");
+                if (result.warning) {
+                  toast.warning(result.warning);
+                } else {
+                  toast.success("Estado eliminado");
+                }
                 setSelected(null);
                 setSearch("");
                 router.refresh();

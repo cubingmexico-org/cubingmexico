@@ -2,40 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
-import { getCurrentUserTeamAction, isSuperadminAction } from "@/app/actions";
+import { getHeaderContextAction, type HeaderContext } from "@/app/actions";
 import { authClient } from "@/lib/auth-client";
 import { UserAuthForm } from "./user-auth-form";
 import { UserDropdown } from "./user-dropdown";
 
-type Team = {
-  id: string;
-  name: string;
-} | null;
+const EMPTY_CONTEXT: HeaderContext = { team: null, isSuperadmin: false };
 
 export function HeaderAuth() {
   const { data: session, isPending } = authClient.useSession();
-  const [team, setTeam] = useState<Team>(null);
-  const [isSuperadmin, setIsSuperadmin] = useState(false);
+  const [context, setContext] = useState<HeaderContext>(EMPTY_CONTEXT);
 
   useEffect(() => {
-    const wcaId = session?.user?.wcaId;
-    if (!wcaId) {
-      setTeam(null);
-      setIsSuperadmin(false);
+    if (!session?.user?.wcaId) {
+      setContext(EMPTY_CONTEXT);
       return;
     }
 
     let cancelled = false;
 
-    void Promise.all([
-      getCurrentUserTeamAction(wcaId),
-      isSuperadminAction(wcaId),
-    ]).then(([teamResult, superadmin]) => {
-      if (!cancelled) {
-        setTeam(teamResult);
-        setIsSuperadmin(superadmin);
-      }
-    });
+    void getHeaderContextAction()
+      .catch(() => null)
+      .then((result) => {
+        if (!cancelled) {
+          setContext(result ?? EMPTY_CONTEXT);
+        }
+      });
 
     return () => {
       cancelled = true;
@@ -51,6 +43,10 @@ export function HeaderAuth() {
   }
 
   return (
-    <UserDropdown user={session.user} team={team} isSuperadmin={isSuperadmin} />
+    <UserDropdown
+      user={session.user}
+      team={context.team}
+      isSuperadmin={context.isSuperadmin}
+    />
   );
 }

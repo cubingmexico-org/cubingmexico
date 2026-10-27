@@ -7,13 +7,9 @@ import { db } from "@workspace/db";
 import {
   event,
   Person,
-  State,
   state,
-  Team,
   team,
-  teamMember,
   person,
-  TeamMember,
   competition,
   result,
   exportMetadata,
@@ -30,6 +26,7 @@ import {
   or,
 } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
+import { currentUserTeamTag } from "@/lib/cache-tag-names";
 import { eventScopeFilter } from "@/lib/official-events";
 import type { EventScope } from "@/lib/constants";
 
@@ -65,22 +62,24 @@ export async function getCurrentUserTeam({
   userId,
 }: {
   userId: Person["wcaId"];
-}) {
+}): Promise<{ id: string; name: string } | undefined> {
   cacheLife("hours");
-  cacheTag(`current-user-team-${userId}`);
+  cacheTag(currentUserTeamTag(userId));
 
-  return (await db
+  const [row] = await db
     .select({
-      id: person.stateId,
+      id: team.stateId,
       name: team.name,
     })
     .from(person)
     .innerJoin(team, eq(person.stateId, team.stateId))
     .where(eq(person.wcaId, userId))
-    .then((res) => res[0])) as {
-    id: string;
-    name: string;
-  };
+    .limit(1);
+
+  if (row) {
+    cacheTag(`team-info-${row.id}`);
+  }
+  return row;
 }
 
 export async function getPerson(id: string) {
@@ -109,191 +108,6 @@ export async function getTeam(stateId: string) {
     .innerJoin(state, eq(team.stateId, state.id))
     .where(eq(team.stateId, stateId));
   return res[0];
-}
-
-export async function saveTeam({
-  stateId,
-  name,
-  description,
-  socialLinks,
-  founded,
-  isActive,
-}: {
-  stateId: State["id"];
-  name: Team["name"];
-  description: Team["description"];
-  socialLinks: Team["socialLinks"];
-  founded: Team["founded"];
-  isActive: Team["isActive"];
-}) {
-  try {
-    await db
-      .update(team)
-      .set({
-        name,
-        description,
-        socialLinks,
-        founded,
-        isActive,
-      })
-      .where(eq(team.stateId, stateId));
-  } catch (error) {
-    console.error("Failed to save team in database");
-    throw error;
-  }
-}
-
-export async function saveProfile({
-  stateId,
-  personId,
-}: {
-  stateId: State["id"];
-  personId: Person["wcaId"];
-}) {
-  try {
-    await db
-      .update(person)
-      .set({
-        stateId,
-      })
-      .where(eq(person.wcaId, personId));
-  } catch (error) {
-    console.error("Failed to save profile in database");
-    throw error;
-  }
-}
-
-export async function saveProfileSpecialties({
-  personId,
-  specialties,
-}: {
-  personId: Person["wcaId"];
-  specialties: TeamMember["specialties"];
-}) {
-  try {
-    await db
-      .insert(teamMember)
-      .values({
-        personId,
-        specialties,
-      })
-      .onConflictDoUpdate({
-        target: [teamMember.personId],
-        set: {
-          specialties,
-        },
-      });
-  } catch (error) {
-    console.error("Failed to save profile specialties in database");
-    throw error;
-  }
-}
-
-export async function deleteTeamLogo({ stateId }: { stateId: State["id"] }) {
-  try {
-    await db
-      .update(team)
-      .set({
-        image: null,
-      })
-      .where(eq(team.stateId, stateId));
-  } catch (error) {
-    console.error("Failed to delete team logo in database");
-    throw error;
-  }
-}
-
-export async function updateTeamLogo({
-  stateId,
-  image,
-}: {
-  stateId: State["id"];
-  image: Team["image"];
-}) {
-  try {
-    await db
-      .update(team)
-      .set({
-        image,
-      })
-      .where(eq(team.stateId, stateId));
-  } catch (error) {
-    console.error("Failed to update team logo in database");
-    throw error;
-  }
-}
-
-export async function deleteTeamCover({ stateId }: { stateId: State["id"] }) {
-  try {
-    await db
-      .update(team)
-      .set({
-        coverImage: null,
-      })
-      .where(eq(team.stateId, stateId));
-  } catch (error) {
-    console.error("Failed to delete team cover in database");
-    throw error;
-  }
-}
-
-export async function updateTeamCover({
-  stateId,
-  coverImage,
-}: {
-  stateId: State["id"];
-  coverImage: Team["coverImage"];
-}) {
-  try {
-    await db
-      .update(team)
-      .set({
-        coverImage,
-      })
-      .where(eq(team.stateId, stateId));
-  } catch (error) {
-    console.error("Failed to update team cover in database");
-    throw error;
-  }
-}
-
-export async function addMember({
-  personId,
-  stateId,
-  specialties,
-  achievements,
-}: {
-  stateId: State["id"];
-  personId: Person["wcaId"];
-  specialties: TeamMember["specialties"];
-  achievements: TeamMember["achievements"];
-}) {
-  try {
-    await db
-      .update(person)
-      .set({
-        stateId,
-      })
-      .where(eq(person.wcaId, personId));
-
-    await db
-      .insert(teamMember)
-      .values({
-        personId,
-        specialties,
-        achievements,
-      })
-      .onConflictDoUpdate({
-        target: [teamMember.personId],
-        set: {
-          specialties,
-          achievements,
-        },
-      });
-  } catch (error) {
-    console.error("Failed to add member in database");
-    throw error;
-  }
 }
 
 /** Dates of the last imported WCA and Cubing Contests exports, for attribution. */

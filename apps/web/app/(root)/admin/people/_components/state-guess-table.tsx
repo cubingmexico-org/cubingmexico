@@ -108,6 +108,9 @@ export function StateGuessTable({
         ? `Asignadas ${applied} personas (${skipped} omitidas)`
         : `Asignadas ${applied} personas`,
     );
+    if (result.warning) {
+      toast.warning(result.warning);
+    }
     router.refresh();
   }
 

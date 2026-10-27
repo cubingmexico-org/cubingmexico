@@ -1,22 +1,16 @@
 "use server";
 
 import { db } from "@workspace/db";
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { updateTag } from "next/cache";
 
 import { getErrorMessage } from "@/lib/handle-error";
-import {
-  invalidateAfterStateRanksChange,
-  invalidateAfterStateRecordsChange,
-  invalidateStateMemberTags,
-} from "@/lib/cache-tags";
+import { invalidateStateMemberTags } from "@/lib/cache-tags";
 import { requireTeamPermission } from "@/lib/team-auth";
 import {
-  clearPersonStateRanks,
-  clearPersonStateRecords,
-  updateStateRanks,
-  updateStateRecords,
-} from "@/lib/state-updates";
+  refreshStatesAfterRosterChange,
+  ROSTER_REFRESH_PENDING,
+} from "@/lib/roster-refresh";
 import { person, teamMember } from "@workspace/db/schema";
 
 import { addMemberFormSchema } from "@/lib/validations";
@@ -35,6 +29,20 @@ export async function updateMember(_prevState: unknown, formData: FormData) {
     const specialties = data.specialties
       ? data.specialties.split(",").map((speciality) => speciality.trim())
       : null;
+
+    const [member] = await db
+      .select({ stateId: person.stateId })
+      .from(person)
+      .where(eq(person.wcaId, data.personId))
+      .limit(1);
+
+    if (member?.stateId !== data.stateId) {
+      return {
+        defaultValues,
+        success: false,
+        errors: "El miembro no pertenece a este team",
+      };
+    }
 
     await db
       .insert(teamMember)
@@ -79,34 +87,43 @@ export async function deleteMembers(input: { ids: string[]; stateId: string }) {
   try {
     await requireTeamPermission(input.stateId, "team.members");
 
+    const members = await db
+      .select({ wcaId: person.wcaId })
+      .from(person)
+      .where(
+        and(
+          inArray(person.wcaId, input.ids),
+          eq(person.stateId, input.stateId),
+        ),
+      );
+    const ids = members.map((member) => member.wcaId);
+    if (ids.length === 0) {
+      return { data: null, error: null, warning: null };
+    }
+
     await db.transaction(async (tx) => {
-      await tx
-        .delete(teamMember)
-        .where(inArray(teamMember.personId, input.ids));
+      await tx.delete(teamMember).where(inArray(teamMember.personId, ids));
       await tx
         .update(person)
         .set({ stateId: null })
-        .where(inArray(person.wcaId, input.ids));
+        .where(inArray(person.wcaId, ids));
     });
 
-    await clearPersonStateRanks(input.ids);
-    await clearPersonStateRecords(input.ids);
-    await updateStateRanks(input.stateId);
-    invalidateAfterStateRanksChange(input.stateId);
-    const records = await updateStateRecords(input.stateId);
-    invalidateAfterStateRecordsChange([...input.ids, ...records.personIds]);
-    updateTag("persons-without-state");
+    const { ok } = await refreshStatesAfterRosterChange({
+      stateIds: [input.stateId],
+      personIds: ids,
+    });
 
     return {
       data: null,
       error: null,
+      warning: ok ? null : ROSTER_REFRESH_PENDING,
     };
   } catch (err) {
-    const error = getErrorMessage(err);
-    console.error("Error deleting members", err);
     return {
       data: null,
-      error,
+      error: getErrorMessage(err),
+      warning: null,
     };
   }
 }

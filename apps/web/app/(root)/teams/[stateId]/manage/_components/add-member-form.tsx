@@ -54,6 +54,7 @@ export function AddMemberForm({
     },
     success: false,
     errors: null,
+    warning: null,
   });
 
   useEffect(() => {
@@ -72,7 +73,7 @@ export function AddMemberForm({
               Éxito
             </AlertTitle>
             <AlertDescription className="text-green-700 dark:text-green-400">
-              Miembro añadido exitosamente.
+              {state.warning ?? "Miembro añadido exitosamente."}
             </AlertDescription>
           </Alert>
         </div>

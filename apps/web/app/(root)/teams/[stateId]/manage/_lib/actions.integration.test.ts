@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { teamMember } from "@workspace/db/schema";
+import { person, teamMember } from "@workspace/db/schema";
 import { deleteMembers, updateMember, updateMemberRole } from "./actions";
 import { insertPerson, insertTeamMember } from "@/test/factories";
 import { signIn } from "@/test/session";
@@ -27,6 +27,14 @@ async function roleOf(personId: string) {
     .from(teamMember)
     .where(eq(teamMember.personId, personId));
   return rows[0];
+}
+
+async function stateOf(wcaId: string) {
+  const rows = await db
+    .select({ stateId: person.stateId })
+    .from(person)
+    .where(eq(person.wcaId, wcaId));
+  return rows[0]?.stateId ?? null;
 }
 
 beforeEach(async () => {
@@ -114,5 +122,34 @@ describe("deleteMembers", () => {
       deleteMembers({ ids: [EDITOR], stateId: "JAL" }),
     ).rejects.toMatchObject(UNAUTHORIZED);
     expect((await roleOf(EDITOR))?.role).toBe("editor");
+  });
+
+  it("only removes people from the editor's own team", async () => {
+    signIn(EDITOR);
+    const result = await deleteMembers({
+      ids: [MEMBER, OTHER_STATE_MEMBER],
+      stateId: "JAL",
+    });
+
+    expect(result.error).toBeNull();
+    expect(await stateOf(MEMBER)).toBeNull();
+    expect(await stateOf(OTHER_STATE_MEMBER)).toBe("CMX");
+  });
+});
+
+describe("updateMember across teams", () => {
+  it("refuses to edit someone from another team", async () => {
+    signIn(EDITOR);
+    const result = await updateMember(
+      null,
+      memberForm({
+        stateId: "JAL",
+        personId: OTHER_STATE_MEMBER,
+        specialties: "333",
+      }),
+    );
+
+    expect(result.success).toBe(false);
+    expect(await roleOf(OTHER_STATE_MEMBER)).toBeUndefined();
   });
 });

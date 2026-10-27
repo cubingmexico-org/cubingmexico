@@ -56,6 +56,7 @@ export function Profile({ user, person, states }: ProfileProps) {
     },
     success: false,
     errors: null,
+    warning: null,
   });
 
   const [prefsState, prefsFormAction, prefsPending] = useActionState(
@@ -105,7 +106,7 @@ export function Profile({ user, person, states }: ProfileProps) {
                 Éxito
               </AlertTitle>
               <AlertDescription className="text-green-700 dark:text-green-300 inline">
-                Los cambios se han guardado correctamente.
+                {state.warning ?? "Los cambios se han guardado correctamente."}
               </AlertDescription>
             </Alert>
           ) : (
