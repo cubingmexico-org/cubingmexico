@@ -105,6 +105,52 @@ def test_update_state_records(client, db):
     assert [row["id"] for row in rows if row["state_average_record"] == "SR"] == ["r1"]
 
 
+def test_full_runs_rank_and_tag_each_state_and_event_separately(client, db):
+    insert_state(db, "PUE", "Puebla")
+    insert_state(db, "TLA", "Tlaxcala")
+    insert_event(db, "333", 10)
+    insert_event(db, "222", 20)
+    insert_round_type(db, "f", 100)
+    insert_person(db, "2020PUEB01", state_id="PUE")
+    insert_person(db, "2020PUEB02", state_id="PUE")
+    insert_person(db, "2020TLAX01", state_id="TLA")
+    insert_person(db, "2020TLAX02", state_id="TLA")
+    insert_competition(db, "Comp1", date(2024, 1, 10))
+    insert_competition(db, "Comp2", date(2024, 2, 10))
+
+    # Interleaved country ranks across states and events.
+    insert_rank(db, "single", "2020TLAX01", "333", 600, country_rank=1)
+    insert_rank(db, "single", "2020PUEB01", "333", 700, country_rank=2)
+    insert_rank(db, "single", "2020TLAX02", "333", 800, country_rank=3)
+    insert_rank(db, "single", "2020PUEB02", "333", 900, country_rank=4)
+    insert_rank(db, "single", "2020PUEB02", "222", 200, country_rank=1)
+    insert_rank(db, "single", "2020TLAX02", "222", 250, country_rank=2)
+    insert_rank(db, "single", "2020PUEB01", "222", 300, country_rank=3)
+
+    insert_result(db, "p333a", "Comp1", "333", "2020PUEB01", best=1000, round_type_id="f")
+    insert_result(db, "p333b", "Comp2", "333", "2020PUEB02", best=900, round_type_id="f")
+    insert_result(db, "t333a", "Comp1", "333", "2020TLAX01", best=1100, round_type_id="f")
+    insert_result(db, "t333b", "Comp2", "333", "2020TLAX02", best=1200, round_type_id="f")
+    insert_result(db, "p222a", "Comp1", "222", "2020PUEB01", best=500, round_type_id="f")
+    insert_result(db, "t222a", "Comp2", "222", "2020TLAX02", best=600, round_type_id="f")
+
+    assert client.post("/update-state-ranks", headers=AUTH_HEADERS).status_code == 200
+    assert client.post("/update-state-records", headers=AUTH_HEADERS).status_code == 200
+
+    assert _state_ranks(db, "ranks_single") == {
+        ("2020TLAX01", "333"): 1,
+        ("2020TLAX02", "333"): 2,
+        ("2020PUEB01", "333"): 1,
+        ("2020PUEB02", "333"): 2,
+        ("2020PUEB02", "222"): 1,
+        ("2020PUEB01", "222"): 2,
+        ("2020TLAX02", "222"): 1,
+    }
+    rows = fetch_all(db, "SELECT id FROM results WHERE state_single_record = 'SR' ORDER BY id")
+    # A slower result in another state or event is still that group's record.
+    assert [row["id"] for row in rows] == ["p222a", "p333a", "p333b", "t222a", "t333a"]
+
+
 # Single-state routes, called by the web app when a team edits its roster.
 
 
