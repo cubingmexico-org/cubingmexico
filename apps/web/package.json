@@ -30,6 +30,7 @@
     "@workspace/auth": "workspace:*",
     "@workspace/db": "workspace:*",
     "@workspace/icons": "workspace:*",
+    "@workspace/next-config": "workspace:*",
     "@workspace/ui": "workspace:*",
     "@workspace/wca": "workspace:*",
     "better-auth": "catalog:",

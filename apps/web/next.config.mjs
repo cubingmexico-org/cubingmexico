@@ -1,5 +1,6 @@
 import process from "node:process";
 import { withSentryConfig } from "@sentry/nextjs/config";
+import { securityHeaders } from "@workspace/next-config/security-headers";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -8,6 +9,26 @@ const nextConfig = {
   // Off for Vercel free-tier prefetch costs; see docs/web-hosting-constraints.md.
   partialPrefetching: false,
   serverExternalPackages: ["@imgly/background-removal", "onnxruntime-web"],
+
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders({
+          dev: process.env.NODE_ENV === "development",
+          sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+          environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
+          // UploadThing uploads, and the background-removal model for competition logos.
+          connectSrc: [
+            "https://*.uploadthing.com",
+            "https://*.ufs.sh",
+            "https://utfs.io",
+            "https://staticimgly.com",
+          ],
+        }),
+      },
+    ];
+  },
 
   async redirects() {
     return [

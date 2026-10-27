@@ -19,6 +19,7 @@ This is a **Turborepo** monorepo managed with **pnpm workspaces**.
 - **[@workspace/auth](./packages/auth)** - Better Auth setup with WCA OAuth, shared by web and organizer
 - **[@workspace/wca](./packages/wca)** - WCA API client (`wcaFetch`, `wcaUrl`) with timeouts and retries
 - **[@workspace/icons](./packages/icons)** - Centralized icon components
+- **[@workspace/next-config](./packages/next-config)** - Security headers shared by the web and organizer `next.config.mjs`
 - **[@workspace/eslint-config](./packages/eslint-config)** - Shared ESLint configurations
 - **[@workspace/typescript-config](./packages/typescript-config)** - Shared TypeScript configurations
 
@@ -191,6 +192,7 @@ pnpm services:up
   - `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` upload source maps during the build, for readable stack traces. The build skips the upload when the token is missing.
   - The shared options in each app's `lib/sentry.ts` keep traces at 5% and don't send request bodies, cookies, user info or database query data, since those can contain competitors' personal data.
   - The backend reports to its own Sentry project (`backend`) when `SENTRY_DSN` is set on the Cloud Run service and job; see [the backend README](./apps/backend/README.md#deployment).
+- **Security headers:** web and organizer send HSTS, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy` and `nosniff` on every route, from `@workspace/next-config/security-headers`. The Content Security Policy is sent as `Content-Security-Policy-Report-Only`, so it never blocks anything. When `NEXT_PUBLIC_SENTRY_DSN` is set, violations are reported to that app's Sentry project (they show up as CSP issues). Once those reports only contain noise, add any missing origins to the app's `connectSrc` and switch the header to `Content-Security-Policy`.
 
 ## Tech Stack
 

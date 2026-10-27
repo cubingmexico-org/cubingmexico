@@ -1,5 +1,6 @@
 import process from "node:process";
 import { withSentryConfig } from "@sentry/nextjs/config";
+import { securityHeaders } from "@workspace/next-config/security-headers";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -12,6 +13,14 @@ const nextConfig = {
   },
   async headers() {
     return [
+      {
+        source: "/:path*",
+        headers: securityHeaders({
+          dev: process.env.NODE_ENV === "development",
+          sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+          environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
+        }),
+      },
       {
         // File names are not versioned, so cache for a week instead of `immutable`.
         source: "/fonts/:path*",
