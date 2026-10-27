@@ -1,3 +1,6 @@
+export const SITE_SEARCH_MIN_LENGTH = 2;
+export const SITE_SEARCH_MAX_LENGTH = 64;
+
 export type SiteSearchPerson = {
   wcaId: string;
   name: string | null;

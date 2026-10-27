@@ -1,7 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { SiteSearchResults } from "@/lib/site-search-types";
+import {
+  SITE_SEARCH_MAX_LENGTH,
+  type SiteSearchResults,
+} from "@/lib/site-search-types";
 
 const push = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
@@ -84,6 +87,13 @@ describe("HeaderSearch", () => {
       await screen.findByText("No se encontraron resultados."),
     ).toBeInTheDocument();
     expect(screen.queryByText("Buscando…")).not.toBeInTheDocument();
+  });
+
+  it("caps the query at the API's maximum length", async () => {
+    render(<HeaderSearch />);
+    const { input } = await openSearch();
+
+    expect(input).toHaveAttribute("maxLength", String(SITE_SEARCH_MAX_LENGTH));
   });
 
   it("toggles with Ctrl+K", async () => {

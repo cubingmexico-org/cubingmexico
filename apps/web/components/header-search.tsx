@@ -31,7 +31,10 @@ import { cn } from "@workspace/ui/lib/utils";
 import { StateLabel } from "@/components/state-flag";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { filterSitePages, type SitePage } from "@/lib/site-pages";
-import type { SiteSearchResults } from "@/lib/site-search-types";
+import {
+  SITE_SEARCH_MAX_LENGTH,
+  type SiteSearchResults,
+} from "@/lib/site-search-types";
 
 const EMPTY_RESULTS: SiteSearchResults = {
   persons: [],
@@ -185,6 +188,7 @@ export function HeaderSearch() {
           <Command shouldFilter={false} className="rounded-lg border-0">
             <CommandInput
               placeholder="Personas, competencias, teams…"
+              maxLength={SITE_SEARCH_MAX_LENGTH}
               value={query}
               onValueChange={onQueryChange}
             />
