@@ -254,7 +254,7 @@ One-time setup (replace the variables; the job reuses the service's image, env v
 ```bash
 PROJECT=cubing-mexico
 REGION=us-central1            # the backend service's region
-SERVICE=backend               # the backend Cloud Run service
+SERVICE=web-backend           # the backend Cloud Run service
 JOB=update-all
 SA=$(gcloud run services describe $SERVICE --region=$REGION --format='value(spec.template.spec.serviceAccountName)')
 IMAGE=$(gcloud run services describe $SERVICE --region=$REGION --format='value(spec.template.spec.containers[0].image)')
@@ -304,7 +304,7 @@ for policy in apps/backend/monitoring/*.yaml; do
 done
 ```
 
-The policies match the service name `backend` and the job name `update-all`; edit the filters if yours differ.
+The policies match the service name `web-backend` and the job name `update-all`; edit the filters if yours differ.
 
 ## Notes
 
