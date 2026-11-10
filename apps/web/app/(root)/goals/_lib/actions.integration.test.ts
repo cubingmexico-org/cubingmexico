@@ -108,6 +108,14 @@ describe("createGoalAction", () => {
         error: "Elige un evento oficial.",
       });
     }
+    expect(
+      await createGoalAction(2027, {
+        type: "count",
+        metric: "podiums",
+        value: 3,
+        eventId: "333ft",
+      }),
+    ).toEqual({ ok: false, error: "Elige un evento oficial." });
     expect(await goalsOf(ANA)).toEqual([]);
   });
 

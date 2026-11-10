@@ -22,6 +22,7 @@ export const COUNT_METRICS = [
   "podiums",
   "wins",
   "states",
+  "newStates",
   "events",
   "prs",
   "records",
@@ -45,6 +46,7 @@ export const COUNT_METRIC_LABELS: Record<CountMetric, string> = {
   podiums: "podios",
   wins: "primeros lugares",
   states: "estados visitados",
+  newStates: "estados nuevos",
   events: "eventos distintos",
   prs: "récords personales",
   records: "récords (SR, NR, CR o WR)",
@@ -54,44 +56,58 @@ const eventId = z.string().min(1).max(10);
 const kind = z.enum(["single", "average"]);
 const positiveInt = z.coerce.number().int().positive();
 
-export const goalTargetSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("result"),
-    eventId,
-    kind,
-    value: positiveInt,
-  }),
-  z.object({
-    type: z.literal("rank"),
-    eventId,
-    kind,
-    region: z.enum(["national", "state"]),
-    maxRank: positiveInt.max(100_000),
-  }),
-  z.object({
-    type: z.literal("count"),
-    metric: z.enum(COUNT_METRICS),
-    value: positiveInt.max(1000),
-  }),
-  z.object({
-    type: z.literal("mollerz"),
-    tier: z.enum(MOLLERZ_TIERS),
-  }),
-  z.object({
-    type: z.literal("nemesis"),
-    maxNemeses: z.coerce.number().int().min(0).max(1000),
-  }),
-  z.object({
-    type: z.literal("custom"),
-    text: z.string().trim().min(1).max(MAX_CUSTOM_GOAL_LENGTH),
-  }),
-]) satisfies z.ZodType<GoalTarget>;
+/** Count metrics that can be limited to one event. */
+export const EVENT_COUNT_METRICS: readonly CountMetric[] = ["podiums"];
+
+export const goalTargetSchema = z
+  .discriminatedUnion("type", [
+    z.object({
+      type: z.literal("result"),
+      eventId,
+      kind,
+      value: positiveInt,
+    }),
+    z.object({
+      type: z.literal("rank"),
+      eventId,
+      kind,
+      region: z.enum(["national", "state"]),
+      maxRank: positiveInt.max(100_000),
+    }),
+    z.object({
+      type: z.literal("count"),
+      metric: z.enum(COUNT_METRICS),
+      value: positiveInt.max(1000),
+      eventId: eventId.optional(),
+    }),
+    z.object({
+      type: z.literal("mollerz"),
+      tier: z.enum(MOLLERZ_TIERS),
+    }),
+    z.object({
+      type: z.literal("nemesis"),
+      maxNemeses: z.coerce.number().int().min(0).max(1000),
+    }),
+    z.object({
+      type: z.literal("custom"),
+      text: z.string().trim().min(1).max(MAX_CUSTOM_GOAL_LENGTH),
+    }),
+  ])
+  .refine(
+    (target) =>
+      target.type !== "count" ||
+      target.eventId === undefined ||
+      EVENT_COUNT_METRICS.includes(target.metric),
+    { message: "Only podium goals can be limited to one event" },
+  ) satisfies z.ZodType<GoalTarget>;
 
 /** Goals that point at a specific event. */
 export function goalEventId(target: GoalTarget): string | null {
-  return target.type === "result" || target.type === "rank"
-    ? target.eventId
-    : null;
+  if (target.type === "result" || target.type === "rank") {
+    return target.eventId;
+  }
+  if (target.type === "count") return target.eventId ?? null;
+  return null;
 }
 
 export function tierIndex(tier: Tier | null): number {

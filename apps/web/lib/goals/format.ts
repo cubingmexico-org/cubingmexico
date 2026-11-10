@@ -11,7 +11,17 @@ function formatGoalValue(
   return formatAttemptValue(eventId, value, kind) ?? String(value);
 }
 
-/** Spanish sentence for a goal. `eventName` is required for result and rank goals. */
+/** "3 podios" or "3 podios en 3x3x3 Cube" for podiums limited to one event. */
+export function describeCount(
+  target: Extract<GoalTarget, { type: "count" }>,
+  value: number,
+  eventName?: string,
+): string {
+  const label = `${value} ${COUNT_METRIC_LABELS[target.metric]}`;
+  return target.eventId ? `${label} en ${eventName ?? target.eventId}` : label;
+}
+
+/** Spanish sentence for a goal. `eventName` is required for goals with an event. */
 export function describeGoal(target: GoalTarget, eventName?: string): string {
   switch (target.type) {
     case "result": {
@@ -26,7 +36,7 @@ export function describeGoal(target: GoalTarget, eventName?: string): string {
       return `Top ${target.maxRank} ${region} en ${KIND_LABELS[target.kind].toLowerCase()} de ${eventName ?? target.eventId}`;
     }
     case "count":
-      return `${target.value} ${COUNT_METRIC_LABELS[target.metric]} en el año`;
+      return `${describeCount(target, target.value, eventName)} en el año`;
     case "mollerz":
       return `Membresía Mollerz ${target.tier} o superior`;
     case "nemesis":

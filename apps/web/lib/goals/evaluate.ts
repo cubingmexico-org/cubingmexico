@@ -13,6 +13,7 @@ import {
 import {
   and,
   asc,
+  count,
   countDistinct,
   eq,
   gte,
@@ -34,12 +35,12 @@ import { personGoalsTag } from "@/lib/cache-tag-names";
 import { inOfficialEvents, isOfficialEvent } from "@/lib/official-events";
 import { getTier } from "@/lib/utils";
 import {
+  describeCount,
   describeGoal,
   describeRankProgress,
   describeResultProgress,
 } from "./format";
 import {
-  COUNT_METRIC_LABELS,
   goalEventId,
   tierIndex,
   type CountMetric,
@@ -99,6 +100,26 @@ async function bestInYear(
   return row?.best ?? null;
 }
 
+async function podiumsInEvent(ctx: Context, eventId: string): Promise<number> {
+  const [row] = await db
+    .select({ total: count() })
+    .from(result)
+    .innerJoin(competition, eq(result.competitionId, competition.id))
+    .where(
+      and(
+        eq(result.personId, ctx.wcaId),
+        eq(result.eventId, eventId),
+        inOfficialEvents(result.eventId),
+        sql`${result.roundTypeId} IN ('f', 'c')`,
+        sql`${result.pos} IN (1, 2, 3)`,
+        sql`${result.best} > 0`,
+        gte(competition.startDate, ctx.yearStart),
+        lte(competition.startDate, ctx.asOf),
+      ),
+    );
+  return Number(row?.total ?? 0);
+}
+
 async function yearCounts(ctx: Context): Promise<Record<CountMetric, number>> {
   // Competitions and states count every result, like the annual summary;
   // event-level counts only use official events.
@@ -111,6 +132,13 @@ async function yearCounts(ctx: Context): Promise<Record<CountMetric, number>> {
     .select({
       competitions: countDistinct(result.competitionId),
       states: countDistinct(competition.stateId),
+      newStates: sql<number>`COUNT(DISTINCT ${competition.stateId}) FILTER (WHERE NOT EXISTS (
+        SELECT 1 FROM results pr
+        INNER JOIN competitions pc ON pc.id = pr.competition_id
+        WHERE pr.person_id = ${ctx.wcaId}
+          AND pc.state_id = ${competition.stateId}
+          AND pc.start_date < ${ctx.yearStart.toISOString()}
+      ))`,
       events: sql<number>`COUNT(DISTINCT ${result.eventId}) FILTER (WHERE ${official})`,
       podiums: sql<number>`COUNT(*) FILTER (WHERE ${podium} AND ${result.pos} IN (1, 2, 3))`,
       wins: sql<number>`COUNT(*) FILTER (WHERE ${podium} AND ${result.pos} = 1)`,
@@ -136,6 +164,7 @@ async function yearCounts(ctx: Context): Promise<Record<CountMetric, number>> {
   return {
     competitions: Number(row?.competitions ?? 0),
     states: Number(row?.states ?? 0),
+    newStates: Number(row?.newStates ?? 0),
     events: Number(row?.events ?? 0),
     podiums: Number(row?.podiums ?? 0),
     wins: Number(row?.wins ?? 0),
@@ -148,6 +177,7 @@ async function evaluateTarget(
   ctx: Context,
   target: GoalTarget,
   completedAt: Date | null,
+  eventName: string | undefined,
 ): Promise<Evaluation> {
   switch (target.type) {
     case "result": {
@@ -181,10 +211,12 @@ async function evaluateTarget(
       };
     }
     case "count": {
-      const value = (await ctx.counts())[target.metric];
+      const value = target.eventId
+        ? await podiumsInEvent(ctx, target.eventId)
+        : (await ctx.counts())[target.metric];
       return {
         achieved: value >= target.value,
-        progress: `${value} de ${target.value} ${COUNT_METRIC_LABELS[target.metric]}`,
+        progress: `${value} de ${describeCount(target, target.value, eventName)}`,
       };
     }
     case "mollerz": {
@@ -272,12 +304,14 @@ export async function getGoalViews(
 
   return Promise.all(
     goals.map(async (g) => {
+      const eventId = goalEventId(g.target);
+      const eventName = eventId ? eventNames.get(eventId) : undefined;
       const { achieved, progress } = await evaluateTarget(
         ctx,
         g.target,
         g.completedAt,
+        eventName,
       );
-      const eventId = goalEventId(g.target);
       return {
         id: g.id,
         year: g.year,
@@ -285,10 +319,7 @@ export async function getGoalViews(
         target: g.target,
         isPublic: g.isPublic,
         completedAt: g.completedAt?.toISOString() ?? null,
-        label: describeGoal(
-          g.target,
-          eventId ? eventNames.get(eventId) : undefined,
-        ),
+        label: describeGoal(g.target, eventName),
         achieved,
         progress,
       };

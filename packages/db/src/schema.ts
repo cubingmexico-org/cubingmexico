@@ -712,10 +712,13 @@ export type GoalTarget =
         | "podiums"
         | "wins"
         | "states"
+        | "newStates"
         | "events"
         | "prs"
         | "records";
       value: number;
+      /** Only for "podiums": count podiums in this event alone. */
+      eventId?: string;
     }
   | {
       type: "mollerz";

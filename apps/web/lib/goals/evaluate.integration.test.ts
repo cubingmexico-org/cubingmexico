@@ -41,6 +41,7 @@ async function addResult(values: {
   best?: number;
   average?: number;
   pos?: number;
+  roundTypeId?: string;
   regionalSingleRecord?: string;
 }) {
   await insertResult({
@@ -273,6 +274,97 @@ describe("getGoalViews", () => {
         expect.objectContaining({ metric: "prs" }),
         true,
         "2 de 2 récords personales",
+      ],
+    ]);
+  });
+
+  it("counts states visited for the first time in the year", async () => {
+    await insertCompetition({
+      id: "Puebla2019",
+      startDate: new Date("2019-11-10T00:00:00Z"),
+      stateId: "PUE",
+    });
+    // Jalisco was visited in 2018; Ciudad de México and Puebla are new in 2019.
+    await addResult({ competitionId: "Open2018", personId: ANA, best: 1500 });
+    await addResult({ competitionId: "Open2019", personId: ANA, best: 1400 });
+    await addResult({
+      competitionId: "Fall2019",
+      personId: ANA,
+      eventId: "333ft",
+      best: 4000,
+    });
+    await addResult({ competitionId: "Puebla2019", personId: ANA, best: 1300 });
+
+    await addGoal({ type: "count", metric: "newStates", value: 2 });
+    await addGoal({ type: "count", metric: "newStates", value: 3 });
+
+    const views = await getGoalViews(ANA, 2019, YEAR_END);
+    expect(views.map((v) => [v.achieved, v.progress])).toEqual([
+      [true, "2 de 2 estados nuevos"],
+      [false, "2 de 3 estados nuevos"],
+    ]);
+  });
+
+  it("counts podiums in a single official event", async () => {
+    await insertEvent({ id: "444", name: "4x4x4 Cube", rank: 20 });
+    await insertRoundType({ id: "1" });
+    await addResult({
+      competitionId: "Open2019",
+      personId: ANA,
+      best: 1000,
+      pos: 1,
+    });
+    await addResult({
+      competitionId: "Open2019",
+      personId: ANA,
+      eventId: "444",
+      best: 5000,
+      pos: 2,
+    });
+    await addResult({
+      competitionId: "Fall2019",
+      personId: ANA,
+      eventId: "444",
+      best: 4800,
+      pos: 3,
+    });
+    // Not a podium: first round, and outside the year.
+    await addResult({
+      competitionId: "Fall2019",
+      personId: ANA,
+      eventId: "444",
+      best: 4900,
+      pos: 1,
+      roundTypeId: "1",
+    });
+    await addResult({
+      competitionId: "Open2020",
+      personId: ANA,
+      eventId: "444",
+      best: 4700,
+      pos: 1,
+    });
+
+    await addGoal({
+      type: "count",
+      metric: "podiums",
+      value: 2,
+      eventId: "444",
+    });
+    await addGoal({
+      type: "count",
+      metric: "podiums",
+      value: 2,
+      eventId: "333",
+    });
+
+    const views = await getGoalViews(ANA, 2019, YEAR_END);
+    expect(views.map((v) => [v.label, v.achieved, v.progress])).toEqual([
+      ["2 podios en 4x4x4 Cube en el año", true, "2 de 2 podios en 4x4x4 Cube"],
+      [
+        "2 podios en 3x3x3 Cube en el año",
+        false,
+        "1 de 2 podios en 3x3x3 Cube",
       ],
     ]);
   });

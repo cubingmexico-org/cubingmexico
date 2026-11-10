@@ -35,6 +35,20 @@ describe("goalTargetSchema", () => {
     ).toMatchObject({ text: "Aprender 4BLD" });
   });
 
+  it("limits only podium counts to one event", () => {
+    const podiums = {
+      type: "count",
+      metric: "podiums",
+      value: 3,
+      eventId: "333",
+    };
+    expect(goalTargetSchema.parse(podiums)).toEqual(podiums);
+    expect(
+      goalTargetSchema.safeParse({ ...podiums, metric: "competitions" })
+        .success,
+    ).toBe(false);
+  });
+
   it("rejects invalid targets", () => {
     const invalid = [
       { type: "result", eventId: "333", kind: "average", value: 0 },
@@ -80,6 +94,15 @@ describe("describeGoal", () => {
     expect(
       describeGoal({ type: "count", metric: "competitions", value: 10 }),
     ).toBe("10 competencias en el año");
+    expect(
+      describeGoal(
+        { type: "count", metric: "podiums", value: 3, eventId: "444" },
+        "4x4x4 Cube",
+      ),
+    ).toBe("3 podios en 4x4x4 Cube en el año");
+    expect(describeGoal({ type: "count", metric: "newStates", value: 2 })).toBe(
+      "2 estados nuevos en el año",
+    );
   });
 });
 

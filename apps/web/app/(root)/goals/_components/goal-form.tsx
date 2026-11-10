@@ -19,6 +19,7 @@ import { formatAttemptValue } from "@/lib/utils";
 import {
   COUNT_METRIC_LABELS,
   COUNT_METRICS,
+  EVENT_COUNT_METRICS,
   GOAL_TYPE_LABELS,
   GOAL_TYPES,
   MAX_CUSTOM_GOAL_LENGTH,
@@ -32,6 +33,8 @@ import { createGoalAction, updateGoalAction } from "../_lib/actions";
 type EventOption = { id: string; name: string };
 type Kind = "single" | "average";
 
+const ALL_EVENTS = "all";
+
 type FormState = {
   type: GoalType;
   eventId: string;
@@ -41,6 +44,8 @@ type FormState = {
   maxRank: string;
   metric: CountMetric;
   count: string;
+  /** ALL_EVENTS or the event a podium count is limited to. */
+  countEventId: string;
   tier: (typeof MOLLERZ_TIERS)[number];
   maxNemeses: string;
   text: string;
@@ -56,6 +61,7 @@ function initialState(events: EventOption[], target?: GoalTarget): FormState {
     maxRank: "",
     metric: "competitions",
     count: "",
+    countEventId: ALL_EVENTS,
     tier: "Plata",
     maxNemeses: "0",
     text: "",
@@ -79,6 +85,7 @@ function initialState(events: EventOption[], target?: GoalTarget): FormState {
     case "count":
       state.metric = target.metric;
       state.count = String(target.value);
+      state.countEventId = target.eventId ?? ALL_EVENTS;
       break;
     case "mollerz":
       state.tier = target.tier;
@@ -140,6 +147,10 @@ function buildTarget(
           type: "count",
           metric: state.metric,
           value: Number(state.count),
+          ...(EVENT_COUNT_METRICS.includes(state.metric) &&
+          state.countEventId !== ALL_EVENTS
+            ? { eventId: state.countEventId }
+            : {}),
         },
       };
     case "mollerz":
@@ -349,6 +360,27 @@ export function GoalForm({
               </SelectContent>
             </Select>
           </Field>
+          {EVENT_COUNT_METRICS.includes(state.metric) && (
+            <Field label="Evento">
+              <Select
+                value={state.countEventId}
+                onValueChange={(v) => set("countEventId", v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={ALL_EVENTS}>Todos los eventos</SelectItem>
+                  {events.map((event) => (
+                    <SelectItem key={event.id} value={event.id}>
+                      <span className={`cubing-icon event-${event.id}`} />
+                      {event.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          )}
         </div>
       )}
 
