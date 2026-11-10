@@ -69,6 +69,14 @@ Every `<Link>` that scrolls into view prefetches its target. Each prefetch count
 
 ---
 
+## Sentry: errors only on the server
+
+`serverSentryOptions` in `apps/web/lib/sentry.ts` and `apps/organizer/lib/sentry.ts` drops `tracesSampleRate` and sets `enableOpenTelemetrySetup: false` for the Node.js/edge SDK. With server tracing on, Sentry registers an OpenTelemetry provider that wraps every render, even unsampled ones. After it shipped (Oct 27, 2026), average Fluid Active CPU per `web` invocation went from ~125 ms to ~220 ms, which pushed the project past the free tier.
+
+**Policy:** keep server tracing off. Browser tracing (`instrumentation-client.ts`) and `onRequestError` error reporting stay on. Keep the Sentry uptime monitor at 5 minutes or more; at 60 s it adds ~50K CDN requests a month.
+
+---
+
 ## Rate limiting: Vercel Firewall rules
 
 There is no rate limiting in application code. An in-memory limiter only counts per serverless instance, so it gives little protection on Vercel. Public and expensive endpoints are protected by **Vercel Firewall rate-limit rules** configured in the dashboard instead (Project → Firewall → Rules → New rule → Rate Limit).

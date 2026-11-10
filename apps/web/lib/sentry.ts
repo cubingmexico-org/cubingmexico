@@ -18,3 +18,14 @@ export const sentryOptions = {
     stackFrameVariables: false,
   },
 } satisfies Parameters<typeof init>[0];
+
+/**
+ * Server SDKs only report errors: server tracing registers an OpenTelemetry provider
+ * that wraps every render and adds Fluid Active CPU to each invocation.
+ * Browser traces still use `tracesSampleRate`.
+ */
+export const serverSentryOptions = {
+  ...sentryOptions,
+  tracesSampleRate: undefined,
+  enableOpenTelemetrySetup: false,
+} satisfies Parameters<typeof init>[0];

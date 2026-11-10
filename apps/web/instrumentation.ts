@@ -1,12 +1,12 @@
 import * as Sentry from "@sentry/nextjs";
-import { sentryOptions } from "./lib/sentry";
+import { serverSentryOptions } from "./lib/sentry";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
     const { validateEnv } = await import("./lib/env");
     validateEnv();
   }
-  Sentry.init(sentryOptions);
+  Sentry.init(serverSentryOptions);
 }
 
 // Reports errors from Server Components, route handlers, server actions and the proxy.
