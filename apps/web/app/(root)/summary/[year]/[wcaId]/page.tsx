@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { cacheLife, cacheTag } from "next/cache";
 import { getPerson } from "@/db/queries";
+import { getPersonAvatarFromWCA } from "@/app/(root)/persons/[id]/_lib/queries";
 import { SummaryLoading } from "../../_components/summary-loading";
 import { canAccessAnnualSummary } from "../../_lib/summary-access";
 import { getAnnualSummary } from "./_lib/queries";
@@ -50,9 +51,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 async function SummaryPageContent({
   year,
   wcaId,
+  avatarUrl,
 }: {
   year: number;
   wcaId: string;
+  avatarUrl: string | null;
 }) {
   "use cache";
   cacheLife("days");
@@ -66,7 +69,13 @@ async function SummaryPageContent({
     notFound();
   }
 
-  return <AnnualSummaryView summary={summary} unofficial={unofficial} />;
+  return (
+    <AnnualSummaryView
+      summary={summary}
+      unofficial={unofficial}
+      avatarUrl={avatarUrl}
+    />
+  );
 }
 
 async function SummaryPage({ params }: Props) {
@@ -81,9 +90,14 @@ async function SummaryPage({ params }: Props) {
     notFound();
   }
 
+  // Fetched outside SummaryPageContent so a failed WCA request isn't cached for days.
+  const wcaData = await getPersonAvatarFromWCA(wcaId);
+  const avatar = wcaData?.person.avatar;
+  const avatarUrl = avatar && !avatar.is_default ? avatar.thumb_url : null;
+
   return (
     <div className="flex flex-col gap-8">
-      <SummaryPageContent year={year} wcaId={wcaId} />
+      <SummaryPageContent year={year} wcaId={wcaId} avatarUrl={avatarUrl} />
       <Suspense fallback={null}>
         <GoalsSection year={year} wcaId={wcaId} />
       </Suspense>

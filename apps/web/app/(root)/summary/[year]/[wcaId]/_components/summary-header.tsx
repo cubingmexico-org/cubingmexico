@@ -1,12 +1,23 @@
 import Link from "next/link";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar";
 import { Stat } from "../../../_components/summary-stat";
 import { SummaryYearNav } from "../../../_components/summary-year-nav";
-import { formatSummaryDate } from "../../../_lib/format";
+import { formatSummaryDate, personInitials } from "../../../_lib/format";
 import type { AnnualSummary } from "../_lib/queries";
 import { getShareHighlights } from "../_lib/share-highlights";
 import { SummaryShareButton } from "./summary-share-button";
 
-export function SummaryHeader({ summary }: { summary: AnnualSummary }) {
+export function SummaryHeader({
+  summary,
+  avatarUrl,
+}: {
+  summary: AnnualSummary;
+  avatarUrl?: string | null;
+}) {
   const {
     person,
     year,
@@ -28,6 +39,19 @@ export function SummaryHeader({ summary }: { summary: AnnualSummary }) {
 
   return (
     <div className="text-center space-y-3">
+      <Link
+        href={`/persons/${person.wcaId}`}
+        prefetch={false}
+        className="mx-auto inline-flex"
+        aria-label={`Ver perfil de ${displayName}`}
+      >
+        <Avatar className="size-20 sm:size-24 border-2 border-border shadow-sm">
+          <AvatarImage src={avatarUrl ?? undefined} alt={displayName} />
+          <AvatarFallback className="text-lg font-semibold">
+            {personInitials(displayName, person.wcaId)}
+          </AvatarFallback>
+        </Avatar>
+      </Link>
       <h1 className="text-2xl sm:text-3xl font-bold">
         <Link
           href={`/persons/${person.wcaId}`}
