@@ -48,6 +48,8 @@ type FormState = {
   countEventId: string;
   tier: (typeof MOLLERZ_TIERS)[number];
   maxNemeses: string;
+  kinchScore: string;
+  sorSum: string;
   text: string;
 };
 
@@ -64,6 +66,8 @@ function initialState(events: EventOption[], target?: GoalTarget): FormState {
     countEventId: ALL_EVENTS,
     tier: "Plata",
     maxNemeses: "0",
+    kinchScore: "",
+    sorSum: "",
     text: "",
   };
   if (!target) return state;
@@ -92,6 +96,13 @@ function initialState(events: EventOption[], target?: GoalTarget): FormState {
       break;
     case "nemesis":
       state.maxNemeses = String(target.maxNemeses);
+      break;
+    case "kinch":
+      state.kinchScore = target.minScore.toFixed(2);
+      break;
+    case "sor":
+      state.kind = target.kind;
+      state.sorSum = String(target.maxSum);
       break;
     case "custom":
       state.text = target.text;
@@ -161,6 +172,21 @@ function buildTarget(
       }
       return {
         target: { type: "nemesis", maxNemeses: Number(state.maxNemeses) },
+      };
+    case "kinch": {
+      const text = state.kinchScore.trim();
+      const score = Number(text);
+      if (!/^\d+(\.\d{1,2})?$/.test(text) || score <= 0 || score > 100) {
+        return { error: "Escribe un Kinch entre 0 y 100." };
+      }
+      return { target: { type: "kinch", minScore: score } };
+    }
+    case "sor":
+      if (!positive(state.sorSum)) {
+        return { error: "Escribe una suma válida." };
+      }
+      return {
+        target: { type: "sor", kind: state.kind, maxSum: Number(state.sorSum) },
       };
     case "custom":
       if (!state.text.trim()) return { error: "Describe tu meta." };
@@ -412,6 +438,44 @@ export function GoalForm({
             onChange={(e) => set("maxNemeses", e.target.value)}
           />
         </Field>
+      )}
+
+      {state.type === "kinch" && (
+        <Field label="Kinch de al menos (0 a 100)">
+          <Input
+            inputMode="decimal"
+            value={state.kinchScore}
+            onChange={(e) => set("kinchScore", e.target.value)}
+            placeholder="50.00"
+          />
+        </Field>
+      )}
+
+      {state.type === "sor" && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Tipo">
+            <Select
+              value={state.kind}
+              onValueChange={(v) => set("kind", v as Kind)}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="single">Single</SelectItem>
+                <SelectItem value="average">Promedio</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Sum of Ranks de máximo">
+            <Input
+              inputMode="numeric"
+              value={state.sorSum}
+              onChange={(e) => set("sorSum", e.target.value)}
+              placeholder="500"
+            />
+          </Field>
+        </div>
       )}
 
       {state.type === "custom" && (

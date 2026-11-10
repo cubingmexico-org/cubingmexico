@@ -85,7 +85,7 @@ export async function getAsOfPbs(asOf: Date): Promise<{
   };
 }
 
-function computeKinchForPerson(
+export function computeKinchForPerson(
   wcaId: string,
   data: Awaited<ReturnType<typeof getAsOfPbs>>,
 ): number {
@@ -120,7 +120,7 @@ function computeKinchForPerson(
   return ratios.reduce((a, b) => a + b, 0) / ratios.length;
 }
 
-function computeSorForPerson(
+export function computeSorForPerson(
   wcaId: string,
   data: Awaited<ReturnType<typeof getAsOfPbs>>,
   kind: "single" | "average",

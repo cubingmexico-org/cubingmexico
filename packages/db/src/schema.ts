@@ -685,6 +685,8 @@ export const goalTypeEnum = [
   "count",
   "mollerz",
   "nemesis",
+  "kinch",
+  "sor",
   "custom",
 ] as const;
 
@@ -725,6 +727,8 @@ export type GoalTarget =
       tier: "Diamante" | "Ópalo" | "Platino" | "Oro" | "Plata" | "Bronce";
     }
   | { type: "nemesis"; maxNemeses: number }
+  | { type: "kinch"; minScore: number }
+  | { type: "sor"; kind: "single" | "average"; maxSum: number }
   | { type: "custom"; text: string };
 
 export const goal = pgTable(

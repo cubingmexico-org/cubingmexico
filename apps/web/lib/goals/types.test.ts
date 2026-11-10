@@ -35,6 +35,22 @@ describe("goalTargetSchema", () => {
     ).toMatchObject({ text: "Aprender 4BLD" });
   });
 
+  it("parses Kinch and Sum of Ranks targets", () => {
+    expect(goalTargetSchema.parse({ type: "kinch", minScore: "52.5" })).toEqual(
+      { type: "kinch", minScore: 52.5 },
+    );
+    expect(
+      goalTargetSchema.parse({ type: "sor", kind: "average", maxSum: "400" }),
+    ).toEqual({ type: "sor", kind: "average", maxSum: 400 });
+    expect(
+      goalTargetSchema.safeParse({ type: "kinch", minScore: 101 }).success,
+    ).toBe(false);
+    expect(
+      goalTargetSchema.safeParse({ type: "sor", kind: "single", maxSum: 0 })
+        .success,
+    ).toBe(false);
+  });
+
   it("limits only podium counts to one event", () => {
     const podiums = {
       type: "count",

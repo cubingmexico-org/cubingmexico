@@ -37,6 +37,8 @@ export {
 } from "./summary-extra/ranks";
 export {
   getAsOfPbs,
+  computeKinchForPerson,
+  computeSorForPerson,
   computeYearKinchSor,
   computeTeamYearKinchSor,
 } from "./summary-extra/kinch-sor";

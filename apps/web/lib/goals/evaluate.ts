@@ -25,6 +25,9 @@ import {
 } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import {
+  computeKinchForPerson,
+  computeSorForPerson,
+  getAsOfPbs,
   getAsOfPersonRanks,
   getMembershipAsOf,
   getMollerzEventIds,
@@ -71,6 +74,8 @@ type Context = {
   asOf: Date;
   /** Lazily computed so goals that don't need them skip the queries. */
   counts: () => Promise<Record<CountMetric, number>>;
+  /** Everyone's official PBs as of `asOf`, shared by Kinch and Sum of Ranks goals. */
+  pbs: () => ReturnType<typeof getAsOfPbs>;
 };
 
 function memo<T>(fn: () => Promise<T>): () => Promise<T> {
@@ -242,6 +247,23 @@ async function evaluateTarget(
           slotCount === 0 ? "Aún sin resultados" : `Némesis: ${nemesisCount}`,
       };
     }
+    case "kinch": {
+      // Rounded like the annual summary, so a shown 50.00 meets a 50.00 goal.
+      const score = Number(
+        computeKinchForPerson(ctx.wcaId, await ctx.pbs()).toFixed(2),
+      );
+      return {
+        achieved: score >= target.minScore,
+        progress: `Kinch actual: ${score.toFixed(2)}`,
+      };
+    }
+    case "sor": {
+      const sum = computeSorForPerson(ctx.wcaId, await ctx.pbs(), target.kind);
+      return {
+        achieved: sum <= target.maxSum,
+        progress: `Sum of Ranks (${target.kind}) actual: ${sum}`,
+      };
+    }
     case "custom":
       return {
         achieved: completedAt !== null,
@@ -296,6 +318,7 @@ export async function getGoalViews(
     yearStart: new Date(Date.UTC(year, 0, 1)),
     asOf: new Date(`${asOfDay}T00:00:00Z`),
     counts: memo(() => yearCounts(ctx)),
+    pbs: memo(() => getAsOfPbs(ctx.asOf)),
   };
 
   const eventNames = await getEventNames(

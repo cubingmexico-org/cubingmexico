@@ -36,6 +36,8 @@ export const GOAL_TYPE_LABELS: Record<GoalType, string> = {
   count: "Actividad",
   mollerz: "Membresía Mollerz",
   nemesis: "Némesis",
+  kinch: "Kinch",
+  sor: "Sum of Ranks",
   custom: "Personalizada",
 };
 
@@ -87,6 +89,15 @@ export const goalTargetSchema = z
     z.object({
       type: z.literal("nemesis"),
       maxNemeses: z.coerce.number().int().min(0).max(1000),
+    }),
+    z.object({
+      type: z.literal("kinch"),
+      minScore: z.coerce.number().positive().max(100),
+    }),
+    z.object({
+      type: z.literal("sor"),
+      kind,
+      maxSum: positiveInt.max(1_000_000),
     }),
     z.object({
       type: z.literal("custom"),

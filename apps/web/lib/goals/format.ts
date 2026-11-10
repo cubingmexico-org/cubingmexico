@@ -43,6 +43,10 @@ export function describeGoal(target: GoalTarget, eventName?: string): string {
       return target.maxNemeses === 0
         ? "Terminar el año sin némesis"
         : `Terminar el año con ${target.maxNemeses} némesis o menos`;
+    case "kinch":
+      return `Kinch de al menos ${target.minScore.toFixed(2)}`;
+    case "sor":
+      return `Sum of Ranks (${target.kind}) de ${target.maxSum} o menos`;
     case "custom":
       return target.text;
   }

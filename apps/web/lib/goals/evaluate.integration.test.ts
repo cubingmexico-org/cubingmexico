@@ -369,6 +369,56 @@ describe("getGoalViews", () => {
     ]);
   });
 
+  it("computes Kinch and Sum of Ranks from official PBs as of the evaluation day", async () => {
+    await addResult({
+      competitionId: "Open2019",
+      personId: ANA,
+      best: 1000,
+      average: 1100,
+    });
+    await addResult({
+      competitionId: "Open2019",
+      personId: BETO,
+      best: 900,
+      average: 1000,
+    });
+    // Deprecated events and results after the year don't count.
+    await addResult({
+      competitionId: "Open2019",
+      personId: ANA,
+      eventId: "333ft",
+      best: 3000,
+      average: 3500,
+    });
+    await addResult({
+      competitionId: "Open2020",
+      personId: ANA,
+      best: 800,
+      average: 850,
+    });
+
+    await addGoal({ type: "kinch", minScore: 90.91 });
+    await addGoal({ type: "kinch", minScore: 95 });
+    await addGoal({ type: "sor", kind: "single", maxSum: 2 });
+    await addGoal({ type: "sor", kind: "average", maxSum: 1 });
+
+    const views = await getGoalViews(ANA, 2019, YEAR_END);
+    expect(views.map((v) => [v.label, v.achieved, v.progress])).toEqual([
+      ["Kinch de al menos 90.91", true, "Kinch actual: 90.91"],
+      ["Kinch de al menos 95.00", false, "Kinch actual: 90.91"],
+      [
+        "Sum of Ranks (single) de 2 o menos",
+        true,
+        "Sum of Ranks (single) actual: 2",
+      ],
+      [
+        "Sum of Ranks (average) de 1 o menos",
+        false,
+        "Sum of Ranks (average) actual: 2",
+      ],
+    ]);
+  });
+
   it("compares the Mollerz tier reached by the evaluation day", async () => {
     await addResult({
       competitionId: "Open2020",
