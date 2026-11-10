@@ -148,6 +148,13 @@
       "when": 1793119431597,
       "tag": "0020_search_trigram_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794350676495,
+      "tag": "0021_goals",
+      "breakpoints": true
     }
   ]
 }

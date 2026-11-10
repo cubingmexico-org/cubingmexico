@@ -18,6 +18,11 @@ export function teamInitials(name: string, fallback: string): string {
   );
 }
 
+export function personInitials(name: string, fallback: string): string {
+  const withoutLocalName = name.replace(/\s*\(.*\)\s*$/, "");
+  return teamInitials(withoutLocalName, fallback).slice(0, 2).toUpperCase();
+}
+
 export function championshipLabel(type: string): string {
   switch (type) {
     case "MX":

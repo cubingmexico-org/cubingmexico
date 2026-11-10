@@ -20,6 +20,7 @@ describe("cache tags", () => {
       "total-members-CMX",
       "team-top-members-CMX",
       "team-podiums-CMX",
+      "team-events-CMX",
       "single-national-records-CMX",
       "average-national-records-CMX",
       "sosr-CMX-single",

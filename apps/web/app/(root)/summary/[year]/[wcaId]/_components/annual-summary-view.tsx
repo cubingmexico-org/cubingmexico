@@ -17,9 +17,10 @@ import { SummaryHeader } from "./summary-header";
 type Props = {
   summary: AnnualSummary;
   unofficial?: CcYearSummary | null;
+  avatarUrl?: string | null;
 };
 
-export function AnnualSummaryView({ summary, unofficial }: Props) {
+export function AnnualSummaryView({ summary, unofficial, avatarUrl }: Props) {
   const {
     person,
     year,
@@ -42,7 +43,7 @@ export function AnnualSummaryView({ summary, unofficial }: Props) {
 
   return (
     <div className="flex flex-col gap-8 max-w-4xl mx-auto">
-      <SummaryHeader summary={summary} />
+      <SummaryHeader summary={summary} avatarUrl={avatarUrl} />
 
       <PodiumsSection pronoun={pronoun} podiums={podiums} />
 

@@ -1,15 +1,18 @@
 import "server-only";
 import { db } from "@workspace/db";
 import {
+  Goal,
+  GoalTarget,
   Person,
   State,
   Team,
+  goal,
   team,
   teamMember,
   person,
   TeamMember,
 } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 
 // Writes live here and not in db/queries.ts: a file-level "use cache" caches every export,
 // so a repeated write with the same arguments would be served from the cache and skipped.
@@ -113,6 +116,90 @@ export async function updateTeamCover({
     await tx.update(team).set({ coverImage }).where(eq(team.stateId, stateId));
     return previous?.coverImage ?? null;
   });
+}
+
+/** Inserts the goal unless the person already has `limit` goals that year; returns whether it did. */
+export async function createGoal({
+  personId,
+  year,
+  target,
+  limit,
+}: {
+  personId: Person["wcaId"];
+  year: Goal["year"];
+  target: GoalTarget;
+  limit: number;
+}): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    // Serializes concurrent creates for the same person so the limit holds.
+    await tx
+      .select({ wcaId: person.wcaId })
+      .from(person)
+      .where(eq(person.wcaId, personId))
+      .for("update");
+    const [existing] = await tx
+      .select({ total: count() })
+      .from(goal)
+      .where(and(eq(goal.personId, personId), eq(goal.year, year)));
+    if ((existing?.total ?? 0) >= limit) return false;
+
+    await tx.insert(goal).values({
+      id: crypto.randomUUID(),
+      personId,
+      year,
+      type: target.type,
+      target,
+    });
+    return true;
+  });
+}
+
+export async function updateGoal({
+  id,
+  target,
+}: {
+  id: Goal["id"];
+  target: GoalTarget;
+}) {
+  await db
+    .update(goal)
+    .set({
+      type: target.type,
+      target,
+      completedAt: null,
+      updatedAt: new Date(),
+    })
+    .where(eq(goal.id, id));
+}
+
+export async function deleteGoal(id: Goal["id"]) {
+  await db.delete(goal).where(eq(goal.id, id));
+}
+
+export async function setGoalPublic({
+  id,
+  isPublic,
+}: {
+  id: Goal["id"];
+  isPublic: Goal["isPublic"];
+}) {
+  await db
+    .update(goal)
+    .set({ isPublic, updatedAt: new Date() })
+    .where(eq(goal.id, id));
+}
+
+export async function setGoalCompleted({
+  id,
+  completed,
+}: {
+  id: Goal["id"];
+  completed: boolean;
+}) {
+  await db
+    .update(goal)
+    .set({ completedAt: completed ? new Date() : null, updatedAt: new Date() })
+    .where(eq(goal.id, id));
 }
 
 export async function addMember({

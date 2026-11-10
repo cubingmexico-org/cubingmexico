@@ -676,3 +676,78 @@ export const design = pgTable(
 );
 
 export type Design = InferSelectModel<typeof design>;
+
+// Cubing México yearly goals ("Metas"). Targets are validated in apps/web/lib/goals/types.ts.
+
+export const goalTypeEnum = [
+  "result",
+  "rank",
+  "count",
+  "mollerz",
+  "nemesis",
+  "kinch",
+  "sor",
+  "custom",
+] as const;
+
+export type GoalType = (typeof goalTypeEnum)[number];
+
+export type GoalTarget =
+  | {
+      type: "result";
+      eventId: string;
+      kind: "single" | "average";
+      /** WCA-encoded value the result has to beat (strictly lower). */
+      value: number;
+    }
+  | {
+      type: "rank";
+      eventId: string;
+      kind: "single" | "average";
+      region: "national" | "state";
+      maxRank: number;
+    }
+  | {
+      type: "count";
+      metric:
+        | "competitions"
+        | "podiums"
+        | "wins"
+        | "states"
+        | "newStates"
+        | "events"
+        | "prs"
+        | "records";
+      value: number;
+      /** Only for "podiums": count podiums in this event alone. */
+      eventId?: string;
+    }
+  | {
+      type: "mollerz";
+      tier: "Diamante" | "Ópalo" | "Platino" | "Oro" | "Plata" | "Bronce";
+    }
+  | { type: "nemesis"; maxNemeses: number }
+  | { type: "kinch"; minScore: number }
+  | { type: "sor"; kind: "single" | "average"; maxSum: number }
+  | { type: "custom"; text: string };
+
+export const goal = pgTable(
+  "goals",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    personId: varchar("person_id", { length: 10 })
+      .notNull()
+      .references(() => person.wcaId, { onDelete: "cascade" }),
+    year: integer("year").notNull(),
+    type: varchar("type", { length: 16 }).$type<GoalType>().notNull(),
+    target: jsonb("target").$type<GoalTarget>().notNull(),
+    isPublic: boolean("is_public").notNull().default(false),
+    /** Set by the owner on custom goals; other types are evaluated from results. */
+    completedAt: timestamp("completed_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [index("goals_person_year_idx").on(t.personId, t.year)],
+);
+
+export type Goal = InferSelectModel<typeof goal>;
