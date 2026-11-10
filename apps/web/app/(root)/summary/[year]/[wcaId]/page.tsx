@@ -8,6 +8,7 @@ import { canAccessAnnualSummary } from "../../_lib/summary-access";
 import { getAnnualSummary } from "./_lib/queries";
 import { getPersonYearUnofficial } from "./_lib/unofficial";
 import { AnnualSummaryView } from "./_components/annual-summary-view";
+import { GoalsSection } from "./_components/goals-section";
 
 type Props = {
   params: Promise<{ year: string; wcaId: string }>;
@@ -80,7 +81,14 @@ async function SummaryPage({ params }: Props) {
     notFound();
   }
 
-  return <SummaryPageContent year={year} wcaId={wcaId} />;
+  return (
+    <div className="flex flex-col gap-8">
+      <SummaryPageContent year={year} wcaId={wcaId} />
+      <Suspense fallback={null}>
+        <GoalsSection year={year} wcaId={wcaId} />
+      </Suspense>
+    </div>
+  );
 }
 
 export default function Page({ params }: Props) {

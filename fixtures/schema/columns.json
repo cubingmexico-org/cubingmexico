@@ -113,6 +113,17 @@
     "trim_fastest_n",
     "trim_slowest_n"
   ],
+  "goals": [
+    "completed_at",
+    "created_at",
+    "id",
+    "is_public",
+    "person_id",
+    "target",
+    "type",
+    "updated_at",
+    "year"
+  ],
   "job_runs": [
     "error",
     "finished_at",

@@ -28,7 +28,13 @@ export {
   enhanceStatesWithFirstTime,
   computeTeammates,
 } from "./summary-extra/travel";
-export { computeRankProgress, computeYearMollerz } from "./summary-extra/ranks";
+export {
+  computeRankProgress,
+  computeYearMollerz,
+  getAsOfPersonRanks,
+  getMembershipAsOf,
+  getMollerzEventIds,
+} from "./summary-extra/ranks";
 export {
   getAsOfPbs,
   computeYearKinchSor,

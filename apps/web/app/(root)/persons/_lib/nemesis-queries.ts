@@ -3,7 +3,7 @@ import { db } from "@workspace/db";
 import { nemesisStats } from "@workspace/db/schema";
 import { and, eq, sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
-import { eventIdsSql } from "@/lib/official-events";
+import { eventIdsSql, officialEventIdsSql } from "@/lib/official-events";
 import type { EventScope } from "@/lib/constants";
 
 export type PersonNemesis = {
@@ -470,6 +470,70 @@ export type PersonNemesisStats = {
   nemesizedCount: number;
   slotCount: number;
 };
+
+/**
+ * Official-scope nemesis count using only competitions that started on or
+ * before `asOf`: same "beats every slot" rule as `findNemesisReport`, with PBs
+ * rebuilt from `results` instead of the current `ranks_*` tables.
+ */
+export async function countNemesesAsOf(
+  wcaId: string,
+  asOf: Date,
+): Promise<{ slotCount: number; nemesisCount: number }> {
+  const asOfIso = asOf.toISOString();
+
+  const rows = (await db.execute(sql`
+    WITH target AS (
+      SELECT 'single'::text AS type, r.event_id, MIN(r.best) AS best
+      FROM results r
+      INNER JOIN competitions c ON c.id = r.competition_id
+      WHERE r.person_id = ${wcaId}
+        AND r.event_id IN ${officialEventIdsSql}
+        AND r.best > 0
+        AND c.start_date <= ${asOfIso}
+      GROUP BY r.event_id
+      UNION ALL
+      SELECT 'average'::text AS type, r.event_id, MIN(r.average) AS best
+      FROM results r
+      INNER JOIN competitions c ON c.id = r.competition_id
+      WHERE r.person_id = ${wcaId}
+        AND r.event_id IN ${officialEventIdsSql}
+        AND r.average > 0
+        AND c.start_date <= ${asOfIso}
+      GROUP BY r.event_id
+    ),
+    total AS (
+      SELECT COUNT(*)::int AS n FROM target
+    ),
+    better AS (
+      SELECT DISTINCT r.person_id, t.type, t.event_id
+      FROM target t
+      INNER JOIN results r ON r.event_id = t.event_id AND r.person_id <> ${wcaId}
+      INNER JOIN competitions c ON c.id = r.competition_id
+      WHERE c.start_date <= ${asOfIso}
+        AND (
+          (t.type = 'single' AND r.best > 0 AND r.best < t.best)
+          OR (t.type = 'average' AND r.average > 0 AND r.average < t.best)
+        )
+    ),
+    nemeses AS (
+      SELECT b.person_id
+      FROM better b
+      GROUP BY b.person_id
+      HAVING COUNT(*) = (SELECT n FROM total)
+    )
+    SELECT
+      total.n AS "slotCount",
+      (CASE WHEN total.n = 0 THEN 0 ELSE (SELECT COUNT(*) FROM nemeses) END)::int AS "nemesisCount"
+    FROM total
+  `)) as unknown as { slotCount: number; nemesisCount: number }[];
+
+  const row = rows[0];
+  return {
+    slotCount: Number(row?.slotCount ?? 0),
+    nemesisCount: Number(row?.nemesisCount ?? 0),
+  };
+}
 
 export async function getPersonNemesisStats(
   wcaId: string,

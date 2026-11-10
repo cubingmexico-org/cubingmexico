@@ -12,7 +12,7 @@ import { and, countDistinct, eq, gt, inArray, lte, sql } from "drizzle-orm";
 import type { MollerzConditions, RankProgressRow, YearMollerz } from "./types";
 import { dayBefore } from "./utils";
 
-async function getAsOfPersonRanks(
+export async function getAsOfPersonRanks(
   wcaId: string,
   stateId: string | null,
   asOf: Date,
@@ -143,7 +143,16 @@ export async function computeRankProgress(
   );
 }
 
-async function getMembershipAsOf(
+/** Ids of the official events, which Mollerz membership requires all of. */
+export async function getMollerzEventIds(): Promise<string[]> {
+  const events = await db
+    .select({ id: event.id })
+    .from(event)
+    .where(isOfficialEvent);
+  return events.map((e) => e.id);
+}
+
+export async function getMembershipAsOf(
   wcaId: string,
   eventIds: string[],
   asOf: Date | null,
@@ -191,12 +200,7 @@ export async function computeYearMollerz(
   yearStart: Date,
   yearEnd: Date,
 ): Promise<YearMollerz> {
-  const events = await db
-    .select({ id: event.id })
-    .from(event)
-    .where(isOfficialEvent);
-
-  const eventIds = events.map((e) => e.id);
+  const eventIds = await getMollerzEventIds();
   if (eventIds.length === 0) return null;
 
   const beforeDate = dayBefore(yearStart);

@@ -10,6 +10,7 @@ import {
   CalendarRange,
   Shield,
   Award,
+  Target,
 } from "lucide-react";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
 import { useRouter } from "next/navigation";
@@ -17,6 +18,7 @@ import { authClient } from "@/lib/auth-client";
 import { ORGANIZER_APP_URL } from "@/lib/constants";
 import {
   canShowAnnualSummaryLinks,
+  canShowGoalsLinks,
   getDefaultSummaryYear,
 } from "@/app/(root)/summary/_lib/summary-year";
 import {
@@ -52,6 +54,7 @@ export function UserDropdown({
   const router = useRouter();
   const summaryYear = getDefaultSummaryYear();
   const showAnnualSummary = canShowAnnualSummaryLinks(isSuperadmin);
+  const showGoals = canShowGoalsLinks(isSuperadmin);
 
   return (
     <DropdownMenu>
@@ -89,6 +92,14 @@ export function UserDropdown({
               className="w-full"
             >
               Resumen anual
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
+        {showGoals && user.wcaId ? (
+          <DropdownMenuItem>
+            <Target />
+            <Link href="/goals" prefetch={false} className="w-full">
+              Mis metas
             </Link>
           </DropdownMenuItem>
         ) : null}

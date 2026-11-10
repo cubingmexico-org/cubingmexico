@@ -53,6 +53,11 @@ export function currentUserTeamTag(wcaId: string): string {
   return `current-user-team-${wcaId}`;
 }
 
+/** A person's goals for one year and their evaluated progress. */
+export function personGoalsTag(wcaId: string, year: number): string {
+  return `person-goals-${wcaId}-${year}`;
+}
+
 /** Person-scoped cache tags affected when historical SR markers change. */
 export function personStateRecordTags(personIds: string[]): string[] {
   return personIds.flatMap((wcaId) => [
