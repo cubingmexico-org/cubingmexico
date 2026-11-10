@@ -159,19 +159,30 @@ describe("getTeamEventInsights", () => {
 
     expect(events["333"]).toMatchObject({
       members: 4,
-      memberShare: 1,
+      demandShare: 1,
       roundsCompeted: 3,
       roundsCompetedOutside: 1,
       podiums: 4,
       roundsHosted: 2,
       competitionsHosted: 1,
+      supplyShare: 1,
       top100Single: 1,
       top100Average: 1,
       bestNationalRank: 3,
-      recommendation: "overrepresented",
+      recommendation: "balanced",
     });
-    expect(events["333"]!.demandShare).toBeCloseTo(0.4);
-    expect(events["333"]!.supplyShare).toBeCloseTo(2 / 3);
+  });
+
+  it("compares member share against the share of hosted competitions", async () => {
+    const events = byId(await getTeamEventInsights("JAL", null, "official"));
+
+    expect(events["333"]).toMatchObject({
+      demandShare: 1,
+      competitionsHosted: 2,
+      supplyShare: 1,
+    });
+    expect(events["222"]!.demandShare).toBeCloseTo(0.5);
+    expect(events["222"]!.supplyShare).toBeCloseTo(0.5);
   });
 
   it("flags popular events the state does not hold", async () => {

@@ -1,24 +1,19 @@
 import type { StatsWindow } from "@/lib/search-params";
 
-export type EventRecommendation =
-  | "more_rounds"
-  | "balanced"
-  | "overrepresented";
+export type EventRecommendation = "more_rounds" | "balanced";
 
 /** Below this many team members competing, the shares are too noisy to judge. */
 export const MIN_MEMBERS_FOR_RECOMMENDATION = 3;
 /** Coverage (`supplyShare / demandShare`) below this marks the event as under-served. */
 export const UNDER_SERVED_COVERAGE = 0.67;
-/** Coverage above this marks the event as over-represented. */
-export const OVER_SERVED_COVERAGE = 1.5;
 /** Ignore coverage differences smaller than this many share points. */
-export const MIN_GAP = 0.005;
+export const MIN_GAP = 0.03;
 
 export type RecommendationInput = {
   members: number;
-  /** This event's share of all member-event participations (shares sum to 1). */
+  /** Share of the team's active members who compete in this event. */
   demandShare: number;
-  /** This event's share of all rounds hosted in the state (shares sum to 1). */
+  /** Share of the competitions hosted in the state that include this event. */
   supplyShare: number;
 };
 
@@ -43,16 +38,12 @@ export function recommendEvent({
   if (coverage < UNDER_SERVED_COVERAGE && gap >= MIN_GAP) {
     return { gap, coverage, recommendation: "more_rounds" };
   }
-  if (coverage > OVER_SERVED_COVERAGE && -gap >= MIN_GAP) {
-    return { gap, coverage, recommendation: "overrepresented" };
-  }
   return { gap, coverage, recommendation: "balanced" };
 }
 
 export const RECOMMENDATION_LABELS: Record<EventRecommendation, string> = {
   more_rounds: "Necesita más rondas",
   balanced: "Bien cubierto",
-  overrepresented: "Sobrerrepresentado",
 };
 
 /** First day of the current UTC month minus 24 months, so cache keys only change monthly. */

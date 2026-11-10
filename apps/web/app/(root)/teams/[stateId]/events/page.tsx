@@ -86,7 +86,7 @@ export default async function Page(props: {
 
       <Card>
         <CardHeader>
-          <CardTitle>Participación contra rondas en {stateName}</CardTitle>
+          <CardTitle>Miembros contra competencias en {stateName}</CardTitle>
         </CardHeader>
         <CardContent>
           <TeamEventsDemandChart events={insights.events} />
@@ -101,7 +101,7 @@ export default async function Page(props: {
           <TeamEventsRecommendations
             events={insights.events}
             stateName={stateName}
-            hostedRounds={insights.hostedRounds}
+            hostedCompetitions={insights.hostedCompetitions}
           />
         </CardContent>
       </Card>
@@ -114,8 +114,8 @@ export default async function Page(props: {
         <CardContent className="space-y-3">
           <TeamEventsTable events={insights.events} />
           <p className="text-xs text-muted-foreground">
-            Participación y rondas cuentan solo competencias en México del
-            periodo elegido. Top 100 y mejor NR usan los rankings nacionales
+            Miembros, rondas y competencias cuentan solo competencias en México
+            del periodo elegido. Top 100 y mejor NR usan los rankings nacionales
             actuales.
           </p>
         </CardContent>

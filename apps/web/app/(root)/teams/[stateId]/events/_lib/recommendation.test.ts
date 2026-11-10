@@ -6,7 +6,7 @@ import {
 } from "./recommendation";
 
 describe("recommendEvent", () => {
-  it("flags events whose rounds share is well below their participation share", () => {
+  it("flags events held in far fewer competitions than their member share", () => {
     const result = recommendEvent({
       members: 10,
       demandShare: 0.1,
@@ -17,11 +17,11 @@ describe("recommendEvent", () => {
     expect(result.coverage).toBeCloseTo(0.5);
   });
 
-  it("flags events with far more rounds than participation", () => {
+  it("treats events held more often than their member share as balanced", () => {
     expect(
-      recommendEvent({ members: 10, demandShare: 0.05, supplyShare: 0.1 })
+      recommendEvent({ members: 10, demandShare: 0.05, supplyShare: 0.5 })
         .recommendation,
-    ).toBe("overrepresented");
+    ).toBe("balanced");
   });
 
   it("treats close shares as balanced", () => {
@@ -31,20 +31,16 @@ describe("recommendEvent", () => {
     ).toBe("balanced");
   });
 
-  it("treats coverage exactly at the thresholds as balanced", () => {
+  it("treats coverage exactly at the threshold as balanced", () => {
     expect(
       recommendEvent({ members: 10, demandShare: 0.1, supplyShare: 0.067 })
-        .recommendation,
-    ).toBe("balanced");
-    expect(
-      recommendEvent({ members: 10, demandShare: 0.1, supplyShare: 0.15 })
         .recommendation,
     ).toBe("balanced");
   });
 
   it("ignores tiny absolute gaps even when the ratio is large", () => {
     expect(
-      recommendEvent({ members: 10, demandShare: 0.004, supplyShare: 0 })
+      recommendEvent({ members: 10, demandShare: 0.02, supplyShare: 0 })
         .recommendation,
     ).toBe("balanced");
   });

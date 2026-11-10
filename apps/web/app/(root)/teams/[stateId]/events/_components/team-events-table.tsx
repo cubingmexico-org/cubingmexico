@@ -47,7 +47,6 @@ const RECOMMENDATION_CLASSES: Record<EventRecommendation, string> = {
     "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-400",
   balanced:
     "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
-  overrepresented: "text-muted-foreground",
 };
 
 function SortableHead({
@@ -146,7 +145,7 @@ export function TeamEventsTable({ events }: { events: TeamEventInsight[] }) {
             onSort={onSort}
           />
           <SortableHead
-            label="Participación / rondas"
+            label="% miembros / % competencias"
             sortKey="gap"
             sort={sort}
             onSort={onSort}
@@ -175,12 +174,7 @@ export function TeamEventsTable({ events }: { events: TeamEventInsight[] }) {
                 {eventLabel(e.eventId, e.eventName)}
               </span>
             </TableCell>
-            <TableCell className="tabular-nums">
-              {e.members}
-              <span className="ml-1 text-xs text-muted-foreground">
-                {formatShare(e.memberShare)}
-              </span>
-            </TableCell>
+            <TableCell className="tabular-nums">{e.members}</TableCell>
             <TableCell className="tabular-nums">
               {e.roundsCompeted}
               {e.roundsCompetedOutside > 0 ? (

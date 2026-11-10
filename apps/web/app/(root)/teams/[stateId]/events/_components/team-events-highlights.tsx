@@ -82,7 +82,7 @@ export function TeamEventsHighlights({
         insight={needsRounds}
         detail={
           needsRounds
-            ? `${formatShare(needsRounds.demandShare)} de participación, ${formatShare(needsRounds.supplyShare)} de rondas`
+            ? `${formatShare(needsRounds.demandShare)} de miembros, ${formatShare(needsRounds.supplyShare)} de competencias`
             : ""
         }
       />

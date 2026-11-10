@@ -15,8 +15,11 @@ import { eventLabel } from "../_lib/format";
 const ROW_HEIGHT = 34;
 
 const chartConfig = {
-  demand: { label: "Participación del equipo", color: "var(--chart-1)" },
-  supply: { label: "Rondas en el estado", color: "var(--chart-2)" },
+  demand: { label: "Miembros que lo compiten", color: "var(--chart-1)" },
+  supply: {
+    label: "Competencias del estado que lo incluyen",
+    color: "var(--chart-2)",
+  },
 } satisfies ChartConfig;
 
 export function TeamEventsDemandChart({

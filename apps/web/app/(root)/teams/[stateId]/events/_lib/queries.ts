@@ -29,9 +29,7 @@ export type TeamEventInsight = {
   isOfficial: boolean;
   /** Team members with a result in the event in Mexico, within the window. */
   members: number;
-  /** `members` over team members active in any official event. */
-  memberShare: number | null;
-  /** Share of all member-event participations; null for deprecated events. */
+  /** `members` over team members active in any official event; null for deprecated events. */
   demandShare: number | null;
   roundsCompeted: number;
   roundsCompetedOutside: number;
@@ -39,7 +37,7 @@ export type TeamEventInsight = {
   /** Rounds held in competitions hosted by the state, within the window. */
   roundsHosted: number;
   competitionsHosted: number;
-  /** Share of all official rounds hosted in the state; null for deprecated events. */
+  /** `competitionsHosted` over competitions hosted in the state; null for deprecated events. */
   supplyShare: number | null;
   coverage: number | null;
   gap: number | null;
@@ -128,7 +126,6 @@ export async function getTeamEventInsights(
     db
       .select({
         activeMembers: sql<number>`COUNT(DISTINCT ${result.personId})::int`,
-        participations: sql<number>`COUNT(DISTINCT ${result.personId} || ':' || ${result.eventId})::int`,
       })
       .from(result)
       .innerJoin(person, eq(result.personId, person.wcaId))
@@ -148,8 +145,8 @@ export async function getTeamEventInsights(
   ]);
 
   const activeMembers = memberTotals?.activeMembers ?? 0;
-  const participations = memberTotals?.participations ?? 0;
   const hostedRounds = hostedTotals?.rounds ?? 0;
+  const hostedCompetitions = hostedTotals?.competitions ?? 0;
 
   const byEvent = new Map<string, TeamEventInsight>();
   const ensure = (row: {
@@ -165,7 +162,6 @@ export async function getTeamEventInsights(
         eventRank: row.eventRank,
         isOfficial: row.eventRank < OFFICIAL_EVENT_MAX_RANK,
         members: 0,
-        memberShare: null,
         demandShare: null,
         roundsCompeted: 0,
         roundsCompetedOutside: 0,
@@ -216,12 +212,11 @@ export async function getTeamEventInsights(
 
   for (const insight of byEvent.values()) {
     if (!insight.isOfficial) continue;
-    insight.memberShare =
-      activeMembers > 0 ? insight.members / activeMembers : null;
-    const demandShare =
-      participations > 0 ? insight.members / participations : 0;
+    const demandShare = activeMembers > 0 ? insight.members / activeMembers : 0;
     const supplyShare =
-      hostedRounds > 0 ? insight.roundsHosted / hostedRounds : 0;
+      hostedCompetitions > 0
+        ? insight.competitionsHosted / hostedCompetitions
+        : 0;
     insight.demandShare = demandShare;
     insight.supplyShare = supplyShare;
     const { gap, coverage, recommendation } = recommendEvent({
@@ -237,7 +232,7 @@ export async function getTeamEventInsights(
   return {
     activeMembers,
     hostedRounds,
-    hostedCompetitions: hostedTotals?.competitions ?? 0,
+    hostedCompetitions,
     events: [...byEvent.values()].sort(
       (a, b) => a.eventRank - b.eventRank || a.eventId.localeCompare(b.eventId),
     ),
