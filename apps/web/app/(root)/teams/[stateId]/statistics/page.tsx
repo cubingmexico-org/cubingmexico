@@ -13,6 +13,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import {
   Calendar,
   CalendarRange,
+  ChartBarBig,
   ChartNoAxesCombined,
   Flame,
   History,
@@ -140,6 +141,11 @@ export default async function Page(props: {
       href: `/kinch/${stateId}`,
       label: `Kinch Ranks de ${stateName}`,
       icon: ChartNoAxesCombined,
+    },
+    {
+      href: `/teams/${stateId}/events`,
+      label: `Eventos populares de ${stateName}`,
+      icon: ChartBarBig,
     },
   ];
 

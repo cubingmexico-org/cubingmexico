@@ -21,6 +21,7 @@ export function stateMemberTags(stateId: string): string[] {
     `total-members-${stateId}`,
     `team-top-members-${stateId}`,
     `team-podiums-${stateId}`,
+    `team-events-${stateId}`,
     `single-national-records-${stateId}`,
     `average-national-records-${stateId}`,
     `sosr-${stateId}-single`,

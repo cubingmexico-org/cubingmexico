@@ -8,6 +8,7 @@ const TABS = [
   { key: "overview", suffix: "", label: "Resumen" },
   { key: "members", suffix: "/members", label: "Miembros" },
   { key: "competitions", suffix: "/competitions", label: "Competencias" },
+  { key: "events", suffix: "/events", label: "Eventos" },
   { key: "statistics", suffix: "/statistics", label: "Estadísticas" },
 ] as const;
 
@@ -31,11 +32,13 @@ export function TeamTabsNav({ stateId }: { stateId: string }) {
     ? "members"
     : pathname.endsWith(`${basePath}/competitions`)
       ? "competitions"
-      : pathname.endsWith(`${basePath}/statistics`)
-        ? "statistics"
-        : pathname === basePath || pathname === `${basePath}/`
-          ? "overview"
-          : null;
+      : pathname.endsWith(`${basePath}/events`)
+        ? "events"
+        : pathname.endsWith(`${basePath}/statistics`)
+          ? "statistics"
+          : pathname === basePath || pathname === `${basePath}/`
+            ? "overview"
+            : null;
 
   return (
     <div className="mb-8 w-full min-w-0 overflow-x-auto">
