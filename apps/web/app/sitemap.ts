@@ -1,5 +1,6 @@
 import { getEvents, getStates } from "@/db/queries";
 import { getCcRankingEvents } from "@/app/(root)/unofficial/_lib/queries";
+import { rankTypeForEvent } from "@/lib/selectors";
 import type { MetadataRoute } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -83,7 +84,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  const averageRankingUrls = events.map((event) => {
+  const averageEvents = events.filter(
+    (event) => rankTypeForEvent(event.id, "average") === "average",
+  );
+
+  const averageRankingUrls = averageEvents.map((event) => {
     return {
       url: `https://www.cubingmexico.net/rankings/${event.id}/average`,
       changeFrequency: "weekly" as const,
@@ -99,7 +104,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
   });
 
-  const averageResultsRankingUrls = events.map((event) => {
+  const averageResultsRankingUrls = averageEvents.map((event) => {
     return {
       url: `https://www.cubingmexico.net/rankings/${event.id}/average/results`,
       changeFrequency: "weekly" as const,

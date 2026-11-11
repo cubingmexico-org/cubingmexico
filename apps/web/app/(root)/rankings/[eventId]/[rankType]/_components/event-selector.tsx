@@ -19,6 +19,7 @@ import { usePathname } from "next/navigation";
 import type { EventId } from "@/types/wca";
 import { AsOfDatePicker } from "@/components/as-of-date-picker";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { rankTypeForEvent } from "@/lib/selectors";
 
 const searchParams = {
   name: parseAsString.withDefault(""),
@@ -98,10 +99,11 @@ export function EventSelector({
         <span className="font-semibold text-sm">Eventos</span>
         <div className="flex flex-wrap gap-2 text-muted-foreground">
           {visibleEvents.map((event) => {
+            const rankType = rankTypeForEvent(event.id, selectedRankType);
             const href = serialize(
               pathname.includes("results")
-                ? `/rankings/${event.id}/${selectedRankType}/results`
-                : `/rankings/${event.id}/${selectedRankType}`,
+                ? `/rankings/${event.id}/${rankType}/results`
+                : `/rankings/${event.id}/${rankType}`,
               preserved,
             );
 

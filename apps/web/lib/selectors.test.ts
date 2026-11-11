@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { shouldHideRankTypeSelector, toggleSelectedValue } from "./selectors";
+import {
+  rankTypeForEvent,
+  shouldHideRankTypeSelector,
+  toggleSelectedValue,
+} from "./selectors";
 
 describe("toggleSelectedValue", () => {
   it("clears the value when selecting the current selection", () => {
@@ -23,5 +27,17 @@ describe("shouldHideRankTypeSelector", () => {
   it("shows the selector for other events", () => {
     expect(shouldHideRankTypeSelector("333")).toBe(false);
     expect(shouldHideRankTypeSelector("333fm")).toBe(false);
+  });
+});
+
+describe("rankTypeForEvent", () => {
+  it("always links 333mbf to single", () => {
+    expect(rankTypeForEvent("333mbf", "average")).toBe("single");
+    expect(rankTypeForEvent("333mbf", "single")).toBe("single");
+  });
+
+  it("keeps the rank type for other events", () => {
+    expect(rankTypeForEvent("333", "average")).toBe("average");
+    expect(rankTypeForEvent("333fm", "single")).toBe("single");
   });
 });
