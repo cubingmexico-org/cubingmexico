@@ -9,15 +9,25 @@ import {
   rankAverage,
   rankSingle,
   result,
+  resultAttempts,
 } from "@workspace/db/schema";
-import { and, eq, gt, gte, sql, type SQL } from "drizzle-orm";
+import { and, eq, gt, gte, inArray, sql, type SQL } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { OFFICIAL_EVENT_MAX_RANK, type EventScope } from "@/lib/constants";
 import {
   eventScopeFilter,
   inOfficialEvents,
   inScopeEvents,
+  isOfficialEvent,
 } from "@/lib/official-events";
+import {
+  cutoffAttempts,
+  median,
+  recommendCutoff,
+  typicalCutoff,
+  type CutoffRecommendation,
+  type CutoffRound,
+} from "./cutoff";
 import { recommendEvent, type EventRecommendation } from "./recommendation";
 
 const NATIONAL_TOP_N = 100;
@@ -237,6 +247,183 @@ export async function getTeamEventInsights(
       (a, b) => a.eventRank - b.eventRank || a.eventId.localeCompare(b.eventId),
     ),
   };
+}
+
+export type TeamEventCutoff = CutoffRecommendation & {
+  eventId: string;
+  eventName: string;
+  eventRank: number;
+  /** Attempts to make the cutoff, from the format the event uses most often. */
+  attempts: number;
+};
+
+const CUTOFF_ROUND_TYPES = ["c", "d", "e", "g"];
+
+const cutoffAttemptsSql = sql`CASE ${result.formatId} WHEN 'a' THEN 2 ELSE 1 END`;
+const firstAttemptsBestSql = sql<
+  number | null
+>`MIN(${resultAttempts.value}) FILTER (WHERE ${resultAttempts.value} > 0 AND ${resultAttempts.attemptNumber} <= ${cutoffAttemptsSql})::int`;
+const cutoffEventsFilter = and(
+  isOfficialEvent,
+  eq(event.format, "time"),
+  inArray(result.formatId, ["a", "m"]),
+);
+
+/**
+ * Only official timed events in Ao5 or Mo3 rounds, the formats that take
+ * cutoffs. `typicalSince` bounds the rounds with a cutoff held in Mexico that
+ * set the typical cutoff each suggestion is capped at.
+ */
+export async function getTeamEventCutoffs(
+  stateId: string,
+  since: string | null,
+  typicalSince: string | null,
+): Promise<TeamEventCutoff[]> {
+  cacheLife("weeks");
+  cacheTag(`team-events-${stateId}`);
+
+  const [rows, typicalCutoffs] = await Promise.all([
+    db
+      .select({
+        personId: result.personId,
+        eventId: event.id,
+        eventName: event.name,
+        eventRank: event.rank,
+        formatId: result.formatId,
+        firstAttemptsBest: firstAttemptsBestSql,
+      })
+      .from(result)
+      .innerJoin(resultAttempts, eq(resultAttempts.resultId, result.id))
+      .innerJoin(person, eq(result.personId, person.wcaId))
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .innerJoin(event, eq(result.eventId, event.id))
+      .where(
+        and(
+          eq(person.stateId, stateId),
+          eq(competition.countryId, "Mexico"),
+          sinceFilter(since),
+          cutoffEventsFilter,
+        ),
+      )
+      .groupBy(
+        result.id,
+        result.personId,
+        event.id,
+        event.name,
+        event.rank,
+        result.formatId,
+      ),
+    getTypicalCutoffs(typicalSince),
+  ]);
+
+  const byEvent = new Map<
+    string,
+    {
+      eventName: string;
+      eventRank: number;
+      formats: Map<string, number>;
+      members: Map<string, number[]>;
+    }
+  >();
+  for (const row of rows) {
+    let entry = byEvent.get(row.eventId);
+    if (!entry) {
+      entry = {
+        eventName: row.eventName,
+        eventRank: row.eventRank,
+        formats: new Map(),
+        members: new Map(),
+      };
+      byEvent.set(row.eventId, entry);
+    }
+    entry.formats.set(row.formatId, (entry.formats.get(row.formatId) ?? 0) + 1);
+    const rounds = entry.members.get(row.personId) ?? [];
+    rounds.push(row.firstAttemptsBest ?? Number.POSITIVE_INFINITY);
+    entry.members.set(row.personId, rounds);
+  }
+
+  const cutoffs: TeamEventCutoff[] = [];
+  for (const [eventId, entry] of byEvent) {
+    const recommendation = recommendCutoff(
+      [...entry.members.values()].map(median),
+      typicalCutoffs.get(eventId) ?? null,
+    );
+    if (!recommendation) continue;
+    const [formatId] = [...entry.formats].reduce((a, b) =>
+      b[1] > a[1] ? b : a,
+    );
+    cutoffs.push({
+      ...recommendation,
+      eventId,
+      eventName: entry.eventName,
+      eventRank: entry.eventRank,
+      attempts: cutoffAttempts(formatId),
+    });
+  }
+
+  return cutoffs.sort(
+    (a, b) => a.eventRank - b.eventRank || a.eventId.localeCompare(b.eventId),
+  );
+}
+
+/** Typical cutoff per event across rounds with a cutoff held in Mexico. */
+async function getTypicalCutoffs(
+  since: string | null,
+): Promise<Map<string, number>> {
+  const perResult = db.$with("per_result").as(
+    db
+      .select({
+        competitionId: result.competitionId,
+        eventId: result.eventId,
+        roundTypeId: result.roundTypeId,
+        firstAttemptsBest: firstAttemptsBestSql.as("first_attempts_best"),
+        madeCutoff:
+          sql<boolean>`BOOL_OR(${resultAttempts.attemptNumber} > ${cutoffAttemptsSql} AND ${resultAttempts.value} <> 0)`.as(
+            "made_cutoff",
+          ),
+      })
+      .from(result)
+      .innerJoin(resultAttempts, eq(resultAttempts.resultId, result.id))
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .innerJoin(event, eq(result.eventId, event.id))
+      .where(
+        and(
+          eq(competition.countryId, "Mexico"),
+          sinceFilter(since),
+          inArray(result.roundTypeId, CUTOFF_ROUND_TYPES),
+          cutoffEventsFilter,
+        ),
+      )
+      .groupBy(result.id),
+  );
+
+  const rounds = await db
+    .with(perResult)
+    .select({
+      eventId: perResult.eventId,
+      slowestMade: sql<
+        number | null
+      >`MAX(${perResult.firstAttemptsBest}) FILTER (WHERE ${perResult.madeCutoff})::int`,
+      fastestMissed: sql<
+        number | null
+      >`MIN(${perResult.firstAttemptsBest}) FILTER (WHERE NOT ${perResult.madeCutoff})::int`,
+    })
+    .from(perResult)
+    .groupBy(perResult.competitionId, perResult.eventId, perResult.roundTypeId);
+
+  const byEvent = new Map<string, CutoffRound[]>();
+  for (const { eventId, ...round } of rounds) {
+    const eventRounds = byEvent.get(eventId) ?? [];
+    eventRounds.push(round);
+    byEvent.set(eventId, eventRounds);
+  }
+
+  const typical = new Map<string, number>();
+  for (const [eventId, eventRounds] of byEvent) {
+    const cutoff = typicalCutoff(eventRounds);
+    if (cutoff !== null) typical.set(eventId, cutoff);
+  }
+  return typical;
 }
 
 function rankStrength(

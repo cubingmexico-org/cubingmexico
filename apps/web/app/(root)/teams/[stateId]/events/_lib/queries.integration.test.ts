@@ -6,9 +6,10 @@ import {
   insertRankAverage,
   insertRankSingle,
   insertResult,
+  insertResultAttempts,
   insertRoundType,
 } from "@/test/factories";
-import { getTeamEventInsights } from "./queries";
+import { getTeamEventCutoffs, getTeamEventInsights } from "./queries";
 
 const SINCE = "2024-01-01";
 
@@ -237,5 +238,147 @@ describe("getTeamEventInsights", () => {
       competitionsHosted: 2,
       roundsCompeted: 4,
     });
+  });
+});
+
+describe("getTeamEventCutoffs", () => {
+  let attemptCounter = 0;
+  async function insertWithAttempts(
+    competitionId: string,
+    eventId: string,
+    personId: string,
+    formatId: string,
+    attempts: number[],
+  ) {
+    attemptCounter += 1;
+    const id = `c${attemptCounter}`;
+    await insertResult({
+      id,
+      competitionId,
+      eventId,
+      personId,
+      formatId,
+      roundTypeId: "1",
+    });
+    await insertResultAttempts(id, attempts);
+  }
+
+  beforeEach(async () => {
+    attemptCounter = 0;
+    await insertEvent({ id: "666", name: "6x6x6 Cube", rank: 70 });
+    await insertPerson({ wcaId: "2020FFFF01", stateId: "JAL" });
+
+    const ao5: [string, number[]][] = [
+      ["2020AAAA01", [800, 900, 700, 700, 700]],
+      ["2020BBBB01", [1000, 1100, 1000, 1000, 1000]],
+      ["2020CCCC01", [-1, 1200, 1000, 1000, 1000]],
+      ["2020DDDD01", [-1, -1, 500, 500, 500]],
+      ["2020FFFF01", [1500, 1400, 1400, 1400, 1400]],
+      ["2020EEEE01", [100, 100, 100, 100, 100]],
+    ];
+    for (const [personId, attempts] of ao5) {
+      await insertWithAttempts("Jal2025", "333", personId, "a", attempts);
+      await insertWithAttempts("Jal2025", "fto", personId, "a", attempts);
+    }
+    await insertWithAttempts("Jal2015", "333", "2020FFFF01", "a", [100, 100]);
+
+    const mo3: [string, number[]][] = [
+      ["2020AAAA01", [6000, 1000, 1000]],
+      ["2020BBBB01", [6100, 6100, 6100]],
+      ["2020CCCC01", [6200, 6200, 6200]],
+      ["2020DDDD01", [7000, 100, 100]],
+      ["2020FFFF01", [6400, 6400, 6400]],
+    ];
+    for (const [personId, attempts] of mo3) {
+      await insertWithAttempts("Cmx2025", "666", personId, "m", attempts);
+    }
+  });
+
+  function byEvent(cutoffs: Awaited<ReturnType<typeof getTeamEventCutoffs>>) {
+    return Object.fromEntries(cutoffs.map((c) => [c.eventId, c]));
+  }
+
+  it("uses the best of the first two attempts in Ao5 rounds", async () => {
+    const cutoffs = byEvent(await getTeamEventCutoffs("JAL", SINCE, SINCE));
+
+    expect(cutoffs["333"]).toEqual({
+      eventId: "333",
+      eventName: "3x3x3 Cube",
+      eventRank: 10,
+      attempts: 2,
+      cutoff: 1500,
+      members: 5,
+      passing: 4,
+      close: 0,
+      capped: false,
+    });
+  });
+
+  it("uses only the first attempt in Mo3 rounds", async () => {
+    const cutoffs = byEvent(await getTeamEventCutoffs("JAL", SINCE, SINCE));
+
+    expect(cutoffs["666"]).toMatchObject({
+      attempts: 1,
+      cutoff: 6500,
+      members: 5,
+      passing: 4,
+      close: 1,
+      capped: false,
+    });
+  });
+
+  it("caps at the typical cutoff of rounds with a cutoff in Mexico", async () => {
+    await insertRoundType({ id: "c", rank: 80 });
+    await insertPerson({ wcaId: "2020GGGG01" });
+    for (let i = 1; i <= 5; i++) {
+      const competitionId = `Cutoff2025${i}`;
+      await insertCompetition({
+        id: competitionId,
+        stateId: "CMX",
+        startDate: new Date("2025-09-01T00:00:00Z"),
+      });
+      for (const [personId, attempts] of [
+        ["2020EEEE01", [6250, 6200, 6300]],
+        ["2020GGGG01", [6400, 0, 0]],
+      ] as const) {
+        attemptCounter += 1;
+        const id = `c${attemptCounter}`;
+        await insertResult({
+          id,
+          competitionId,
+          eventId: "666",
+          personId,
+          formatId: "m",
+          roundTypeId: "c",
+        });
+        await insertResultAttempts(id, [...attempts]);
+      }
+    }
+
+    const cutoffs = byEvent(await getTeamEventCutoffs("JAL", SINCE, SINCE));
+    expect(cutoffs["666"]).toMatchObject({
+      cutoff: 6300,
+      passing: 3,
+      close: 1,
+      capped: true,
+    });
+
+    const older = byEvent(
+      await getTeamEventCutoffs("JAL", SINCE, "2026-01-01"),
+    );
+    expect(older["666"]).toMatchObject({ cutoff: 6500, capped: false });
+  });
+
+  it("includes older competitions in the all-time window", async () => {
+    const cutoffs = byEvent(await getTeamEventCutoffs("JAL", null, SINCE));
+
+    expect(cutoffs["333"]).toMatchObject({ cutoff: 1300, passing: 4 });
+  });
+
+  it("never suggests cutoffs for unofficial events or with few members", async () => {
+    const cutoffs = await getTeamEventCutoffs("JAL", SINCE, SINCE);
+    expect(cutoffs.map((c) => c.eventId)).toEqual(["333", "666"]);
+
+    expect(await getTeamEventCutoffs("CMX", SINCE, SINCE)).toEqual([]);
   });
 });

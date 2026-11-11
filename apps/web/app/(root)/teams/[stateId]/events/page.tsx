@@ -13,8 +13,9 @@ import { eventScopeFromDeprecated } from "@/lib/official-events";
 import { deprecatedParser, statsWindowParser } from "@/lib/search-params";
 import type { SearchParams } from "@/types";
 import { getTeamInfo } from "../_lib/queries";
-import { getTeamEventInsights } from "./_lib/queries";
+import { getTeamEventCutoffs, getTeamEventInsights } from "./_lib/queries";
 import { windowSince } from "./_lib/recommendation";
+import { TeamEventsCutoffs } from "./_components/team-events-cutoffs";
 import { TeamEventsHighlights } from "./_components/team-events-highlights";
 import { TeamEventsDemandChart } from "./_components/team-events-demand-chart";
 import { TeamEventsRecommendations } from "./_components/team-events-recommendations";
@@ -50,9 +51,10 @@ export default async function Page(props: {
   );
   const since = windowSince(window);
 
-  const [team, insights] = await Promise.all([
+  const [team, insights, cutoffs] = await Promise.all([
     getTeamInfo(stateId),
     getTeamEventInsights(stateId, since, eventScopeFromDeprecated(deprecated)),
+    getTeamEventCutoffs(stateId, since, windowSince("2y")),
   ]);
 
   if (!team) {
@@ -103,6 +105,15 @@ export default async function Page(props: {
             stateName={stateName}
             hostedCompetitions={insights.hostedCompetitions}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Cutoffs sugeridos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TeamEventsCutoffs cutoffs={cutoffs} stateName={stateName} />
         </CardContent>
       </Card>
 
