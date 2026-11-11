@@ -16,6 +16,8 @@ export default function robots(): MetadataRoute.Robots {
           "Claude-Web",
           "Bytespider",
           "CCBot",
+          "DotBot",
+          "SERankingBacklinksBot",
         ],
         disallow: "/",
       },

@@ -5,6 +5,7 @@ import { EventSelector } from "./_components/event-selector";
 import { getEvents } from "@/db/queries";
 import type { EventId } from "@/types/wca";
 import type { SearchParams } from "@/types";
+import { rankTypeForEvent } from "@/lib/selectors";
 import {
   RankSinglesLoader,
   RankAveragesLoader,
@@ -18,10 +19,14 @@ type Props = {
 
 export async function generateStaticParams() {
   const events = await getEvents();
-  return events.flatMap((event) => [
-    { eventId: event.id, rankType: "single" },
-    { eventId: event.id, rankType: "average" },
-  ]);
+  return events.flatMap((event) =>
+    rankTypeForEvent(event.id, "average") === "average"
+      ? [
+          { eventId: event.id, rankType: "single" },
+          { eventId: event.id, rankType: "average" },
+        ]
+      : [{ eventId: event.id, rankType: "single" }],
+  );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
