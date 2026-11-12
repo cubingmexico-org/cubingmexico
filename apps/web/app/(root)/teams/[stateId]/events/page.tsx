@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createSearchParamsCache } from "nuqs/server";
-import { getTeam } from "@/db/queries";
+import { getStatesGeoJSON, getTeam } from "@/db/queries";
 import {
   Card,
   CardContent,
@@ -13,13 +13,20 @@ import { eventScopeFromDeprecated } from "@/lib/official-events";
 import { deprecatedParser, statsWindowParser } from "@/lib/search-params";
 import type { SearchParams } from "@/types";
 import { getTeamInfo } from "../_lib/queries";
-import { getTeamEventCutoffs, getTeamEventInsights } from "./_lib/queries";
+import {
+  getPodiumLevels,
+  getStateVisitors,
+  getTeamEventCutoffs,
+  getTeamEventInsights,
+} from "./_lib/queries";
 import { windowSince } from "./_lib/recommendation";
 import { TeamEventsCutoffs } from "./_components/team-events-cutoffs";
 import { TeamEventsHighlights } from "./_components/team-events-highlights";
 import { TeamEventsDemandChart } from "./_components/team-events-demand-chart";
+import { TeamEventsPodiumLevels } from "./_components/team-events-podium-levels";
 import { TeamEventsRecommendations } from "./_components/team-events-recommendations";
 import { TeamEventsTable } from "./_components/team-events-table";
+import { TeamEventsVisitors } from "./_components/team-events-visitors";
 import { WindowSelect } from "./_components/window-select";
 
 const searchParamsCache = createSearchParamsCache({
@@ -51,11 +58,19 @@ export default async function Page(props: {
   );
   const since = windowSince(window);
 
-  const [team, insights, cutoffs] = await Promise.all([
-    getTeamInfo(stateId),
-    getTeamEventInsights(stateId, since, eventScopeFromDeprecated(deprecated)),
-    getTeamEventCutoffs(stateId, since, windowSince("2y")),
-  ]);
+  const [team, insights, cutoffs, podiumLevels, visitors, statesGeoJSON] =
+    await Promise.all([
+      getTeamInfo(stateId),
+      getTeamEventInsights(
+        stateId,
+        since,
+        eventScopeFromDeprecated(deprecated),
+      ),
+      getTeamEventCutoffs(stateId, since, windowSince("2y")),
+      getPodiumLevels(stateId, since),
+      getStateVisitors(stateId, since),
+      getStatesGeoJSON(),
+    ]);
 
   if (!team) {
     return notFound();
@@ -110,10 +125,33 @@ export default async function Page(props: {
 
       <Card>
         <CardHeader>
+          <CardTitle>Nivel para podio en {stateName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TeamEventsPodiumLevels levels={podiumLevels} stateName={stateName} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Cutoffs sugeridos</CardTitle>
         </CardHeader>
         <CardContent>
           <TeamEventsCutoffs cutoffs={cutoffs} stateName={stateName} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>¿De dónde vienen los competidores?</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TeamEventsVisitors
+            visitors={visitors}
+            stateId={stateId}
+            stateName={stateName}
+            statesGeoJSON={statesGeoJSON}
+          />
         </CardContent>
       </Card>
 

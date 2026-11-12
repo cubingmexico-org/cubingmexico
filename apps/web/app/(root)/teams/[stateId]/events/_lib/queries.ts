@@ -28,6 +28,14 @@ import {
   type CutoffRecommendation,
   type CutoffRound,
 } from "./cutoff";
+import {
+  finalPodium,
+  isAverageFormat,
+  membersAtLevel,
+  podiumLevel,
+  rankingValue,
+  type PodiumLevel,
+} from "./podium";
 import { recommendEvents, type EventRecommendation } from "./recommendation";
 
 const NATIONAL_TOP_N = 100;
@@ -515,6 +523,184 @@ async function getTypicalCutoffs(
     if (cutoff !== null) typical.set(eventId, cutoff);
   }
   return typical;
+}
+
+export type StateVisitorOrigin = {
+  /** Home state of the competitors; null when it isn't registered. */
+  stateId: string | null;
+  people: number;
+  /** Distinct (person, competition) attendances. */
+  visits: number;
+};
+
+export type StateVisitors = {
+  origins: StateVisitorOrigin[];
+  totalPeople: number;
+  /** People from another state, excluding those without a registered state. */
+  outsidePeople: number;
+};
+
+/** Where competitors at competitions hosted in the state come from; only Mexican competitors are stored. */
+export async function getStateVisitors(
+  stateId: string,
+  since: string | null,
+): Promise<StateVisitors> {
+  cacheLife("weeks");
+  cacheTag(`team-events-${stateId}`);
+
+  const origins = await db
+    .select({
+      stateId: person.stateId,
+      people: sql<number>`COUNT(DISTINCT ${result.personId})::int`,
+      visits: sql<number>`COUNT(DISTINCT ${attendanceKey})::int`,
+    })
+    .from(result)
+    .innerJoin(person, eq(result.personId, person.wcaId))
+    .innerJoin(competition, eq(result.competitionId, competition.id))
+    .where(
+      and(
+        eq(competition.stateId, stateId),
+        sinceFilter(since),
+        inOfficialEvents(result.eventId),
+      ),
+    )
+    .groupBy(person.stateId);
+
+  return {
+    origins: origins.sort(
+      (a, b) =>
+        b.people - a.people || (a.stateId ?? "").localeCompare(b.stateId ?? ""),
+    ),
+    totalPeople: origins.reduce((sum, o) => sum + o.people, 0),
+    outsidePeople: origins
+      .filter((o) => o.stateId !== null && o.stateId !== stateId)
+      .reduce((sum, o) => sum + o.people, 0),
+  };
+}
+
+export type TeamPodiumLevel = PodiumLevel & {
+  eventId: string;
+  eventName: string;
+  eventRank: number;
+  /** Whether results are averages or singles, from the format most finals used. */
+  kind: "average" | "single";
+  /** Members whose current PR beats the typical third place. */
+  membersAtLevel: number;
+};
+
+/** Typical podium results in finals held in the state; only Mexican competitors are stored. */
+export async function getPodiumLevels(
+  stateId: string,
+  since: string | null,
+): Promise<TeamPodiumLevel[]> {
+  cacheLife("weeks");
+  cacheTag(`team-events-${stateId}`);
+
+  const memberPrs = (table: typeof rankSingle | typeof rankAverage) =>
+    db
+      .select({ eventId: table.eventId, best: table.best })
+      .from(table)
+      .innerJoin(person, eq(table.personId, person.wcaId))
+      .where(
+        and(
+          eq(person.stateId, stateId),
+          gt(table.best, 0),
+          inOfficialEvents(table.eventId),
+        ),
+      );
+
+  const [podiumRows, singlePrs, averagePrs] = await Promise.all([
+    db
+      .select({
+        competitionId: result.competitionId,
+        eventId: event.id,
+        eventName: event.name,
+        eventRank: event.rank,
+        pos: result.pos,
+        formatId: result.formatId,
+        best: result.best,
+        average: result.average,
+      })
+      .from(result)
+      .innerJoin(competition, eq(result.competitionId, competition.id))
+      .innerJoin(event, eq(result.eventId, event.id))
+      .where(
+        and(
+          eq(competition.stateId, stateId),
+          sinceFilter(since),
+          isOfficialEvent,
+          inArray(result.roundTypeId, ["f", "c"]),
+          inArray(result.pos, [1, 2, 3]),
+        ),
+      ),
+    memberPrs(rankSingle),
+    memberPrs(rankAverage),
+  ]);
+
+  type Final = {
+    average: boolean;
+    rows: { pos: number; value: number | null }[];
+  };
+  const byEvent = new Map<
+    string,
+    { eventName: string; eventRank: number; finals: Map<string, Final> }
+  >();
+  for (const row of podiumRows) {
+    let entry = byEvent.get(row.eventId);
+    if (!entry) {
+      entry = {
+        eventName: row.eventName,
+        eventRank: row.eventRank,
+        finals: new Map(),
+      };
+      byEvent.set(row.eventId, entry);
+    }
+    let final = entry.finals.get(row.competitionId);
+    if (!final) {
+      final = { average: isAverageFormat(row.formatId), rows: [] };
+      entry.finals.set(row.competitionId, final);
+    }
+    final.rows.push({
+      pos: row.pos ?? 0,
+      value: rankingValue(row.formatId, row.best, row.average),
+    });
+  }
+
+  const prsByEvent = (rows: { eventId: string; best: number }[]) => {
+    const prs = new Map<string, number[]>();
+    for (const { eventId, best } of rows) {
+      prs.set(eventId, [...(prs.get(eventId) ?? []), best]);
+    }
+    return prs;
+  };
+  const singles = prsByEvent(singlePrs);
+  const averages = prsByEvent(averagePrs);
+
+  const levels: TeamPodiumLevel[] = [];
+  for (const [eventId, entry] of byEvent) {
+    const finals = [...entry.finals.values()];
+    const averageFinals = finals.filter((f) => f.average).length;
+    const kind = averageFinals * 2 >= finals.length ? "average" : "single";
+    const level = podiumLevel(
+      finals
+        .filter((f) => f.average === (kind === "average"))
+        .map((f) => finalPodium(f.rows)),
+    );
+    if (!level) continue;
+    const prs = (kind === "average" ? averages : singles).get(eventId) ?? [];
+    levels.push({
+      ...level,
+      eventId,
+      eventName: entry.eventName,
+      eventRank: entry.eventRank,
+      kind,
+      membersAtLevel: membersAtLevel(prs, level.third),
+    });
+  }
+
+  return levels.sort(
+    (a, b) => a.eventRank - b.eventRank || a.eventId.localeCompare(b.eventId),
+  );
 }
 
 function rankStrength(

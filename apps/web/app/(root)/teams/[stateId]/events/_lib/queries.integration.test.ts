@@ -9,7 +9,12 @@ import {
   insertResultAttempts,
   insertRoundType,
 } from "@/test/factories";
-import { getTeamEventCutoffs, getTeamEventInsights } from "./queries";
+import {
+  getPodiumLevels,
+  getStateVisitors,
+  getTeamEventCutoffs,
+  getTeamEventInsights,
+} from "./queries";
 
 const SINCE = "2024-01-01";
 
@@ -418,5 +423,153 @@ describe("getTeamEventCutoffs", () => {
     expect(cutoffs.map((c) => c.eventId)).toEqual(["333", "666"]);
 
     expect(await getTeamEventCutoffs("CMX", SINCE, SINCE)).toEqual([]);
+  });
+});
+
+describe("getStateVisitors", () => {
+  beforeEach(async () => {
+    await insertPerson({ wcaId: "2020HHHH01" });
+    await insertResult({
+      id: "visitor1",
+      competitionId: "Jal2025",
+      eventId: "333",
+      personId: "2020HHHH01",
+      roundTypeId: "1",
+    });
+  });
+
+  it("groups competitors at hosted competitions by home state", async () => {
+    expect(await getStateVisitors("JAL", SINCE)).toEqual({
+      origins: [
+        { stateId: "JAL", people: 4, visits: 4 },
+        { stateId: null, people: 1, visits: 1 },
+        { stateId: "CMX", people: 1, visits: 1 },
+      ],
+      totalPeople: 6,
+      outsidePeople: 1,
+    });
+  });
+
+  it("counts every visit within the window, only in official events", async () => {
+    const visitors = await getStateVisitors("JAL", null);
+    expect(visitors.origins[0]).toEqual({
+      stateId: "JAL",
+      people: 4,
+      visits: 5,
+    });
+
+    expect(await getStateVisitors("JAL", "2026-01-01")).toEqual({
+      origins: [],
+      totalPeople: 0,
+      outsidePeople: 0,
+    });
+  });
+});
+
+describe("getPodiumLevels", () => {
+  let podiumCounter = 0;
+  async function insertFinal(
+    competitionId: string,
+    eventId: string,
+    formatId: string,
+    values: { pos: number; best: number; average?: number }[],
+  ) {
+    const people = ["2020AAAA01", "2020BBBB01", "2020CCCC01", "2020EEEE01"];
+    for (const [index, { pos, best, average = 0 }] of values.entries()) {
+      podiumCounter += 1;
+      await insertResult({
+        id: `p${podiumCounter}`,
+        competitionId,
+        eventId,
+        personId: people[index]!,
+        formatId,
+        roundTypeId: "f",
+        pos,
+        best,
+        average,
+      });
+    }
+  }
+
+  beforeEach(async () => {
+    podiumCounter = 0;
+    await insertEvent({ id: "333bf", name: "3x3x3 Blindfolded", rank: 70 });
+    for (const id of ["JalPodium1", "JalPodium2"]) {
+      await insertCompetition({
+        id,
+        stateId: "JAL",
+        startDate: new Date("2025-10-01T00:00:00Z"),
+      });
+    }
+
+    await insertFinal("JalPodium1", "333", "a", [
+      { pos: 1, best: 800, average: 900 },
+      { pos: 2, best: 850, average: 950 },
+      { pos: 3, best: 700, average: 1000 },
+    ]);
+    await insertFinal("JalPodium2", "333", "a", [
+      { pos: 1, best: 700, average: 800 },
+      { pos: 2, best: 750, average: 850 },
+      { pos: 3, best: 800, average: 1100 },
+    ]);
+
+    await insertFinal("JalPodium1", "333bf", "3", [
+      { pos: 1, best: 3000 },
+      { pos: 2, best: 3100 },
+      { pos: 3, best: 3200 },
+    ]);
+    await insertFinal("JalPodium2", "333bf", "3", [
+      { pos: 1, best: 2800 },
+      { pos: 2, best: 2900 },
+      { pos: 2, best: 2900 },
+    ]);
+
+    for (const id of ["JalPodium1", "JalPodium2"]) {
+      await insertFinal(id, "fto", "a", [
+        { pos: 1, best: 2000, average: 2100 },
+        { pos: 2, best: 2200, average: 2300 },
+        { pos: 3, best: 2400, average: 2500 },
+      ]);
+    }
+
+    await insertRankSingle({
+      personId: "2020AAAA01",
+      eventId: "333bf",
+      best: 2850,
+    });
+    await insertRankSingle({
+      personId: "2020BBBB01",
+      eventId: "333bf",
+      best: 2950,
+    });
+  });
+
+  it("takes typical first and third place by average or single", async () => {
+    expect(await getPodiumLevels("JAL", SINCE)).toEqual([
+      {
+        eventId: "333",
+        eventName: "3x3x3 Cube",
+        eventRank: 10,
+        kind: "average",
+        finals: 2,
+        first: 800,
+        third: 1000,
+        membersAtLevel: 1,
+      },
+      {
+        eventId: "333bf",
+        eventName: "3x3x3 Blindfolded",
+        eventRank: 70,
+        kind: "single",
+        finals: 2,
+        first: 2800,
+        third: 2900,
+        membersAtLevel: 1,
+      },
+    ]);
+  });
+
+  it("only uses finals within the window", async () => {
+    expect(await getPodiumLevels("JAL", "2026-01-01")).toEqual([]);
   });
 });
