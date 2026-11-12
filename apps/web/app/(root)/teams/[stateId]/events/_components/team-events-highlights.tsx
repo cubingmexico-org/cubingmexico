@@ -1,5 +1,6 @@
 import type { TeamEventInsight } from "../_lib/queries";
 import { eventLabel, formatShare } from "../_lib/format";
+import { RECOMMENDATION_LABELS } from "../_lib/recommendation";
 
 function maxBy<T>(items: T[], score: (item: T) => number): T | null {
   let best: T | null = null;
@@ -53,7 +54,7 @@ export function TeamEventsHighlights({
   const strongest = maxBy(events, (e) => e.top100Single + e.top100Average);
   const needsRounds = maxBy(
     events.filter((e) => e.recommendation === "more_rounds"),
-    (e) => e.gap ?? 0,
+    (e) => 1 - (e.coverage ?? 0),
   );
 
   return (
@@ -61,7 +62,11 @@ export function TeamEventsHighlights({
       <HighlightStat
         label="Más popular"
         insight={popular}
-        detail={popular ? `${popular.members} miembros` : ""}
+        detail={
+          popular
+            ? `${popular.members} miembros${popular.recommendation === "frequency" ? `, ${RECOMMENDATION_LABELS.frequency.toLowerCase()}` : ""}`
+            : ""
+        }
       />
       <HighlightStat
         label="Más rondas en el estado"
@@ -82,7 +87,7 @@ export function TeamEventsHighlights({
         insight={needsRounds}
         detail={
           needsRounds
-            ? `${formatShare(needsRounds.demandShare)} de miembros, ${formatShare(needsRounds.supplyShare)} de competencias`
+            ? `${formatShare(needsRounds.interest)} de interés, en ${formatShare(needsRounds.supplyShare)} de competencias`
             : ""
         }
       />

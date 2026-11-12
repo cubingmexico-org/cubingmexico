@@ -88,7 +88,7 @@ export default async function Page(props: {
 
       <Card>
         <CardHeader>
-          <CardTitle>Miembros contra competencias en {stateName}</CardTitle>
+          <CardTitle>Interés contra competencias en {stateName}</CardTitle>
         </CardHeader>
         <CardContent>
           <TeamEventsDemandChart events={insights.events} />
@@ -126,8 +126,11 @@ export default async function Page(props: {
           <TeamEventsTable events={insights.events} />
           <p className="text-xs text-muted-foreground">
             Miembros, rondas y competencias cuentan solo competencias en México
-            del periodo elegido. Top 100 y mejor NR usan los rankings nacionales
-            actuales.
+            del periodo elegido. Pasar de ronda y llegar a final cuentan solo
+            eventos con más de una ronda, sobre los miembros que compitieron en
+            su primera ronda. Interés: de las veces que los miembros fueron a
+            una competencia con el evento, en cuántas lo compitieron. Top 100 y
+            mejor NR usan los rankings nacionales actuales.
           </p>
         </CardContent>
       </Card>

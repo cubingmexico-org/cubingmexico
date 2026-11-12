@@ -163,14 +163,50 @@ describe("getTeamEventInsights", () => {
       demandShare: 1,
       roundsCompeted: 3,
       roundsCompetedOutside: 1,
+      multiRoundMembers: 4,
+      advancedMembers: 3,
+      finalistMembers: 3,
       podiums: 4,
       roundsHosted: 2,
       competitionsHosted: 1,
       supplyShare: 1,
+      interest: 5 / 8,
+      exposure: 1,
       top100Single: 1,
       top100Average: 1,
       bestNationalRank: 3,
+      coverage: 1,
       recommendation: "balanced",
+    });
+  });
+
+  it("counts members who advance and reach finals only in events with more than one round", async () => {
+    await insertEvent({ id: "pyram", name: "Pyraminx", rank: 40 });
+    await insertRoundType({ id: "2", rank: 20 });
+    await insertRound("Jal2025", "pyram", "1", [
+      "2020AAAA01",
+      "2020BBBB01",
+      "2020CCCC01",
+      "2020DDDD01",
+    ]);
+    await insertRound("Jal2025", "pyram", "2", [
+      "2020AAAA01",
+      "2020BBBB01",
+      "2020CCCC01",
+    ]);
+    await insertRound("Jal2025", "pyram", "f", ["2020AAAA01"]);
+
+    const events = byId(await getTeamEventInsights("JAL", SINCE, "official"));
+
+    expect(events.pyram).toMatchObject({
+      multiRoundMembers: 4,
+      advancedMembers: 3,
+      finalistMembers: 1,
+    });
+    expect(events["222"]).toMatchObject({
+      multiRoundMembers: 0,
+      advancedMembers: 0,
+      finalistMembers: 0,
     });
   });
 
@@ -193,6 +229,8 @@ describe("getTeamEventInsights", () => {
       members: 4,
       roundsHosted: 0,
       roundsCompetedOutside: 1,
+      interest: 1,
+      exposure: 0.5,
       coverage: 0,
       recommendation: "more_rounds",
     });
