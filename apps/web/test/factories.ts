@@ -13,6 +13,7 @@ import {
   rankAverage,
   rankSingle,
   result,
+  resultAttempts,
   roundType,
   streakRanks,
   sumOfRanks,
@@ -121,6 +122,17 @@ export async function insertResult(
     roundTypeId: null,
     ...values,
   });
+}
+
+/** Attempts are numbered from 1 in the order given. */
+export async function insertResultAttempts(resultId: string, values: number[]) {
+  await db.insert(resultAttempts).values(
+    values.map((value, index) => ({
+      resultId,
+      value,
+      attemptNumber: index + 1,
+    })),
+  );
 }
 
 type CcEventInsert = typeof ccEvent.$inferInsert;

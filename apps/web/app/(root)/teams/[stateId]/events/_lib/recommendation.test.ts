@@ -1,85 +1,110 @@
 import { describe, expect, it } from "vitest";
 import {
   MIN_MEMBERS_FOR_RECOMMENDATION,
-  recommendEvent,
+  recommendEvents,
   windowSince,
+  type RecommendationInput,
 } from "./recommendation";
 
-describe("recommendEvent", () => {
-  it("flags events held in far fewer competitions than their member share", () => {
-    const result = recommendEvent({
-      members: 10,
-      demandShare: 0.1,
-      supplyShare: 0.05,
+function input(
+  demandShare: number,
+  interest: number | null,
+  supplyShare: number,
+  members = 10,
+): RecommendationInput {
+  return { members, demandShare, interest, supplyShare };
+}
+
+/** Three events offered exactly as much as their interest: a typical ratio of 1. */
+const TYPICAL = [
+  input(0.5, 0.6, 0.6),
+  input(0.5, 0.5, 0.5),
+  input(0.5, 0.8, 0.8),
+];
+
+describe("recommendEvents", () => {
+  it("flags events offered too little for their interest", () => {
+    const [, , , underServed] = recommendEvents([
+      ...TYPICAL,
+      input(0.4, 0.8, 0.4),
+    ]);
+    expect(underServed).toEqual({
+      coverage: 0.5,
+      recommendation: "more_rounds",
     });
-    expect(result.recommendation).toBe("more_rounds");
-    expect(result.gap).toBeCloseTo(0.05);
-    expect(result.coverage).toBeCloseTo(0.5);
   });
 
-  it("treats events held more often than their member share as balanced", () => {
-    expect(
-      recommendEvent({ members: 10, demandShare: 0.05, supplyShare: 0.5 })
-        .recommendation,
-    ).toBe("balanced");
+  it("treats events offered in line with their interest as balanced", () => {
+    const results = recommendEvents(TYPICAL);
+    expect(results.map((r) => r.recommendation)).toEqual([
+      "balanced",
+      "balanced",
+      "balanced",
+    ]);
+    expect(results[0]!.coverage).toBeCloseTo(1);
   });
 
-  it("treats close shares as balanced", () => {
-    expect(
-      recommendEvent({ members: 10, demandShare: 0.1, supplyShare: 0.09 })
-        .recommendation,
-    ).toBe("balanced");
+  it("flags popular events whose participation comes from being held often", () => {
+    const [, , , , frequent, niche] = recommendEvents([
+      ...TYPICAL,
+      input(0.4, 0.8, 0.4),
+      input(0.6, 0.4, 0.8),
+      input(0.1, 0.2, 0.4),
+    ]);
+    expect(frequent).toEqual({ coverage: 2, recommendation: "frequency" });
+    expect(niche).toEqual({ coverage: 2, recommendation: "over_offered" });
   });
 
-  it("treats coverage exactly at the threshold as balanced", () => {
-    expect(
-      recommendEvent({ members: 10, demandShare: 0.1, supplyShare: 0.067 })
-        .recommendation,
-    ).toBe("balanced");
+  it("never calls an event over-offered when members compete in it more than in others", () => {
+    const results = recommendEvents([
+      input(0.5, 0.8, 0.4),
+      input(0.5, 0.8, 0.4),
+      input(0.5, 0.6, 0.3),
+      input(0.97, 0.97, 1),
+    ]);
+    expect(results[3]!.coverage).toBeGreaterThan(2);
+    expect(results[3]!.recommendation).toBe("balanced");
   });
 
-  it("ignores tiny absolute gaps even when the ratio is large", () => {
-    expect(
-      recommendEvent({ members: 10, demandShare: 0.02, supplyShare: 0 })
-        .recommendation,
-    ).toBe("balanced");
+  it("treats coverage exactly at the thresholds as balanced", () => {
+    const [, , , low, high] = recommendEvents([
+      ...TYPICAL,
+      input(0.5, 0.5, 0.4),
+      input(0.5, 0.4, 0.5),
+    ]);
+    expect(low!.recommendation).toBe("balanced");
+    expect(high!.recommendation).toBe("balanced");
   });
 
   it("flags events the state never holds", () => {
-    const result = recommendEvent({
-      members: 5,
-      demandShare: 0.05,
-      supplyShare: 0,
-    });
-    expect(result.recommendation).toBe("more_rounds");
-    expect(result.coverage).toBe(0);
+    const [, , , missing] = recommendEvents([...TYPICAL, input(0.3, 0.5, 0)]);
+    expect(missing).toEqual({ coverage: 0, recommendation: "more_rounds" });
   });
 
-  it("skips events with too few members", () => {
-    expect(
-      recommendEvent({
-        members: MIN_MEMBERS_FOR_RECOMMENDATION - 1,
-        demandShare: 0.2,
-        supplyShare: 0,
-      }).recommendation,
-    ).toBeNull();
-    expect(
-      recommendEvent({
-        members: MIN_MEMBERS_FOR_RECOMMENDATION,
-        demandShare: 0.2,
-        supplyShare: 0,
-      }).recommendation,
-    ).toBe("more_rounds");
+  it("flags every event when the state holds none", () => {
+    const results = recommendEvents([input(0.5, 0.6, 0), input(0.2, 0.3, 0)]);
+    expect(results.map((r) => r.recommendation)).toEqual([
+      "more_rounds",
+      "more_rounds",
+    ]);
   });
 
-  it("skips events nobody competes in", () => {
-    const result = recommendEvent({
-      members: 0,
-      demandShare: 0,
-      supplyShare: 0.1,
-    });
-    expect(result.recommendation).toBeNull();
-    expect(result.coverage).toBeNull();
+  it("skips events with too few members without letting them skew the rest", () => {
+    const results = recommendEvents([
+      ...TYPICAL,
+      input(0.9, 0.1, 0.9, MIN_MEMBERS_FOR_RECOMMENDATION - 1),
+    ]);
+    expect(results[3]).toEqual({ coverage: null, recommendation: null });
+    expect(results.slice(0, 3).map((r) => r.recommendation)).toEqual([
+      "balanced",
+      "balanced",
+      "balanced",
+    ]);
+  });
+
+  it("skips events members never had the chance to compete in", () => {
+    const [, , , unseen] = recommendEvents([...TYPICAL, input(0, null, 0.3)]);
+    expect(unseen).toEqual({ coverage: null, recommendation: null });
   });
 });
 

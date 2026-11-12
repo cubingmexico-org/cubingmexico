@@ -15,7 +15,10 @@ import { eventLabel } from "../_lib/format";
 const ROW_HEIGHT = 34;
 
 const chartConfig = {
-  demand: { label: "Miembros que lo compiten", color: "var(--chart-1)" },
+  interest: {
+    label: "Miembros que lo compiten cuando se ofrece",
+    color: "var(--chart-1)",
+  },
   supply: {
     label: "Competencias del estado que lo incluyen",
     color: "var(--chart-2)",
@@ -30,12 +33,12 @@ export function TeamEventsDemandChart({
   const data = events
     .filter(
       (e) =>
-        e.isOfficial && ((e.demandShare ?? 0) > 0 || (e.supplyShare ?? 0) > 0),
+        e.isOfficial && ((e.interest ?? 0) > 0 || (e.supplyShare ?? 0) > 0),
     )
     .map((e) => ({
       eventId: e.eventId,
       label: eventLabel(e.eventId, e.eventName),
-      demand: Number(((e.demandShare ?? 0) * 100).toFixed(1)),
+      interest: Number(((e.interest ?? 0) * 100).toFixed(1)),
       supply: Number(((e.supplyShare ?? 0) * 100).toFixed(1)),
     }));
 
@@ -88,7 +91,7 @@ export function TeamEventsDemandChart({
           }
         />
         <ChartLegend content={<ChartLegendContent />} />
-        <Bar dataKey="demand" fill="var(--color-demand)" radius={3} />
+        <Bar dataKey="interest" fill="var(--color-interest)" radius={3} />
         <Bar dataKey="supply" fill="var(--color-supply)" radius={3} />
       </BarChart>
     </ChartContainer>

@@ -23,9 +23,11 @@ type SortKey =
   | "event"
   | "members"
   | "roundsCompeted"
+  | "advanced"
+  | "finalists"
   | "podiums"
   | "roundsHosted"
-  | "gap"
+  | "coverage"
   | "top100"
   | "bestNationalRank";
 
@@ -35,9 +37,12 @@ const SORT_VALUE: Record<SortKey, (e: TeamEventInsight) => number> = {
   event: (e) => e.eventRank,
   members: (e) => e.members,
   roundsCompeted: (e) => e.roundsCompeted,
+  advanced: (e) => e.advancedMembers,
+  finalists: (e) => e.finalistMembers,
   podiums: (e) => e.podiums,
   roundsHosted: (e) => e.roundsHosted,
-  gap: (e) => e.gap ?? Number.NEGATIVE_INFINITY,
+  coverage: (e) =>
+    e.coverage === null ? Number.NEGATIVE_INFINITY : -e.coverage,
   top100: (e) => e.top100Single + e.top100Average,
   bestNationalRank: (e) => e.bestNationalRank ?? Number.POSITIVE_INFINITY,
 };
@@ -45,9 +50,23 @@ const SORT_VALUE: Record<SortKey, (e: TeamEventInsight) => number> = {
 const RECOMMENDATION_CLASSES: Record<EventRecommendation, string> = {
   more_rounds:
     "border-transparent bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  frequency: "border-transparent bg-sky-500/15 text-sky-700 dark:text-sky-400",
+  over_offered: "border-transparent bg-muted text-muted-foreground",
   balanced:
     "border-transparent bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
 };
+
+function MembersOutOf({ count, total }: { count: number; total: number }) {
+  if (total === 0) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  return (
+    <>
+      {count}
+      <span className="ml-1 text-xs text-muted-foreground">de {total}</span>
+    </>
+  );
+}
 
 function SortableHead({
   label,
@@ -133,6 +152,18 @@ export function TeamEventsTable({ events }: { events: TeamEventInsight[] }) {
             onSort={onSort}
           />
           <SortableHead
+            label="Pasan de ronda"
+            sortKey="advanced"
+            sort={sort}
+            onSort={onSort}
+          />
+          <SortableHead
+            label="Llegan a final"
+            sortKey="finalists"
+            sort={sort}
+            onSort={onSort}
+          />
+          <SortableHead
             label="Podios"
             sortKey="podiums"
             sort={sort}
@@ -145,8 +176,8 @@ export function TeamEventsTable({ events }: { events: TeamEventInsight[] }) {
             onSort={onSort}
           />
           <SortableHead
-            label="% miembros / % competencias"
-            sortKey="gap"
+            label="Interés / % competencias"
+            sortKey="coverage"
             sort={sort}
             onSort={onSort}
           />
@@ -183,6 +214,18 @@ export function TeamEventsTable({ events }: { events: TeamEventInsight[] }) {
                 </span>
               ) : null}
             </TableCell>
+            <TableCell className="whitespace-nowrap tabular-nums">
+              <MembersOutOf
+                count={e.advancedMembers}
+                total={e.multiRoundMembers}
+              />
+            </TableCell>
+            <TableCell className="whitespace-nowrap tabular-nums">
+              <MembersOutOf
+                count={e.finalistMembers}
+                total={e.multiRoundMembers}
+              />
+            </TableCell>
             <TableCell className="tabular-nums">{e.podiums}</TableCell>
             <TableCell className="tabular-nums">
               {e.roundsHosted}
@@ -193,7 +236,7 @@ export function TeamEventsTable({ events }: { events: TeamEventInsight[] }) {
               ) : null}
             </TableCell>
             <TableCell className="whitespace-nowrap tabular-nums">
-              {formatShare(e.demandShare)}
+              {formatShare(e.interest)}
               <span className="mx-1 text-muted-foreground">/</span>
               {formatShare(e.supplyShare)}
             </TableCell>
