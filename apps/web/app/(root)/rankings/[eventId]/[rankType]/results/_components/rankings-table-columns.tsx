@@ -68,19 +68,23 @@ export function getSingleColumns({
       ),
       cell: ({ row }) => {
         if (eventId === "333fm") {
-          return <div className="flex space-x-2">{row.getValue("best")}</div>;
+          return (
+            <div className="flex space-x-2 font-mono tabular-nums">
+              {row.getValue("best")}
+            </div>
+          );
         }
 
         if (eventId === "333mbf") {
           return (
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 font-mono tabular-nums">
               {formatTime333mbf(row.getValue("best"))}
             </div>
           );
         }
 
         return (
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 font-mono tabular-nums">
             {formatTime(row.getValue("best"))}
           </div>
         );

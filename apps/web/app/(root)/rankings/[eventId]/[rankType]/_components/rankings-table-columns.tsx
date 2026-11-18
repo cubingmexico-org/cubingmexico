@@ -30,7 +30,17 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="NR" />
       ),
       cell: ({ row }) => {
-        return <div>{row.getValue("countryRank")}</div>;
+        const rank = Number(row.getValue("countryRank"));
+        return (
+          <div
+            className={cn(
+              "font-display text-lg font-bold tabular-nums tracking-wide",
+              rank <= 3 ? "text-brand" : "text-foreground",
+            )}
+          >
+            {row.getValue("countryRank")}
+          </div>
+        );
       },
       enableHiding: false,
       size: 20,
@@ -42,7 +52,11 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="SR" />
       ),
       cell: ({ row }) => {
-        return <div>{row.getValue("stateRank")}</div>;
+        return (
+          <div className="font-display text-lg font-semibold tabular-nums tracking-wide text-muted-foreground">
+            {row.getValue("stateRank")}
+          </div>
+        );
       },
       enableHiding: false,
       size: 20,
@@ -83,7 +97,7 @@ export function getColumns({
       cell: ({ row }) => {
         if (eventId === "333fm") {
           return (
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 font-mono tabular-nums">
               {formatAttemptValue(
                 eventId,
                 Number(row.getValue("best")),
@@ -95,14 +109,14 @@ export function getColumns({
 
         if (eventId === "333mbf") {
           return (
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 font-mono tabular-nums">
               {formatTime333mbf(row.getValue("best"))}
             </div>
           );
         }
 
         return (
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 font-mono tabular-nums">
             {formatTime(row.getValue("best"))}
           </div>
         );

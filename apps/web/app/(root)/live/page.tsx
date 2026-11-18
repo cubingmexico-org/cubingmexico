@@ -11,6 +11,7 @@ import {
 import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import { CompetitionLogo } from "@/components/competition-logo";
+import { PageHeading } from "@/components/page-heading";
 import { formatDate } from "@/lib/utils";
 import { getInProgressLiveCompetitions } from "@/lib/live/queries";
 
@@ -26,10 +27,10 @@ export default async function LiveHubPage() {
   return (
     <main className="grow container mx-auto px-4 py-8">
       <div className="mb-8 space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <Radio className="size-8 text-red-500" aria-hidden />
+        <PageHeading>
+          <Radio className="size-7 shrink-0 text-brand" aria-hidden />
           En vivo
-        </h1>
+        </PageHeading>
         <p className="text-muted-foreground max-w-2xl">
           Resultados en tiempo casi real de competencias en México. Los tiempos
           se capturan en el sistema oficial de la WCA; aquí los mostramos con

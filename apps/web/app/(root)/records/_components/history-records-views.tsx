@@ -33,7 +33,7 @@ function SolvesCell({
   const formatted = formatRecordSolves(eventId, solves);
 
   return (
-    <p className="flex gap-4">
+    <p className="flex gap-4 font-mono tabular-nums">
       {formatted.map(({ key, text, isOutlier }) =>
         text == null ? null : (
           <span key={key}>{isOutlier ? `(${text})` : text}</span>
@@ -76,12 +76,12 @@ function HistoryRow({
           </Link>
         ) : null}
       </TableCell>
-      <TableCell>
+      <TableCell className="font-mono tabular-nums">
         {entry.isSingleRecord && entry.best > 0
           ? formatRecordResult(entry.eventId, entry.best)
           : null}
       </TableCell>
-      <TableCell>
+      <TableCell className="font-mono tabular-nums">
         {entry.isAverageRecord && entry.average > 0
           ? formatRecordResult(entry.eventId, entry.average, "average")
           : null}

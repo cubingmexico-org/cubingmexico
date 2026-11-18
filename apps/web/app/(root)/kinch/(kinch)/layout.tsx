@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageHeading } from "@/components/page-heading";
 
 export const metadata: Metadata = {
   title: "Kinch Ranks | Cubing México",
@@ -11,7 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <main className="grow container mx-auto px-4 py-8">
       <div className="flex flex-col gap-4 mb-6">
-        <h1 className="text-3xl font-bold">Kinch Ranks nacionales</h1>
+        <PageHeading>Kinch Ranks nacionales</PageHeading>
         <p>
           Los Kinch Ranks son un sistema de clasificación innovador diseñado
           para evaluar la habilidad de un cubero en los 17 eventos oficiales de

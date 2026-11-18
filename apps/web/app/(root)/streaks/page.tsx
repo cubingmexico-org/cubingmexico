@@ -10,6 +10,7 @@ import {
 } from "./_lib/queries";
 import { getValidFilters } from "@/lib/data-table";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { PageHeading } from "@/components/page-heading";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 interface PageProps {
@@ -35,8 +36,8 @@ export default async function Page(props: PageProps) {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-3xl font-bold">Rachas de Récords Personales</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <PageHeading>Rachas de Récords Personales</PageHeading>
+        <p className="text-muted-foreground mt-2">
           Ranking de rachas de competencias consecutivas con récords personales.
           Se cuenta una racha como el número de competencias seguidas donde un
           speedcuber obtuvo al menos un récord personal (single o promedio) en

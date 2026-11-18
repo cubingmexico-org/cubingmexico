@@ -11,6 +11,22 @@ import type { CurrentRecord } from "../_lib/queries";
 import { formatRecordResult, formatRecordSolves } from "../_lib/format";
 import { StateLabel } from "@/components/state-flag";
 
+function RecordResult({
+  eventId,
+  value,
+  type,
+}: {
+  eventId: string;
+  value: number;
+  type?: "single" | "average";
+}) {
+  return (
+    <span className="font-mono tabular-nums">
+      {formatRecordResult(eventId, value, type)}
+    </span>
+  );
+}
+
 function SolvesCell({
   eventId,
   solves,
@@ -21,7 +37,7 @@ function SolvesCell({
   const formatted = formatRecordSolves(eventId, solves);
 
   return (
-    <p className="flex gap-4">
+    <p className="flex gap-4 font-mono tabular-nums">
       {formatted.map(({ key, text, isOutlier }) =>
         text == null ? null : (
           <span key={key}>{isOutlier ? `(${text})` : text}</span>
@@ -92,7 +108,10 @@ export function MixedRecordsTable({ records }: { records: CurrentRecord[] }) {
               />
             </TableCell>
             <TableCell>
-              {formatRecordResult(record.eventId, record.single.best)}
+              <RecordResult
+                eventId={record.eventId}
+                value={record.single.best}
+              />
             </TableCell>
             <TableCell className="whitespace-nowrap">
               <div className="flex gap-2 items-center">
@@ -106,11 +125,11 @@ export function MixedRecordsTable({ records }: { records: CurrentRecord[] }) {
               {record.eventId === "333mbf" || !record.average ? (
                 <span className="text-muted-foreground font-thin">N/A</span>
               ) : (
-                formatRecordResult(
-                  record.eventId,
-                  record.average.best,
-                  "average",
-                )
+                <RecordResult
+                  eventId={record.eventId}
+                  value={record.average.best}
+                  type="average"
+                />
               )}
             </TableCell>
             <TableCell className="whitespace-nowrap">
@@ -167,7 +186,10 @@ export function SlimRecordsTables({ records }: { records: CurrentRecord[] }) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {formatRecordResult(record.eventId, record.single.best)}
+                  <RecordResult
+                    eventId={record.eventId}
+                    value={record.single.best}
+                  />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <PersonLink
@@ -214,11 +236,11 @@ export function SlimRecordsTables({ records }: { records: CurrentRecord[] }) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {formatRecordResult(
-                    record.eventId,
-                    record.average!.best,
-                    "average",
-                  )}
+                  <RecordResult
+                    eventId={record.eventId}
+                    value={record.average!.best}
+                    type="average"
+                  />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <PersonLink
@@ -278,7 +300,10 @@ export function SeparateRecordsTables({
                   />
                 </TableCell>
                 <TableCell>
-                  {formatRecordResult(record.eventId, record.single.best)}
+                  <RecordResult
+                    eventId={record.eventId}
+                    value={record.single.best}
+                  />
                 </TableCell>
                 <TableCell className="whitespace-nowrap">
                   <StateLabel stateName={record.single.state} />
@@ -309,11 +334,11 @@ export function SeparateRecordsTables({
                   </TableCell>
                   <TableCell>
                     {record.average ? (
-                      formatRecordResult(
-                        record.eventId,
-                        record.average.best,
-                        "average",
-                      )
+                      <RecordResult
+                        eventId={record.eventId}
+                        value={record.average.best}
+                        type="average"
+                      />
                     ) : (
                       <span className="text-muted-foreground font-thin">
                         N/A

@@ -4,6 +4,7 @@ import { Card, CardContent } from "@workspace/ui/components/card";
 import { Download } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
+import { PageHeading } from "@/components/page-heading";
 
 export const metadata: Metadata = {
   title: "Logotipo | Cubing México",
@@ -15,9 +16,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <main className="grow container mx-auto px-4 py-12">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center">
+        <PageHeading className="mb-6 text-center">
           Logotipo de Cubing México
-        </h1>
+        </PageHeading>
 
         <Card className="mb-8">
           <CardContent className="pt-6">
