@@ -12,6 +12,7 @@ import { ExternalLink, Trophy } from "lucide-react";
 import { WcaMonochrome } from "@workspace/icons";
 import { StateLabel } from "@/components/state-flag";
 import { CompetitionLogo } from "@/components/competition-logo";
+import { competitionsTableLiveHref } from "@/lib/live/urls";
 
 interface GetColumnsProps {
   stateCounts: Record<string, number>;
@@ -196,19 +197,26 @@ export function getColumns({
     {
       accessorKey: "wca-live",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="WCA Live" />
+        <DataTableColumnHeader column={column} title="En vivo" />
       ),
       cell: ({ row }) => {
+        const href = competitionsTableLiveHref(
+          row.original.id,
+          row.original.status as "past" | "in_progress" | "upcoming",
+        );
+        const external = href.startsWith("http");
         return (
           <div className="flex space-x-2">
             <Link
               className="flex items-center truncate hover:underline"
-              href={`https://live.worldcubeassociation.org/link/competitions/${row.original.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
+              href={href}
+              prefetch={false}
+              {...(external
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
             >
               <WcaMonochrome className="mr-1 size-4" />
-              WCA Live
+              En vivo
             </Link>
           </div>
         );

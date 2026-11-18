@@ -86,17 +86,18 @@ export default async function Page({
 
             <div className="rounded-lg bg-linear-to-br from-blue-50/80 to-indigo-50/50 dark:from-blue-950/30 dark:to-indigo-950/20 p-5 border border-blue-200 dark:border-blue-900/40">
               <p className="leading-relaxed text-gray-700 dark:text-gray-300">
-                Si eres el organizador de esta competencia, entra a{" "}
+                Si eres el organizador de esta competencia, asegúrate de que el
+                WCIF esté disponible en la WCA. Puedes revisar los{" "}
                 <Link
-                  href="https://live.worldcubeassociation.org/my-competitions"
+                  href={`https://www.worldcubeassociation.org/competitions/${competitionId}/live`}
                   className="inline-flex items-center gap-1.5 font-semibold text-blue-600 dark:text-blue-400 underline decoration-2 decoration-blue-300 dark:decoration-blue-600 underline-offset-4 hover:decoration-blue-600 dark:hover:decoration-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-all duration-200 hover:gap-2"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  WCA Live
+                  resultados en vivo
                   <ExternalLink className="h-4 w-4" />
-                </Link>{" "}
-                e importa la competencia para que el WCIF esté disponible.
+                </Link>
+                .
               </p>
             </div>
           </div>

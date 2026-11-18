@@ -54,6 +54,12 @@ export function HeaderNavigationMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
+          <HeaderNavLink href="/live" className={navItemClass}>
+            En vivo
+          </HeaderNavLink>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
           <HeaderNavLink href="/teams" className={navItemClass}>
             Teams estatales
           </HeaderNavLink>

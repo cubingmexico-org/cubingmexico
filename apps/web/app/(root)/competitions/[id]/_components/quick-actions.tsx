@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, ExternalLink, Mail } from "lucide-react";
+import { CalendarDays, ExternalLink, Mail, Radio } from "lucide-react";
 import { buttonVariants } from "@workspace/ui/components/button";
 import {
   Card,
@@ -9,6 +9,7 @@ import {
 } from "@workspace/ui/components/card";
 import { cn } from "@workspace/ui/lib/utils";
 import type { Competition } from "@/types/wca";
+import { cubingMexicoLiveUrl } from "@/lib/live/urls";
 import { extractEmail } from "../_lib/format";
 
 export function QuickActions({ competition }: { competition: Competition }) {
@@ -24,6 +25,14 @@ export function QuickActions({ competition }: { competition: Competition }) {
         >
           <CalendarDays />
           Todas las Competencias
+        </Link>
+        <Link
+          href={cubingMexicoLiveUrl(competition.id)}
+          prefetch={false}
+          className={cn(buttonVariants({ variant: "outline" }))}
+        >
+          <Radio />
+          Resultados en vivo
         </Link>
         <Link
           href={competition.url}
