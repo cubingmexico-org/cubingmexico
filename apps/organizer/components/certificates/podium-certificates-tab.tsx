@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
-import { Input } from "@workspace/ui/components/input";
 import { FileUploader } from "../file-uploader";
 import { Switch } from "@workspace/ui/components/switch";
 import { Slider } from "@workspace/ui/components/slider";
@@ -33,10 +32,8 @@ import { eventNames, type CertificateTemplate } from "./utils";
 
 export function PodiumCertificatesTab({
   background,
-  birthdateMap,
   competition,
   content,
-  csvError,
   files,
   filterByCountry,
   generatePDF,
@@ -49,7 +46,6 @@ export function PodiumCertificatesTab({
   selectedTemplate,
   setAgeRange,
   setContent,
-  setCsvFiles,
   setFiles,
   setFilterByCountry,
   setPageMargins,
@@ -60,10 +56,8 @@ export function PodiumCertificatesTab({
   tempAgeRange,
 }: {
   background: string | undefined;
-  birthdateMap: Map<number, string> | undefined;
   competition: Competition;
   content: JSONContent;
-  csvError: string | undefined;
   files: File[];
   filterByCountry: boolean;
   generatePDF: (action: "open" | "download") => void;
@@ -76,7 +70,6 @@ export function PodiumCertificatesTab({
   selectedTemplate: CertificateTemplate;
   setAgeRange: React.Dispatch<React.SetStateAction<[number, number]>>;
   setContent: React.Dispatch<React.SetStateAction<JSONContent>>;
-  setCsvFiles: React.Dispatch<React.SetStateAction<File[]>>;
   setFiles: React.Dispatch<React.SetStateAction<File[]>>;
   setFilterByCountry: React.Dispatch<React.SetStateAction<boolean>>;
   setPageMargins: React.Dispatch<React.SetStateAction<Margins>>;
@@ -126,63 +119,32 @@ export function PodiumCertificatesTab({
                 )}
                 {selectedTemplate === "age" && (
                   <div className="space-y-3 mt-2">
+                    <p className="text-xs text-muted-foreground">
+                      Las fechas de nacimiento se obtienen del WCIF autorizado
+                      de la WCA (debes ser organizador o delegado). La edad se
+                      calcula al último día de la competencia.
+                    </p>
                     <div className="space-y-2">
                       <Label className="text-xs font-medium">
-                        Archivo CSV con fechas de nacimiento
+                        Rango de edad
                       </Label>
-                      <Input
-                        type="file"
-                        accept=".csv,text/csv"
-                        onChange={(e) => {
-                          const files = e.target.files;
-                          if (files && files.length > 0) {
-                            setCsvFiles([files[0]!]);
-                          } else {
-                            setCsvFiles([]);
-                          }
-                        }}
+                      <Slider
+                        value={tempAgeRange}
+                        onValueChange={(value) =>
+                          setTempAgeRange(value as [number, number])
+                        }
+                        onValueCommit={(value) =>
+                          setAgeRange(value as [number, number])
+                        }
+                        min={0}
+                        max={100}
+                        step={1}
+                        className="mt-2"
                       />
                       <p className="text-xs text-muted-foreground">
-                        CSV con columnas{" "}
-                        <span className="font-medium">Registrant Id</span> y{" "}
-                        <span className="font-medium">Birth Date</span>{" "}
-                        (YYYY-MM-DD). La edad se calcula al último día de la
-                        competencia. Sube el archivo antes de generar.
+                        {tempAgeRange[0]} - {tempAgeRange[1]} años
                       </p>
-                      {csvError && (
-                        <p className="text-xs text-destructive">{csvError}</p>
-                      )}
-                      {birthdateMap && birthdateMap.size > 0 && (
-                        <p className="text-xs text-green-600 dark:text-green-500">
-                          ✓ {birthdateMap.size} competidor
-                          {birthdateMap.size !== 1 ? "es" : ""} cargado
-                          {birthdateMap.size !== 1 ? "s" : ""}
-                        </p>
-                      )}
                     </div>
-                    {birthdateMap && birthdateMap.size > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium">
-                          Rango de edad
-                        </Label>
-                        <Slider
-                          value={tempAgeRange}
-                          onValueChange={(value) =>
-                            setTempAgeRange(value as [number, number])
-                          }
-                          onValueCommit={(value) =>
-                            setAgeRange(value as [number, number])
-                          }
-                          min={0}
-                          max={100}
-                          step={1}
-                          className="mt-2"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          {tempAgeRange[0]} - {tempAgeRange[1]} años
-                        </p>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>

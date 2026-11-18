@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -19,6 +20,8 @@ import {
   Download,
   Search,
   XCircle,
+  Mail,
+  Loader2,
 } from "lucide-react";
 import { Competition } from "@/types/wca";
 import type { ParticipantData, RegisteredPerson } from "@/types/wcif";
@@ -28,7 +31,9 @@ import { Margins, PageOrientation, PageSize } from "pdfmake/interfaces";
 import { Input } from "@workspace/ui/components/input";
 import { FileUploader } from "../file-uploader";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
+import { toast } from "sonner";
 import type * as React from "react";
+import { sendParticipationEmails } from "@/lib/certificates/send-participation-emails";
 
 export function ParticipationCertificatesTab({
   backgroundParticipants,
@@ -75,6 +80,83 @@ export function ParticipationCertificatesTab({
     React.SetStateAction<ParticipantData[]>
   >;
 }) {
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
+  const sendSelectedByEmail = async () => {
+    const registrantIds = selectedParticipants
+      .map((p) => p.registrantId)
+      .filter((id): id is number => id !== null);
+
+    if (registrantIds.length === 0) return;
+
+    setIsSendingEmail(true);
+    const toastId = toast.loading(
+      `Enviando certificados… 0/${registrantIds.length}`,
+    );
+
+    try {
+      const result = await sendParticipationEmails({
+        competitionId: competition.id,
+        registrantIds,
+        content: participantsContent,
+        pageMargins: pageMarginsParticipants,
+        pageOrientation: pageOrientationParticipants,
+        pageSize: pageSizeParticipants,
+        background: backgroundParticipants,
+        onProgress: (done, total) => {
+          toast.loading(`Enviando certificados… ${done}/${total}`, {
+            id: toastId,
+          });
+        },
+      });
+
+      const parts: string[] = [];
+      if (result.sent > 0) {
+        parts.push(
+          `${result.sent} enviado${result.sent !== 1 ? "s" : ""}`,
+        );
+      }
+      if (result.skippedNoEmail.length > 0) {
+        parts.push(
+          `${result.skippedNoEmail.length} sin correo en el WCIF`,
+        );
+      }
+      if (result.failed.length > 0) {
+        parts.push(`${result.failed.length} con error`);
+      }
+
+      if (result.dailyQuotaHit) {
+        toast.warning("Límite diario de Resend alcanzado", {
+          id: toastId,
+          description: `${parts.join(". ")}. El plan gratuito permite 100 correos al día (UTC); puedes continuar mañana con los pendientes.`,
+        });
+      } else if (result.monthlyQuotaHit) {
+        toast.warning("Límite mensual de Resend alcanzado", {
+          id: toastId,
+          description: parts.join(". "),
+        });
+      } else if (result.failed.length > 0 || result.skippedNoEmail.length > 0) {
+        toast.warning("Envío terminado con avisos", {
+          id: toastId,
+          description: parts.join(". "),
+        });
+      } else {
+        toast.success("Certificados enviados", {
+          id: toastId,
+          description: parts.join(". ") || "Listo",
+        });
+      }
+    } catch (error) {
+      toast.error("No se pudieron enviar los certificados", {
+        id: toastId,
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  };
+
   return (
     <div className="grid gap-6">
       <div className="grid gap-6 lg:grid-cols-2">
@@ -235,7 +317,7 @@ export function ParticipationCertificatesTab({
             </div>
             <div className="flex flex-wrap justify-end gap-2 w-full">
               <Button
-                disabled={selectedParticipants.length === 0}
+                disabled={selectedParticipants.length === 0 || isSendingEmail}
                 variant="outline"
                 onClick={() => generateParticipantPDF("open")}
               >
@@ -243,13 +325,29 @@ export function ParticipationCertificatesTab({
                 Vista previa ({selectedParticipants.length})
               </Button>
               <Button
-                disabled={selectedParticipants.length === 0}
+                disabled={selectedParticipants.length === 0 || isSendingEmail}
+                variant="outline"
                 onClick={() => generateParticipantPDF("download")}
               >
                 <Download />
                 Descargar ({selectedParticipants.length})
               </Button>
+              <Button
+                disabled={selectedParticipants.length === 0 || isSendingEmail}
+                onClick={() => void sendSelectedByEmail()}
+              >
+                {isSendingEmail ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <Mail />
+                )}
+                Enviar por correo ({selectedParticipants.length})
+              </Button>
             </div>
+            <p className="w-full text-xs text-muted-foreground">
+              El correo usa el WCIF autorizado (organizador/delegado). El plan
+              gratuito de Resend permite hasta 100 envíos por día (UTC).
+            </p>
           </CardFooter>
         </Card>
 

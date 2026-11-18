@@ -7,7 +7,7 @@
  * Consumed today:
  * - persons: name, wcaId, registrantId, countryIso2, gender, roles,
  *   registration.eventIds / isCompeting, avatar.url, assignments,
- *   personalBests
+ *   personalBests; authorized WCIF also has birthdate / email (server-only)
  * - events → rounds → results: personId, ranking, best, average
  * - schedule → venues → rooms → activities / childActivities (Grupos draft)
  *
@@ -82,6 +82,12 @@ export interface Person {
   assignments: Assignment[];
   personalBests: PersonalBest[];
   extensions: WcifExtension[];
+  /**
+   * Present only on the authorized WCIF (`manage_competitions`).
+   * Never expose these to the client from list APIs.
+   */
+  birthdate?: string;
+  email?: string;
 }
 
 interface Registration {

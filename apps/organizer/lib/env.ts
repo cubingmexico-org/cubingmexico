@@ -13,6 +13,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_SENTRY_DSN: z.url().optional(),
   NEXT_PUBLIC_DESK_ENABLED: previewModuleFlag,
   NEXT_PUBLIC_GROUPS_ENABLED: previewModuleFlag,
+  // Optional until certificate emailing is configured in a given environment.
+  RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM_EMAIL: z.email().optional(),
 });
 
 export function validateEnv(
