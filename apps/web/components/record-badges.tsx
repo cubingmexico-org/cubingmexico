@@ -20,6 +20,20 @@ export function recordBadgeClass(type: string | null | undefined): string {
   return "";
 }
 
+const STRONGER_THAN_PR = new Set(["WR", "NAR", "NR", "SR"]);
+
+/**
+ * Drop PR when a stronger tag is already shown (SR/NR/NAR/WR imply a PR).
+ */
+export function visibleRecordTags(
+  regional?: string | null,
+  state?: string | null,
+): string[] {
+  const tags = [regional, state].filter((tag): tag is string => Boolean(tag));
+  const hasStronger = tags.some((tag) => STRONGER_THAN_PR.has(tag));
+  return hasStronger ? tags.filter((tag) => tag !== "PR") : tags;
+}
+
 function BadgeChip({ tag }: { tag: string }) {
   return (
     <Badge
@@ -41,12 +55,14 @@ export function RecordBadges({
   state?: string | null;
   className?: string;
 }) {
-  if (!regional && !state) return null;
+  const tags = visibleRecordTags(regional, state);
+  if (tags.length === 0) return null;
 
   return (
     <span className={cn("inline-flex items-center gap-1", className)}>
-      {regional ? <BadgeChip tag={regional} /> : null}
-      {state ? <BadgeChip tag={state} /> : null}
+      {tags.map((tag) => (
+        <BadgeChip key={tag} tag={tag} />
+      ))}
     </span>
   );
 }
