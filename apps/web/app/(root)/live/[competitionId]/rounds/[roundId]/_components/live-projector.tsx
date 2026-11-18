@@ -3,11 +3,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { Pause, Play, X } from "lucide-react";
 import { Button } from "@workspace/ui/components/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select";
 import { RecordBadges } from "@/components/record-badges";
-import { formatLiveResultValue } from "@/lib/live/format";
+import {
+  formatLiveResultValue,
+  liveRoundEventId,
+  liveRoundLabel,
+  liveRoundStateLabel,
+} from "@/lib/live/format";
 import type {
   EnrichedLiveCompetitor,
   EnrichedLiveResult,
+  LiveRoundSummary,
 } from "@/lib/live/types";
 import { LiveRegion } from "../../../../_components/live-region";
 
@@ -30,18 +43,26 @@ function rowsPerPage(): number {
 export function LiveProjector({
   title,
   competitionName,
+  roundId,
+  rounds,
   eventId,
   attemptCount,
   results,
   competitorsById,
+  loading,
+  onRoundChange,
   onClose,
 }: {
   title: string;
   competitionName: string;
+  roundId: string;
+  rounds: LiveRoundSummary[];
   eventId: string;
   attemptCount: number;
   results: EnrichedLiveResult[];
   competitorsById: Map<number, EnrichedLiveCompetitor>;
+  loading: boolean;
+  onRoundChange: (roundId: string) => void;
   onClose: () => void;
 }) {
   const nonempty = useMemo(
@@ -77,6 +98,11 @@ export function LiveProjector({
   }, [onClose]);
 
   useEffect(() => {
+    setTopIndex(0);
+    setPhase("showing");
+  }, [roundId]);
+
+  useEffect(() => {
     if (paused) return;
 
     if (phase === "showing") {
@@ -103,21 +129,60 @@ export function LiveProjector({
   }, [phase, paused, nonempty.length, pageSize]);
 
   const page = nonempty.slice(topIndex, topIndex + pageSize);
-  const opacity =
-    phase === "hiding" ? 0 : phase === "showing" ? 0.35 : 1;
+  const opacity = phase === "hiding" ? 0 : phase === "showing" ? 0.35 : 1;
+  const selectRounds =
+    rounds.length > 0
+      ? rounds
+      : [{ id: roundId, format: "a", state: "open" as const }];
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-zinc-950 text-zinc-50">
-      <header className="flex items-center justify-between gap-4 border-b border-zinc-800 px-6 py-4">
-        <div className="min-w-0">
+      <header className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-800 px-6 py-4">
+        <div className="min-w-0 space-y-2">
           <p className="text-sm text-zinc-400 truncate">{competitionName}</p>
-          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
-            <span
-              className={`cubing-icon event-${eventId} text-2xl`}
-              aria-hidden
-            />
-            {title}
-          </h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
+              <span
+                className={`cubing-icon event-${eventId} text-2xl`}
+                aria-hidden
+              />
+              <span className="sr-only">{title}</span>
+            </h1>
+            <Select value={roundId} onValueChange={onRoundChange}>
+              <SelectTrigger
+                size="sm"
+                aria-label="Evento y ronda"
+                className="min-w-56 max-w-[min(100vw-2rem,28rem)] border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800 [&_svg]:text-zinc-400"
+              >
+                <SelectValue placeholder="Elegir ronda" />
+              </SelectTrigger>
+              <SelectContent className="z-60 max-h-80 border-zinc-700 bg-zinc-900 text-zinc-100">
+                {selectRounds.map((round) => {
+                  const roundEventId = liveRoundEventId(round.id);
+                  const label = liveRoundLabel(round.id);
+                  return (
+                    <SelectItem
+                      key={round.id}
+                      value={round.id}
+                      textValue={label}
+                      className="focus:bg-zinc-800 focus:text-zinc-50"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className={`cubing-icon event-${roundEventId}`}
+                          aria-hidden
+                        />
+                        <span>{label}</span>
+                        <span className="text-zinc-500">
+                          · {liveRoundStateLabel(round.state)}
+                        </span>
+                      </span>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
@@ -144,8 +209,8 @@ export function LiveProjector({
       </header>
 
       <div
-        className="flex-1 overflow-hidden px-4 py-2 transition-opacity duration-500"
-        style={{ opacity }}
+        className="relative flex-1 overflow-hidden px-4 py-2 transition-opacity duration-500"
+        style={{ opacity: loading ? 0.4 : opacity }}
       >
         <table className="w-full border-collapse text-lg">
           <thead>
@@ -203,7 +268,11 @@ export function LiveProjector({
                   })}
                   <td className="px-3 text-right">
                     <span className="inline-flex items-center justify-end gap-2 tabular-nums">
-                      {formatLiveResultValue(eventId, result.average, "average")}
+                      {formatLiveResultValue(
+                        eventId,
+                        result.average,
+                        "average",
+                      )}
                       <RecordBadges
                         regional={result.average_record_tag}
                         state={result.stateAverageRecord}
@@ -224,9 +293,14 @@ export function LiveProjector({
             })}
           </tbody>
         </table>
-        {nonempty.length === 0 ? (
+        {!loading && nonempty.length === 0 ? (
           <p className="p-8 text-center text-zinc-400">
-            Aún no hay resultados para proyectar.
+            Aún no hay resultados para proyectar en esta ronda.
+          </p>
+        ) : null}
+        {loading ? (
+          <p className="absolute inset-x-0 top-1/3 text-center text-zinc-400">
+            Cargando ronda…
           </p>
         ) : null}
       </div>

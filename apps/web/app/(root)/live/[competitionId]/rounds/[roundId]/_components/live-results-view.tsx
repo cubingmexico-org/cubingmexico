@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, GalleryVertical, Radio } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
@@ -17,6 +17,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { RecordBadges } from "@/components/record-badges";
 import {
   formatLiveResultValue,
+  liveRoundEventId,
   liveRoundLabel,
   liveRoundStateLabel,
 } from "@/lib/live/format";
@@ -24,6 +25,7 @@ import type {
   EnrichedLiveCompetitor,
   EnrichedLiveResult,
   EnrichedLiveRoundDetails,
+  LiveRoundSummary,
 } from "@/lib/live/types";
 import { LiveRegion } from "../../../../_components/live-region";
 import { useVisiblePoll } from "../../../../_components/use-visible-poll";
@@ -35,40 +37,98 @@ type LiveRoundPayload = EnrichedLiveRoundDetails & {
 
 export function LiveResultsView({
   competitionId,
-  roundId,
+  roundId: initialRoundId,
   initial,
 }: {
   competitionId: string;
   roundId: string;
   initial: LiveRoundPayload;
 }) {
+  const [activeRoundId, setActiveRoundId] = useState(initialRoundId);
   const [data, setData] = useState(initial);
+  const [rounds, setRounds] = useState<LiveRoundSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [projectorOpen, setProjectorOpen] = useState(false);
+  const [roundLoading, setRoundLoading] = useState(false);
 
-  const poll = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `/api/live/${encodeURIComponent(competitionId)}/rounds/${encodeURIComponent(roundId)}`,
-      );
-      if (!response.ok) {
+  // Sync when the route param changes (e.g. browser back/forward into this page).
+  useEffect(() => {
+    setActiveRoundId(initialRoundId);
+    setData(initial);
+  }, [initialRoundId, initial]);
+
+  const fetchRound = useCallback(
+    async (roundId: string, { silent }: { silent?: boolean } = {}) => {
+      if (!silent) setRoundLoading(true);
+      try {
+        const response = await fetch(
+          `/api/live/${encodeURIComponent(competitionId)}/rounds/${encodeURIComponent(roundId)}`,
+        );
+        if (!response.ok) {
+          setError("No se pudieron actualizar los resultados.");
+          return;
+        }
+        const json = (await response.json()) as {
+          success: boolean;
+          data?: LiveRoundPayload;
+        };
+        if (json.success && json.data) {
+          setData(json.data);
+          setError(null);
+        }
+      } catch {
         setError("No se pudieron actualizar los resultados.");
-        return;
+      } finally {
+        if (!silent) setRoundLoading(false);
       }
-      const json = (await response.json()) as {
-        success: boolean;
-        data?: LiveRoundPayload;
-      };
-      if (json.success && json.data) {
-        setData(json.data);
-        setError(null);
-      }
-    } catch {
-      setError("No se pudieron actualizar los resultados.");
-    }
-  }, [competitionId, roundId]);
+    },
+    [competitionId],
+  );
+
+  const poll = useCallback(() => {
+    void fetchRound(activeRoundId, { silent: true });
+  }, [fetchRound, activeRoundId]);
 
   useVisiblePoll(poll);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const response = await fetch(
+          `/api/live/${encodeURIComponent(competitionId)}/rounds`,
+        );
+        if (!response.ok) return;
+        const json = (await response.json()) as {
+          success: boolean;
+          data?: { rounds: LiveRoundSummary[] };
+        };
+        if (!cancelled && json.success && json.data) {
+          setRounds(json.data.rounds);
+        }
+      } catch {
+        // Dropdown stays empty; projector still works for the current round.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [competitionId]);
+
+  const selectRound = useCallback(
+    (nextRoundId: string) => {
+      if (nextRoundId === activeRoundId) return;
+      setActiveRoundId(nextRoundId);
+      // Keep projector mounted: avoid App Router remount from router.replace.
+      window.history.replaceState(
+        null,
+        "",
+        `/live/${competitionId}/rounds/${encodeURIComponent(nextRoundId)}`,
+      );
+      void fetchRound(nextRoundId);
+    },
+    [activeRoundId, competitionId, fetchRound],
+  );
 
   const competitorsById = useMemo(() => {
     const map = new Map<number, EnrichedLiveCompetitor>();
@@ -92,18 +152,25 @@ export function LiveResultsView({
     data.format === "a" || data.format === "m" ? 5 : 3,
   );
 
-  const eventId = sortedResults[0]?.event_id ?? roundId.split("-r")[0]!;
-  const title = liveRoundLabel(roundId);
+  const eventId =
+    sortedResults[0]?.event_id ?? liveRoundEventId(activeRoundId);
+  const title = liveRoundLabel(activeRoundId);
+  const competitionName = data.competitionName ?? competitionId;
 
   if (projectorOpen) {
     return (
       <LiveProjector
+        key={activeRoundId}
+        competitionName={competitionName}
+        roundId={activeRoundId}
+        rounds={rounds}
         title={title}
-        competitionName={data.competitionName ?? competitionId}
         eventId={eventId}
         attemptCount={attemptCount}
         results={sortedResults}
         competitorsById={competitorsById}
+        loading={roundLoading}
+        onRoundChange={selectRound}
         onClose={() => setProjectorOpen(false)}
       />
     );
@@ -119,7 +186,7 @@ export function LiveResultsView({
               prefetch={false}
               className="hover:underline"
             >
-              {data.competitionName ?? competitionId}
+              {competitionName}
             </Link>
           </p>
           <h1 className="text-3xl font-bold tracking-tight flex flex-wrap items-center gap-3">
@@ -150,7 +217,6 @@ export function LiveResultsView({
             type="button"
             variant="default"
             onClick={() => setProjectorOpen(true)}
-            disabled={sortedResults.length === 0}
           >
             <GalleryVertical />
             Proyectar
