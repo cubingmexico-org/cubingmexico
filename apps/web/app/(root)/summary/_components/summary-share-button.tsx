@@ -116,13 +116,13 @@ export function SummaryShareButton({
         Compartir
       </Button>
 
-      {/* Off-screen card kept at real size so html-to-image captures correctly */}
+      {/* Off-screen card kept at real size so html-to-image captures correctly.
+          size-0 + overflow-hidden keeps the 1080px card out of document scroll. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed top-0 z-[-1] overflow-hidden"
-        style={{ left: -9999 }}
+        className="pointer-events-none fixed top-0 left-0 z-[-1] size-0 overflow-hidden"
       >
-        {renderCard(cardRef)}
+        <div className="absolute top-0 left-0">{renderCard(cardRef)}</div>
       </div>
     </>
   );

@@ -25,7 +25,7 @@ export function TeamSummaryHeader({ summary }: { summary: TeamAnnualSummary }) {
   };
 
   return (
-    <div className="text-center space-y-3">
+    <div className="min-w-0 space-y-3 text-center">
       <Link
         href={`/teams/${team.stateId}`}
         prefetch={false}
@@ -39,7 +39,7 @@ export function TeamSummaryHeader({ summary }: { summary: TeamAnnualSummary }) {
           </AvatarFallback>
         </Avatar>
       </Link>
-      <h1 className="text-2xl sm:text-3xl font-bold">
+      <h1 className="text-2xl font-bold break-words sm:text-3xl">
         <Link
           href={`/teams/${team.stateId}`}
           prefetch={false}

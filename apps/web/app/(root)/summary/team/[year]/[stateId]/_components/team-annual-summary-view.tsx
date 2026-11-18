@@ -27,7 +27,7 @@ export function TeamAnnualSummaryView({ summary, unofficial }: Props) {
   const { team, year, hosted, members, staff } = summary;
 
   return (
-    <div className="flex flex-col gap-8 max-w-4xl mx-auto">
+    <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-8">
       <TeamSummaryHeader summary={summary} />
 
       <TeamActivitySections year={year} members={members} />

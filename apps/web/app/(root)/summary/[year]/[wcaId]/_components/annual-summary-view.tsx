@@ -42,7 +42,7 @@ export function AnnualSummaryView({ summary, unofficial, avatarUrl }: Props) {
   const pronoun = subjectPronoun(person.gender);
 
   return (
-    <div className="flex flex-col gap-8 max-w-4xl mx-auto">
+    <div className="mx-auto flex w-full min-w-0 max-w-4xl flex-col gap-8">
       <SummaryHeader summary={summary} avatarUrl={avatarUrl} />
 
       <PodiumsSection pronoun={pronoun} podiums={podiums} />

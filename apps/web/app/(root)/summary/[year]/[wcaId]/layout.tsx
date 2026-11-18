@@ -11,5 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  return <main className="grow container mx-auto px-4 py-8">{children}</main>;
+  return (
+    <main className="container mx-auto min-w-0 grow overflow-x-clip px-4 py-8">
+      {children}
+    </main>
+  );
 }

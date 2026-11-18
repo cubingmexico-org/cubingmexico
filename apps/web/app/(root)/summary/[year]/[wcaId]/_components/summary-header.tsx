@@ -38,7 +38,7 @@ export function SummaryHeader({
   };
 
   return (
-    <div className="text-center space-y-3">
+    <div className="min-w-0 space-y-3 text-center">
       <Link
         href={`/persons/${person.wcaId}`}
         prefetch={false}
@@ -52,7 +52,7 @@ export function SummaryHeader({
           </AvatarFallback>
         </Avatar>
       </Link>
-      <h1 className="text-2xl sm:text-3xl font-bold">
+      <h1 className="text-2xl font-bold break-words sm:text-3xl">
         <Link
           href={`/persons/${person.wcaId}`}
           prefetch={false}
