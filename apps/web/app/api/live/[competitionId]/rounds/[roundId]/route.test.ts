@@ -60,6 +60,17 @@ describe("GET /api/live/[competitionId]/rounds/[roundId]", () => {
     enrichLiveRoundDetails.mockImplementation(async (round, meta) => ({
       ...round,
       competitors: [],
+      results: (round.results ?? []).map(
+        (result: {
+          result_id: number;
+          single_record_tag: string | null;
+          average_record_tag: string | null;
+        }) => ({
+          ...result,
+          stateSingleRecord: null,
+          stateAverageRecord: null,
+        }),
+      ),
       competitionName: meta.competitionName,
       scoretakingSoftware: meta.scoretakingSoftware,
     }));

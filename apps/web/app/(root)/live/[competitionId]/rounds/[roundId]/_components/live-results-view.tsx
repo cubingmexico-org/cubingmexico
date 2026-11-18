@@ -2,9 +2,9 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, Radio } from "lucide-react";
+import { ExternalLink, GalleryVertical, Radio } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
-import { buttonVariants } from "@workspace/ui/components/button";
+import { Button, buttonVariants } from "@workspace/ui/components/button";
 import {
   Table,
   TableBody,
@@ -14,18 +14,20 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { cn } from "@workspace/ui/lib/utils";
+import { RecordBadges } from "@/components/record-badges";
 import {
   formatLiveResultValue,
-  formatRecordTag,
   liveRoundLabel,
   liveRoundStateLabel,
 } from "@/lib/live/format";
 import type {
   EnrichedLiveCompetitor,
+  EnrichedLiveResult,
   EnrichedLiveRoundDetails,
-  LiveResult,
 } from "@/lib/live/types";
+import { LiveRegion } from "../../../../_components/live-region";
 import { useVisiblePoll } from "../../../../_components/use-visible-poll";
+import { LiveProjector } from "./live-projector";
 
 type LiveRoundPayload = EnrichedLiveRoundDetails & {
   officialLiveUrl: string;
@@ -42,6 +44,7 @@ export function LiveResultsView({
 }) {
   const [data, setData] = useState(initial);
   const [error, setError] = useState<string | null>(null);
+  const [projectorOpen, setProjectorOpen] = useState(false);
 
   const poll = useCallback(async () => {
     try {
@@ -90,6 +93,21 @@ export function LiveResultsView({
   );
 
   const eventId = sortedResults[0]?.event_id ?? roundId.split("-r")[0]!;
+  const title = liveRoundLabel(roundId);
+
+  if (projectorOpen) {
+    return (
+      <LiveProjector
+        title={title}
+        competitionName={data.competitionName ?? competitionId}
+        eventId={eventId}
+        attemptCount={attemptCount}
+        results={sortedResults}
+        competitorsById={competitorsById}
+        onClose={() => setProjectorOpen(false)}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -109,12 +127,10 @@ export function LiveResultsView({
               className={`cubing-icon event-${eventId} text-3xl`}
               aria-hidden
             />
-            {liveRoundLabel(roundId)}
+            {title}
           </h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Badge
-              variant={data.state === "open" ? "default" : "secondary"}
-            >
+            <Badge variant={data.state === "open" ? "default" : "secondary"}>
               {liveRoundStateLabel(data.state)}
             </Badge>
             <span className="inline-flex items-center gap-1">
@@ -124,15 +140,21 @@ export function LiveResultsView({
             {data.timeLimit ? (
               <span>
                 Límite:{" "}
-                {formatLiveResultValue(
-                  eventId,
-                  data.timeLimit.centiseconds,
-                )}
+                {formatLiveResultValue(eventId, data.timeLimit.centiseconds)}
               </span>
             ) : null}
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="default"
+            onClick={() => setProjectorOpen(true)}
+            disabled={sortedResults.length === 0}
+          >
+            <GalleryVertical />
+            Proyectar
+          </Button>
           <Link
             href={`/live/${competitionId}`}
             prefetch={false}
@@ -202,7 +224,7 @@ function ResultRow({
   attemptCount,
   eventId,
 }: {
-  result: LiveResult;
+  result: EnrichedLiveResult;
   competitor: EnrichedLiveCompetitor | undefined;
   attemptCount: number;
   eventId: string;
@@ -211,13 +233,6 @@ function ResultRow({
     result.attempts.map((a) => [a.attempt_number, a.value]),
   );
   const pos = result.local_pos ?? result.global_pos;
-  const avgTag = formatRecordTag(result.average_record_tag);
-  const singleTag = formatRecordTag(result.single_record_tag);
-  const region =
-    [competitor?.country_iso2, competitor?.stateName]
-      .filter(Boolean)
-      .join(" · ") || "—";
-
   const name = competitor?.name ?? `Registrant ${result.registration_id}`;
   const wcaId = competitor?.wca_id;
 
@@ -237,7 +252,13 @@ function ResultRow({
           <span className="font-medium">{name}</span>
         )}
       </TableCell>
-      <TableCell className="text-muted-foreground text-sm">{region}</TableCell>
+      <TableCell>
+        <LiveRegion
+          countryIso2={competitor?.country_iso2}
+          stateId={competitor?.stateId}
+          stateName={competitor?.stateName}
+        />
+      </TableCell>
       {Array.from({ length: attemptCount }, (_, i) => {
         const value = attemptsByNumber.get(i + 1);
         return (
@@ -248,21 +269,23 @@ function ResultRow({
           </TableCell>
         );
       })}
-      <TableCell className="text-right tabular-nums">
-        {formatLiveResultValue(eventId, result.average, "average")}
-        {avgTag ? (
-          <span className="ml-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
-            {avgTag}
-          </span>
-        ) : null}
+      <TableCell className="text-right">
+        <span className="inline-flex items-center justify-end gap-1.5 tabular-nums">
+          {formatLiveResultValue(eventId, result.average, "average")}
+          <RecordBadges
+            regional={result.average_record_tag}
+            state={result.stateAverageRecord}
+          />
+        </span>
       </TableCell>
-      <TableCell className="text-right tabular-nums">
-        {formatLiveResultValue(eventId, result.best, "single")}
-        {singleTag ? (
-          <span className="ml-1 text-xs font-semibold text-amber-600 dark:text-amber-400">
-            {singleTag}
-          </span>
-        ) : null}
+      <TableCell className="text-right">
+        <span className="inline-flex items-center justify-end gap-1.5 tabular-nums">
+          {formatLiveResultValue(eventId, result.best, "single")}
+          <RecordBadges
+            regional={result.single_record_tag}
+            state={result.stateSingleRecord}
+          />
+        </span>
       </TableCell>
     </TableRow>
   );

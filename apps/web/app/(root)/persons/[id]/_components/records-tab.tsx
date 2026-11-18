@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { Badge } from "@workspace/ui/components/badge";
+import { RecordBadges } from "@/components/record-badges";
 import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
 import type { PersonRecordHistoryEntry } from "../_lib/queries";
@@ -21,46 +21,6 @@ import type { PersonRecordHistoryEntry } from "../_lib/queries";
 type Props = {
   records: PersonRecordHistoryEntry[];
 };
-
-function recordBadgeClass(type: string | null) {
-  if (type === "WR")
-    return "bg-amber-500/15 text-amber-700 border-amber-500/30";
-  if (type === "NAR") return "bg-blue-500/15 text-blue-700 border-blue-500/30";
-  if (type === "NR")
-    return "bg-green-500/15 text-green-700 border-green-500/30";
-  if (type === "SR")
-    return "bg-violet-500/15 text-violet-700 border-violet-500/30";
-  return "";
-}
-
-function RecordBadges({
-  regional,
-  state,
-}: {
-  regional: string | null;
-  state: string | null;
-}) {
-  return (
-    <>
-      {regional && (
-        <Badge
-          variant="outline"
-          className={cn("text-xs px-1 py-0 h-5", recordBadgeClass(regional))}
-        >
-          {regional}
-        </Badge>
-      )}
-      {state && (
-        <Badge
-          variant="outline"
-          className={cn("text-xs px-1 py-0 h-5", recordBadgeClass(state))}
-        >
-          {state}
-        </Badge>
-      )}
-    </>
-  );
-}
 
 export function PersonRecordsTab({ records }: Props) {
   if (records.length === 0) {

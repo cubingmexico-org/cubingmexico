@@ -3,8 +3,15 @@ import "server-only";
 import { db } from "@workspace/db";
 import { person, state } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
+import { liveRoundEventId } from "./format";
+import {
+  getStateAverageBests,
+  getStateSingleBests,
+} from "./state-bests";
+import { attachLiveStateRecords } from "./state-records";
 import type {
   EnrichedLiveCompetitor,
+  EnrichedLiveResult,
   EnrichedLiveRoundDetails,
   LiveCompetitor,
   LiveRoundDetails,
@@ -67,10 +74,39 @@ export async function enrichLiveRoundDetails(
     .map((c) => c.wca_id)
     .filter((id): id is string => Boolean(id));
   const states = await getPersonStateMap(wcaIds);
+  const competitors = enrichCompetitors(round.competitors, states);
+
+  const eventId =
+    round.results[0]?.event_id ?? liveRoundEventId(round.id);
+  const stateIds = competitors
+    .map((c) => c.stateId)
+    .filter((id): id is string => Boolean(id));
+
+  const [singleBests, averageBests] = await Promise.all([
+    getStateSingleBests(eventId, stateIds),
+    getStateAverageBests(eventId, stateIds),
+  ]);
+
+  const competitorsByRegistrationId = new Map(
+    competitors.map((c) => [c.id, c]),
+  );
+  const tags = attachLiveStateRecords(
+    round.results,
+    competitorsByRegistrationId,
+    singleBests,
+    averageBests,
+  );
+
+  const results: EnrichedLiveResult[] = round.results.map((result, i) => ({
+    ...result,
+    stateSingleRecord: tags[i]!.stateSingleRecord,
+    stateAverageRecord: tags[i]!.stateAverageRecord,
+  }));
 
   return {
     ...round,
-    competitors: enrichCompetitors(round.competitors, states),
+    competitors,
+    results,
     competitionName: meta.competitionName,
     scoretakingSoftware: meta.scoretakingSoftware,
   };

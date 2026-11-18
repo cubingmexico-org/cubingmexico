@@ -64,6 +64,12 @@ export type LiveResult = {
   round_wcif_id: string;
 };
 
+/** Live result plus Cubing México state-record tags computed at enrich time. */
+export type EnrichedLiveResult = LiveResult & {
+  stateSingleRecord: string | null;
+  stateAverageRecord: string | null;
+};
+
 export type LiveRoundDetails = LiveRoundSummary & {
   round_id: number;
   competitors: LiveCompetitor[];
@@ -78,8 +84,12 @@ export type PersonStateEnrichment = {
 
 export type EnrichedLiveCompetitor = LiveCompetitor & PersonStateEnrichment;
 
-export type EnrichedLiveRoundDetails = Omit<LiveRoundDetails, "competitors"> & {
+export type EnrichedLiveRoundDetails = Omit<
+  LiveRoundDetails,
+  "competitors" | "results"
+> & {
   competitors: EnrichedLiveCompetitor[];
+  results: EnrichedLiveResult[];
   scoretakingSoftware: ScoretakingSoftware | null;
   competitionName: string | null;
 };
