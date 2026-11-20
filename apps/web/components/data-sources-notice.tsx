@@ -18,7 +18,8 @@ export function DataSourcesNotice({
   ccExportDate: Date | null;
   className?: string;
 }) {
-  const linkClass = "underline text-link hover:text-link/80";
+  // Inherit color from the parent (footer uses brand-warm on chrome).
+  const linkClass = "underline hover:opacity-80";
 
   return (
     <div

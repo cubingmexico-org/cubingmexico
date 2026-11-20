@@ -13,7 +13,10 @@ export function useVisiblePoll(
   intervalMs: number = DEFAULT_INTERVAL_MS,
 ): void {
   const onPollRef = useRef(onPoll);
-  onPollRef.current = onPoll;
+
+  useEffect(() => {
+    onPollRef.current = onPoll;
+  });
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | null = null;

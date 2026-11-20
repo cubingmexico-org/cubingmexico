@@ -15,7 +15,6 @@ import {
 } from "@workspace/ui/components/table";
 import { RecordBadges } from "@/components/record-badges";
 import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
-import { cn } from "@workspace/ui/lib/utils";
 import type { PersonRecordHistoryEntry } from "../_lib/queries";
 
 type Props = {

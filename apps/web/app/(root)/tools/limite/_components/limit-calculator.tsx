@@ -17,9 +17,7 @@ import {
   sanitizeDigitInput,
 } from "@/lib/digit-time";
 
-const ATTEMPT_COUNTS = ["3", "5"] as const;
-
-type AttemptCount = (typeof ATTEMPT_COUNTS)[number];
+type AttemptCount = "3" | "5";
 
 function DigitTimeInput({
   id,
@@ -28,7 +26,6 @@ function DigitTimeInput({
   digits,
   onDigitsChange,
   hint,
-  autoFocus,
 }: {
   id: string;
   label: string;
@@ -36,7 +33,6 @@ function DigitTimeInput({
   digits: string;
   onDigitsChange: (digits: string) => void;
   hint?: string;
-  autoFocus?: boolean;
 }) {
   const display = formatDigitsDisplay(digits);
   const parsed = digitsToCentiseconds(digits);
@@ -71,7 +67,6 @@ function DigitTimeInput({
         id={id}
         inputMode="numeric"
         autoComplete="off"
-        autoFocus={autoFocus}
         placeholder={placeholder}
         value={display}
         aria-invalid={invalid || undefined}
@@ -147,7 +142,6 @@ export function LimitCalculator() {
           placeholder="Límite total (ej. 50000 = 5:00.00)"
           digits={limitDigits}
           onDigitsChange={setLimitDigits}
-          autoFocus
         />
 
         {attempts.slice(0, count).map((digits, index) => (
