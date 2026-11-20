@@ -43,7 +43,7 @@ async function FooterContent() {
               <SiGithub className="size-5" />
               Cubing México
             </Link>
-            <p className="mt-2 text-sm text-white/50">
+            <p className="mt-2 text-sm text-white/70">
               © {currentYear} Cubing México
             </p>
           </div>
@@ -100,16 +100,16 @@ async function FooterContent() {
         </div>
 
         <DataSourcesNotice
-          className="mt-6 space-y-1 text-center text-xs text-white/45 sm:text-left [&_a]:text-[#e8a090] [&_a:hover]:text-white"
+          className="mt-6 space-y-1 text-center text-xs text-white/70 sm:text-left [&_a]:text-white [&_a:hover]:text-white/90"
           wcaExportDate={dataSourceDates.wca}
           ccExportDate={dataSourceDates.cubingContests}
         />
 
-        <p className="mt-4 text-center text-xs text-white/40 sm:text-left">
+        <p className="mt-4 text-center text-xs text-white/70 sm:text-left">
           Hecho con ❤️ por{" "}
           <Link
             href="https://www.worldcubeassociation.org/persons/2016TORO03"
-            className="text-[#e8a090] hover:underline"
+            className="text-white underline hover:text-white/90"
             target="_blank"
             rel="noopener noreferrer"
           >
