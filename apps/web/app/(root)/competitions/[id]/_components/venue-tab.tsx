@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MapPin } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { buttonVariants } from "@workspace/ui/components/button";
 import {
   Card,
@@ -8,6 +9,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import { cn } from "@workspace/ui/lib/utils";
+import { stripMarkdownLinks } from "@/lib/calendar";
 import type { Competition } from "@/types/wca";
 import { Map as CompetitionMap } from "./map";
 
@@ -21,7 +23,25 @@ export function VenueTab({ competition }: { competition: Competition }) {
         <CardContent className="space-y-4">
           <div>
             <h4 className="font-semibold mb-2">Ubicación</h4>
-            <p className="text-sm text-muted-foreground">{competition.venue}</p>
+            <div className="text-sm text-muted-foreground">
+              <ReactMarkdown
+                components={{
+                  a: ({ children, href }) => (
+                    <Link
+                      className="hover:underline"
+                      href={href ?? ""}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {children}
+                    </Link>
+                  ),
+                  p: ({ children }) => <>{children}</>,
+                }}
+              >
+                {competition.venue}
+              </ReactMarkdown>
+            </div>
           </div>
           <div>
             <h4 className="font-semibold mb-2">Dirección</h4>
@@ -64,7 +84,7 @@ export function VenueTab({ competition }: { competition: Competition }) {
               markers={[
                 {
                   id: competition.id,
-                  venue: competition.venue,
+                  venue: stripMarkdownLinks(competition.venue),
                   address: competition.venue_address,
                   latitude: competition.latitude_degrees,
                   longitude: competition.longitude_degrees,

@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Radio } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { Badge } from "@workspace/ui/components/badge";
 import { buttonVariants } from "@workspace/ui/components/button";
 import {
@@ -79,11 +80,31 @@ export function LiveCompetitionView({
           <h1 className="text-3xl font-bold tracking-tight">
             {data.competition.name}
           </h1>
-          <p className="text-muted-foreground">
-            {[data.competition.venue, data.competition.city]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
+          {(data.competition.venue || data.competition.city) && (
+            <p className="text-muted-foreground">
+              {data.competition.venue ? (
+                <ReactMarkdown
+                  components={{
+                    a: ({ children, href }) => (
+                      <Link
+                        className="hover:underline"
+                        href={href ?? ""}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {children}
+                      </Link>
+                    ),
+                    p: ({ children }) => <>{children}</>,
+                  }}
+                >
+                  {data.competition.venue}
+                </ReactMarkdown>
+              ) : null}
+              {data.competition.venue && data.competition.city ? " · " : null}
+              {data.competition.city}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
