@@ -16,6 +16,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { eventNames } from "@/lib/constants";
 import {
+  liveRoundCompletedCount,
   liveRoundEventId,
   liveRoundLabel,
   liveRoundStateLabel,
@@ -191,7 +192,7 @@ function RoundSection({
       <ul className="grid gap-3 sm:grid-cols-2">
         {rounds.map((round) => {
           const eventId = liveRoundEventId(round.id);
-          const completed = round.completed_competitors ?? 0;
+          const completed = liveRoundCompletedCount(round);
           const total = round.total_competitors ?? 0;
           return (
             <li key={round.id}>

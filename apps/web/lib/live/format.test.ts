@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatLiveResultValue,
   formatRecordTag,
+  liveRoundCompletedCount,
   liveRoundEventId,
   liveRoundLabel,
   liveRoundStateLabel,
@@ -39,5 +40,41 @@ describe("live format helpers", () => {
   it("passes through record tags", () => {
     expect(formatRecordTag("PR")).toBe("PR");
     expect(formatRecordTag(null)).toBeNull();
+  });
+
+  it("falls back completed count for locked rounds missing the field", () => {
+    expect(
+      liveRoundCompletedCount({
+        state: "locked",
+        total_competitors: 78,
+      }),
+    ).toBe(78);
+    expect(
+      liveRoundCompletedCount({
+        state: "locked",
+        completed_competitors: null,
+        total_competitors: 34,
+      }),
+    ).toBe(34);
+    expect(
+      liveRoundCompletedCount({
+        state: "locked",
+        completed_competitors: 50,
+        total_competitors: 78,
+      }),
+    ).toBe(50);
+    expect(
+      liveRoundCompletedCount({
+        state: "open",
+        total_competitors: 65,
+      }),
+    ).toBe(0);
+    expect(
+      liveRoundCompletedCount({
+        state: "open",
+        completed_competitors: 44,
+        total_competitors: 65,
+      }),
+    ).toBe(44);
   });
 });

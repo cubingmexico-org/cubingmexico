@@ -36,6 +36,25 @@ export function liveRoundStateLabel(state: string): string {
   }
 }
 
+/**
+ * WCA's live rounds list often omits `completed_competitors` for locked
+ * rounds while still sending `total_competitors`. Treat that as fully
+ * complete so the list does not show "0/N resultados".
+ */
+export function liveRoundCompletedCount(round: {
+  state: string;
+  completed_competitors?: number | null;
+  total_competitors?: number | null;
+}): number {
+  if (round.completed_competitors != null) {
+    return round.completed_competitors;
+  }
+  if (round.state === "locked") {
+    return round.total_competitors ?? 0;
+  }
+  return 0;
+}
+
 export function formatLiveResultValue(
   eventId: string,
   value: number | null | undefined,
