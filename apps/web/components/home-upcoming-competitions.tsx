@@ -36,7 +36,10 @@ export function HomeUpcomingCompetitions({
       {competitions.length === 0 ? (
         <p className="mt-8 text-muted-foreground">
           No hay competencias próximas.{" "}
-          <Link href="/competitions" className="text-brand underline hover:text-brand-warm">
+          <Link
+            href="/competitions"
+            className="text-brand underline hover:text-brand-warm"
+          >
             Calendario
           </Link>
         </p>
