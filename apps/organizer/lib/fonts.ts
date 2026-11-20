@@ -158,15 +158,20 @@ function collectFontNames(node: unknown, found: Set<string>): void {
   }
 }
 
-/**
- * pdfmake font dictionary with only the fonts `docDefinition` uses, because
- * pdfmake downloads every font it is given before rendering. Returns a fresh
- * object each call since pdfmake mutates it. Italics are not bundled, so they
- * reuse the upright files.
- */
-export function fontDeclarationsFor(docDefinition: unknown) {
+function usedFontFamilies(docDefinition: unknown): Set<string> {
   const used = new Set([PDF_DEFAULT_FONT]);
   collectFontNames(docDefinition, used);
+  return used;
+}
+
+/**
+ * Browser pdfmake font dictionary (HTTP URLs). Only fonts `docDefinition` uses,
+ * because pdfmake downloads every font it is given before rendering. Returns a
+ * fresh object each call since pdfmake mutates it. Italics are not bundled, so
+ * they reuse the upright files.
+ */
+export function fontDeclarationsFor(docDefinition: unknown) {
+  const used = usedFontFamilies(docDefinition);
 
   const origin =
     typeof window !== "undefined"
@@ -177,6 +182,22 @@ export function fontDeclarationsFor(docDefinition: unknown) {
     BUNDLED_FONTS.filter((f) => used.has(f.family)).map((f) => {
       const normal = `${origin}${f.regular}`;
       const bold = `${origin}${f.bold ?? f.regular}`;
+      return [f.family, { normal, bold, italics: normal, bolditalics: bold }];
+    }),
+  );
+}
+
+/**
+ * Server pdfmake font dictionary (paths under `/public`, e.g. `/fonts/...`).
+ * Used with pdfmake's Node printer so fonts are read from disk, not via XHR.
+ */
+export function fontFilePathsFor(docDefinition: unknown) {
+  const used = usedFontFamilies(docDefinition);
+
+  return Object.fromEntries(
+    BUNDLED_FONTS.filter((f) => used.has(f.family)).map((f) => {
+      const normal = f.regular;
+      const bold = f.bold ?? f.regular;
       return [f.family, { normal, bold, italics: normal, bolditalics: bold }];
     }),
   );

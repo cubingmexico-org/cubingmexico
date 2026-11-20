@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import useSWR from "swr";
 import {
   Card,
   CardContent,
@@ -13,6 +14,12 @@ import { Button } from "@workspace/ui/components/button";
 import { Label } from "@workspace/ui/components/label";
 import { Checkbox } from "@workspace/ui/components/checkbox";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu";
+import {
   Settings,
   Eye,
   Check,
@@ -22,6 +29,9 @@ import {
   XCircle,
   Mail,
   Loader2,
+  Share2,
+  Link2,
+  ChevronDown,
 } from "lucide-react";
 import { Competition } from "@/types/wca";
 import type { ParticipantData, RegisteredPerson } from "@/types/wcif";
@@ -35,6 +45,20 @@ import { toast } from "sonner";
 import type * as React from "react";
 import { buildClaimMailto } from "@/lib/certificates/mailto";
 import { publishParticipationShare } from "@/lib/certificates/publish-share";
+import type { DesignListItem } from "@/lib/design-schemas";
+
+type DesignsResponse = { designs: DesignListItem[] };
+
+const designsFetcher = async (url: string): Promise<DesignsResponse> => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new Error(body?.error || "No se pudieron cargar los diseños");
+  }
+  return res.json() as Promise<DesignsResponse>;
+};
 
 export function ParticipationCertificatesTab({
   backgroundParticipants,
@@ -83,26 +107,66 @@ export function ParticipationCertificatesTab({
 }) {
   const [isSharing, setIsSharing] = useState(false);
 
+  const designsKey = `/api/designs?competitionId=${encodeURIComponent(competition.id)}&module=certificate_participation`;
+  const { data: designsData, isLoading: designsLoading } =
+    useSWR<DesignsResponse>(designsKey, designsFetcher);
+  const hasCloudDesign = (designsData?.designs.length ?? 0) > 0;
+
+  const publishShare = async (registrantIds: number[]) => {
+    return publishParticipationShare({
+      competitionId: competition.id,
+      registrantIds,
+      background: backgroundParticipants,
+    });
+  };
+
+  const copyClaimLink = async () => {
+    if (!hasCloudDesign) {
+      toast.error("Guarda el certificado en la nube antes de compartir");
+      return;
+    }
+
+    setIsSharing(true);
+    const toastId = toast.loading("Publicando enlace…");
+
+    try {
+      const result = await publishShare([]);
+      await navigator.clipboard.writeText(result.claimUrl);
+      toast.success("Enlace copiado", {
+        id: toastId,
+        description: result.claimUrl,
+      });
+    } catch (error) {
+      toast.error("No se pudo copiar el enlace", {
+        id: toastId,
+        description:
+          error instanceof Error ? error.message : "Error desconocido",
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   const shareSelectedByEmail = async () => {
+    if (!hasCloudDesign) {
+      toast.error("Guarda el certificado en la nube antes de compartir");
+      return;
+    }
+
     const registrantIds = selectedParticipants
       .map((p) => p.registrantId)
       .filter((id): id is number => id !== null);
 
-    if (registrantIds.length === 0) return;
+    if (registrantIds.length === 0) {
+      toast.error("Selecciona al menos un participante para enviar el correo");
+      return;
+    }
 
     setIsSharing(true);
     const toastId = toast.loading("Publicando enlace de certificados…");
 
     try {
-      const result = await publishParticipationShare({
-        competitionId: competition.id,
-        registrantIds,
-        content: participantsContent,
-        pageMargins: pageMarginsParticipants,
-        pageOrientation: pageOrientationParticipants,
-        pageSize: pageSizeParticipants,
-        background: backgroundParticipants,
-      });
+      const result = await publishShare(registrantIds);
 
       const mailto = buildClaimMailto({
         emails: result.emails,
@@ -146,6 +210,8 @@ export function ParticipationCertificatesTab({
       setIsSharing(false);
     }
   };
+
+  const shareDisabled = isSharing || designsLoading || !hasCloudDesign;
 
   return (
     <div className="grid gap-6">
@@ -322,18 +388,43 @@ export function ParticipationCertificatesTab({
                 <Download />
                 Descargar ({selectedParticipants.length})
               </Button>
-              <Button
-                disabled={selectedParticipants.length === 0 || isSharing}
-                onClick={() => void shareSelectedByEmail()}
-              >
-                {isSharing ? <Loader2 className="animate-spin" /> : <Mail />}
-                Publicar y compartir ({selectedParticipants.length})
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button disabled={shareDisabled}>
+                    {isSharing ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <Share2 />
+                    )}
+                    Compartir
+                    <ChevronDown />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    disabled={isSharing}
+                    onClick={() => void copyClaimLink()}
+                  >
+                    <Link2 />
+                    Copiar enlace
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={isSharing || selectedParticipants.length === 0}
+                    onClick={() => void shareSelectedByEmail()}
+                  >
+                    <Mail />
+                    Enviar por correo
+                    {selectedParticipants.length > 0
+                      ? ` (${selectedParticipants.length})`
+                      : ""}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <p className="w-full text-xs text-muted-foreground">
-              Publica un enlace único. Se abre un correo con ese enlace; cada
-              competidor inicia sesión con su cuenta WCA para descargar solo su
-              certificado.
+              {hasCloudDesign
+                ? "Publica un enlace único a partir del diseño guardado en la nube. Cada competidor inicia sesión con su cuenta WCA para descargar solo su certificado."
+                : "Guarda el certificado en la nube (Archivo → Guardar en la nube) antes de compartir el enlace."}
             </p>
           </CardFooter>
         </Card>

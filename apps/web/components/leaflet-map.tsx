@@ -82,5 +82,11 @@ export function LeafletMap({
     };
   }, [posix, zoom, statesData, locations, resolvedTheme]);
 
-  return <div ref={containerRef} style={{ height: "100%", width: "100%" }} />;
+  return (
+    <div
+      ref={containerRef}
+      className="isolate z-0"
+      style={{ height: "100%", width: "100%" }}
+    />
+  );
 }

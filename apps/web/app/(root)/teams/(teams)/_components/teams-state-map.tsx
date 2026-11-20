@@ -292,5 +292,5 @@ export function TeamsStateMap({
     );
   }
 
-  return <div ref={containerRef} className="h-full w-full" />;
+  return <div ref={containerRef} className="isolate z-0 h-full w-full" />;
 }

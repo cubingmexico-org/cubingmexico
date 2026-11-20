@@ -8,6 +8,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  serverExternalPackages: ["pdfmake"],
+  // Claim PDF rendering reads TTFs from disk via pdfmake's Node printer.
+  outputFileTracingIncludes: {
+    "/api/claim/*/pdf": ["./public/fonts/**/*"],
+  },
   experimental: {
     authInterrupts: true,
   },

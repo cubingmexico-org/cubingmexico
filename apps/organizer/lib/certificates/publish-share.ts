@@ -1,14 +1,8 @@
-import type { JSONContent } from "@tiptap/react";
-import type { Margins, PageOrientation, PageSize } from "pdfmake/interfaces";
 import type { PublishParticipationShareResponse } from "@/lib/certificates/share-schema";
 
 export type PublishParticipationShareInput = {
   competitionId: string;
-  registrantIds: number[];
-  content: JSONContent;
-  pageMargins: Margins;
-  pageOrientation: PageOrientation;
-  pageSize: PageSize;
+  registrantIds?: number[];
   background?: string;
 };
 

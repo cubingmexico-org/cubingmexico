@@ -19,6 +19,14 @@ const shareRows: Array<{
   json: unknown;
 }> = [];
 
+const designRows: Array<{
+  id: string;
+  competitionId: string | null;
+  module: string;
+  json: unknown;
+  updatedAt: Date;
+}> = [];
+
 vi.mock("@/lib/auth", () => ({
   auth: {
     api: {
@@ -59,21 +67,44 @@ vi.mock("@/lib/wca-wcif", () => ({
   },
 }));
 
-vi.mock("@workspace/db", () => {
-  const selectLimit = async () =>
-    shareRows.filter(
+vi.mock("@workspace/db", async () => {
+  const schema = await import("@workspace/db/schema");
+
+  const rowsFor = (table: unknown) => {
+    if (table === schema.design) {
+      return designRows.filter(
+        (row) =>
+          row.competitionId === COMPETITION &&
+          row.module === "certificate_participation",
+      );
+    }
+    return shareRows.filter(
       (row) =>
         row.competitionId === COMPETITION &&
         row.module === "certificate_participation",
     );
+  };
+
+  const selectChain = (table: unknown) => {
+    const finish = async (limit?: number) => {
+      const rows = rowsFor(table);
+      return limit === undefined ? rows : rows.slice(0, limit);
+    };
+    return {
+      where: () => ({
+        orderBy: () => ({
+          limit: (n: number) => finish(n),
+        }),
+        limit: (n: number) => finish(n),
+      }),
+      limit: (n: number) => finish(n),
+    };
+  };
+
   return {
     db: {
       select: () => ({
-        from: () => ({
-          where: () => ({
-            limit: selectLimit,
-          }),
-        }),
+        from: (table: unknown) => selectChain(table),
       }),
       insert: () => ({
         values: async (values: (typeof shareRows)[number]) => {
@@ -154,11 +185,28 @@ function shareRequest(body: unknown) {
   });
 }
 
+const cloudDesignJson = {
+  content: { type: "doc", content: [{ type: "paragraph" }] },
+  pageConfig: {
+    pageSize: "LETTER",
+    pageOrientation: "landscape" as const,
+    pageMargins: [40, 40, 40, 40] as [number, number, number, number],
+  },
+};
+
 beforeEach(() => {
   signedInWcaId = null;
   competition = makeCompetition([USER]);
   wcif = wcifWithResults();
   shareRows.length = 0;
+  designRows.length = 0;
+  designRows.push({
+    id: "design-1",
+    competitionId: COMPETITION,
+    module: "certificate_participation",
+    json: cloudDesignJson,
+    updatedAt: new Date(),
+  });
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3001");
 });
 
@@ -231,13 +279,6 @@ describe("POST /api/certificates/podium", () => {
 });
 
 describe("POST /api/certificates/participation/share", () => {
-  const design = {
-    content: { type: "doc", content: [] },
-    pageMargins: [40, 40, 40, 40],
-    pageOrientation: "landscape" as const,
-    pageSize: "LETTER",
-  };
-
   it("publishes a stable claim link and lists emails", async () => {
     signedInWcaId = USER;
     wcif!.persons[0]!.email = "ana@example.com";
@@ -246,7 +287,6 @@ describe("POST /api/certificates/participation/share", () => {
       shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1, 2],
-        ...design,
       }),
     );
     expect(first.status).toBe(200);
@@ -257,12 +297,15 @@ describe("POST /api/certificates/participation/share", () => {
       skippedNoEmail: [2],
       claimUrl: expect.stringMatching(/^http:\/\/localhost:3001\/claim\//),
     });
+    expect(shareRows[0]?.json).toMatchObject({
+      content: cloudDesignJson.content,
+      pageMargins: cloudDesignJson.pageConfig.pageMargins,
+    });
 
     const second = await postParticipationShare(
       shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
-        ...design,
         background: "data:image/png;base64,abc",
       }),
     );
@@ -275,6 +318,29 @@ describe("POST /api/certificates/participation/share", () => {
     });
   });
 
+  it("publishes a link without emails when no registrants are selected", async () => {
+    signedInWcaId = USER;
+    const response = await postParticipationShare(
+      shareRequest({ competitionId: COMPETITION }),
+    );
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.emails).toEqual([]);
+    expect(body.claimUrl).toMatch(/^http:\/\/localhost:3001\/claim\//);
+  });
+
+  it("requires a cloud-saved participation design", async () => {
+    signedInWcaId = USER;
+    designRows.length = 0;
+    const response = await postParticipationShare(
+      shareRequest({ competitionId: COMPETITION }),
+    );
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringContaining("nube"),
+    });
+  });
+
   it("forbids non-managers", async () => {
     competition = makeCompetition([]);
     signedInWcaId = USER;
@@ -282,7 +348,6 @@ describe("POST /api/certificates/participation/share", () => {
       shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
-        ...design,
       }),
     );
     expect(response.status).toBe(403);
