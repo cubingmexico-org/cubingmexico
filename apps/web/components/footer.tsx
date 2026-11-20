@@ -105,6 +105,21 @@ async function FooterContent() {
           ccExportDate={dataSourceDates.cubingContests}
         />
 
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-white/70 sm:justify-start">
+          <Link
+            href="/aviso-de-privacidad"
+            className="underline hover:text-white/90"
+          >
+            Aviso de privacidad
+          </Link>
+          <span className="text-white/40" aria-hidden>
+            ·
+          </span>
+          <Link href="/terminos" className="underline hover:text-white/90">
+            Términos de uso
+          </Link>
+        </div>
+
         <p className="mt-4 text-center text-xs text-white/70 sm:text-left">
           Hecho con ❤️ por{" "}
           <Link
