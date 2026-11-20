@@ -15,7 +15,8 @@
   --chrome: #1a0508;
   --brand-ink: #1a0508;
   --brand-paper: #f4efe9;
-  --link: #15803d;
+  /* green-800: green-700 (#15803d) fails WCAG AA on brand-paper */
+  --link: #166534;
 
   --background: var(--brand-paper);
   --foreground: var(--brand-ink);
@@ -28,7 +29,7 @@
   --secondary: #ebe3db;
   --secondary-foreground: var(--brand-ink);
   --muted: #ebe3db;
-  --muted-foreground: oklch(0.45 0.02 25);
+  --muted-foreground: oklch(0.38 0.02 25);
   --accent: #f0e4dc;
   --accent-foreground: var(--brand);
   --destructive: oklch(0.577 0.245 27.325);

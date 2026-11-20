@@ -55,7 +55,7 @@ export default async function Page(props: PageProps) {
           utilizado para calcular la habilidad de un cubero en los 17 eventos de
           la WCA. La suma de rankings se calcula sumando el{" "}
           <Link
-            className="text-muted-foreground hover:underline"
+            className="underline text-link hover:text-link/80"
             href="/rankings/333/single"
           >
             ranking nacional

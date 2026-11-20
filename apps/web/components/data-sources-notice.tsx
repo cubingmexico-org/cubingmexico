@@ -18,7 +18,7 @@ export function DataSourcesNotice({
   ccExportDate: Date | null;
   className?: string;
 }) {
-  const linkClass = "underline hover:text-primary";
+  const linkClass = "underline text-link hover:text-link/80";
 
   return (
     <div

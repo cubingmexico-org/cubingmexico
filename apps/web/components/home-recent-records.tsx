@@ -34,7 +34,7 @@ export function HomeRecentRecords({ records }: HomeRecentRecordsProps) {
       {records.length === 0 ? (
         <p className="mt-8 text-muted-foreground">
           Sin récords recientes.{" "}
-          <Link href="/records" className="text-brand hover:underline">
+          <Link href="/records" className="text-brand underline hover:text-brand-warm">
             Ver récords
           </Link>
         </p>

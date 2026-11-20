@@ -21,7 +21,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           evento. Cada evento se puntúa en una escala del 0 al 100, considerando
           tanto los{" "}
           <Link
-            className="text-muted-foreground hover:underline"
+            className="underline text-link hover:text-link/80"
             href="/records"
           >
             récords nacionales (NR)
@@ -31,7 +31,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           eliminando las desventajas percibidas en sistemas tradicionales como
           el{" "}
           <Link
-            className="text-muted-foreground hover:underline"
+            className="underline text-link hover:text-link/80"
             href="/sor/single"
           >
             SOR

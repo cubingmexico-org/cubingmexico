@@ -9,7 +9,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <p>
           Una competencia oficial de la{" "}
           <Link
-            className="hover:underline text-muted-foreground"
+            className="underline text-link hover:text-link/80"
             href="https://www.worldcubeassociation.org/"
           >
             World Cube Association

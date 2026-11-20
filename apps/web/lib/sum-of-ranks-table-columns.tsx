@@ -65,8 +65,8 @@ function makeEventColumn<TRow extends SumOfRanksRow>(
             "flex space-x-2 justify-center",
             rank !== undefined &&
               rank <= 10 &&
-              "text-green-700 dark:text-green-400 font-semibold",
-            !event?.completed && "text-red-600 dark:text-red-400 font-semibold",
+              "text-green-800 dark:text-green-400 font-semibold",
+            !event?.completed && "text-red-700 dark:text-red-400 font-semibold",
           )}
         >
           {rank ?? "N/A"}

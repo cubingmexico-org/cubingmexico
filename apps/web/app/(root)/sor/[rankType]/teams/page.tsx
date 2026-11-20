@@ -102,9 +102,9 @@ export default async function Page(props: PageProps) {
                 <TableCell
                   className={cn(
                     event.bestRank <= 10 &&
-                      "text-green-700 dark:text-green-400 font-semibold",
+                      "text-green-800 dark:text-green-400 font-semibold",
                     !event.completed &&
-                      "text-red-600 dark:text-red-400 font-semibold",
+                      "text-red-700 dark:text-red-400 font-semibold",
                   )}
                   key={event.eventId}
                 >
