@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "Aviso de privacidad de Cubing México: qué datos personales tratamos, para qué, con quién y cómo ejercer tus derechos ARCO.",
 };
 
-const LAST_UPDATED = "13 de agosto de 2026";
+const LAST_UPDATED = "20 de noviembre de 2026";
 
 export default function Page(): React.JSX.Element {
   return (
@@ -23,7 +23,9 @@ export default function Page(): React.JSX.Element {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold">1. Identidad del responsable</h2>
           <p>
-            El responsable del tratamiento de los datos personales es{" "}
+            En cumplimiento con la Ley Federal de Protección de Datos Personales
+            en Posesión de los Particulares (“LFPDPPP”) y su normativa aplicable,
+            el responsable del tratamiento de los datos personales es{" "}
             <strong>Cubing México</strong>, sitio comunitario independiente
             disponible en{" "}
             <Link
@@ -60,8 +62,9 @@ export default function Page(): React.JSX.Element {
             </li>
             <li>
               <strong>Datos técnicos y de uso:</strong> información agregada o
-              identificadores técnicos relacionados con el uso y el rendimiento
-              del sitio (por ejemplo, a través de analytics).
+              identificadores técnicos relacionados con el uso, el rendimiento
+              y el diagnóstico de errores del sitio (por ejemplo, a través de
+              analytics o monitoreo de errores).
             </li>
             <li>
               <strong>Datos públicos derivados de la WCA:</strong> resultados,
@@ -94,6 +97,10 @@ export default function Page(): React.JSX.Element {
             <li>
               Medir el uso y el rendimiento del sitio para mejorarlo (analytics
               e insights).
+            </li>
+            <li>
+              Detectar, diagnosticar y corregir fallos técnicos (monitoreo de
+              errores).
             </li>
           </ul>
           <p>
@@ -142,6 +149,10 @@ export default function Page(): React.JSX.Element {
               <strong>UploadThing:</strong> almacenamiento y entrega de archivos
               subidos (por ejemplo, imágenes).
             </li>
+            <li>
+              <strong>Sentry:</strong> monitoreo y diagnóstico de errores
+              técnicos del sitio.
+            </li>
           </ul>
           <p>
             Estos terceros tratan la información conforme a sus propias
@@ -152,43 +163,50 @@ export default function Page(): React.JSX.Element {
         <section className="space-y-3">
           <h2 className="text-xl font-semibold">6. Derechos ARCO</h2>
           <p>
-            En los términos aplicables de la legislación mexicana en materia de
-            protección de datos personales, puedes solicitar el acceso,
-            rectificación, cancelación u oposición (derechos ARCO) respecto de
-            tus datos personales, así como limitar el uso o divulgación cuando
-            proceda.
+            Conforme a la LFPDPPP, puedes solicitar el acceso, rectificación,
+            cancelación u oposición (derechos ARCO) respecto de tus datos
+            personales, así como limitar el uso o divulgación cuando proceda.
           </p>
           <p>
-            Para ejercer estos derechos, contáctanos a través de nuestras redes
-            sociales{" "}
-            <Link
-              href="https://facebook.com/cubingmexico"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary"
-            >
-              Facebook
-            </Link>
-            ,{" "}
-            <Link
-              href="https://instagram.com/cubingmexico"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary"
-            >
-              Instagram (@cubingmexico)
-            </Link>{" "}
-            o nuestro{" "}
-            <Link
-              href="https://discord.gg/N9KcpWngz7"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-primary"
-            >
-              servidor de Discord
-            </Link>
-            . Indica tu WCA ID (si aplica) y describe claramente tu solicitud
-            para que podamos atenderla.
+            Para ejercer estos derechos, envía una solicitud clara por cualquiera
+            de estos canales de contacto:
+          </p>
+          <ul className="list-disc pl-5 space-y-2">
+            <li>
+              <Link
+                href="https://facebook.com/cubingmexico"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-primary"
+              >
+                Facebook
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="https://instagram.com/cubingmexico"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-primary"
+              >
+                Instagram (@cubingmexico)
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="https://discord.gg/N9KcpWngz7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline hover:text-primary"
+              >
+                Servidor de Discord
+              </Link>
+            </li>
+          </ul>
+          <p>
+            Incluye tu nombre, tu WCA ID (si aplica), el derecho que deseas
+            ejercer y una descripción concreta de tu solicitud, para que podamos
+            identificarte y atenderla.
           </p>
           <p>
             Nota: parte de la información mostrada en el sitio proviene de datos
