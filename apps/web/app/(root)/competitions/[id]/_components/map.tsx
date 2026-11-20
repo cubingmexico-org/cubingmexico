@@ -65,7 +65,7 @@ export function Map({
   const tiles = getMapTileConfig(resolvedTheme);
 
   return (
-    <div style={{ height, width: "100%" }}>
+    <div className="isolate z-0" style={{ height, width: "100%" }}>
       <MapContainer
         center={center}
         zoom={zoom}

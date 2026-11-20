@@ -83,6 +83,9 @@ export function TeamStateMap({ statesData }: TeamStateMapProps) {
   }, [statesData, resolvedTheme]);
 
   return (
-    <div ref={containerRef} className="h-full w-full min-w-0 max-w-full" />
+    <div
+      ref={containerRef}
+      className="isolate z-0 h-full w-full min-w-0 max-w-full"
+    />
   );
 }
