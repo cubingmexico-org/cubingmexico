@@ -1,10 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { connection } from "next/server";
 import { reportError } from "@/lib/report-error";
-import {
-  fetchLiveCompetitionMeta,
-  fetchLiveRounds,
-} from "@/lib/live/wca";
+import { fetchLiveCompetitionMeta, fetchLiveRounds } from "@/lib/live/wca";
 import { officialLiveUrl } from "@/lib/live/urls";
 
 const CACHE_HEADERS = {

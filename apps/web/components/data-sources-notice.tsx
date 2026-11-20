@@ -23,8 +23,7 @@ export function DataSourcesNotice({
   return (
     <div
       className={
-        className ??
-        "space-y-1 text-center text-xs text-muted-foreground"
+        className ?? "space-y-1 text-center text-xs text-muted-foreground"
       }
     >
       <p>

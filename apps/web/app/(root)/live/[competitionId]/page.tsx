@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import {
-  fetchLiveCompetitionMeta,
-  fetchLiveRounds,
-} from "@/lib/live/wca";
+import { fetchLiveCompetitionMeta, fetchLiveRounds } from "@/lib/live/wca";
 import { officialLiveUrl } from "@/lib/live/urls";
 import { LiveCompetitionView } from "./_components/live-competition-view";
 

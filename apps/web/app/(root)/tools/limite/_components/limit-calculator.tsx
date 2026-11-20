@@ -112,7 +112,10 @@ export function LimitCalculator() {
     setAttempts(Array(count).fill(""));
   }
 
-  const remaining = remainingCentiseconds(limitDigits, attempts.slice(0, count));
+  const remaining = remainingCentiseconds(
+    limitDigits,
+    attempts.slice(0, count),
+  );
   const remainingLabel =
     remaining === null ? "--.--" : formatDigitTime(remaining);
 

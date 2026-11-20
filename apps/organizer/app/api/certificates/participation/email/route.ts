@@ -16,10 +16,7 @@ import {
   requireSessionUser,
 } from "@/lib/design-access";
 import { sendCertificateEmail } from "@/lib/email/resend";
-import {
-  getAuthorizedWcif,
-  requireWcaAccessToken,
-} from "@/lib/wca-wcif";
+import { getAuthorizedWcif, requireWcaAccessToken } from "@/lib/wca-wcif";
 
 export const maxDuration = 300;
 

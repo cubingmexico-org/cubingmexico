@@ -94,12 +94,7 @@ describe("attachLiveStateRecords", () => {
   it("skips SR without a state assignment", () => {
     const tags = attachLiveStateRecords(
       [result],
-      new Map([
-        [
-          10,
-          { ...competitor, stateId: null, stateName: null },
-        ],
-      ]),
+      new Map([[10, { ...competitor, stateId: null, stateName: null }]]),
       new Map([["JAL", 950]]),
       new Map(),
     );

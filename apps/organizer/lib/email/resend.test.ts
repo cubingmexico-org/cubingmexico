@@ -33,9 +33,7 @@ describe("sendCertificateEmail", () => {
       expect.objectContaining({
         from: "from@example.com",
         to: "competitor@example.com",
-        attachments: [
-          expect.objectContaining({ filename: "cert.pdf" }),
-        ],
+        attachments: [expect.objectContaining({ filename: "cert.pdf" })],
       }),
     );
   });

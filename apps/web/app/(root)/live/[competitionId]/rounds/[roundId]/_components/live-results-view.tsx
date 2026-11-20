@@ -152,8 +152,7 @@ export function LiveResultsView({
     data.format === "a" || data.format === "m" ? 5 : 3,
   );
 
-  const eventId =
-    sortedResults[0]?.event_id ?? liveRoundEventId(activeRoundId);
+  const eventId = sortedResults[0]?.event_id ?? liveRoundEventId(activeRoundId);
   const title = liveRoundLabel(activeRoundId);
   const competitionName = data.competitionName ?? competitionId;
 

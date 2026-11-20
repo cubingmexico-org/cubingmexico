@@ -7,11 +7,7 @@ type CountryFlagProps = {
 };
 
 /** Small country flag from flagcdn (same source as Organización badge art). */
-export function CountryFlag({
-  iso2,
-  size = 16,
-  className,
-}: CountryFlagProps) {
+export function CountryFlag({ iso2, size = 16, className }: CountryFlagProps) {
   const code = iso2?.trim().toLowerCase();
   if (!code || code.length !== 2) return null;
 

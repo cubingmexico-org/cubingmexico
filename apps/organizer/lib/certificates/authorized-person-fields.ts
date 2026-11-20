@@ -3,9 +3,7 @@ import type { WCIF } from "@/types/wcif";
 const BIRTHDATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** registrantId → YYYY-MM-DD from an authorized WCIF. */
-export function birthdatesFromAuthorizedWcif(
-  wcif: WCIF,
-): Map<number, string> {
+export function birthdatesFromAuthorizedWcif(wcif: WCIF): Map<number, string> {
   const birthdates = new Map<number, string>();
   for (const person of wcif.persons) {
     if (person.registrantId === null || !person.birthdate) continue;

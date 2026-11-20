@@ -16,7 +16,10 @@ export function CubingMexico(props: React.HTMLAttributes<SVGElement>) {
         {CUBING_MEXICO_FLOURISHES.map((d) => (
           <path key={d.slice(0, 24)} d={d} fill="currentColor" />
         ))}
-        <path d="m555.2 185.2l339.2 364.4-370.1 344.5-339.2-364.4z" fill="none" />
+        <path
+          d="m555.2 185.2l339.2 364.4-370.1 344.5-339.2-364.4z"
+          fill="none"
+        />
         <path d={CUBING_MEXICO_CUBE} fill="currentColor" />
       </g>
     </svg>

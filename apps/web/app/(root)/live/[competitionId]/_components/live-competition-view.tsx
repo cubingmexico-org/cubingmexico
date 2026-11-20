@@ -21,10 +21,7 @@ import {
   liveRoundLabel,
   liveRoundStateLabel,
 } from "@/lib/live/format";
-import type {
-  LiveCompetitionMeta,
-  LiveRoundSummary,
-} from "@/lib/live/types";
+import type { LiveCompetitionMeta, LiveRoundSummary } from "@/lib/live/types";
 import { useVisiblePoll } from "../../_components/use-visible-poll";
 
 type LiveRoundsPayload = {
@@ -211,9 +208,7 @@ function RoundSection({
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {eventNames[eventId] ?? eventId}
-                    {total > 0
-                      ? ` · ${completed}/${total} resultados`
-                      : null}
+                    {total > 0 ? ` · ${completed}/${total} resultados` : null}
                   </p>
                 </div>
                 <Badge

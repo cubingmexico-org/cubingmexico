@@ -83,9 +83,7 @@ export default function Page(): React.JSX.Element {
         </div>
 
         <div className="p-6 border-b last:border-b-0">
-          <h3 className="text-xl font-semibold">
-            Tiempo límite acumulativo
-          </h3>
+          <h3 className="text-xl font-semibold">Tiempo límite acumulativo</h3>
           <p className="my-2">
             Calcula cuánto tiempo te queda bajo un límite de tiempo acumulativo
             de la WCA a partir del límite total y cada intento.

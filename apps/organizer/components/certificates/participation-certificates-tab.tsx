@@ -112,14 +112,10 @@ export function ParticipationCertificatesTab({
 
       const parts: string[] = [];
       if (result.sent > 0) {
-        parts.push(
-          `${result.sent} enviado${result.sent !== 1 ? "s" : ""}`,
-        );
+        parts.push(`${result.sent} enviado${result.sent !== 1 ? "s" : ""}`);
       }
       if (result.skippedNoEmail.length > 0) {
-        parts.push(
-          `${result.skippedNoEmail.length} sin correo en el WCIF`,
-        );
+        parts.push(`${result.skippedNoEmail.length} sin correo en el WCIF`);
       }
       if (result.failed.length > 0) {
         parts.push(`${result.failed.length} con error`);

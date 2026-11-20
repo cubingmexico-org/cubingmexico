@@ -9,10 +9,7 @@ import {
   assertManagesCompetition,
   requireSessionUser,
 } from "@/lib/design-access";
-import {
-  getAuthorizedWcif,
-  requireWcaAccessToken,
-} from "@/lib/wca-wcif";
+import { getAuthorizedWcif, requireWcaAccessToken } from "@/lib/wca-wcif";
 
 export async function POST(request: Request): Promise<Response> {
   const user = await requireSessionUser();
@@ -32,14 +29,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const {
-    competitionId,
-    filterByCountry,
-    country,
-    template,
-    minAge,
-    maxAge,
-  } = parsed.data;
+  const { competitionId, filterByCountry, country, template, minAge, maxAge } =
+    parsed.data;
 
   const filter: PodiumFilter = {
     country: filterByCountry ? country : undefined,

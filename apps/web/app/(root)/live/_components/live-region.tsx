@@ -33,11 +33,7 @@ export function LiveRegion({
 
   if (iso2) {
     return (
-      <CountryLabel
-        iso2={iso2}
-        size={size}
-        nameClassName={nameClassName}
-      />
+      <CountryLabel iso2={iso2} size={size} nameClassName={nameClassName} />
     );
   }
 

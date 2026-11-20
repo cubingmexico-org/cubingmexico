@@ -57,11 +57,7 @@ export function attachLiveStateRecords(
       single_record_tag: result.single_record_tag,
       average_record_tag: result.average_record_tag,
       stateSingleRecord: stateId
-        ? liveStateRecordTag(
-            result.best,
-            result.single_record_tag,
-            singleBest,
-          )
+        ? liveStateRecordTag(result.best, result.single_record_tag, singleBest)
         : null,
       stateAverageRecord: stateId
         ? liveStateRecordTag(

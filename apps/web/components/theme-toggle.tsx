@@ -41,7 +41,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       <Sun
         className={cn(
           "h-[1.2rem] w-[1.2rem] transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-          isDark ? "scale-75 rotate-12 opacity-40" : "scale-100 rotate-0 opacity-100",
+          isDark
+            ? "scale-75 rotate-12 opacity-40"
+            : "scale-100 rotate-0 opacity-100",
         )}
       />
       <Switch
@@ -53,7 +55,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       <Moon
         className={cn(
           "h-[1.2rem] w-[1.2rem] transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
-          isDark ? "scale-100 rotate-0 opacity-100" : "scale-75 rotate-12 opacity-40",
+          isDark
+            ? "scale-100 rotate-0 opacity-100"
+            : "scale-75 rotate-12 opacity-40",
         )}
       />
     </div>

@@ -101,9 +101,7 @@ describe("GET /api/certificates/participation", () => {
     signIn(USER);
     for (const query of ["", "?competitionId=../x"]) {
       const response = await getParticipation(
-        new Request(
-          `http://localhost/api/certificates/participation${query}`,
-        ),
+        new Request(`http://localhost/api/certificates/participation${query}`),
       );
       expect(response.status).toBe(400);
     }

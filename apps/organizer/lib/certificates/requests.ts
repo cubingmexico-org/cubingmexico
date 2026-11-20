@@ -29,7 +29,9 @@ export const participationEmailRequestSchema = z.object({
     .array(z.number().int().positive())
     .min(1)
     .max(EMAIL_BATCH_MAX),
-  content: z.custom<JSONContent>((value) => !!value && typeof value === "object"),
+  content: z.custom<JSONContent>(
+    (value) => !!value && typeof value === "object",
+  ),
   pageMargins: z.custom<Margins>(
     (value) => marginsSchema.safeParse(value).success,
   ),
