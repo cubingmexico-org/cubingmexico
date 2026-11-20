@@ -59,7 +59,7 @@ export function ScorecardBackgroundField({
           )}
         {config.scorecardsBackgroundMode === "competition" &&
           !competitionImageUrl && (
-            <p className="text-xs text-amber-700 dark:text-amber-400">
+            <p className="text-xs text-amber-800 dark:text-amber-400">
               Esta competencia no tiene logo en la base de datos; las papeletas
               saldrán sin fondo hasta que subas uno o elijas una URL.
             </p>

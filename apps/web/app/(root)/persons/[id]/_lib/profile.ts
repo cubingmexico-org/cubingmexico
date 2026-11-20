@@ -332,23 +332,33 @@ export async function getPersonDataFromWCA(
   wcaId: string,
 ): Promise<WcaPersonResponse | null> {
   "use cache";
-  cacheLife("weeks");
-  cacheTag(`person-data-wca-${wcaId}`);
+  cacheTag(`person-data-wca-v2-${wcaId}`);
 
-  const response = await wcaFetch(`/api/v0/persons/${wcaId}`);
-
-  if (response.status === 404) {
+  let response: Response;
+  try {
+    response = await wcaFetch(`/api/v0/persons/${wcaId}`);
+  } catch {
+    cacheLife("minutes");
     return null;
   }
 
-  // Throw instead of returning null so transient failures (429, 5xx) are not cached.
+  if (response.status === 404) {
+    cacheLife("minutes");
+    return null;
+  }
+
+  // Rate limits and upstream outages: soft-fail briefly. Other 4xx stay loud.
+  if (response.status === 429 || response.status >= 500) {
+    cacheLife("minutes");
+    return null;
+  }
+
   if (!response.ok) {
     throw new Error(`WCA API responded ${response.status} for person ${wcaId}`);
   }
 
-  const data = await response.json();
-
-  return data;
+  cacheLife("weeks");
+  return response.json();
 }
 
 export async function getPersonAvatarFromWCA(

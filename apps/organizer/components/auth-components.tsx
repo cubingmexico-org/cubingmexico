@@ -10,7 +10,11 @@ import { reportError } from "@/lib/report-error";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export function SignIn(): React.JSX.Element {
+export function SignIn({
+  callbackURL = "/",
+}: {
+  callbackURL?: string;
+} = {}): React.JSX.Element {
   const [pending, startTransition] = useTransition();
 
   return (
@@ -21,7 +25,7 @@ export function SignIn(): React.JSX.Element {
           try {
             await authClient.signIn.social({
               provider: "wca",
-              callbackURL: "/",
+              callbackURL,
             });
           } catch (error) {
             reportError(error);

@@ -30,6 +30,16 @@
     "round_number",
     "round_type_id"
   ],
+  "certificate_shares": [
+    "competition_id",
+    "created_at",
+    "id",
+    "json",
+    "module",
+    "token",
+    "updated_at",
+    "user_id"
+  ],
   "championships": [
     "championship_type",
     "competition_id",

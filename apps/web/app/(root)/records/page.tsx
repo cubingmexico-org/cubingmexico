@@ -13,6 +13,7 @@ import { ShowSelector } from "./_components/show-selector";
 import { ClearFiltersButton } from "./_components/clear-filters-button";
 import { AsOfDatePicker } from "@/components/as-of-date-picker";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { PageHeading } from "@/components/page-heading";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
 import {
   MixedRecordsTable,
@@ -45,14 +46,14 @@ export default async function Page(props: PageProps) {
   return (
     <>
       <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold">
+        <PageHeading>
           {search.state
             ? `Récords estatales de ${search.state}`
             : `Récords nacionales`}{" "}
           {search.gender
             ? `(${search.gender === "m" ? "Masculinos" : "Femeniles"})`
             : undefined}
-        </h1>
+        </PageHeading>
 
         <EventSelector events={events} />
 

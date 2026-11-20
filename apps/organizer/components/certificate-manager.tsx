@@ -11,6 +11,7 @@ import { Award, FileText } from "lucide-react";
 import { Competition } from "@/types/wca";
 import useSWR from "swr";
 import { notFound } from "next/navigation";
+import { toast } from "sonner";
 import { fetcher, postFetcher } from "@/lib/utils";
 import type { PodiumRequest } from "@/lib/certificates/requests";
 import type {
@@ -23,7 +24,6 @@ import { JSONContent } from "@tiptap/react";
 import { Margins, PageOrientation, PageSize } from "pdfmake/interfaces";
 import { CertificateManagerSkeleton } from "./certificate-manager-skeleton";
 import { useIsMobile } from "@workspace/ui/hooks/use-mobile";
-import { useBirthdatesCsv } from "./certificates/birthdates-csv";
 import { CertificatesBreadcrumb } from "./certificates/certificates-breadcrumb";
 import { MobileUnavailableCard } from "./certificates/mobile-unavailable-card";
 import { useFileDataUrl } from "./certificates/use-file-data-url";
@@ -100,8 +100,6 @@ export function CertificateManager({
   const [filterByCountry, setFilterByCountry] = useState(false);
 
   // Age filter states
-  const [csvFiles, setCsvFiles] = useState<File[]>([]);
-  const { birthdateMap, csvError } = useBirthdatesCsv(csvFiles);
   const [ageRange, setAgeRange] = useState<[number, number]>([0, 100]);
   const [tempAgeRange, setTempAgeRange] = useState<[number, number]>([0, 100]);
 
@@ -113,7 +111,6 @@ export function CertificateManager({
 
     // Clear age-related state when switching away from age template
     if (selectedTemplate !== "age") {
-      setCsvFiles([]);
       setAgeRange([0, 100]);
       setTempAgeRange([0, 100]);
     }
@@ -136,11 +133,10 @@ export function CertificateManager({
     filterByCountry,
     country: competition.country_iso2,
     template: selectedTemplate,
-    ...(selectedTemplate === "age" && birthdateMap && birthdateMap.size > 0
+    ...(selectedTemplate === "age"
       ? {
           minAge: ageRange[0],
           maxAge: ageRange[1],
-          birthdates: Array.from(birthdateMap.entries()),
         }
       : {}),
   };
@@ -154,6 +150,15 @@ export function CertificateManager({
     ([url, body]: [string, PodiumRequest]) => postFetcher(url, body),
     {
       fallbackData: [],
+      onError: (error: { info?: { error?: string }; message?: string }) => {
+        if (podiumRequest.template !== "age") return;
+        const description =
+          typeof error.info?.error === "string"
+            ? error.info.error
+            : (error.message ??
+              "No se pudieron cargar los podios por edad desde el WCIF autorizado.");
+        toast.error("Error al filtrar por edad", { description });
+      },
     },
   );
 
@@ -275,10 +280,8 @@ export function CertificateManager({
           <TabsContent value="podium" className="space-y-6 pt-6">
             <PodiumCertificatesTab
               background={background}
-              birthdateMap={birthdateMap}
               competition={competition}
               content={content}
-              csvError={csvError}
               files={files}
               filterByCountry={filterByCountry}
               generatePDF={generatePDF}
@@ -291,7 +294,6 @@ export function CertificateManager({
               selectedTemplate={selectedTemplate}
               setAgeRange={setAgeRange}
               setContent={setContent}
-              setCsvFiles={setCsvFiles}
               setFiles={setFiles}
               setFilterByCountry={setFilterByCountry}
               setPageMargins={setPageMargins}

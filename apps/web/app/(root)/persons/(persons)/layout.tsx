@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageHeading } from "@/components/page-heading";
 
 export const metadata: Metadata = {
   title: "Competidores | Cubing México",
@@ -10,7 +11,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <main className="grow container mx-auto px-4 py-8">
       <div className="flex flex-col gap-4 mb-6">
-        <h1 className="text-3xl font-bold">Competidores</h1>
+        <PageHeading>Competidores</PageHeading>
         <p>Directorio de todos los competidores mexicanos de la WCA.</p>
       </div>
       <div className="grid gap-6">{children}</div>

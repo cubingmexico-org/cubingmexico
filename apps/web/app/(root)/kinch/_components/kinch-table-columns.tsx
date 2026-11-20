@@ -35,9 +35,9 @@ function makeEventColumn(eventId: string): ColumnDef<KinchRanks> {
           className={cn(
             "flex space-x-2 justify-center",
             event?.ratio === 100 &&
-              "text-green-700 dark:text-green-400 font-semibold",
+              "text-green-800 dark:text-green-400 font-semibold",
             event?.ratio === 0 &&
-              "text-red-600 dark:text-red-400 font-semibold",
+              "text-red-700 dark:text-red-400 font-semibold",
           )}
         >
           {event?.ratio.toFixed(2)}

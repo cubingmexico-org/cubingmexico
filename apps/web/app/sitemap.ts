@@ -131,6 +131,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.8,
     },
     {
+      url: "https://www.cubingmexico.net/live",
+      changeFrequency: "hourly",
+      priority: 0.8,
+    },
+    {
       url: "https://www.cubingmexico.net/about",
       changeFrequency: "monthly",
       priority: 0.7,
@@ -217,6 +222,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: "https://www.cubingmexico.net/tools",
       changeFrequency: "monthly",
       priority: 0.7,
+    },
+    {
+      url: "https://www.cubingmexico.net/tools/limite",
+      changeFrequency: "monthly",
+      priority: 0.5,
     },
     {
       url: "https://www.cubingmexico.net/docs",

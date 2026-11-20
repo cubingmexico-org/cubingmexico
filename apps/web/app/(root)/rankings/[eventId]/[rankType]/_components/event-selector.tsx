@@ -19,6 +19,7 @@ import { usePathname } from "next/navigation";
 import type { EventId } from "@/types/wca";
 import { AsOfDatePicker } from "@/components/as-of-date-picker";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { PageHeading } from "@/components/page-heading";
 import { rankTypeForEvent } from "@/lib/selectors";
 
 const searchParams = {
@@ -91,10 +92,10 @@ export function EventSelector({
 
   return (
     <div className={cn("flex flex-col gap-4", className)} {...props}>
-      <h1 className="text-3xl font-bold">
+      <PageHeading>
         Ranking nacional oficial de {eventName} (
         {selectedRankType === "single" ? "Single" : "Average"})
-      </h1>
+      </PageHeading>
       <div className="flex flex-col gap-2">
         <span className="font-semibold text-sm">Eventos</span>
         <div className="flex flex-wrap gap-2 text-muted-foreground">
@@ -116,7 +117,7 @@ export function EventSelector({
                 className={cn(
                   "size-10 text-muted-foreground",
                   selectedEventId === event.id &&
-                    "bg-accent text-primary border-primary",
+                    "border-brand bg-brand text-white hover:bg-brand-warm hover:text-white",
                 )}
               >
                 <Link href={href} aria-label={event.name}>

@@ -13,8 +13,8 @@ const fadeUp = {
     opacity: 1,
     y: 0,
     transition: {
-      delay: 0.15 + i * 0.12,
-      duration: 0.55,
+      delay: 0.12 + i * 0.1,
+      duration: 0.5,
       ease: [0.22, 1, 0.36, 1] as const,
     },
   }),
@@ -33,15 +33,15 @@ export function HomeHero() {
   const prefersReducedMotion = useReducedMotion();
 
   return (
-    <section className="relative h-[min(100svh,56rem)] w-full overflow-hidden">
+    <section className="relative h-[min(88svh,42rem)] w-full overflow-hidden md:h-[min(92svh,48rem)]">
       <motion.div
         className="absolute inset-0"
         initial={{ scale: 1 }}
-        animate={{ scale: prefersReducedMotion ? 1 : 1.08 }}
+        animate={{ scale: prefersReducedMotion ? 1 : 1.06 }}
         transition={
           prefersReducedMotion
             ? { duration: 0 }
-            : { duration: 14, ease: "linear" }
+            : { duration: 16, ease: "linear" }
         }
       >
         <Image
@@ -53,12 +53,13 @@ export function HomeHero() {
         />
       </motion.div>
 
-      <div className="absolute inset-0 bg-linear-to-t from-black via-black/55 to-black/35" />
+      {/* Fixed chrome scrim — independent of theme tokens. */}
+      <div className="absolute inset-0 bg-linear-to-t from-chrome via-chrome/70 to-chrome/30" />
 
-      <div className="relative z-10 flex h-full items-end md:items-center">
-        <div className="container mx-auto px-5 pb-16 pt-28 md:pb-24 md:pt-20">
+      <div className="relative z-10 flex h-full items-end">
+        <div className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-6 md:pb-16">
           <motion.h1
-            className="font-display text-5xl font-bold uppercase tracking-wide text-white sm:text-6xl md:text-7xl lg:text-8xl"
+            className="max-w-4xl font-display text-5xl font-bold uppercase tracking-wide text-white sm:text-6xl md:text-7xl lg:text-8xl"
             custom={0}
             initial="hidden"
             animate="visible"
@@ -68,17 +69,18 @@ export function HomeHero() {
           </motion.h1>
 
           <motion.p
-            className="mt-4 max-w-xl text-lg text-white/85 md:text-xl"
+            className="mt-4 max-w-lg text-base text-white/85 sm:text-lg"
             custom={1}
             initial="hidden"
             animate="visible"
             variants={prefersReducedMotion ? fadeUpReduced : fadeUp}
           >
-            Descubre los mejores cuberos, récords y competencias de México
+            Rankings estatales, récords nacionales y el calendario WCA de
+            México.
           </motion.p>
 
           <motion.div
-            className="mt-8 flex flex-wrap items-center gap-4"
+            className="mt-7 flex flex-wrap items-center gap-3"
             custom={2}
             initial="hidden"
             animate="visible"
@@ -88,17 +90,17 @@ export function HomeHero() {
               href="/rankings/333/single"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "group bg-brand text-white hover:bg-brand-warm",
+                "group bg-brand hover:bg-brand-warm",
               )}
             >
-              Ver Rankings
-              <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              Rankings
+              <ArrowRight className="ml-2 size-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
               href="/competitions"
               className={cn(
                 buttonVariants({ size: "lg", variant: "outline" }),
-                "border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white",
+                "border-white/35 bg-transparent text-white hover:bg-white/10 hover:text-white",
               )}
             >
               Competencias

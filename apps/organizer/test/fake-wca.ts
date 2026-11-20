@@ -17,15 +17,29 @@ export function addCompetition(
     organizers = [],
     delegates = [],
     endDate = "2025-03-15",
-  }: { organizers?: string[]; delegates?: string[]; endDate?: string },
+    startDate,
+  }: {
+    organizers?: string[];
+    delegates?: string[];
+    endDate?: string;
+    startDate?: string;
+  },
 ): void {
   const staff = (wcaIds: string[]) =>
-    wcaIds.map((wcaId, index) => ({ id: index + 1, wca_id: wcaId }));
+    wcaIds.map((wcaId, index) => ({
+      id: index + 1,
+      wca_id: wcaId,
+      name: wcaId,
+    }));
   competitions.set(id, {
     id,
+    name: id,
+    city: "Ciudad de México",
     organizers: staff(organizers),
     delegates: staff(delegates),
+    start_date: startDate ?? endDate,
     end_date: endDate,
+    event_ids: ["333", "333bf"],
   } as unknown as Competition);
 }
 
@@ -45,6 +59,8 @@ export const fakeAuth = {
       signedInWcaId
         ? { user: { id: signedInWcaId, wcaId: signedInWcaId } }
         : null,
+    getAccessToken: async () =>
+      signedInWcaId ? { accessToken: "fake-wca-token" } : null,
   },
 };
 

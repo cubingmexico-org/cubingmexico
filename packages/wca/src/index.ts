@@ -49,14 +49,15 @@ function parseRetryAfter(value: string | null, now: number): number | null {
 export interface WcaFetchInit extends RequestInit {
   /** Per-attempt timeout. Defaults to 10s. */
   timeoutMs?: number;
-  /** Retries for GET requests on 429, 5xx and network errors. Defaults to 3; other methods never retry. */
+  /** Retries for GET requests on 429, 5xx, timeouts and network errors. Defaults to 3; other methods never retry. */
   retries?: number;
 }
 
 /**
  * `fetch` for the WCA API and OAuth endpoints, with a timeout on every attempt and
- * retries with backoff for GET requests. Accepts a WCA path or an absolute URL.
- * Returns the last response, so callers still check `response.ok`.
+ * retries with backoff for GET requests (including per-attempt timeouts). Accepts a
+ * WCA path or an absolute URL. Returns the last response, so callers still check
+ * `response.ok`.
  */
 export async function wcaFetch(
   pathOrUrl: string,
@@ -76,8 +77,15 @@ export async function wcaFetch(
         signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
       });
     } catch (error) {
-      // Timeouts and caller aborts are DOMExceptions and are not retried; network failures are TypeErrors.
-      if (attempt >= maxRetries || !(error instanceof TypeError)) {
+      // Network failures are TypeErrors. Per-attempt timeouts are DOMExceptions
+      // (TimeoutError / AbortError) and are retried like network errors, unless the
+      // caller already aborted their own signal.
+      const isNetwork = error instanceof TypeError;
+      const isTimeout =
+        error instanceof DOMException &&
+        (error.name === "TimeoutError" || error.name === "AbortError") &&
+        !signal?.aborted;
+      if (attempt >= maxRetries || (!isNetwork && !isTimeout)) {
         throw error;
       }
       await sleep(retryDelayMs(attempt, null));

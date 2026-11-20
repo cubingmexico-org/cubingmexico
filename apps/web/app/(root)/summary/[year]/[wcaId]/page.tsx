@@ -96,7 +96,7 @@ async function SummaryPage({ params }: Props) {
   const avatarUrl = avatar && !avatar.is_default ? avatar.thumb_url : null;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex min-w-0 flex-col gap-8">
       <SummaryPageContent year={year} wcaId={wcaId} avatarUrl={avatarUrl} />
       <Suspense fallback={null}>
         <GoalsSection year={year} wcaId={wcaId} />

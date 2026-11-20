@@ -12,14 +12,21 @@ function asOf(date: Date | null) {
 export function DataSourcesNotice({
   wcaExportDate,
   ccExportDate,
+  className,
 }: {
   wcaExportDate: Date | null;
   ccExportDate: Date | null;
+  className?: string;
 }) {
-  const linkClass = "underline hover:text-primary";
+  // Inherit color from the parent (footer uses brand-warm on chrome).
+  const linkClass = "underline hover:opacity-80";
 
   return (
-    <div className="space-y-1 text-center text-xs text-muted-foreground">
+    <div
+      className={
+        className ?? "space-y-1 text-center text-xs text-muted-foreground"
+      }
+    >
       <p>
         Los resultados oficiales se basan en resultados de competencias
         propiedad de la World Cube Association y mantenidos por ella, publicados

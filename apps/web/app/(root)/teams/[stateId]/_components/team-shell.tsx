@@ -10,6 +10,7 @@ import {
 import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
 import { CalendarRange, MapPin, Settings, Swords, Users } from "lucide-react";
+import { PageHeading } from "@/components/page-heading";
 import type { getTeamInfo } from "../_lib/queries";
 import { TeamTabsNav } from "./team-tabs-nav";
 
@@ -61,9 +62,9 @@ export function TeamShell({
               </Avatar>
               <div className="mb-2 min-w-0 text-white">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-2xl font-bold wrap-break-word sm:text-3xl">
+                  <PageHeading className="wrap-break-word text-2xl text-white sm:text-3xl">
                     {team.name}
-                  </h1>
+                  </PageHeading>
                   {!team.isActive ? (
                     <Badge
                       variant="secondary"

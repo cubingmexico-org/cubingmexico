@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Radio } from "lucide-react";
 import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import type { Competition } from "@/types/wca";
+import { cubingMexicoLiveUrl } from "@/lib/live/urls";
 import { RegistrationButton } from "./registration-button";
 import { AddToCalendarButton } from "./add-to-calendar-button";
 
@@ -42,6 +43,14 @@ export function CompetitionActions({
           />
         </>
       )}
+      <Link
+        className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
+        href={cubingMexicoLiveUrl(competition.id)}
+        prefetch={false}
+      >
+        <Radio />
+        Resultados en vivo
+      </Link>
       <Link
         className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
         href={competition.url}

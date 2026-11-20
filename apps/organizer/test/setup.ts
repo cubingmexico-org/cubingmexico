@@ -13,6 +13,29 @@ vi.mock("@/db/queries", async () => {
     getWCIFByCompetitionId: fake.fakeGetWCIFByCompetitionId,
   };
 });
+vi.mock("@/lib/wca-wcif", async () => {
+  const fake = await import("./fake-wca");
+  return {
+    requireWcaAccessToken: async () => {
+      const token = await fake.fakeAuth.api.getAccessToken();
+      if (!token?.accessToken) {
+        throw new Error(
+          "No se pudo obtener el token de WCA. Cierra sesión y vuelve a entrar con permisos de manage_competitions.",
+        );
+      }
+      return token.accessToken;
+    },
+    getAuthorizedWcif: async (competitionId: string) => {
+      const wcif = await fake.fakeGetWCIFByCompetitionId({ competitionId });
+      if (!wcif) {
+        throw new Error(`No se pudo cargar el WCIF autorizado (404)`);
+      }
+      return wcif;
+    },
+    checkWcif: async () => ({ ok: true as const }),
+    patchWcif: async () => ({ ok: true as const }),
+  };
+});
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 
 let dataTables: string[] | null = null;

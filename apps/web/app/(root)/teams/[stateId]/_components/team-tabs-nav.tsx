@@ -16,7 +16,7 @@ function tabClass(isActive: boolean) {
   return cn(
     "inline-flex h-9 shrink-0 items-center justify-center rounded-md px-3 text-sm font-medium whitespace-nowrap transition-colors",
     isActive
-      ? "bg-background text-foreground shadow-sm"
+      ? "bg-background text-brand shadow-sm ring-1 ring-brand/30"
       : "text-muted-foreground hover:text-foreground",
   );
 }

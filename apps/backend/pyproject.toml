@@ -29,6 +29,8 @@ dev = [
 
 [tool.uv]
 package = false
+# Transitive via google-auth; 0.6.4 has known CVEs (pip-audit).
+override-dependencies = ["pyasn1>=0.6.5"]
 
 [tool.ruff]
 line-length = 120

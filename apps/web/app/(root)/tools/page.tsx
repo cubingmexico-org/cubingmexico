@@ -70,7 +70,7 @@ export default function Page(): React.JSX.Element {
       </p>
 
       <div className="border rounded-md mb-8">
-        <div className="p-6 border-b last:border-b-0">
+        <div className="p-6 border-b">
           <h3 className="text-xl font-semibold">Organización</h3>
           <p className="my-2">
             Suite de Cubing México para organizadores: certificados y gafetes
@@ -80,6 +80,22 @@ export default function Page(): React.JSX.Element {
             siteHref="https://certificados.cubingmexico.net"
             sourceHref="https://github.com/cubingmexico-org/cubingmexico/tree/development/apps/organizer"
           />
+        </div>
+
+        <div className="p-6 border-b last:border-b-0">
+          <h3 className="text-xl font-semibold">Tiempo límite acumulativo</h3>
+          <p className="my-2">
+            Calcula cuánto tiempo te queda bajo un límite de tiempo acumulativo
+            de la WCA a partir del límite total y cada intento.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Link
+              href="/tools/limite"
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
+              Abrir
+            </Link>
+          </div>
         </div>
       </div>
 

@@ -144,7 +144,8 @@ describe("wcaFetch", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  it("aborts a slow request and does not retry the timeout", async () => {
+  // AbortSignal.timeout uses real timers, so these cannot use vi.useFakeTimers().
+  it("retries timeouts then throws once retries run out", async () => {
     fetchMock.mockImplementation(
       (_url, init) =>
         new Promise((_resolve, reject) => {
@@ -154,11 +155,27 @@ describe("wcaFetch", () => {
         }),
     );
 
-    await expect(wcaFetch("/api/v0/me", { timeoutMs: 20 })).rejects.toThrow(
-      /timeout|aborted/i,
-    );
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
+    await expect(
+      wcaFetch("/api/v0/me", { timeoutMs: 20, retries: 2 }),
+    ).rejects.toThrow(/timeout|aborted/i);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  }, 10_000);
+
+  it("retries a timeout and succeeds on a later attempt", async () => {
+    fetchMock
+      .mockImplementationOnce(
+        (_url, init) =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () =>
+              reject(init.signal?.reason),
+            );
+          }),
+      )
+      .mockResolvedValueOnce(response(200));
+
+    expect((await wcaFetch("/api/v0/me", { timeoutMs: 20 })).status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  }, 10_000);
 
   it("aborts when the caller's signal aborts", async () => {
     const controller = new AbortController();

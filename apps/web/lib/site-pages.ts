@@ -15,6 +15,11 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["competitions", "eventos"],
   },
   {
+    title: "En vivo",
+    href: "/live",
+    keywords: ["live", "resultados en vivo", "ilr", "wca live"],
+  },
+  {
     title: "Teams estatales",
     href: "/teams",
     keywords: ["equipos", "estados"],

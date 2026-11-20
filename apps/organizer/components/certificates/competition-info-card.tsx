@@ -32,7 +32,7 @@ export function CompetitionInfoCard({
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2 mb-2">
           <Link
-            href={`https://live.worldcubeassociation.org/link/competitions/${competition.id}`}
+            href={`https://www.worldcubeassociation.org/competitions/${competition.id}/live`}
             target="_blank"
             rel="noopener noreferrer"
             className={buttonVariants({
@@ -41,7 +41,7 @@ export function CompetitionInfoCard({
             })}
           >
             <WcaMonochrome />
-            WCA Live
+            Resultados en vivo
           </Link>
         </div>
         <div className="flex items-start gap-2">

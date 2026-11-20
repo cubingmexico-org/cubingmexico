@@ -9,9 +9,6 @@ export const podiumRequestSchema = z.object({
   template: z.enum(["general", "female", "newcomer", "age"]),
   minAge: z.number().int().min(0).optional(),
   maxAge: z.number().int().min(0).optional(),
-  birthdates: z
-    .array(z.tuple([z.number().int(), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]))
-    .optional(),
 });
 
 export type PodiumRequest = z.input<typeof podiumRequestSchema>;

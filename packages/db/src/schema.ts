@@ -677,6 +677,34 @@ export const design = pgTable(
 
 export type Design = InferSelectModel<typeof design>;
 
+/**
+ * Published participation-certificate claim links.
+ * Competitors open `/claim/{token}`, sign in with WCA, and download only their PDF.
+ * Unique on (competitionId, module) so republish keeps a stable token.
+ */
+export const certificateShare = pgTable(
+  "certificate_shares",
+  {
+    id: varchar("id", { length: 36 }).primaryKey(),
+    token: varchar("token", { length: 64 }).notNull(),
+    competitionId: varchar("competition_id", { length: 32 }).notNull(),
+    userId: varchar("user_id", { length: 64 }).notNull(),
+    module: varchar("module", { length: 32 }).$type<DesignModule>().notNull(),
+    json: jsonb("json").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("certificate_shares_token_uidx").on(t.token),
+    uniqueIndex("certificate_shares_competition_module_uidx").on(
+      t.competitionId,
+      t.module,
+    ),
+  ],
+);
+
+export type CertificateShare = InferSelectModel<typeof certificateShare>;
+
 // Cubing México yearly goals ("Metas"). Targets are validated in apps/web/lib/goals/types.ts.
 
 export const goalTypeEnum = [

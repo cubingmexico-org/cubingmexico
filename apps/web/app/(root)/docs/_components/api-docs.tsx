@@ -156,7 +156,7 @@ export function ApiDocs(): React.JSX.Element {
                   >
                     <AccordionTrigger className="text-left">
                       <span className="flex flex-wrap items-center gap-2">
-                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                        <code className="rounded bg-muted px-1.5 py-0.5 text-xs font-mono font-semibold text-emerald-800 dark:text-emerald-400">
                           {endpoint.method}
                         </code>
                         <code className="font-mono text-sm">

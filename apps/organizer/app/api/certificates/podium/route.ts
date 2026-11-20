@@ -1,12 +1,16 @@
-import { getWCIFByCompetitionId, getCompetitionById } from "@/db/queries";
+import { getWCIFByCompetitionId } from "@/db/queries";
+import { birthdatesFromAuthorizedWcif } from "@/lib/certificates/authorized-person-fields";
 import {
   buildPodiums,
   type PodiumFilter,
 } from "@/lib/certificates/podium-data";
 import { podiumRequestSchema } from "@/lib/certificates/requests";
-import { requireSessionUser } from "@/lib/design-access";
+import {
+  assertManagesCompetition,
+  requireSessionUser,
+} from "@/lib/design-access";
+import { getAuthorizedWcif, requireWcaAccessToken } from "@/lib/wca-wcif";
 
-// POST rather than GET so competitors' birthdates never end up in a URL or request log.
 export async function POST(request: Request): Promise<Response> {
   const user = await requireSessionUser();
   if (!user) {
@@ -25,20 +29,8 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const {
-    competitionId,
-    filterByCountry,
-    country,
-    template,
-    minAge,
-    maxAge,
-    birthdates,
-  } = parsed.data;
-
-  const wcif = await getWCIFByCompetitionId({ competitionId });
-  if (!wcif) {
-    return Response.json([]);
-  }
+  const { competitionId, filterByCountry, country, template, minAge, maxAge } =
+    parsed.data;
 
   const filter: PodiumFilter = {
     country: filterByCountry ? country : undefined,
@@ -46,22 +38,63 @@ export async function POST(request: Request): Promise<Response> {
     newcomer: template === "newcomer",
   };
 
-  if (
-    template === "age" &&
-    birthdates &&
-    minAge !== undefined &&
-    maxAge !== undefined
-  ) {
-    const competition = await getCompetitionById({ id: competitionId });
-    if (competition?.end_date) {
-      const [year, month, day] = competition.end_date.split("-").map(Number);
-      filter.age = {
-        min: minAge,
-        max: maxAge,
-        birthdates: new Map(birthdates),
-        referenceDate: new Date(year!, month! - 1, day),
-      };
+  if (template === "age") {
+    if (minAge === undefined || maxAge === undefined) {
+      return Response.json({ error: "Invalid request" }, { status: 400 });
     }
+
+    const access = await assertManagesCompetition(user.id, competitionId);
+    if (!access.ok) {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
+    }
+
+    let token: string;
+    try {
+      token = await requireWcaAccessToken();
+    } catch {
+      return Response.json(
+        {
+          error:
+            "No se pudo obtener el token de WCA. Cierra sesión y vuelve a entrar con permisos de manage_competitions.",
+        },
+        { status: 401 },
+      );
+    }
+
+    let authorizedWcif;
+    try {
+      authorizedWcif = await getAuthorizedWcif(competitionId, token);
+    } catch (error) {
+      return Response.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "No se pudo cargar el WCIF autorizado",
+        },
+        { status: 502 },
+      );
+    }
+
+    const competition = access.competition;
+    if (!competition.end_date) {
+      return Response.json([]);
+    }
+
+    const [year, month, day] = competition.end_date.split("-").map(Number);
+    filter.age = {
+      min: minAge,
+      max: maxAge,
+      birthdates: birthdatesFromAuthorizedWcif(authorizedWcif),
+      referenceDate: new Date(year!, month! - 1, day),
+    };
+
+    return Response.json(buildPodiums(authorizedWcif, filter));
+  }
+
+  const wcif = await getWCIFByCompetitionId({ competitionId });
+  if (!wcif) {
+    return Response.json([]);
   }
 
   return Response.json(buildPodiums(wcif, filter));

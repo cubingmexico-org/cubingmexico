@@ -83,22 +83,25 @@ export async function getKinchRanksState(
                 p.person_id,
                 e.id AS event_id,
                 e.rank,
-                MAX(
-                  CASE 
-                    WHEN e.id = '333mbf' THEN
-                      CASE 
-                        WHEN COALESCE(pr.personal_best, 0) != 0 THEN 
-                          ((99 - CAST(SUBSTRING(CAST(pr.personal_best AS TEXT), 1, 2) AS FLOAT) + 
-                            (1 - (CAST(SUBSTRING(CAST(pr.personal_best AS TEXT), 3, 5) AS FLOAT) / 3600))) / 
-                          ((99 - CAST(SUBSTRING(CAST(sr.state_best AS TEXT), 1, 2) AS FLOAT)) + 
-                            (1 - (CAST(SUBSTRING(CAST(sr.state_best AS TEXT), 3, 5) AS FLOAT) / 3600)))
-                          ) * 100
-                        ELSE 0
-                      END
-                    WHEN COALESCE(pr.personal_best, 0) != 0 THEN 
-                      (sr.state_best / COALESCE(pr.personal_best, 0)::FLOAT) * 100
-                    ELSE 0
-                  END
+                COALESCE(
+                  MAX(
+                    CASE 
+                      WHEN e.id = '333mbf' THEN
+                        CASE 
+                          WHEN COALESCE(pr.personal_best, 0) != 0 THEN 
+                            ((99 - CAST(SUBSTRING(CAST(pr.personal_best AS TEXT), 1, 2) AS FLOAT) + 
+                              (1 - (CAST(SUBSTRING(CAST(pr.personal_best AS TEXT), 3, 5) AS FLOAT) / 3600))) / 
+                            ((99 - CAST(SUBSTRING(CAST(sr.state_best AS TEXT), 1, 2) AS FLOAT)) + 
+                              (1 - (CAST(SUBSTRING(CAST(sr.state_best AS TEXT), 3, 5) AS FLOAT) / 3600)))
+                            ) * 100
+                          ELSE 0
+                        END
+                      WHEN COALESCE(pr.personal_best, 0) != 0 THEN 
+                        (sr.state_best / COALESCE(pr.personal_best, 0)::FLOAT) * 100
+                      ELSE 0
+                    END
+                  ),
+                  0
                 ) AS best_ratio
               FROM Persons p
               CROSS JOIN Events e
@@ -116,7 +119,7 @@ export async function getKinchRanksState(
                 )
                 ORDER BY r.rank
               ) AS events,
-              AVG(r.best_ratio) AS overall
+              COALESCE(AVG(r.best_ratio), 0) AS overall
             FROM Ratios r
             JOIN Persons p ON r.person_id = p.person_id
             GROUP BY p.person_id, p.name

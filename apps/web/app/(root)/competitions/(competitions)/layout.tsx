@@ -1,16 +1,15 @@
 import Link from "next/link";
+import { PageHeading } from "@/components/page-heading";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="flex flex-col gap-4 mb-6">
-        <h1 className="text-3xl font-bold">
-          Competencias oficiales de la WCA en México
-        </h1>
+        <PageHeading>Competencias oficiales de la WCA en México</PageHeading>
         <p>
           Una competencia oficial de la{" "}
           <Link
-            className="hover:underline text-muted-foreground"
+            className="underline text-link hover:text-link/80"
             href="https://www.worldcubeassociation.org/"
           >
             World Cube Association

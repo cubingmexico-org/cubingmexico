@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { formatRecordResult } from "@/app/(root)/records/_lib/format";
 import type { RecentNationalRecord } from "@/app/(root)/records/_lib/queries";
 
@@ -19,104 +18,88 @@ function formatCircaDate(dateKey: string): string {
 
 export function HomeRecentRecords({ records }: HomeRecentRecordsProps) {
   return (
-    <section className="border-t border-border bg-background">
-      <div className="container mx-auto px-5 py-20 md:py-28">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h2 className="font-display text-4xl font-bold uppercase tracking-wide text-foreground md:text-5xl">
-              Récords recientes
-            </h2>
-            <p className="mt-3 max-w-2xl text-lg text-muted-foreground">
-              Los últimos récords nacionales establecidos en competencias WCA.
-            </p>
-          </div>
+    <section className="bg-muted/40 px-4 py-10 sm:px-6 md:py-14 lg:bg-transparent">
+      <div className="flex items-baseline justify-between gap-4">
+        <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-foreground md:text-3xl">
+          Récords
+        </h2>
+        <Link
+          href="/records?show=history"
+          className="text-sm font-medium text-brand hover:text-brand-warm"
+        >
+          Historial
+        </Link>
+      </div>
+
+      {records.length === 0 ? (
+        <p className="mt-8 text-muted-foreground">
+          Sin récords recientes.{" "}
           <Link
-            href="/records?show=history"
-            className="inline-flex items-center gap-1 text-sm font-medium text-brand transition-colors hover:text-brand-warm"
+            href="/records"
+            className="text-brand underline hover:text-brand-warm"
           >
-            Ver historial
-            <ArrowRight className="size-4" />
+            Ver récords
           </Link>
-        </div>
+        </p>
+      ) : (
+        <ul className="mt-6">
+          {records.map((record) => {
+            const typeLabel = record.type === "single" ? "Single" : "Average";
 
-        {records.length === 0 ? (
-          <p className="mt-12 text-base text-muted-foreground">
-            No hay récords recientes por mostrar.{" "}
-            <Link
-              href="/records"
-              className="font-medium text-brand underline-offset-4 hover:underline"
-            >
-              Consulta los récords nacionales
-            </Link>
-            .
-          </p>
-        ) : (
-          <ul className="mt-12 divide-y divide-border border-t border-border">
-            {records.map((record) => {
-              const typeLabel = record.type === "single" ? "Single" : "Average";
-
-              return (
-                <li
-                  key={`${record.resultId}-${record.type}`}
-                  className="flex flex-wrap items-center gap-x-4 gap-y-2 py-5 md:gap-x-6"
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-3">
-                    <span
-                      className={`cubing-icon event-${record.eventId} shrink-0 text-2xl text-foreground`}
-                      aria-hidden
-                    />
-                    <div className="min-w-0">
-                      <p className="font-display text-lg font-semibold uppercase tracking-wide text-foreground md:text-xl">
+            return (
+              <li
+                key={`${record.resultId}-${record.type}`}
+                className="border-t border-border py-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="flex items-center gap-2 text-sm font-medium text-foreground">
+                      <span
+                        className={`cubing-icon event-${record.eventId} text-lg`}
+                        aria-hidden
+                      />
+                      <span className="truncate">
                         {record.eventName}{" "}
                         <span className="text-muted-foreground">
                           · {typeLabel}
                         </span>
-                      </p>
-                      <p className="mt-1 truncate text-sm text-muted-foreground md:text-base">
-                        {record.personName ? (
-                          <Link
-                            prefetch={false}
-                            href={`/persons/${record.personId}`}
-                            className="font-medium text-foreground transition-colors hover:text-brand"
-                          >
-                            {record.personName}
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
-                        {record.personState ? ` · ${record.personState}` : null}
-                        {" · "}
+                      </span>
+                    </p>
+                    <p className="mt-1 truncate text-sm text-muted-foreground">
+                      {record.personName ? (
                         <Link
                           prefetch={false}
-                          href={`/competitions/${record.competitionId}`}
-                          className="transition-colors hover:text-brand"
+                          href={`/persons/${record.personId}`}
+                          className="hover:text-brand"
                         >
-                          {record.competitionName}
+                          {record.personName}
                         </Link>
-                      </p>
-                    </div>
+                      ) : (
+                        "—"
+                      )}
+                    </p>
                   </div>
-                  <div className="flex shrink-0 items-baseline gap-3 sm:ml-auto">
-                    <span className="font-display text-2xl font-bold tabular-nums text-brand md:text-3xl">
+                  <div className="shrink-0 text-right">
+                    <p className="font-mono text-lg font-semibold tabular-nums text-brand">
                       {formatRecordResult(
                         record.eventId,
                         record.value,
                         record.type,
                       )}
-                    </span>
+                    </p>
                     <time
                       dateTime={record.recordDate}
-                      className="text-sm text-muted-foreground"
+                      className="text-xs text-muted-foreground"
                     >
                       {formatCircaDate(record.recordDate)}
                     </time>
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

@@ -8,83 +8,92 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  /* 0.53 rather than shadcn's 0.556 so muted text on --muted passes WCAG AA (4.5:1). */
-  --muted-foreground: oklch(0.53 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  /* Cubing México brand */
+  --brand: #9a002b;
+  --brand-warm: #ad4b32;
+  /* Fixed chrome for header/footer/hero scrims — never flips with theme. */
+  --chrome: #1a0508;
+  --brand-ink: #1a0508;
+  --brand-paper: #f4efe9;
+  /* green-800: green-700 (#15803d) fails WCAG AA on brand-paper */
+  --link: #166534;
+
+  --background: var(--brand-paper);
+  --foreground: var(--brand-ink);
+  --card: #ffffff;
+  --card-foreground: var(--brand-ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--brand-ink);
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: #ebe3db;
+  --secondary-foreground: var(--brand-ink);
+  --muted: #ebe3db;
+  --muted-foreground: oklch(0.38 0.02 25);
+  --accent: #f0e4dc;
+  --accent-foreground: var(--brand);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
+  --border: #ddd2c8;
+  --input: #ddd2c8;
+  --ring: var(--brand);
+  --chart-1: var(--brand);
+  --chart-2: var(--brand-warm);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  /* Cubing México brand accents (landing / header) */
-  --brand: #9a002b;
-  --brand-warm: #ad4b32;
-  /* Content entity links (person / competition names); dark enough for 4.5:1 on white and highlighted rows. */
-  --link: #15803d;
+  --radius: 0.375rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: var(--brand-ink);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0e4dc;
+  --sidebar-accent-foreground: var(--brand);
+  --sidebar-border: #ddd2c8;
+  --sidebar-ring: var(--brand);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
+  /* Same brand reds; readable dark neutrals (not inverted ink). */
+  --brand: #e11d48;
+  --brand-warm: #e07a5f;
+  --chrome: #1a0508;
+  --brand-ink: #f5f0eb;
+  --brand-paper: #121010;
+  --link: #4ade80;
+
+  --background: #141210;
+  --foreground: #f5f0eb;
+  --card: #1c1917;
+  --card-foreground: #f5f0eb;
+  --popover: #1c1917;
+  --popover-foreground: #f5f0eb;
+  --primary: var(--brand);
+  --primary-foreground: #ffffff;
+  --secondary: #292524;
+  --secondary-foreground: #f5f0eb;
+  --muted: #292524;
+  --muted-foreground: #a8a29e;
+  --accent: #292524;
+  --accent-foreground: #fda4af;
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: #fecaca;
+  --border: #292524;
+  --input: #292524;
+  --ring: var(--brand-warm);
+  --chart-1: var(--brand);
+  --chart-2: var(--brand-warm);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-  --brand: #9a002b;
-  --brand-warm: #ad4b32;
-  --link: #4ade80;
+  --sidebar: #1c1917;
+  --sidebar-foreground: #f5f0eb;
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #292524;
+  --sidebar-accent-foreground: #fda4af;
+  --sidebar-border: #292524;
+  --sidebar-ring: var(--brand-warm);
 }
 
 @theme inline {
@@ -114,6 +123,9 @@
   --color-chart-5: var(--chart-5);
   --color-brand: var(--brand);
   --color-brand-warm: var(--brand-warm);
+  --color-brand-paper: var(--brand-paper);
+  --color-brand-ink: var(--brand-ink);
+  --color-chrome: var(--chrome);
   --color-link: var(--link);
   --font-display: var(--font-oswald), ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
@@ -136,5 +148,9 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--brand) 35%, transparent);
+    color: var(--foreground);
   }
 }

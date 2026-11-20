@@ -19,8 +19,8 @@ const nextConfig = {
           enforce: true,
           sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
           environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
-          // The background-removal model for competition logos runs on WebAssembly.
-          scriptSrc: ["'wasm-unsafe-eval'"],
+          // IMG.LY background-removal: wasm + blob: script URLs for its workers.
+          scriptSrc: ["'wasm-unsafe-eval'", "blob:"],
           // UploadThing uploads, and the background-removal model for competition logos.
           connectSrc: [
             "https://*.uploadthing.com",

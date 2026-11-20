@@ -17,6 +17,7 @@ import {
 import { Search } from "lucide-react";
 import { Skeleton } from "@workspace/ui/components/skeleton";
 import { normalizeSearchText } from "@/lib/search";
+import { PageHeading } from "@/components/page-heading";
 import { TeamCard } from "./team-card";
 
 const TeamsStateMap = dynamic(
@@ -77,7 +78,7 @@ export function Teams({
   return (
     <>
       <div className="flex flex-col gap-4 mb-6">
-        <h1 className="text-3xl font-bold">Teams estatales</h1>
+        <PageHeading>Teams estatales</PageHeading>
         <p className="text-muted-foreground">
           Descubre y conecta con los Teams de speedcubers en México
         </p>
