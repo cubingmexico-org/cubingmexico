@@ -72,7 +72,9 @@ export async function renderClaimPdf(params: {
   });
 
   const pdf = await renderPdfBuffer(doc);
-  const safeName = removeAccents(participant.name).replace(/[^\w\s-]/g, "").trim();
+  const safeName = removeAccents(participant.name)
+    .replace(/[^\w\s-]/g, "")
+    .trim();
   const filename = `Certificado Participacion - ${safeName || "competidor"}.pdf`;
 
   return {

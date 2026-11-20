@@ -17,7 +17,9 @@ describe("buildClaimMailto", () => {
 
     expect(result.copyEmailsToClipboard).toBe(false);
     expect(result.href).toContain("bcc=");
-    expect(result.href).toContain(encodeURIComponent(claimUrl).replace(/%20/g, "+"));
+    expect(result.href).toContain(
+      encodeURIComponent(claimUrl).replace(/%20/g, "+"),
+    );
     expect(result.href).toContain("subject=");
   });
 

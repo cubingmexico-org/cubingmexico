@@ -32,10 +32,5 @@ export default async function ClaimPage({
     notFound();
   }
 
-  return (
-    <ClaimCertificate
-      competitionName={competition.name}
-      token={token}
-    />
-  );
+  return <ClaimCertificate competitionName={competition.name} token={token} />;
 }

@@ -128,9 +128,7 @@ describe("GET /api/claim/[token]/pdf", () => {
     });
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("application/pdf");
-    expect(response.headers.get("Content-Disposition")).toContain(
-      "Ana Lopez",
-    );
+    expect(response.headers.get("Content-Disposition")).toContain("Ana Lopez");
     expect(Buffer.from(await response.arrayBuffer()).toString()).toContain(
       "%PDF",
     );

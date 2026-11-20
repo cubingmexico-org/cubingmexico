@@ -36,9 +36,7 @@ export function ClaimCertificate({
         const json = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
-        throw new Error(
-          json?.error ?? "No se pudo descargar el certificado",
-        );
+        throw new Error(json?.error ?? "No se pudo descargar el certificado");
       }
       const blob = await res.blob();
       const disposition = res.headers.get("Content-Disposition");

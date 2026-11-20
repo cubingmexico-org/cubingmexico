@@ -30,7 +30,9 @@ export const participationShareJsonSchema = z.object({
   background: z.string().optional(),
 });
 
-export type ParticipationShareJson = z.infer<typeof participationShareJsonSchema>;
+export type ParticipationShareJson = z.infer<
+  typeof participationShareJsonSchema
+>;
 
 export const publishParticipationShareSchema = z.object({
   competitionId: competitionIdSchema,
