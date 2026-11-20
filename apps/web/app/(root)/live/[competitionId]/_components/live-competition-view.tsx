@@ -16,10 +16,11 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { eventNames } from "@/lib/constants";
 import {
+  isLiveRoundInProgress,
   liveRoundCompletedCount,
   liveRoundEventId,
   liveRoundLabel,
-  liveRoundStateLabel,
+  liveRoundSpectatorLabel,
 } from "@/lib/live/format";
 import type { LiveCompetitionMeta, LiveRoundSummary } from "@/lib/live/types";
 import { useVisiblePoll } from "../../_components/use-visible-poll";
@@ -64,8 +65,8 @@ export function LiveCompetitionView({
 
   useVisiblePoll(poll);
 
-  const openRounds = data.rounds.filter((r) => r.state === "open");
-  const otherRounds = data.rounds.filter((r) => r.state !== "open");
+  const openRounds = data.rounds.filter(isLiveRoundInProgress);
+  const otherRounds = data.rounds.filter((r) => !isLiveRoundInProgress(r));
 
   return (
     <div className="space-y-6">
@@ -212,9 +213,11 @@ function RoundSection({
                   </p>
                 </div>
                 <Badge
-                  variant={round.state === "open" ? "default" : "secondary"}
+                  variant={
+                    isLiveRoundInProgress(round) ? "default" : "secondary"
+                  }
                 >
-                  {liveRoundStateLabel(round.state)}
+                  {liveRoundSpectatorLabel(round)}
                 </Badge>
               </Link>
             </li>

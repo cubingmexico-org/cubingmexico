@@ -36,16 +36,18 @@ export function liveRoundStateLabel(state: string): string {
   }
 }
 
+type LiveRoundCountFields = {
+  state: string;
+  completed_competitors?: number | null;
+  total_competitors?: number | null;
+};
+
 /**
  * WCA's live rounds list often omits `completed_competitors` for locked
  * rounds while still sending `total_competitors`. Treat that as fully
  * complete so the list does not show "0/N resultados".
  */
-export function liveRoundCompletedCount(round: {
-  state: string;
-  completed_competitors?: number | null;
-  total_competitors?: number | null;
-}): number {
+export function liveRoundCompletedCount(round: LiveRoundCountFields): number {
   if (round.completed_competitors != null) {
     return round.completed_competitors;
   }
@@ -53,6 +55,26 @@ export function liveRoundCompletedCount(round: {
     return round.total_competitors ?? 0;
   }
   return 0;
+}
+
+/**
+ * WCA `open` means the round was opened for scoretaking and is not locked —
+ * finals often stay `open` forever after N/N. For spectators, only incomplete
+ * open rounds count as actively in progress.
+ */
+export function isLiveRoundInProgress(round: LiveRoundCountFields): boolean {
+  if (round.state !== "open") return false;
+  const total = round.total_competitors ?? 0;
+  if (total <= 0) return false;
+  return liveRoundCompletedCount(round) < total;
+}
+
+/** Spectator-facing badge label (not raw WCA lifecycle state). */
+export function liveRoundSpectatorLabel(round: LiveRoundCountFields): string {
+  if (isLiveRoundInProgress(round)) return "En curso";
+  if (round.state === "locked") return "Cerrada";
+  if (round.state === "open") return "Completada";
+  return liveRoundStateLabel(round.state);
 }
 
 export function formatLiveResultValue(

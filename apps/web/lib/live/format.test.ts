@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   formatLiveResultValue,
   formatRecordTag,
+  isLiveRoundInProgress,
   liveRoundCompletedCount,
   liveRoundEventId,
   liveRoundLabel,
+  liveRoundSpectatorLabel,
   liveRoundStateLabel,
   parseLiveRoundId,
 } from "./format";
@@ -76,5 +78,49 @@ describe("live format helpers", () => {
         total_competitors: 65,
       }),
     ).toBe(44);
+  });
+
+  it("treats only incomplete open rounds as in progress", () => {
+    expect(
+      isLiveRoundInProgress({
+        state: "open",
+        completed_competitors: 10,
+        total_competitors: 65,
+      }),
+    ).toBe(true);
+    expect(
+      isLiveRoundInProgress({
+        state: "open",
+        completed_competitors: 65,
+        total_competitors: 65,
+      }),
+    ).toBe(false);
+    expect(
+      isLiveRoundInProgress({
+        state: "locked",
+        total_competitors: 78,
+      }),
+    ).toBe(false);
+
+    expect(
+      liveRoundSpectatorLabel({
+        state: "open",
+        completed_competitors: 10,
+        total_competitors: 65,
+      }),
+    ).toBe("En curso");
+    expect(
+      liveRoundSpectatorLabel({
+        state: "open",
+        completed_competitors: 65,
+        total_competitors: 65,
+      }),
+    ).toBe("Completada");
+    expect(
+      liveRoundSpectatorLabel({
+        state: "locked",
+        total_competitors: 78,
+      }),
+    ).toBe("Cerrada");
   });
 });

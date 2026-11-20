@@ -15,7 +15,7 @@ import {
   formatLiveResultValue,
   liveRoundEventId,
   liveRoundLabel,
-  liveRoundStateLabel,
+  liveRoundSpectatorLabel,
 } from "@/lib/live/format";
 import type {
   EnrichedLiveCompetitor,
@@ -174,7 +174,7 @@ export function LiveProjector({
                         />
                         <span>{label}</span>
                         <span className="text-zinc-500">
-                          · {liveRoundStateLabel(round.state)}
+                          · {liveRoundSpectatorLabel(round)}
                         </span>
                       </span>
                     </SelectItem>

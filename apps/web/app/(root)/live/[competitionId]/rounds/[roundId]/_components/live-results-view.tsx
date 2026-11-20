@@ -17,9 +17,10 @@ import { cn } from "@workspace/ui/lib/utils";
 import { RecordBadges } from "@/components/record-badges";
 import {
   formatLiveResultValue,
+  isLiveRoundInProgress,
   liveRoundEventId,
   liveRoundLabel,
-  liveRoundStateLabel,
+  liveRoundSpectatorLabel,
 } from "@/lib/live/format";
 import type {
   EnrichedLiveCompetitor,
@@ -196,8 +197,10 @@ export function LiveResultsView({
             {title}
           </h1>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-            <Badge variant={data.state === "open" ? "default" : "secondary"}>
-              {liveRoundStateLabel(data.state)}
+            <Badge
+              variant={isLiveRoundInProgress(data) ? "default" : "secondary"}
+            >
+              {liveRoundSpectatorLabel(data)}
             </Badge>
             <span className="inline-flex items-center gap-1">
               <Radio className="size-3.5 text-red-500 animate-pulse" />
