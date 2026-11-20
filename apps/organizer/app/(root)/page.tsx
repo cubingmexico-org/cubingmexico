@@ -12,19 +12,27 @@ import {
 import { CompetitionList } from "@/components/competition-list";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { unauthorized } from "next/navigation";
 
 export default async function Page(): Promise<React.JSX.Element> {
   const headersList = await headers();
 
-  const tokenData = await auth.api.getAccessToken({
-    body: {
-      useAccountCookie: true,
-    },
-    headers: headersList,
-  });
+  let accessToken = "";
+  try {
+    const tokenData = await auth.api.getAccessToken({
+      body: {
+        useAccountCookie: true,
+      },
+      headers: headersList,
+    });
+    accessToken = tokenData?.accessToken || "";
+  } catch {
+    // Expired/missing account cookie or failed WCA token refresh → reauth.
+    unauthorized();
+  }
 
   const competitions = await getCompetitionsManagedByUser({
-    token: tokenData?.accessToken || "",
+    token: accessToken,
   });
 
   const logoById = await getCompetitionLogosByIds(

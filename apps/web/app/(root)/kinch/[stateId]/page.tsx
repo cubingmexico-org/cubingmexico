@@ -121,7 +121,7 @@ export default async function Page(props: {
                 </Link>
               </TableCell>
               <TableCell className="font-semibold">
-                {person.overall.toFixed(2)}
+                {(person.overall ?? 0).toFixed(2)}
               </TableCell>
               {person.events.map((event) => (
                 <TableCell
@@ -133,7 +133,7 @@ export default async function Page(props: {
                       "text-green-700 dark:text-green-400 font-semibold",
                   )}
                 >
-                  {event.ratio.toFixed(2)}
+                  {(event.ratio ?? 0).toFixed(2)}
                 </TableCell>
               ))}
             </TableRow>

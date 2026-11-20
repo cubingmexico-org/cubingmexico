@@ -32,13 +32,25 @@ export interface CompetitionResultRow {
 export async function getWcaCompetitionData(
   competitionId: string,
 ): Promise<Competition | null> {
-  // v2: avoid reusing nulls cached from transient WCA failures.
-  cacheTag(`wca-competition-data-v2-${competitionId}`);
+  // v3: soft-fail transient WCA errors (429/5xx/timeout) with a short TTL so
+  // pages degrade instead of 500ing into Sentry; success still caches for weeks.
+  cacheTag(`wca-competition-data-v3-${competitionId}`);
 
-  const response = await wcaFetch(`/api/v0/competitions/${competitionId}`);
+  let response: Response;
+  try {
+    response = await wcaFetch(`/api/v0/competitions/${competitionId}`);
+  } catch {
+    cacheLife("minutes");
+    return null;
+  }
 
-  // Only real 404s are "not found". Other failures must not be cached as null.
   if (response.status === 404) {
+    cacheLife("minutes");
+    return null;
+  }
+
+  // Rate limits and upstream outages: soft-fail briefly. Other 4xx stay loud.
+  if (response.status === 429 || response.status >= 500) {
     cacheLife("minutes");
     return null;
   }
