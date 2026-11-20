@@ -49,10 +49,6 @@ export const participationEmailRequestSchema = z.object({
   background: z.string().optional(),
 });
 
-export type ParticipationEmailRequest = z.input<
-  typeof participationEmailRequestSchema
->;
-
 export type ParticipationEmailResponse = {
   sent: number;
   failed: { registrantId: number; error: string }[];
