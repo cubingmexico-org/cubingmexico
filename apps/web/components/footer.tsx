@@ -100,7 +100,7 @@ async function FooterContent() {
         </div>
 
         <DataSourcesNotice
-          className="mt-6 space-y-1 text-center text-xs text-white/45 sm:text-left [&_a]:text-brand-warm [&_a:hover]:text-white"
+          className="mt-6 space-y-1 text-center text-xs text-white/45 sm:text-left [&_a]:text-[#e8a090] [&_a:hover]:text-white"
           wcaExportDate={dataSourceDates.wca}
           ccExportDate={dataSourceDates.cubingContests}
         />
@@ -109,7 +109,7 @@ async function FooterContent() {
           Hecho con ❤️ por{" "}
           <Link
             href="https://www.worldcubeassociation.org/persons/2016TORO03"
-            className="text-brand-warm hover:underline"
+            className="text-[#e8a090] hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >
