@@ -33,7 +33,8 @@ import { FileUploader } from "../file-uploader";
 import { ScrollArea } from "@workspace/ui/components/scroll-area";
 import { toast } from "sonner";
 import type * as React from "react";
-import { sendParticipationEmails } from "@/lib/certificates/send-participation-emails";
+import { buildClaimMailto } from "@/lib/certificates/mailto";
+import { publishParticipationShare } from "@/lib/certificates/publish-share";
 
 export function ParticipationCertificatesTab({
   backgroundParticipants,
@@ -80,22 +81,20 @@ export function ParticipationCertificatesTab({
     React.SetStateAction<ParticipantData[]>
   >;
 }) {
-  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
-  const sendSelectedByEmail = async () => {
+  const shareSelectedByEmail = async () => {
     const registrantIds = selectedParticipants
       .map((p) => p.registrantId)
       .filter((id): id is number => id !== null);
 
     if (registrantIds.length === 0) return;
 
-    setIsSendingEmail(true);
-    const toastId = toast.loading(
-      `Enviando certificados… 0/${registrantIds.length}`,
-    );
+    setIsSharing(true);
+    const toastId = toast.loading("Publicando enlace de certificados…");
 
     try {
-      const result = await sendParticipationEmails({
+      const result = await publishParticipationShare({
         competitionId: competition.id,
         registrantIds,
         content: participantsContent,
@@ -103,53 +102,48 @@ export function ParticipationCertificatesTab({
         pageOrientation: pageOrientationParticipants,
         pageSize: pageSizeParticipants,
         background: backgroundParticipants,
-        onProgress: (done, total) => {
-          toast.loading(`Enviando certificados… ${done}/${total}`, {
-            id: toastId,
-          });
-        },
       });
 
-      const parts: string[] = [];
-      if (result.sent > 0) {
-        parts.push(`${result.sent} enviado${result.sent !== 1 ? "s" : ""}`);
+      const mailto = buildClaimMailto({
+        emails: result.emails,
+        competitionName: result.competitionName,
+        claimUrl: result.claimUrl,
+      });
+
+      if (mailto.copyEmailsToClipboard && result.emails.length > 0) {
+        await navigator.clipboard.writeText(result.emails.join(", "));
       }
+
+      const anchor = document.createElement("a");
+      anchor.href = mailto.href;
+      anchor.rel = "noopener";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+
+      const parts: string[] = [
+        "Enlace publicado",
+        `${result.emails.length} correo${result.emails.length !== 1 ? "s" : ""}`,
+      ];
       if (result.skippedNoEmail.length > 0) {
         parts.push(`${result.skippedNoEmail.length} sin correo en el WCIF`);
       }
-      if (result.failed.length > 0) {
-        parts.push(`${result.failed.length} con error`);
+      if (mailto.copyEmailsToClipboard && result.emails.length > 0) {
+        parts.push("lista de correos copiada (pega en CCO)");
       }
 
-      if (result.dailyQuotaHit) {
-        toast.warning("Límite diario de Resend alcanzado", {
-          id: toastId,
-          description: `${parts.join(". ")}. El plan gratuito permite 100 correos al día (UTC); puedes continuar mañana con los pendientes.`,
-        });
-      } else if (result.monthlyQuotaHit) {
-        toast.warning("Límite mensual de Resend alcanzado", {
-          id: toastId,
-          description: parts.join(". "),
-        });
-      } else if (result.failed.length > 0 || result.skippedNoEmail.length > 0) {
-        toast.warning("Envío terminado con avisos", {
-          id: toastId,
-          description: parts.join(". "),
-        });
-      } else {
-        toast.success("Certificados enviados", {
-          id: toastId,
-          description: parts.join(". ") || "Listo",
-        });
-      }
+      toast.success("Listo para enviar desde tu correo", {
+        id: toastId,
+        description: parts.join(". "),
+      });
     } catch (error) {
-      toast.error("No se pudieron enviar los certificados", {
+      toast.error("No se pudo preparar el correo", {
         id: toastId,
         description:
           error instanceof Error ? error.message : "Error desconocido",
       });
     } finally {
-      setIsSendingEmail(false);
+      setIsSharing(false);
     }
   };
 
@@ -313,7 +307,7 @@ export function ParticipationCertificatesTab({
             </div>
             <div className="flex flex-wrap justify-end gap-2 w-full">
               <Button
-                disabled={selectedParticipants.length === 0 || isSendingEmail}
+                disabled={selectedParticipants.length === 0 || isSharing}
                 variant="outline"
                 onClick={() => generateParticipantPDF("open")}
               >
@@ -321,7 +315,7 @@ export function ParticipationCertificatesTab({
                 Vista previa ({selectedParticipants.length})
               </Button>
               <Button
-                disabled={selectedParticipants.length === 0 || isSendingEmail}
+                disabled={selectedParticipants.length === 0 || isSharing}
                 variant="outline"
                 onClick={() => generateParticipantPDF("download")}
               >
@@ -329,20 +323,17 @@ export function ParticipationCertificatesTab({
                 Descargar ({selectedParticipants.length})
               </Button>
               <Button
-                disabled={selectedParticipants.length === 0 || isSendingEmail}
-                onClick={() => void sendSelectedByEmail()}
+                disabled={selectedParticipants.length === 0 || isSharing}
+                onClick={() => void shareSelectedByEmail()}
               >
-                {isSendingEmail ? (
-                  <Loader2 className="animate-spin" />
-                ) : (
-                  <Mail />
-                )}
-                Enviar por correo ({selectedParticipants.length})
+                {isSharing ? <Loader2 className="animate-spin" /> : <Mail />}
+                Publicar y compartir ({selectedParticipants.length})
               </Button>
             </div>
             <p className="w-full text-xs text-muted-foreground">
-              El correo usa el WCIF autorizado (organizador/delegado). El plan
-              gratuito de Resend permite hasta 100 envíos por día (UTC).
+              Publica un enlace único. Se abre un correo con ese enlace; cada
+              competidor inicia sesión con su cuenta WCA para descargar solo su
+              certificado.
             </p>
           </CardFooter>
         </Card>

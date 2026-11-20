@@ -22,9 +22,7 @@
     "UPLOADTHING_TOKEN",
     "WCA_ORIGIN",
     "WCA_CLIENT_ID",
-    "WCA_CLIENT_SECRET",
-    "RESEND_API_KEY",
-    "RESEND_FROM_EMAIL"
+    "WCA_CLIENT_SECRET"
   ],
   "globalPassThroughEnv": ["CI", "E2E_PORT", "NEXT_RUNTIME", "UV_*"],
   "tasks": {

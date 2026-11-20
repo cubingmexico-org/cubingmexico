@@ -10,6 +10,15 @@ let signedInWcaId: string | null = null;
 let competition: Competition | undefined;
 let wcif: WCIF | undefined;
 
+const shareRows: Array<{
+  id: string;
+  token: string;
+  competitionId: string;
+  userId: string;
+  module: string;
+  json: unknown;
+}> = [];
+
 vi.mock("@/lib/auth", () => ({
   auth: {
     api: {
@@ -50,27 +59,42 @@ vi.mock("@/lib/wca-wcif", () => ({
   },
 }));
 
-vi.mock("@/lib/certificates/render-pdf-buffer", () => ({
-  renderPdfBuffer: async () => Buffer.from("%PDF-fake"),
-}));
-
-vi.mock("@/lib/email/resend", () => ({
-  sendCertificateEmail: vi.fn(async ({ to }: { to: string }) => {
-    if (to.includes("quota-daily")) {
-      return {
-        ok: false as const,
-        error: "daily_quota_exceeded",
-        dailyQuotaHit: true,
-      };
-    }
-    return { ok: true as const, id: `email-${to}` };
-  }),
-}));
+vi.mock("@workspace/db", () => {
+  const selectLimit = async () =>
+    shareRows.filter(
+      (row) =>
+        row.competitionId === COMPETITION &&
+        row.module === "certificate_participation",
+    );
+  return {
+    db: {
+      select: () => ({
+        from: () => ({
+          where: () => ({
+            limit: selectLimit,
+          }),
+        }),
+      }),
+      insert: () => ({
+        values: async (values: (typeof shareRows)[number]) => {
+          shareRows.push(values);
+        },
+      }),
+      update: () => ({
+        set: (patch: Partial<(typeof shareRows)[number]>) => ({
+          where: async () => {
+            const row = shareRows[0];
+            if (row) Object.assign(row, patch);
+          },
+        }),
+      }),
+    },
+  };
+});
 
 import { GET as getParticipation } from "./participation/route";
 import { POST as postPodium } from "./podium/route";
-import { POST as postParticipationEmail } from "./participation/email/route";
-import { sendCertificateEmail } from "@/lib/email/resend";
+import { POST as postParticipationShare } from "./participation/share/route";
 
 function result(
   personId: number,
@@ -122,8 +146,8 @@ function podiumRequest(body: unknown) {
   });
 }
 
-function emailRequest(body: unknown) {
-  return new Request("http://localhost/api/certificates/participation/email", {
+function shareRequest(body: unknown) {
+  return new Request("http://localhost/api/certificates/participation/share", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -134,9 +158,8 @@ beforeEach(() => {
   signedInWcaId = null;
   competition = makeCompetition([USER]);
   wcif = wcifWithResults();
-  vi.stubEnv("RESEND_API_KEY", "re_test");
-  vi.stubEnv("RESEND_FROM_EMAIL", "certificados@example.com");
-  vi.mocked(sendCertificateEmail).mockClear();
+  shareRows.length = 0;
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3001");
 });
 
 describe("GET /api/certificates/participation", () => {
@@ -207,7 +230,7 @@ describe("POST /api/certificates/podium", () => {
   });
 });
 
-describe("POST /api/certificates/participation/email", () => {
+describe("POST /api/certificates/participation/share", () => {
   const design = {
     content: { type: "doc", content: [] },
     pageMargins: [40, 40, 40, 40],
@@ -215,51 +238,53 @@ describe("POST /api/certificates/participation/email", () => {
     pageSize: "LETTER",
   };
 
-  it("sends attachments and reports missing emails", async () => {
+  it("publishes a stable claim link and lists emails", async () => {
     signedInWcaId = USER;
     wcif!.persons[0]!.email = "ana@example.com";
 
-    const response = await postParticipationEmail(
-      emailRequest({
+    const first = await postParticipationShare(
+      shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1, 2],
         ...design,
       }),
     );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      sent: 1,
-      failed: [],
+    expect(first.status).toBe(200);
+    const firstBody = await first.json();
+    expect(firstBody).toMatchObject({
+      competitionName: COMPETITION,
+      emails: ["ana@example.com"],
       skippedNoEmail: [2],
-      dailyQuotaHit: false,
-      monthlyQuotaHit: false,
+      claimUrl: expect.stringMatching(/^http:\/\/localhost:3001\/claim\//),
     });
-    expect(sendCertificateEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "ana@example.com",
-        filename: expect.stringContaining("Ana López"),
+
+    const second = await postParticipationShare(
+      shareRequest({
+        competitionId: COMPETITION,
+        registrantIds: [1],
+        ...design,
+        background: "data:image/png;base64,abc",
       }),
     );
+    expect(second.status).toBe(200);
+    const secondBody = await second.json();
+    expect(secondBody.token).toBe(firstBody.token);
+    expect(shareRows).toHaveLength(1);
+    expect(shareRows[0]?.json).toMatchObject({
+      background: "data:image/png;base64,abc",
+    });
   });
 
-  it("stops when the daily Resend quota is hit", async () => {
+  it("forbids non-managers", async () => {
+    competition = makeCompetition([]);
     signedInWcaId = USER;
-    wcif!.persons[0]!.email = "quota-daily@example.com";
-
-    const response = await postParticipationEmail(
-      emailRequest({
+    const response = await postParticipationShare(
+      shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
         ...design,
       }),
     );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      sent: 0,
-      dailyQuotaHit: true,
-      failed: [{ registrantId: 1, error: "daily_quota_exceeded" }],
-    });
+    expect(response.status).toBe(403);
   });
 });

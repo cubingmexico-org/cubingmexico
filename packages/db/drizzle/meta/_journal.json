@@ -155,6 +155,13 @@
       "when": 1794350676495,
       "tag": "0021_goals",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794500000000,
+      "tag": "0022_certificate_shares",
+      "breakpoints": true
     }
   ]
 }

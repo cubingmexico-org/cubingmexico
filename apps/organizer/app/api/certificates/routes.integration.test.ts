@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
+import { db } from "@workspace/db";
+import { certificateShare } from "@workspace/db/schema";
 import { GET as getParticipation } from "./participation/route";
 import { POST as postPodium } from "./podium/route";
-import { POST as postParticipationEmail } from "./participation/email/route";
+import { POST as postParticipationShare } from "./participation/share/route";
 import { addCompetition, addWcif, signIn } from "@/test/fake-wca";
 import { makePrintablesWcif } from "@/test/wcif-fixture";
 import type { Result, WCIF } from "@/types/wcif";
@@ -11,29 +14,6 @@ const USER = "2015LOPE01";
 
 vi.mock("@/lib/certificates/render-pdf-buffer", () => ({
   renderPdfBuffer: async () => Buffer.from("%PDF-fake"),
-}));
-
-vi.mock("@/lib/email/resend", () => ({
-  sendCertificateEmail: vi.fn(async ({ to }: { to: string }) => {
-    if (to.includes("quota-daily")) {
-      return {
-        ok: false as const,
-        error: "daily_quota_exceeded",
-        dailyQuotaHit: true,
-      };
-    }
-    if (to.includes("quota-monthly")) {
-      return {
-        ok: false as const,
-        error: "monthly_quota_exceeded",
-        monthlyQuotaHit: true,
-      };
-    }
-    if (to.includes("fail")) {
-      return { ok: false as const, error: "smtp boom" };
-    }
-    return { ok: true as const, id: `email-${to}` };
-  }),
 }));
 
 function result(
@@ -69,8 +49,8 @@ function podiumRequest(body: unknown) {
   });
 }
 
-function emailRequest(body: unknown) {
-  return new Request("http://localhost/api/certificates/participation/email", {
+function shareRequest(body: unknown) {
+  return new Request("http://localhost/api/certificates/participation/share", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
@@ -83,8 +63,7 @@ beforeEach(() => {
     organizers: [USER],
   });
   addWcif(wcifWithResults());
-  vi.stubEnv("RESEND_API_KEY", "re_test");
-  vi.stubEnv("RESEND_FROM_EMAIL", "certificados@example.com");
+  vi.stubEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3001");
 });
 
 describe("GET /api/certificates/participation", () => {
@@ -193,7 +172,7 @@ describe("POST /api/certificates/podium", () => {
   });
 });
 
-describe("POST /api/certificates/participation/email", () => {
+describe("POST /api/certificates/participation/share", () => {
   const design = {
     content: { type: "doc", content: [] },
     pageMargins: [40, 40, 40, 40],
@@ -202,8 +181,8 @@ describe("POST /api/certificates/participation/email", () => {
   };
 
   it("requires a session", async () => {
-    const response = await postParticipationEmail(
-      emailRequest({
+    const response = await postParticipationShare(
+      shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
         ...design,
@@ -215,8 +194,8 @@ describe("POST /api/certificates/participation/email", () => {
   it("forbids non-managers", async () => {
     addCompetition(COMPETITION, { endDate: "2025-03-15", organizers: [] });
     signIn(USER);
-    const response = await postParticipationEmail(
-      emailRequest({
+    const response = await postParticipationShare(
+      shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
         ...design,
@@ -225,57 +204,43 @@ describe("POST /api/certificates/participation/email", () => {
     expect(response.status).toBe(403);
   });
 
-  it("sends attachments and reports missing emails", async () => {
+  it("upserts a stable share token and reports missing emails", async () => {
     signIn(USER);
     const wcif = wcifWithResults();
     wcif.persons[0]!.email = "ana@example.com";
-    // person 2 (Beto) has no email → skipped
     addWcif(wcif);
 
-    const { sendCertificateEmail } = await import("@/lib/email/resend");
-    const response = await postParticipationEmail(
-      emailRequest({
+    const first = await postParticipationShare(
+      shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1, 2],
         ...design,
       }),
     );
-
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({
-      sent: 1,
-      failed: [],
+    expect(first.status).toBe(200);
+    const firstBody = await first.json();
+    expect(firstBody).toMatchObject({
+      emails: ["ana@example.com"],
       skippedNoEmail: [2],
-      dailyQuotaHit: false,
-      monthlyQuotaHit: false,
+      claimUrl: expect.stringContaining("/claim/"),
     });
-    expect(sendCertificateEmail).toHaveBeenCalledWith(
-      expect.objectContaining({
-        to: "ana@example.com",
-        filename: expect.stringContaining("Ana López"),
-      }),
-    );
-  });
 
-  it("stops when the daily Resend quota is hit", async () => {
-    signIn(USER);
-    const wcif = wcifWithResults();
-    wcif.persons[0]!.email = "quota-daily@example.com";
-    addWcif(wcif);
-
-    const response = await postParticipationEmail(
-      emailRequest({
+    const second = await postParticipationShare(
+      shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
         ...design,
       }),
     );
+    expect(second.status).toBe(200);
+    const secondBody = await second.json();
+    expect(secondBody.token).toBe(firstBody.token);
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({
-      sent: 0,
-      dailyQuotaHit: true,
-      failed: [{ registrantId: 1, error: "daily_quota_exceeded" }],
-    });
+    const rows = await db
+      .select()
+      .from(certificateShare)
+      .where(eq(certificateShare.competitionId, COMPETITION));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.token).toBe(firstBody.token);
   });
 });

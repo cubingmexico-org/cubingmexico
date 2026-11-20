@@ -53,7 +53,6 @@
     "qrcode": "^1.5.4",
     "react": "catalog:",
     "react-dom": "catalog:",
-    "resend": "^6.38.1",
     "sonner": "catalog:",
     "swr": "^2.3.3",
     "tippy.js": "^6.3.7",
