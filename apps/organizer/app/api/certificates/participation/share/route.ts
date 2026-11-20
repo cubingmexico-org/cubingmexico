@@ -45,10 +45,7 @@ export async function POST(request: Request): Promise<Response> {
     .select()
     .from(design)
     .where(
-      and(
-        eq(design.competitionId, competitionId),
-        eq(design.module, MODULE),
-      ),
+      and(eq(design.competitionId, competitionId), eq(design.module, MODULE)),
     )
     .orderBy(desc(design.updatedAt))
     .limit(1);

@@ -1,9 +1,6 @@
 import { createRequire } from "node:module";
 import { join } from "node:path";
-import type {
-  TDocumentDefinitions,
-  TFontDictionary,
-} from "pdfmake/interfaces";
+import type { TDocumentDefinitions, TFontDictionary } from "pdfmake/interfaces";
 import { fontFilePathsFor } from "@/lib/fonts";
 
 const require = createRequire(import.meta.url);
@@ -51,7 +48,9 @@ export async function renderPdfBuffer(
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     pdfDoc.on("data", (chunk) => {
-      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array));
+      chunks.push(
+        Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array),
+      );
     });
     pdfDoc.on("end", () => {
       resolve(Buffer.concat(chunks));
