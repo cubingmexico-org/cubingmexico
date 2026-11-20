@@ -34,26 +34,11 @@ export type ParticipationShareJson = z.infer<
   typeof participationShareJsonSchema
 >;
 
+/** Publish a claim link from the latest cloud-saved participation design. */
 export const publishParticipationShareSchema = z.object({
   competitionId: competitionIdSchema,
-  registrantIds: z.array(z.number().int().positive()).min(1).max(500),
-  content: z.custom<JSONContent>(
-    (value) => !!value && typeof value === "object",
-  ),
-  pageMargins: z.custom<Margins>(
-    (value) => marginsSchema.safeParse(value).success,
-  ),
-  pageOrientation: z.custom<PageOrientation>(
-    (value) => value === "portrait" || value === "landscape",
-  ),
-  pageSize: z.custom<PageSize>(
-    (value) =>
-      typeof value === "string" ||
-      (typeof value === "object" &&
-        value !== null &&
-        "width" in value &&
-        "height" in value),
-  ),
+  /** When set, resolve emails for mailto; empty/omitted = link-only publish. */
+  registrantIds: z.array(z.number().int().positive()).max(500).default([]),
   background: z.string().optional(),
 });
 

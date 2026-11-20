@@ -6,6 +6,7 @@ import { GET as getParticipation } from "./participation/route";
 import { POST as postPodium } from "./podium/route";
 import { POST as postParticipationShare } from "./participation/share/route";
 import { addCompetition, addWcif, signIn } from "@/test/fake-wca";
+import { insertDesign } from "@/test/design-fixtures";
 import { makePrintablesWcif } from "@/test/wcif-fixture";
 import type { Result, WCIF } from "@/types/wcif";
 
@@ -173,19 +174,30 @@ describe("POST /api/certificates/podium", () => {
 });
 
 describe("POST /api/certificates/participation/share", () => {
-  const design = {
+  const cloudDesign = {
     content: { type: "doc", content: [] },
-    pageMargins: [40, 40, 40, 40],
-    pageOrientation: "landscape" as const,
-    pageSize: "LETTER",
+    pageConfig: {
+      pageSize: "LETTER",
+      pageOrientation: "landscape" as const,
+      pageMargins: [40, 40, 40, 40] as [number, number, number, number],
+    },
   };
+
+  async function saveCloudDesign() {
+    await insertDesign({
+      id: `part-${COMPETITION}`,
+      competitionId: COMPETITION,
+      userId: USER,
+      module: "certificate_participation",
+      json: cloudDesign,
+    });
+  }
 
   it("requires a session", async () => {
     const response = await postParticipationShare(
       shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
-        ...design,
       }),
     );
     expect(response.status).toBe(401);
@@ -198,14 +210,25 @@ describe("POST /api/certificates/participation/share", () => {
       shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
-        ...design,
       }),
     );
     expect(response.status).toBe(403);
   });
 
+  it("requires a cloud-saved participation design", async () => {
+    signIn(USER);
+    const response = await postParticipationShare(
+      shareRequest({ competitionId: COMPETITION }),
+    );
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: expect.stringContaining("nube"),
+    });
+  });
+
   it("upserts a stable share token and reports missing emails", async () => {
     signIn(USER);
+    await saveCloudDesign();
     const wcif = wcifWithResults();
     wcif.persons[0]!.email = "ana@example.com";
     addWcif(wcif);
@@ -214,7 +237,6 @@ describe("POST /api/certificates/participation/share", () => {
       shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1, 2],
-        ...design,
       }),
     );
     expect(first.status).toBe(200);
@@ -229,7 +251,6 @@ describe("POST /api/certificates/participation/share", () => {
       shareRequest({
         competitionId: COMPETITION,
         registrantIds: [1],
-        ...design,
       }),
     );
     expect(second.status).toBe(200);
@@ -242,5 +263,9 @@ describe("POST /api/certificates/participation/share", () => {
       .where(eq(certificateShare.competitionId, COMPETITION));
     expect(rows).toHaveLength(1);
     expect(rows[0]?.token).toBe(firstBody.token);
+    expect(rows[0]?.json).toMatchObject({
+      content: cloudDesign.content,
+      pageMargins: cloudDesign.pageConfig.pageMargins,
+    });
   });
 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import { Cloud, Loader2, Trash2 } from "lucide-react";
 import type { DesignModule } from "@workspace/db/schema";
@@ -49,6 +49,16 @@ function formatUpdatedAt(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+function revalidateCompetitionDesigns(competitionId: string): Promise<unknown> {
+  return globalMutate(
+    (key) =>
+      typeof key === "string" &&
+      key.startsWith(
+        `/api/designs?competitionId=${encodeURIComponent(competitionId)}`,
+      ),
+  );
 }
 
 export type DesignLibraryDialogProps = {
@@ -136,6 +146,7 @@ export function DesignLibraryDialog({
 
       toast.success("Diseño guardado en la nube");
       setName("");
+      await revalidateCompetitionDesigns(competitionId);
       onOpenChange(false);
     } catch (err) {
       toast.error(
@@ -191,6 +202,7 @@ export function DesignLibraryDialog({
         name: body.design.name,
       });
       toast.success(`Plantilla aplicada: ${body.design.name}`);
+      await revalidateCompetitionDesigns(competitionId);
       onOpenChange(false);
     } catch (err) {
       toast.error(
@@ -213,6 +225,7 @@ export function DesignLibraryDialog({
       }
       toast.success("Diseño eliminado");
       await mutate();
+      await revalidateCompetitionDesigns(competitionId);
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : "Error al eliminar el diseño",

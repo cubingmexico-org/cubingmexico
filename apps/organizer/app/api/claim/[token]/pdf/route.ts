@@ -60,44 +60,52 @@ export async function GET(
     );
   }
 
-  const result = await renderClaimPdf({
-    competition,
-    wcif,
-    subject: user.wcaId,
-    shareJson,
-  });
+  try {
+    const result = await renderClaimPdf({
+      competition,
+      wcif,
+      subject: user.wcaId,
+      shareJson,
+    });
 
-  if (!result.ok) {
-    if (result.reason === "not_in_competition") {
+    if (!result.ok) {
+      if (result.reason === "not_in_competition") {
+        return Response.json(
+          {
+            error:
+              "No apareces como competidor en esta competencia, así que no hay certificado para ti.",
+          },
+          { status: 403 },
+        );
+      }
+      if (result.reason === "no_participation_results") {
+        return Response.json(
+          {
+            error:
+              "Aún no hay resultados de participación disponibles para generar tu certificado.",
+          },
+          { status: 404 },
+        );
+      }
       return Response.json(
-        {
-          error:
-            "No apareces como competidor en esta competencia, así que no hay certificado para ti.",
-        },
-        { status: 403 },
+        { error: "No se pudo generar el certificado" },
+        { status: 500 },
       );
     }
-    if (result.reason === "no_participation_results") {
-      return Response.json(
-        {
-          error:
-            "Aún no hay resultados de participación disponibles para generar tu certificado.",
-        },
-        { status: 404 },
-      );
-    }
+
+    return new Response(new Uint8Array(result.pdf), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${result.filename}"`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  } catch (error) {
+    console.error("claim pdf render failed", error);
     return Response.json(
       { error: "No se pudo generar el certificado" },
       { status: 500 },
     );
   }
-
-  return new Response(new Uint8Array(result.pdf), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${result.filename}"`,
-      "Cache-Control": "private, no-store",
-    },
-  });
 }

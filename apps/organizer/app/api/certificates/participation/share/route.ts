@@ -1,12 +1,13 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@workspace/db";
-import { certificateShare } from "@workspace/db/schema";
+import { certificateShare, design } from "@workspace/db/schema";
 import { emailsFromAuthorizedWcif } from "@/lib/certificates/authorized-person-fields";
 import {
   newShareToken,
   publishParticipationShareSchema,
   type PublishParticipationShareResponse,
 } from "@/lib/certificates/share-schema";
+import { isSavedDocumentFile } from "@/components/editor/saved-document";
 import {
   assertManagesCompetition,
   requireSessionUser,
@@ -33,66 +34,90 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const {
-    competitionId,
-    registrantIds,
-    content,
-    pageMargins,
-    pageOrientation,
-    pageSize,
-    background,
-  } = parsed.data;
+  const { competitionId, registrantIds, background } = parsed.data;
 
   const access = await assertManagesCompetition(user.id, competitionId);
   if (!access.ok) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  let token: string;
-  try {
-    token = await requireWcaAccessToken();
-  } catch {
+  const [savedDesign] = await db
+    .select()
+    .from(design)
+    .where(
+      and(
+        eq(design.competitionId, competitionId),
+        eq(design.module, MODULE),
+      ),
+    )
+    .orderBy(desc(design.updatedAt))
+    .limit(1);
+
+  if (!savedDesign) {
     return Response.json(
       {
         error:
-          "No se pudo obtener el token de WCA. Cierra sesión y vuelve a entrar con permisos de manage_competitions.",
+          "Guarda el certificado de participación en la nube antes de compartir.",
       },
-      { status: 401 },
+      { status: 400 },
     );
   }
 
-  let authorizedWcif;
-  try {
-    authorizedWcif = await getAuthorizedWcif(competitionId, token);
-  } catch (error) {
+  if (!isSavedDocumentFile(savedDesign.json)) {
     return Response.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "No se pudo cargar el WCIF autorizado",
-      },
-      { status: 502 },
+      { error: "El diseño guardado en la nube no es válido" },
+      { status: 500 },
     );
   }
 
-  const emailsById = emailsFromAuthorizedWcif(authorizedWcif);
   const emails: string[] = [];
   const skippedNoEmail: number[] = [];
-  for (const registrantId of registrantIds) {
-    const info = emailsById.get(registrantId);
-    if (!info) {
-      skippedNoEmail.push(registrantId);
-      continue;
+
+  if (registrantIds.length > 0) {
+    let token: string;
+    try {
+      token = await requireWcaAccessToken();
+    } catch {
+      return Response.json(
+        {
+          error:
+            "No se pudo obtener el token de WCA. Cierra sesión y vuelve a entrar con permisos de manage_competitions.",
+        },
+        { status: 401 },
+      );
     }
-    emails.push(info.email);
+
+    let authorizedWcif;
+    try {
+      authorizedWcif = await getAuthorizedWcif(competitionId, token);
+    } catch (error) {
+      return Response.json(
+        {
+          error:
+            error instanceof Error
+              ? error.message
+              : "No se pudo cargar el WCIF autorizado",
+        },
+        { status: 502 },
+      );
+    }
+
+    const emailsById = emailsFromAuthorizedWcif(authorizedWcif);
+    for (const registrantId of registrantIds) {
+      const info = emailsById.get(registrantId);
+      if (!info) {
+        skippedNoEmail.push(registrantId);
+        continue;
+      }
+      emails.push(info.email);
+    }
   }
 
   const shareJson = {
-    content,
-    pageMargins,
-    pageOrientation,
-    pageSize,
+    content: savedDesign.json.content,
+    pageMargins: savedDesign.json.pageConfig.pageMargins,
+    pageOrientation: savedDesign.json.pageConfig.pageOrientation,
+    pageSize: savedDesign.json.pageConfig.pageSize,
     background,
   };
 

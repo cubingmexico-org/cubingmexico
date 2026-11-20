@@ -5,6 +5,7 @@ import {
   BADGE_SYSTEM_FONTS,
   BUNDLED_FONTS,
   fontDeclarationsFor,
+  fontFilePathsFor,
 } from "./fonts";
 
 const publicDir = join(__dirname, "..", "public");
@@ -124,5 +125,14 @@ describe("fontDeclarationsFor", () => {
     expect(fontDeclarationsFor({}).Roboto).not.toBe(
       fontDeclarationsFor({}).Roboto,
     );
+  });
+});
+
+describe("fontFilePathsFor", () => {
+  it("returns public-relative paths for the Node printer", () => {
+    const paths = fontFilePathsFor({ content: [{ font: "Lato" }] });
+    expect(Object.keys(paths).sort()).toEqual(["Lato", "Roboto"]);
+    expect(paths.Lato?.normal).toBe("/fonts/Lato/Lato-Regular.ttf");
+    expect(paths.Roboto?.normal).toBe("/fonts/Roboto/Roboto-Regular.ttf");
   });
 });
