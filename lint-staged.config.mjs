@@ -1,7 +1,9 @@
 /**
  * Pre-commit gates that mirror the CI quality job's fast checks:
  * - Prettier auto-fixes staged files
- * - Typecheck packages touched by this commit (skips backend / uv)
+ * - Typecheck packages touched by this commit
+ * - Backend lint, pyright, and unit tests when backend/schema fixtures change
+ * - Refresh fixtures/schema/columns.json when the Drizzle schema changes
  */
 const prettier = "prettier --write";
 
@@ -33,6 +35,33 @@ function typecheckFilters(filenames) {
   return [...filters];
 }
 
+function schemaSourceTouched(filenames) {
+  return filenames.some(
+    (file) =>
+      file === "packages/db/src/schema.ts" ||
+      file.startsWith("packages/db/src/schema/"),
+  );
+}
+
+function backendQualityCommands(filenames) {
+  const commands = [];
+
+  if (schemaSourceTouched(filenames)) {
+    // Same fixture CI's migration-drift step regenerates; stage it like Prettier.
+    commands.push(
+      "pnpm --filter @workspace/db export-columns && git add fixtures/schema/columns.json",
+    );
+  }
+
+  commands.push(
+    "pnpm --filter backend lint",
+    "pnpm --filter backend check-types",
+    "pnpm --filter backend test",
+  );
+
+  return commands;
+}
+
 export default {
   "*.{ts,tsx,js,mjs,json,css,md,yml,yaml}": prettier,
   "{apps,packages}/**/*.{ts,tsx}": (filenames) => {
@@ -40,4 +69,7 @@ export default {
     if (filters.length === 0) return [];
     return `pnpm turbo run check-types ${filters.map((f) => `--filter=${f}`).join(" ")}`;
   },
+  // Route-map snapshots, schema column writes, and related unit checks.
+  "{apps/backend/**,fixtures/schema/**,packages/db/src/schema.ts}":
+    backendQualityCommands,
 };

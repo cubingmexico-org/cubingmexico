@@ -11,8 +11,10 @@ Thanks for helping with Cubing México. This guide covers what a change needs be
 ## Checks
 
 A Husky pre-commit hook runs Prettier on staged files and typechecks the packages
-you touched (`lint-staged.config.mjs`). Skip it only when you must with
-`git commit --no-verify`.
+you touched (`lint-staged.config.mjs`). When the commit touches `apps/backend`,
+`fixtures/schema`, or `packages/db/src/schema.ts`, it also runs backend lint,
+pyright, and unit tests, and refreshes `fixtures/schema/columns.json` from the
+Drizzle schema. Skip it only when you must with `git commit --no-verify`.
 
 CI runs these on every pull request. Run them locally first:
 
