@@ -44,6 +44,9 @@ export async function GroupOverview({
 
   const socialLinks = getTeamSocialLinks(info.socialLinks);
   const recordLabel = groupRecordLabel(kind);
+  const recordsTitle = recordLabel
+    ? `Récords actuales (${recordLabel})`
+    : "Récords actuales";
   const base = groupHref(kind, groupId);
 
   return (
@@ -90,12 +93,12 @@ export async function GroupOverview({
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Récords actuales ({recordLabel})</CardTitle>
+            <CardTitle>{recordsTitle}</CardTitle>
             <Link
-              href={`${base}/rankings/333/single`}
+              href={`${base}/records`}
               className="text-sm text-brand hover:underline"
             >
-              Ver rankings
+              Ver récords
             </Link>
           </CardHeader>
           <CardContent>
@@ -145,8 +148,8 @@ export async function GroupOverview({
             )}
             {historicalCount > 0 ? (
               <p className="mt-4 text-xs text-muted-foreground">
-                {historicalCount} marcadores históricos {recordLabel} en
-                resultados.
+                {historicalCount} marcadores históricos
+                {recordLabel ? ` ${recordLabel}` : ""} en resultados.
               </p>
             ) : null}
           </CardContent>

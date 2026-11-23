@@ -18,8 +18,9 @@ export function groupHref(kind: GroupKind, groupId: string): string {
   return `${groupBasePath(kind)}/${groupId}`;
 }
 
-export function groupRecordLabel(kind: GroupKind): "CR" | "SpR" {
-  return kind === "community" ? "CR" : "SpR";
+/** Record code shown in UI; communities omit a code (avoid clashing with WCA CR). */
+export function groupRecordLabel(kind: GroupKind): "SpR" | null {
+  return kind === "community" ? null : "SpR";
 }
 
 export function groupKindLabel(kind: GroupKind): string {

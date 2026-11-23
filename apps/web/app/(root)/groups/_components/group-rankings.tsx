@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -9,9 +10,12 @@ import {
 } from "@workspace/ui/components/table";
 import type { GroupKind } from "@workspace/db/schema";
 import { StateLabel } from "@/components/state-flag";
+import { getEvents } from "@/db/queries";
 import { formatAttemptValue } from "@/lib/utils";
-import { groupBasePath, groupRecordLabel } from "@/lib/groups";
+import { groupBasePath } from "@/lib/groups";
+import { rankTypeForEvent } from "@/lib/selectors";
 import { getGroupInfo, getGroupRanks } from "../_lib/queries";
+import { GroupRankingsEventSelector } from "./group-rankings-event-selector";
 
 export async function GroupRankings({
   groupId,
@@ -24,8 +28,9 @@ export async function GroupRankings({
   eventId: string;
   rankType: "single" | "average";
 }) {
-  const [info, ranks] = await Promise.all([
+  const [info, events, ranks] = await Promise.all([
     getGroupInfo(groupId),
+    getEvents(),
     getGroupRanks(groupId, eventId, rankType),
   ]);
 
@@ -34,49 +39,24 @@ export async function GroupRankings({
   }
 
   const base = `${groupBasePath(kind)}/${groupId}/rankings`;
-  const label = groupRecordLabel(kind);
+  const knownEvent = events.some((event) => event.id === eventId);
+  if (!knownEvent) {
+    redirect(`${base}/333/single`);
+  }
+
+  const validRankType = rankTypeForEvent(eventId, rankType);
+  if (validRankType !== rankType) {
+    redirect(`${base}/${eventId}/${validRankType}`);
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold">
-            Rankings {rankType === "single" ? "single" : "average"} · {eventId}
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Clasificación interna del grupo (columna {label} = rank 1).
-          </p>
-        </div>
-        <div className="flex gap-2 text-sm">
-          <Link
-            href={`${base}/${eventId}/single`}
-            className={
-              rankType === "single"
-                ? "font-semibold text-brand"
-                : "text-muted-foreground hover:underline"
-            }
-          >
-            Single
-          </Link>
-          <Link
-            href={`${base}/${eventId}/average`}
-            className={
-              rankType === "average"
-                ? "font-semibold text-brand"
-                : "text-muted-foreground hover:underline"
-            }
-          >
-            Average
-          </Link>
-          <Link
-            href={`/rankings/${eventId}/${rankType}`}
-            prefetch={false}
-            className="text-muted-foreground hover:underline"
-          >
-            Rankings nacionales
-          </Link>
-        </div>
-      </div>
+      <GroupRankingsEventSelector
+        basePath={base}
+        events={events}
+        selectedEventId={eventId}
+        selectedRankType={rankType}
+      />
 
       {ranks.length === 0 ? (
         <p className="text-sm text-muted-foreground">

@@ -10,6 +10,9 @@ const TABS = [
   { key: "overview", suffix: "", label: "Resumen" },
   { key: "members", suffix: "/members", label: "Miembros" },
   { key: "rankings", suffix: "/rankings/333/single", label: "Rankings" },
+  { key: "records", suffix: "/records", label: "Récords" },
+  { key: "sor", suffix: "/sor/single", label: "SOR" },
+  { key: "kinch", suffix: "/kinch", label: "Kinch" },
 ] as const;
 
 function tabClass(isActive: boolean) {
@@ -37,9 +40,15 @@ export function GroupTabsNav({
     ? "members"
     : pathname.includes(`${basePath}/rankings`)
       ? "rankings"
-      : pathname === basePath || pathname === `${basePath}/`
-        ? "overview"
-        : null;
+      : pathname.includes(`${basePath}/records`)
+        ? "records"
+        : pathname.includes(`${basePath}/sor`)
+          ? "sor"
+          : pathname.includes(`${basePath}/kinch`)
+            ? "kinch"
+            : pathname === basePath || pathname === `${basePath}/`
+              ? "overview"
+              : null;
 
   return (
     <div className="mb-8 w-full min-w-0 overflow-x-auto">
