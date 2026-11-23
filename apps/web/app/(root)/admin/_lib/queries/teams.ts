@@ -3,12 +3,8 @@ import "server-only";
 import { db } from "@workspace/db";
 import { state, team } from "@workspace/db/schema";
 import { asc, eq, isNull } from "drizzle-orm";
-import { cacheLife, cacheTag } from "next/cache";
 
 export async function getAdminTeams() {
-  cacheLife("hours");
-  cacheTag("teams");
-
   return db
     .select({
       stateId: team.stateId,
@@ -22,10 +18,6 @@ export async function getAdminTeams() {
 }
 
 export async function getStatesWithoutTeams() {
-  cacheLife("hours");
-  cacheTag("teams");
-  cacheTag("states");
-
   return db
     .select({
       id: state.id,

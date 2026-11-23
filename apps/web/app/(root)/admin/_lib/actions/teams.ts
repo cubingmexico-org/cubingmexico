@@ -38,7 +38,6 @@ export async function createTeamAction(
       description: data.description ?? null,
     });
 
-    updateTag("teams");
     updateTag(`team-info-${data.stateId}`);
     updateTag("sitemap");
 
