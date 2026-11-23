@@ -5,24 +5,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table";
 import type { GroupKind } from "@workspace/db/schema";
-import { formatAttemptValue } from "@/lib/utils";
-import { groupHref, groupRecordLabel } from "@/lib/groups";
+import { groupHref } from "@/lib/groups";
 import { getTeamSocialLinks } from "@/app/(root)/teams/[stateId]/_lib/social-links";
 import {
-  getGroupCurrentRecords,
-  getGroupHistoricalRecordCount,
+  KeyStat,
+  MedalStrip,
+} from "@/app/(root)/teams/[stateId]/_components/team-profile-shared";
+import {
   getGroupInfo,
-  getGroupTopMembers,
+  getGroupMedals,
+  getGroupTopMembersByPodiums,
 } from "../_lib/queries";
+
+const EXPLORE_LINKS = [
+  { suffix: "/rankings/333/single", label: "Rankings" },
+  { suffix: "/records", label: "Récords" },
+  { suffix: "/sor/single", label: "SOR" },
+  { suffix: "/kinch", label: "Kinch" },
+] as const;
 
 export async function GroupOverview({
   groupId,
@@ -31,11 +32,10 @@ export async function GroupOverview({
   groupId: string;
   kind: GroupKind;
 }) {
-  const [info, topMembers, records, historicalCount] = await Promise.all([
+  const [info, medals, topMembers] = await Promise.all([
     getGroupInfo(groupId),
-    getGroupTopMembers(groupId),
-    getGroupCurrentRecords(groupId),
-    getGroupHistoricalRecordCount(groupId),
+    getGroupMedals(groupId),
+    getGroupTopMembersByPodiums(groupId),
   ]);
 
   if (!info || info.kind !== kind) {
@@ -43,10 +43,6 @@ export async function GroupOverview({
   }
 
   const socialLinks = getTeamSocialLinks(info.socialLinks);
-  const recordLabel = groupRecordLabel(kind);
-  const recordsTitle = recordLabel
-    ? `Récords actuales (${recordLabel})`
-    : "Récords actuales";
   const base = groupHref(kind, groupId);
 
   return (
@@ -92,66 +88,38 @@ export async function GroupOverview({
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>{recordsTitle}</CardTitle>
-            <Link
-              href={`${base}/records`}
-              className="text-sm text-brand hover:underline"
-            >
-              Ver récords
-            </Link>
+          <CardHeader>
+            <CardTitle>Podios</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Medallas oficiales de los miembros del grupo en finales WCA.
+            </p>
+            <MedalStrip medals={medals} />
+            <KeyStat label="Podios totales" value={medals.total} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Estadísticas</CardTitle>
           </CardHeader>
           <CardContent>
-            {records.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Aún no hay récords calculados para este grupo.
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Evento</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Persona</TableHead>
-                    <TableHead className="text-right">Resultado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {records.slice(0, 20).map((record) => (
-                    <TableRow
-                      key={`${record.eventId}-${record.type}-${record.personId}`}
-                    >
-                      <TableCell>{record.eventName}</TableCell>
-                      <TableCell>
-                        {record.type === "single" ? "Single" : "Average"}
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          href={`/persons/${record.personId}`}
-                          prefetch={false}
-                          className="hover:underline"
-                        >
-                          {record.personName}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {formatAttemptValue(
-                          record.eventId,
-                          record.best,
-                          record.type,
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-            {historicalCount > 0 ? (
-              <p className="mt-4 text-xs text-muted-foreground">
-                {historicalCount} marcadores históricos
-                {recordLabel ? ` ${recordLabel}` : ""} en resultados.
-              </p>
-            ) : null}
+            <p className="mb-4 text-sm text-muted-foreground">
+              Rankings, récords, SOR y Kinch se calculan con los resultados del
+              grupo.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {EXPLORE_LINKS.map((link) => (
+                <Link
+                  key={link.suffix}
+                  href={`${base}${link.suffix}`}
+                  className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -163,7 +131,9 @@ export async function GroupOverview({
           </CardHeader>
           <CardContent className="space-y-3">
             {topMembers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Sin miembros aún.</p>
+              <p className="text-sm text-muted-foreground">
+                Aún no hay podios registrados.
+              </p>
             ) : (
               topMembers.map((member) => (
                 <div
@@ -178,9 +148,7 @@ export async function GroupOverview({
                     {member.name}
                   </Link>
                   <span className="shrink-0 text-muted-foreground">
-                    {member.bestRank != null
-                      ? `#${member.bestRank} en 3x3`
-                      : "—"}
+                    {member.podiums} {member.podiums === 1 ? "podio" : "podios"}
                   </span>
                 </div>
               ))

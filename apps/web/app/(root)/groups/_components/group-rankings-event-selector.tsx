@@ -34,7 +34,7 @@ export function GroupRankingsEventSelector({
           {eventName}
         </h2>
         <p className="text-sm text-muted-foreground">
-          Clasificación interna del grupo (# = rank dentro del grupo).
+          Clasificación interna del grupo.
         </p>
       </div>
       <div className="flex flex-col gap-2">

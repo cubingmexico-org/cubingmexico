@@ -4,6 +4,7 @@ import "server-only";
 
 import { db } from "@workspace/db";
 import {
+  competition,
   event,
   group,
   groupMembership,
@@ -11,10 +12,22 @@ import {
   groupRankSingle,
   groupRecordMarker,
   person,
+  result,
   state,
   type GroupKind,
 } from "@workspace/db/schema";
-import { and, asc, count, eq, gt, sql, type SQL } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  gt,
+  inArray,
+  or,
+  sql,
+  type SQL,
+} from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import {
   crossEventIdsSql,
@@ -25,8 +38,25 @@ import {
 } from "@/lib/official-events";
 import { SINGLE_EVENTS, type EventScope } from "@/lib/constants";
 import { accentInsensitiveContains } from "@/lib/search";
+import {
+  medalTierCountsFromMergedSql,
+  mergedPodiumRowsSql,
+} from "@/lib/medals";
 import type { GetGroupSORSchema } from "./sor-validations";
 import type { SumOfGroupRanks } from "./sor-types";
+
+export type GroupMedals = {
+  gold: number;
+  silver: number;
+  bronze: number;
+  total: number;
+};
+
+export type GroupTopPodiumMember = {
+  wcaId: string;
+  name: string | null;
+  podiums: number;
+};
 
 export async function getGroupsByKind(
   kind: GroupKind,
@@ -190,41 +220,120 @@ export async function getGroupMembers(groupId: string) {
     .orderBy(asc(person.name));
 }
 
-export async function getGroupTopMembers(groupId: string, limit = 5) {
+export async function getGroupMedals(groupId: string): Promise<GroupMedals> {
   cacheLife("days");
-  cacheTag(`group-top-members-${groupId}`);
+  cacheTag(`group-podiums-${groupId}`);
+
+  const {
+    gold: goldSql,
+    silver: silverSql,
+    bronze: bronzeSql,
+  } = medalTierCountsFromMergedSql();
+  const medalsRows = (await db.execute(sql`
+    SELECT
+      ${goldSql} AS gold,
+      ${silverSql} AS silver,
+      ${bronzeSql} AS bronze
+    FROM (
+      ${mergedPodiumRowsSql(sql`r.person_id IN (
+        SELECT person_id FROM group_memberships
+        WHERE group_id = ${groupId} AND hide_from_roster = false
+      )`)}
+    ) ranked
+    WHERE ranked.rn = 1
+  `)) as unknown as Array<{ gold: number; silver: number; bronze: number }>;
+
+  const gold = Number(medalsRows[0]?.gold ?? 0);
+  const silver = Number(medalsRows[0]?.silver ?? 0);
+  const bronze = Number(medalsRows[0]?.bronze ?? 0);
+
+  return {
+    gold,
+    silver,
+    bronze,
+    total: gold + silver + bronze,
+  };
+}
+
+export async function getGroupTopMembersByPodiums(
+  groupId: string,
+  limit = 5,
+): Promise<GroupTopPodiumMember[]> {
+  cacheLife("days");
+  cacheTag(`group-top-podiums-${groupId}`);
 
   return db
     .select({
       wcaId: person.wcaId,
       name: person.name,
-      bestRank: sql<number>`min(${groupRankSingle.groupRank})`.mapWith(Number),
+      podiums: count().as("podiums"),
     })
     .from(groupMembership)
     .innerJoin(person, eq(groupMembership.personId, person.wcaId))
-    .leftJoin(
-      groupRankSingle,
-      and(
-        eq(groupRankSingle.groupId, groupId),
-        eq(groupRankSingle.personId, person.wcaId),
-        eq(groupRankSingle.eventId, "333"),
-      ),
-    )
+    .innerJoin(result, eq(person.wcaId, result.personId))
     .where(
       and(
         eq(groupMembership.groupId, groupId),
         eq(groupMembership.hideFromRoster, false),
+        or(eq(result.roundTypeId, "f"), eq(result.roundTypeId, "c")),
+        inArray(result.pos, [1, 2, 3]),
+        gt(result.best, 0),
       ),
     )
     .groupBy(person.wcaId, person.name)
-    .orderBy(
-      sql`min(${groupRankSingle.groupRank}) asc nulls last`,
-      asc(person.name),
-    )
+    .orderBy(desc(count()), asc(person.name))
     .limit(limit);
 }
 
-export async function getGroupCurrentRecords(groupId: string) {
+type GroupRecordRow = {
+  eventId: string;
+  eventName: string | null;
+  type: "single" | "average";
+  best: number;
+  personId: string;
+  personName: string | null;
+  groupRank: number | null;
+  competitionId: string | null;
+  competitionName: string | null;
+};
+
+/** Earliest competition where this person set the given single/average value. */
+function pbCompetitionSelect(
+  personIdSql: SQL,
+  eventIdSql: SQL,
+  valueSql: SQL,
+  valueColumn: "best" | "average",
+) {
+  const valueRef = valueColumn === "best" ? sql`r.best` : sql`r.average`;
+  return {
+    competitionId: sql<string | null>`(
+      SELECT r.competition_id
+      FROM ${result} r
+      INNER JOIN ${competition} c ON c.id = r.competition_id
+      WHERE r.person_id = ${personIdSql}
+        AND r.event_id = ${eventIdSql}
+        AND ${valueRef} = ${valueSql}
+        AND ${valueRef} > 0
+      ORDER BY c.end_date ASC NULLS LAST, c.start_date ASC, r.id ASC
+      LIMIT 1
+    )`.as("competitionId"),
+    competitionName: sql<string | null>`(
+      SELECT c.name
+      FROM ${result} r
+      INNER JOIN ${competition} c ON c.id = r.competition_id
+      WHERE r.person_id = ${personIdSql}
+        AND r.event_id = ${eventIdSql}
+        AND ${valueRef} = ${valueSql}
+        AND ${valueRef} > 0
+      ORDER BY c.end_date ASC NULLS LAST, c.start_date ASC, r.id ASC
+      LIMIT 1
+    )`.as("competitionName"),
+  };
+}
+
+export async function getGroupCurrentRecords(
+  groupId: string,
+): Promise<GroupRecordRow[]> {
   cacheLife("days");
   cacheTag(`group-records-${groupId}`);
 
@@ -233,17 +342,8 @@ export async function getGroupCurrentRecords(groupId: string) {
     .from(groupMembership)
     .where(eq(groupMembership.groupId, groupId));
 
-  const ids = memberIds.map((m) => m.personId);
-  if (ids.length === 0) {
-    return [] as {
-      eventId: string;
-      eventName: string | null;
-      type: "single" | "average";
-      best: number;
-      personId: string;
-      personName: string | null;
-      groupRank: number | null;
-    }[];
+  if (memberIds.length === 0) {
+    return [];
   }
 
   const [singles, averages] = await Promise.all([
@@ -255,6 +355,12 @@ export async function getGroupCurrentRecords(groupId: string) {
         personId: groupRankSingle.personId,
         personName: person.name,
         groupRank: groupRankSingle.groupRank,
+        ...pbCompetitionSelect(
+          sql`${groupRankSingle.personId}`,
+          sql`${groupRankSingle.eventId}`,
+          sql`${groupRankSingle.best}`,
+          "best",
+        ),
       })
       .from(groupRankSingle)
       .innerJoin(event, eq(groupRankSingle.eventId, event.id))
@@ -276,6 +382,12 @@ export async function getGroupCurrentRecords(groupId: string) {
         personId: groupRankAverage.personId,
         personName: person.name,
         groupRank: groupRankAverage.groupRank,
+        ...pbCompetitionSelect(
+          sql`${groupRankAverage.personId}`,
+          sql`${groupRankAverage.eventId}`,
+          sql`${groupRankAverage.best}`,
+          "average",
+        ),
       })
       .from(groupRankAverage)
       .innerJoin(event, eq(groupRankAverage.eventId, event.id))
@@ -347,6 +459,12 @@ export async function getGroupRanks(
       state: state.name,
       stateId: person.stateId,
       gender: person.gender,
+      ...pbCompetitionSelect(
+        sql`${table.personId}`,
+        sql`${table.eventId}`,
+        sql`${table.best}`,
+        rankType === "single" ? "best" : "average",
+      ),
     })
     .from(table)
     .innerJoin(person, eq(table.personId, person.wcaId))
