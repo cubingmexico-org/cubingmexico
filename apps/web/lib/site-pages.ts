@@ -25,6 +25,16 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["equipos", "estados"],
   },
   {
+    title: "Comunidades",
+    href: "/communities",
+    keywords: ["comunidad", "vallarta", "local"],
+  },
+  {
+    title: "Patrocinadores",
+    href: "/sponsors",
+    keywords: ["sponsor", "tienda", "cubos dany", "publicidad"],
+  },
+  {
     title: "Comparar teams",
     href: "/teams/compare",
     keywords: ["head to head", "versus", "vs", "equipos", "comparación"],

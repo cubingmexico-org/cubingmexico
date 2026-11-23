@@ -24,6 +24,8 @@ BACKEND_OWNED_TABLES = {"social_temp_media"}
 # Statements with an f-string `{table}` name, and every table that name can take.
 DYNAMIC_TABLES = {
     "routes/admin/state.py": ("ranks_single", "ranks_average"),
+    # INSERT targets only — ranks_* appear in FROM, not as write targets.
+    "routes/admin/groups.py": ("group_ranks_single", "group_ranks_average"),
 }
 
 PLACEHOLDER = "{}"

@@ -12,15 +12,43 @@ import { loadEnv } from "./load-env";
 loadEnv();
 
 const { db } = await import("./index");
-const { state } = await import("./schema");
+const { state, group } = await import("./schema");
 const { MEXICAN_STATES } = await import("./states");
 
 async function seed() {
   console.log("🌱 Seeding reference data...");
 
   await db.insert(state).values(MEXICAN_STATES).onConflictDoNothing();
-
   console.log("  ✅ States seeded");
+
+  await db
+    .insert(group)
+    .values([
+      {
+        id: "vallarta",
+        kind: "community",
+        name: "Vallarta Speed",
+        description:
+          "Comunidad de speedcubing de la zona metropolitana de Puerto Vallarta.",
+        regionLabel:
+          "Zona metropolitana de Puerto Vallarta (Jalisco y Bahía de Banderas, Nayarit)",
+        isActive: true,
+        sponsorshipStatus: "inactive",
+        publicityEnabled: false,
+      },
+      {
+        id: "cubos-dany",
+        kind: "sponsor",
+        name: "Cubos Dany",
+        description: "Equipo patrocinado por Cubos Dany.",
+        isActive: true,
+        sponsorshipStatus: "inactive",
+        publicityEnabled: false,
+      },
+    ])
+    .onConflictDoNothing();
+  console.log("  ✅ Groups seeded");
+
   console.log("✅ Seeding complete!");
   process.exit(0);
 }

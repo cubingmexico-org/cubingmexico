@@ -37,6 +37,7 @@ import {
   UnofficialPrsTable,
 } from "./_components/unofficial-prs-table";
 import { getPersonNemesisStats } from "../_lib/nemesis-queries";
+import { getPersonGroups } from "@/app/(root)/groups/_lib/queries";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
 import type { EventScope } from "@/lib/constants";
@@ -110,6 +111,7 @@ async function PersonPageContent({
     showUnofficialTab,
     unofficialPrs,
     unofficialHonors,
+    personGroups,
   ] = await Promise.all([
     getPersonAvatarFromWCA(id),
     getPersonData(id, scope),
@@ -125,6 +127,7 @@ async function PersonPageContent({
     hasPersonUnofficialResults(id),
     getPersonUnofficialPrs(id),
     getPersonUnofficialHonors(id),
+    getPersonGroups(id),
   ]);
 
   if (!personData) {
@@ -160,6 +163,7 @@ async function PersonPageContent({
         wcaId={id}
         person={person}
         team={team}
+        groups={personGroups}
         tier={getTier(membershipData)}
         organizerStatus={organizerStatus}
         nemesisStats={nemesisStats}

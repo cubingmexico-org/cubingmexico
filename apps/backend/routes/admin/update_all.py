@@ -13,6 +13,7 @@ from cloud_run_jobs import run_job
 from common import UPDATE_ALL_JOB, log, require_cron_auth
 from routes.admin.blueprint import admin_bp
 from routes.admin.cubing_contests import run_update_cubing_contests
+from routes.admin.groups import run_update_group_ranks, run_update_group_records
 from routes.admin.rankings import (
     run_update_kinch_ranks,
     run_update_nemesis_stats,
@@ -50,6 +51,8 @@ UPDATE_ALL_STEPS = [
     ("update_competition_schedules", run_update_competition_schedules, True),
     ("update_state_ranks", run_update_state_ranks, True),
     ("update_state_records", run_update_state_records, True),
+    ("update_group_ranks", run_update_group_ranks, True),
+    ("update_group_records", run_update_group_records, True),
     ("update_sum_of_ranks", run_update_sum_of_ranks, True),
     ("update_kinch_ranks", run_update_kinch_ranks, True),
     ("update_streak_ranks", run_update_streak_ranks, True),

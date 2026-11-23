@@ -3,6 +3,8 @@ import { Crown, Skull, Swords } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
 import { getTierClass, type getTier } from "@/lib/utils";
 import { formatDelegateLevel } from "@/lib/delegate-level";
+import { groupHref } from "@/lib/groups";
+import type { GroupKind } from "@workspace/db/schema";
 import type { OrganizerStatus } from "../_lib/queries";
 import type { PersonNemesisStats } from "../../_lib/nemesis-queries";
 
@@ -12,6 +14,7 @@ export function PersonBadges({
   wcaId,
   person,
   team,
+  groups,
   tier,
   organizerStatus,
   nemesisStats,
@@ -22,6 +25,12 @@ export function PersonBadges({
     delegateStatus: Parameters<typeof formatDelegateLevel>[0];
   };
   team: { id: string; name: string; image: string | null } | null;
+  groups?: {
+    id: string;
+    kind: GroupKind;
+    name: string;
+    image: string | null;
+  }[];
   tier: ReturnType<typeof getTier>;
   organizerStatus: OrganizerStatus;
   nemesisStats: PersonNemesisStats | null;
@@ -56,6 +65,27 @@ export function PersonBadges({
           </Link>
         </Badge>
       )}
+      {(groups ?? []).map((group) => (
+        <Badge key={group.id} variant="outline" asChild>
+          <Link
+            href={groupHref(group.kind, group.id)}
+            prefetch={false}
+            className="gap-1.5"
+          >
+            {group.image ? (
+              // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
+              <img
+                src={group.image}
+                alt=""
+                width={14}
+                height={14}
+                className="size-3.5 rounded-sm object-cover"
+              />
+            ) : null}
+            {group.name}
+          </Link>
+        </Badge>
+      ))}
       <Badge variant="outline" asChild>
         <Link
           href={`/persons/compare?a=${wcaId}`}

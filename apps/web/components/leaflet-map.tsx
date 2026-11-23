@@ -69,8 +69,8 @@ export function LeafletMap({
 
     if (heatmap) {
       // eslint-disable-next-line @typescript-eslint/no-require-imports -- leaflet.heat must load client-side
-      const { HeatLayer } =
-        require("leaflet.heat") as typeof import("leaflet.heat");
+      const heat = require("leaflet.heat") as typeof import("leaflet.heat");
+      const { HeatLayer } = heat;
 
       const points: [number, number, number][] = [];
       for (const { latitude, longitude } of locations) {

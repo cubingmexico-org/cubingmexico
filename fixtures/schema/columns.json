@@ -134,6 +134,50 @@
     "updated_at",
     "year"
   ],
+  "group_memberships": [
+    "achievements",
+    "group_id",
+    "hide_from_roster",
+    "person_id",
+    "role",
+    "specialties"
+  ],
+  "group_ranks_average": [
+    "best",
+    "event_id",
+    "group_id",
+    "group_rank",
+    "person_id"
+  ],
+  "group_ranks_single": [
+    "best",
+    "event_id",
+    "group_id",
+    "group_rank",
+    "person_id"
+  ],
+  "group_record_markers": [
+    "group_id",
+    "record_type",
+    "result_id"
+  ],
+  "groups": [
+    "cover_image",
+    "description",
+    "founded",
+    "id",
+    "image",
+    "is_active",
+    "kind",
+    "name",
+    "publicity_blurb",
+    "publicity_enabled",
+    "region_label",
+    "social_links",
+    "sponsorship_expires_at",
+    "sponsorship_status",
+    "website_url"
+  ],
   "job_runs": [
     "error",
     "finished_at",
@@ -224,14 +268,6 @@
     "post_type",
     "posted_at",
     "subject_key"
-  ],
-  "sponsors": [
-    "active",
-    "description",
-    "id",
-    "logo",
-    "name",
-    "social_links"
   ],
   "states": [
     "id",
