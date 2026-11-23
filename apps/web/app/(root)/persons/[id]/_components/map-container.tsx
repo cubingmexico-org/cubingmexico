@@ -8,9 +8,10 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
-import type {
-  LeafletMapLocation,
-  StateChoroplethCounts,
+import {
+  filterStatesGeoJSON,
+  type LeafletMapLocation,
+  type StateChoroplethCounts,
 } from "@/components/leaflet-map";
 
 const LeafletMap = dynamic(
@@ -47,6 +48,11 @@ export function MapContainer({
     [locations],
   );
 
+  const filteredStatesData = useMemo(
+    () => filterStatesGeoJSON(statesData, Object.keys(choroplethCounts)),
+    [statesData, choroplethCounts],
+  );
+
   const showStates = view === "states" || view === "choropleth";
 
   return (
@@ -71,7 +77,7 @@ export function MapContainer({
         <LeafletMap
           posix={[23.9345, -102.5528]}
           locations={showStates ? [] : mappableLocations}
-          statesData={showStates ? (statesData ?? undefined) : undefined}
+          statesData={showStates ? filteredStatesData : undefined}
           choroplethCounts={
             view === "choropleth" ? choroplethCounts : undefined
           }

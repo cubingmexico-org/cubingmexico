@@ -25,6 +25,26 @@ export type StateChoroplethCounts = Record<string, number>;
 
 type FeatureProperties = { id?: string; name?: string; state_name?: string };
 
+/** Keep only state polygons whose `properties.id` is in `stateIds`. */
+export function filterStatesGeoJSON(
+  statesData: GeoJSONProps["data"] | null | undefined,
+  stateIds: Iterable<string>,
+): GeoJSONProps["data"] | undefined {
+  if (!statesData || typeof statesData !== "object") return undefined;
+  if (!("features" in statesData) || !Array.isArray(statesData.features)) {
+    return undefined;
+  }
+
+  const allowed = new Set(stateIds);
+  return {
+    ...statesData,
+    features: statesData.features.filter((feature) => {
+      const id = (feature.properties as FeatureProperties | null)?.id;
+      return id != null && allowed.has(id);
+    }),
+  };
+}
+
 /** Log scale, so one dense state doesn't wash out the rest. */
 function intensity(value: number, max: number): number {
   if (value <= 0 || max <= 0) return 0;
