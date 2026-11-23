@@ -48,6 +48,11 @@ export async function fetchLiveCompetitionMeta(
   };
 }
 
+/** WCA returns these when ILR live data is missing or not public yet. */
+function isLiveUnavailable(status: number): boolean {
+  return status === 401 || status === 403 || status === 404;
+}
+
 export async function fetchLiveRounds(
   competitionId: string,
 ): Promise<LiveRoundsResponse> {
@@ -56,7 +61,7 @@ export async function fetchLiveRounds(
     { cache: "no-store" },
   );
 
-  if (response.status === 404) {
+  if (isLiveUnavailable(response.status)) {
     return { rounds: [] };
   }
 
@@ -78,7 +83,7 @@ export async function fetchLiveRoundDetails(
     { cache: "no-store" },
   );
 
-  if (response.status === 404) {
+  if (isLiveUnavailable(response.status)) {
     return null;
   }
 
