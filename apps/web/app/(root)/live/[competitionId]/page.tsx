@@ -51,10 +51,7 @@ export default async function LiveCompetitionPage({ params }: Props) {
   if (usesClassicWcaLive(meta.scoretakingSoftware)) {
     return (
       <main className="grow container mx-auto px-4 py-8">
-        <WcaLiveUnsupported
-          competition={meta}
-          officialLiveUrl={officialUrl}
-        />
+        <WcaLiveUnsupported competition={meta} officialLiveUrl={officialUrl} />
       </main>
     );
   }

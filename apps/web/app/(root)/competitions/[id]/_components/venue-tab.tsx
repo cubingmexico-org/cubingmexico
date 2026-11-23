@@ -14,10 +14,10 @@ import { cn } from "@workspace/ui/lib/utils";
 import { stripMarkdownLinks } from "@/lib/calendar";
 import type { Competition } from "@/types/wca";
 
-const CompetitionMap = dynamic(
-  () => import("./map").then((mod) => mod.Map),
-  { ssr: false, loading: () => <Skeleton className="w-full h-full" /> },
-);
+const CompetitionMap = dynamic(() => import("./map").then((mod) => mod.Map), {
+  ssr: false,
+  loading: () => <Skeleton className="w-full h-full" />,
+});
 
 export function VenueTab({ competition }: { competition: Competition }) {
   return (

@@ -8,7 +8,7 @@ import {
   fetchLiveCompetitionMeta,
   fetchLiveRoundDetails,
 } from "@/lib/live/wca";
-import { WcaLiveUnsupported } from "../../../../_components/wca-live-unsupported";
+import { WcaLiveUnsupported } from "../../../_components/wca-live-unsupported";
 import { LiveResultsView } from "./_components/live-results-view";
 
 type Props = {
@@ -54,10 +54,7 @@ export default async function LiveRoundPage({ params }: Props) {
   if (usesClassicWcaLive(meta.scoretakingSoftware)) {
     return (
       <main className="grow container mx-auto px-4 py-8">
-        <WcaLiveUnsupported
-          competition={meta}
-          officialLiveUrl={officialUrl}
-        />
+        <WcaLiveUnsupported competition={meta} officialLiveUrl={officialUrl} />
       </main>
     );
   }

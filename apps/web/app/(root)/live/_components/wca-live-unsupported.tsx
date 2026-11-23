@@ -26,7 +26,9 @@ export function WcaLiveUnsupported({
           <Radio className="size-3.5 text-muted-foreground" />
           Resultados en vivo
         </p>
-        <h1 className="text-3xl font-bold tracking-tight">{competition.name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {competition.name}
+        </h1>
         {(competition.venue || competition.city) && (
           <p className="text-muted-foreground">
             {competition.venue ? (
@@ -59,9 +61,9 @@ export function WcaLiveUnsupported({
           <CardTitle>Esta competencia usa WCA Live</CardTitle>
           <CardDescription>
             Cubing México solo muestra resultados en vivo cuando la captura se
-            hace con el sistema integrado de la WCA (ILR). Esta competencia
-            está usando WCA Live clásico, que la WCA planea dejar de usar en
-            2027. Mientras tanto, sigue los resultados en la fuente oficial.
+            hace con el sistema integrado de la WCA (ILR). Esta competencia está
+            usando WCA Live clásico, que la WCA planea dejar de usar en 2027.
+            Mientras tanto, sigue los resultados en la fuente oficial.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">

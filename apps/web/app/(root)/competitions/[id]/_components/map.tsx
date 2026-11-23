@@ -95,10 +95,11 @@ export function Map({
         venue ? `<b>${venue}</b>` : "",
         address ? `<p>${address}</p>` : "",
       ].filter(Boolean);
-
-      L.marker([markerLat, markerLng])
-        .addTo(map)
-        .bindPopup(popupParts.join("") || undefined);
+      const marker = L.marker([markerLat, markerLng]).addTo(map);
+      const popupHtml = popupParts.join("");
+      if (popupHtml) {
+        marker.bindPopup(popupHtml);
+      }
     }
 
     return () => {

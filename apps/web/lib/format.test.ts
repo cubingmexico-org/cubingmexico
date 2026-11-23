@@ -9,9 +9,7 @@ describe("formatCityState", () => {
   });
 
   it("omits state when city already ends with it", () => {
-    expect(formatCityState("Tepic, Nayarit", "Nayarit")).toBe(
-      "Tepic, Nayarit",
-    );
+    expect(formatCityState("Tepic, Nayarit", "Nayarit")).toBe("Tepic, Nayarit");
     expect(formatCityState("Guadalajara, Jalisco", "Jalisco")).toBe(
       "Guadalajara, Jalisco",
     );

@@ -18,9 +18,9 @@ describe("fetchLiveRounds", () => {
   it("returns empty rounds when WCA live is forbidden", async () => {
     wcaFetch.mockResolvedValue(new Response(null, { status: 403 }));
 
-    await expect(fetchLiveRounds("CoralitoBahiadeBanderas2026")).resolves.toEqual(
-      { rounds: [] },
-    );
+    await expect(
+      fetchLiveRounds("CoralitoBahiadeBanderas2026"),
+    ).resolves.toEqual({ rounds: [] });
   });
 
   it("returns empty rounds for missing live data", async () => {
