@@ -41,7 +41,7 @@ export async function GroupRecords({
       <div>
         <h2 className="text-lg font-semibold">{title}</h2>
         <p className="text-sm text-muted-foreground">
-          Mejores marcas actuales del grupo (rank 1 por evento).
+          Mejores marcas actuales del grupo.
         </p>
       </div>
 
@@ -58,6 +58,7 @@ export async function GroupRecords({
                 <TableHead>Tipo</TableHead>
                 <TableHead>Persona</TableHead>
                 <TableHead className="text-right">Resultado</TableHead>
+                <TableHead>Competencia</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -65,7 +66,15 @@ export async function GroupRecords({
                 <TableRow
                   key={`${record.eventId}-${record.type}-${record.personId}`}
                 >
-                  <TableCell>{record.eventName}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`cubing-icon event-${record.eventId} shrink-0 text-lg`}
+                        aria-hidden
+                      />
+                      <span>{record.eventName}</span>
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {record.type === "single" ? "Single" : "Average"}
                   </TableCell>
@@ -83,6 +92,19 @@ export async function GroupRecords({
                       record.eventId,
                       record.best,
                       record.type,
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {record.competitionId && record.competitionName ? (
+                      <Link
+                        href={`/competitions/${record.competitionId}`}
+                        prefetch={false}
+                        className="text-link hover:text-link/80"
+                      >
+                        {record.competitionName}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                 </TableRow>

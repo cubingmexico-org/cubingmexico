@@ -72,6 +72,7 @@ export async function GroupRankings({
                 <TableHead>Nombre</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Resultado</TableHead>
+                <TableHead>Competencia</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -105,6 +106,19 @@ export async function GroupRankings({
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     {formatAttemptValue(eventId, row.best, rankType)}
+                  </TableCell>
+                  <TableCell>
+                    {row.competitionId && row.competitionName ? (
+                      <Link
+                        href={`/competitions/${row.competitionId}`}
+                        prefetch={false}
+                        className="text-link hover:text-link/80"
+                      >
+                        {row.competitionName}
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

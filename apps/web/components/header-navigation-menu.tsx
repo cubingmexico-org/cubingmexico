@@ -32,7 +32,10 @@ import {
 } from "@workspace/ui/components/navigation-menu";
 import { CubingMexico } from "@workspace/icons";
 import { cn } from "@workspace/ui/lib/utils";
-import { GROUPS_PUBLICLY_RELEASED } from "@/lib/groups";
+import {
+  COMMUNITIES_PUBLICLY_RELEASED,
+  SPONSORS_PUBLICLY_RELEASED,
+} from "@/lib/groups";
 import { HeaderLiveNavLink } from "./header-live-nav-link";
 import { HeaderNavLink } from "./header-nav-link";
 import { ResponsiveNavigationMenu } from "./responsive-navigation-menu";
@@ -74,20 +77,20 @@ export function HeaderNavigationMenu() {
           </HeaderNavLink>
         </NavigationMenuItem>
 
-        {GROUPS_PUBLICLY_RELEASED ? (
-          <>
-            <NavigationMenuItem>
-              <HeaderNavLink href="/communities" className={navItemClass}>
-                Comunidades
-              </HeaderNavLink>
-            </NavigationMenuItem>
+        {COMMUNITIES_PUBLICLY_RELEASED ? (
+          <NavigationMenuItem>
+            <HeaderNavLink href="/communities" className={navItemClass}>
+              Comunidades
+            </HeaderNavLink>
+          </NavigationMenuItem>
+        ) : null}
 
-            <NavigationMenuItem>
-              <HeaderNavLink href="/sponsors" className={navItemClass}>
-                Patrocinadores
-              </HeaderNavLink>
-            </NavigationMenuItem>
-          </>
+        {SPONSORS_PUBLICLY_RELEASED ? (
+          <NavigationMenuItem>
+            <HeaderNavLink href="/sponsors" className={navItemClass}>
+              Patrocinadores
+            </HeaderNavLink>
+          </NavigationMenuItem>
         ) : null}
 
         <NavigationMenuItem>
