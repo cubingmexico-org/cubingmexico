@@ -17,6 +17,8 @@ import {
   roundType,
   streakRanks,
   sumOfRanks,
+  group,
+  groupMembership,
   team,
   teamMember,
 } from "@workspace/db/schema";
@@ -243,6 +245,25 @@ export async function insertTeamMember(
   values: Partial<typeof teamMember.$inferInsert> & { personId: string },
 ) {
   await db.insert(teamMember).values(values);
+}
+
+export async function insertGroup(
+  values: Partial<typeof group.$inferInsert> &
+    Pick<typeof group.$inferInsert, "id" | "kind" | "name">,
+) {
+  await db.insert(group).values({
+    isActive: true,
+    sponsorshipStatus: "inactive",
+    publicityEnabled: false,
+    ...values,
+  });
+}
+
+export async function insertGroupMembership(
+  values: Partial<typeof groupMembership.$inferInsert> &
+    Pick<typeof groupMembership.$inferInsert, "groupId" | "personId">,
+) {
+  await db.insert(groupMembership).values(values);
 }
 
 export async function insertCompetitionRoundDate(

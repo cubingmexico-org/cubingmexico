@@ -74,6 +74,18 @@ export function HeaderNavigationMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
+          <HeaderNavLink href="/communities" className={navItemClass}>
+            Comunidades
+          </HeaderNavLink>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <HeaderNavLink href="/sponsors" className={navItemClass}>
+            Patrocinadores
+          </HeaderNavLink>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
           <NavigationMenuTrigger className={triggerClass}>
             Resultados
           </NavigationMenuTrigger>

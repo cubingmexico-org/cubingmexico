@@ -20,6 +20,7 @@ from routes.admin.rankings import (
     run_update_sum_of_ranks,
 )
 from routes.admin.schedules import run_update_competition_schedules
+from routes.admin.groups import run_update_group_ranks, run_update_group_records
 from routes.admin.state import run_update_state_ranks, run_update_state_records
 from routes.admin.wca_import import run_update_full_database
 from web_cache import UPDATE_ALL_TAGS, revalidate_web_tags
@@ -50,6 +51,8 @@ UPDATE_ALL_STEPS = [
     ("update_competition_schedules", run_update_competition_schedules, True),
     ("update_state_ranks", run_update_state_ranks, True),
     ("update_state_records", run_update_state_records, True),
+    ("update_group_ranks", run_update_group_ranks, True),
+    ("update_group_records", run_update_group_records, True),
     ("update_sum_of_ranks", run_update_sum_of_ranks, True),
     ("update_kinch_ranks", run_update_kinch_ranks, True),
     ("update_streak_ranks", run_update_streak_ranks, True),
