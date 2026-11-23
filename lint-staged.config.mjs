@@ -1,18 +1,21 @@
 /**
  * Pre-commit gates that mirror the CI quality job's fast checks:
  * - Prettier auto-fixes staged files
- * - Typecheck packages touched by this commit
+ * - Lint, typecheck, and unit tests for packages touched by this commit
  * - Backend lint, pyright, and unit tests when backend/schema fixtures change
  * - Refresh fixtures/schema/columns.json when the Drizzle schema changes
+ *
+ * Uses turbo `--force` so a stale remote/local cache cannot mask failures.
+ * Integration / e2e / knip / migration generate still only run in CI.
  */
 const prettier = "prettier --write";
 
 /**
  * Map staged paths to turbo `--filter` selectors.
- * App changes typecheck that app; package changes also typecheck dependents
+ * App changes check that app; package changes also check dependents
  * (`...pkg`) so export/signature breaks surface before push.
  */
-function typecheckFilters(filenames) {
+function packageFilters(filenames) {
   const filters = new Set();
 
   for (const file of filenames) {
@@ -62,13 +65,16 @@ function backendQualityCommands(filenames) {
   return commands;
 }
 
+function packageQualityCommands(filenames) {
+  const filters = packageFilters(filenames);
+  if (filters.length === 0) return [];
+  const filterArgs = filters.map((f) => `--filter=${f}`).join(" ");
+  return `pnpm turbo run lint check-types test ${filterArgs} --force`;
+}
+
 export default {
   "*.{ts,tsx,js,mjs,json,css,md,yml,yaml}": prettier,
-  "{apps,packages}/**/*.{ts,tsx}": (filenames) => {
-    const filters = typecheckFilters(filenames);
-    if (filters.length === 0) return [];
-    return `pnpm turbo run check-types ${filters.map((f) => `--filter=${f}`).join(" ")}`;
-  },
+  "{apps,packages}/**/*.{ts,tsx}": packageQualityCommands,
   // Route-map snapshots, schema column writes, and related unit checks.
   "{apps/backend/**,fixtures/schema/**,packages/db/src/schema.ts}":
     backendQualityCommands,
