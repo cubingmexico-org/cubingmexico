@@ -124,8 +124,9 @@ export function LeafletMap({
         useChoropleth
           ? {
               style: (feature) => {
-                const id = (feature?.properties as FeatureProperties | undefined)
-                  ?.id;
+                const id = (
+                  feature?.properties as FeatureProperties | undefined
+                )?.id;
                 const value = id ? (counts[id] ?? 0) : 0;
                 if (value === 0) {
                   return {

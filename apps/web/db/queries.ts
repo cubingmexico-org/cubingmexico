@@ -202,7 +202,7 @@ export async function getPersonsWithoutState({ search }: { search: string }) {
     .then((res) => res);
 }
 
-interface StatesGeoJSON {
+export interface StatesGeoJSON {
   type: string;
   features: {
     type: string;

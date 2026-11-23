@@ -21,10 +21,7 @@ import {
   canShowGoalsLinks,
   getDefaultSummaryYear,
 } from "@/app/(root)/summary/_lib/summary-year";
-import {
-  GROUPS_PUBLICLY_RELEASED,
-  canShowGroupsLinks,
-} from "@/lib/groups";
+import { GROUPS_PUBLICLY_RELEASED, canShowGroupsLinks } from "@/lib/groups";
 import {
   Avatar,
   AvatarImage,
