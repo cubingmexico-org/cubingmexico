@@ -15,6 +15,8 @@ const LeafletMap = dynamic(
   { ssr: false, loading: () => <Skeleton className="w-full h-full" /> },
 );
 
+type MapView = "locations" | "states" | "heatmap";
+
 export function MapContainer({
   locations,
   statesData,
@@ -22,7 +24,7 @@ export function MapContainer({
   locations: LeafletMapLocation[];
   statesData: GeoJSONProps["data"];
 }) {
-  const [showOnlyStates, setShowOnlyStates] = useState(false);
+  const [view, setView] = useState<MapView>("locations");
 
   return (
     <div className="bg-white-700 mx-auto my-5 w-[98%]">
@@ -31,20 +33,22 @@ export function MapContainer({
           type="single"
           variant="outline"
           aria-label="Vista del mapa"
-          value={showOnlyStates ? "states" : "locations"}
+          value={view}
           onValueChange={(value) => {
-            if (value) setShowOnlyStates(value === "states");
+            if (value) setView(value as MapView);
           }}
         >
           <ToggleGroupItem value="locations">Ubicaciones</ToggleGroupItem>
           <ToggleGroupItem value="states">Estados</ToggleGroupItem>
+          <ToggleGroupItem value="heatmap">Mapa de calor</ToggleGroupItem>
         </ToggleGroup>
       </div>
       <div className="h-120">
         <LeafletMap
           posix={[23.9345, -102.5528]}
-          locations={showOnlyStates ? [] : locations}
-          statesData={showOnlyStates ? statesData : undefined}
+          locations={view === "states" ? [] : locations}
+          statesData={view === "states" ? statesData : undefined}
+          heatmap={view === "heatmap"}
         />
       </div>
     </div>

@@ -401,6 +401,9 @@ importers:
       leaflet-defaulticon-compatibility:
         specifier: ^0.1.2
         version: 0.1.2
+      leaflet.heat:
+        specifier: ^1.0.1
+        version: 1.0.1(leaflet@1.9.4)
       lucide-react:
         specifier: 'catalog:'
         version: 0.548.0(react@19.3.1)
@@ -474,6 +477,9 @@ importers:
       '@types/leaflet':
         specifier: ^1.9.16
         version: 1.9.21
+      '@types/leaflet.heat':
+        specifier: ^0.2.5
+        version: 0.2.5
       '@types/node':
         specifier: 'catalog:'
         version: 24.10.13
@@ -3837,6 +3843,9 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
+  '@types/leaflet.heat@0.2.5':
+    resolution: {integrity: sha512-wmDePJPn2vhW9BScsWTV4pSfWayhdDwXuWIQzUuaJkvk5DCHsYsIegTD7tybo38E/0mxpuWODKV/LhsxPESWJg==}
+
   '@types/leaflet@1.9.21':
     resolution: {integrity: sha512-TbAd9DaPGSnzp6QvtYngntMZgcRk+igFELwR2N99XZn7RXUdKgsXMR+28bUO0rPsWp8MIu/f47luLIQuSLYv/w==}
 
@@ -5378,6 +5387,11 @@ packages:
   leaflet-defaulticon-compatibility@0.1.2:
     resolution: {integrity: sha512-IrKagWxkTwzxUkFIumy/Zmo3ksjuAu3zEadtOuJcKzuXaD76Gwvg2Z1mLyx7y52ykOzM8rAH5ChBs4DnfdGa6Q==}
 
+  leaflet.heat@1.0.1:
+    resolution: {integrity: sha512-F2o1QQbhEvsQJt7EooHPsydxSc746t79yQcDI8gB/K7wPirMowHpirSai6k9EDNZzUH7eKxucFDizoRSbV2Lzw==}
+    peerDependencies:
+      leaflet: ^1.9.0 || ^2.0.0-beta.1
+
   leaflet@1.9.4:
     resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
@@ -6365,6 +6379,9 @@ packages:
 
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
+
+  simpleheat@1.0.0:
+    resolution: {integrity: sha512-hCGl1lj+IR+CymAouYf5ZQ7NguSQq+w1PWu1WvHgZWkdzmyS/xbN1T2TpwlSC8nEDDK2JRVPcdgV0a6652aP2Q==}
 
   smol-toml@1.9.1:
     resolution: {integrity: sha512-j7WyPdf0CJoutMzMoPLF/bVXHtKZIT9Rb4eGeEbWw8X2t5oirjPgpL+OpaENZrILYaXqYwnVH+qgUwVbl+pUJQ==}
@@ -9413,6 +9430,10 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
+  '@types/leaflet.heat@0.2.5':
+    dependencies:
+      '@types/leaflet': 1.9.21
+
   '@types/leaflet@1.9.21':
     dependencies:
       '@types/geojson': 7946.0.16
@@ -11106,6 +11127,11 @@ snapshots:
 
   leaflet-defaulticon-compatibility@0.1.2: {}
 
+  leaflet.heat@1.0.1(leaflet@1.9.4):
+    dependencies:
+      leaflet: 1.9.4
+      simpleheat: 1.0.0
+
   leaflet@1.9.4: {}
 
   levn@0.4.1:
@@ -12410,6 +12436,8 @@ snapshots:
       side-channel-weakmap: 1.0.2
 
   siginfo@2.0.0: {}
+
+  simpleheat@1.0.0: {}
 
   smol-toml@1.9.1: {}
 
