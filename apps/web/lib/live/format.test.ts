@@ -29,6 +29,10 @@ describe("live format helpers", () => {
     expect(liveRoundLabel("333-r2")).toContain("Ronda 2");
     expect(liveRoundStateLabel("open")).toBe("En curso");
     expect(liveRoundStateLabel("locked")).toBe("Cerrada");
+    expect(liveRoundStateLabel("ready")).toBe("Lista");
+    expect(liveRoundStateLabel("pending")).toBe("Pendiente");
+    expect(liveRoundSpectatorLabel({ state: "ready" })).toBe("Lista");
+    expect(liveRoundSpectatorLabel({ state: "pending" })).toBe("Pendiente");
   });
 
   it("formats result values including DNF/DNS and empty", () => {

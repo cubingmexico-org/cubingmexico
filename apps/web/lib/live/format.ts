@@ -31,6 +31,10 @@ export function liveRoundStateLabel(state: string): string {
       return "En curso";
     case "locked":
       return "Cerrada";
+    case "ready":
+      return "Lista";
+    case "pending":
+      return "Pendiente";
     default:
       return state;
   }

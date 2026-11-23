@@ -26,6 +26,8 @@ export interface LeafletMapProps {
   statesData?: GeoJSONProps["data"];
   /** Point markers with optional popup text. */
   locations?: LeafletMapLocation[];
+  /** Render a heat layer instead of individual markers. */
+  heatmap?: boolean;
 }
 
 export function LeafletMap({
@@ -33,6 +35,7 @@ export function LeafletMap({
   zoom = 5,
   statesData,
   locations = [],
+  heatmap = false,
 }: LeafletMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
@@ -64,12 +67,28 @@ export function LeafletMap({
       ...(tiles.subdomains ? { subdomains: tiles.subdomains } : {}),
     }).addTo(map);
 
-    for (const { name, stateName, latitude, longitude } of locations) {
-      const lat = (latitude && latitude / 1000000) || 0;
-      const lng = (longitude && longitude / 1000000) || 0;
-      L.marker([lat, lng])
-        .addTo(map)
-        .bindPopup(`<b>${name}</b>${stateName ? `<br/>${stateName}` : ""}`);
+    if (heatmap) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports -- leaflet.heat must load client-side
+      require("leaflet.heat");
+
+      const points: [number, number, number][] = [];
+      for (const { latitude, longitude } of locations) {
+        if (latitude == null || longitude == null) continue;
+        const lat = latitude / 1_000_000;
+        const lng = longitude / 1_000_000;
+        if (lat === 0 && lng === 0) continue;
+        points.push([lat, lng, 1]);
+      }
+
+      L.heatLayer(points, { radius: 25, blur: 15, maxZoom: 10 }).addTo(map);
+    } else {
+      for (const { name, stateName, latitude, longitude } of locations) {
+        const lat = (latitude && latitude / 1000000) || 0;
+        const lng = (longitude && longitude / 1000000) || 0;
+        L.marker([lat, lng])
+          .addTo(map)
+          .bindPopup(`<b>${name}</b>${stateName ? `<br/>${stateName}` : ""}`);
+      }
     }
 
     if (statesData) {
@@ -80,7 +99,7 @@ export function LeafletMap({
       map.remove();
       mapRef.current = null;
     };
-  }, [posix, zoom, statesData, locations, resolvedTheme]);
+  }, [posix, zoom, statesData, locations, resolvedTheme, heatmap]);
 
   return (
     <div
