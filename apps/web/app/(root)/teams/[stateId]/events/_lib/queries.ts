@@ -20,6 +20,7 @@ import {
   inScopeEvents,
   isOfficialEvent,
 } from "@/lib/official-events";
+import { medalEligibleSql } from "@/lib/medals";
 import {
   cutoffAttempts,
   median,
@@ -170,7 +171,7 @@ export async function getTeamEventInsights(
         multiRoundMembers: sql<number>`COUNT(DISTINCT ${result.personId}) FILTER (WHERE ${result.roundTypeId} IN ${firstRoundTypesSql})::int`,
         advancedMembers: sql<number>`COUNT(DISTINCT ${result.personId}) FILTER (WHERE ${advancedSql})::int`,
         finalistMembers: sql<number>`COUNT(DISTINCT ${result.personId}) FILTER (WHERE ${reachedFinalSql})::int`,
-        podiums: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} IN (1, 2, 3) AND ${result.roundTypeId} IN ('f', 'c') AND ${result.best} > 0)::int`,
+        podiums: sql<number>`COUNT(*) FILTER (WHERE ${medalEligibleSql()})::int`,
       })
       .from(result)
       .innerJoin(person, eq(result.personId, person.wcaId))

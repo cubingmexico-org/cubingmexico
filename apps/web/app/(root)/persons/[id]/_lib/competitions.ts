@@ -48,6 +48,8 @@ type PersonCompetitionResultRow = {
   competitionStartDate: string;
   roundTypeId: string | null;
   position: number | null;
+  globalPos: number | null;
+  isDual: boolean;
   best: number;
   average: number;
   solves: number[];
@@ -209,6 +211,8 @@ export async function getPersonCompetitionResults(
       competitionStartDate: recordDateSql,
       roundTypeId: result.roundTypeId,
       position: result.pos,
+      globalPos: result.globalPos,
+      isDual: result.isDual,
       best: result.best,
       average: result.average,
     })

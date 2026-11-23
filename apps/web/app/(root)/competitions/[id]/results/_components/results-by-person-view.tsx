@@ -25,7 +25,11 @@ import {
   type ResultsByPersonGroup,
 } from "../../_lib/results";
 import { StateLabel } from "@/components/state-flag";
-import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
+import {
+  formatAttemptValue,
+  formatResultPlace,
+  roundTypeLabel,
+} from "@/lib/utils";
 import { normalizeSearchText } from "@/lib/search";
 import type { CcResultRow } from "@/lib/cubing-contests";
 import { CcAttribution } from "@/components/cubing-contests/cc-attribution";
@@ -159,9 +163,17 @@ export function ResultsByPersonView({
                                 </div>
                               </TableCell>
                               <TableCell>
-                                {roundTypeLabel(resultRow.roundTypeId)}
+                                {roundTypeLabel(resultRow.roundTypeId, {
+                                  dual: resultRow.isDual,
+                                })}
                               </TableCell>
-                              <TableCell>{resultRow.position ?? "—"}</TableCell>
+                              <TableCell>
+                                {formatResultPlace(
+                                  resultRow.position,
+                                  resultRow.globalPos,
+                                  resultRow.isDual,
+                                )}
+                              </TableCell>
                               <TableCell>
                                 {formatBestResult(resultRow)}
                               </TableCell>

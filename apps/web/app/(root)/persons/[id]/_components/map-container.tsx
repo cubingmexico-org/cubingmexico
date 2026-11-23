@@ -18,7 +18,7 @@ const LeafletMap = dynamic(
   { ssr: false, loading: () => <Skeleton className="w-full h-full" /> },
 );
 
-type MapView = "locations" | "choropleth" | "heatmap";
+type MapView = "locations" | "states" | "choropleth" | "heatmap";
 
 function hasCoordinates(location: LeafletMapLocation) {
   return (location.latitude ?? 0) !== 0 && (location.longitude ?? 0) !== 0;
@@ -47,6 +47,8 @@ export function MapContainer({
     [locations],
   );
 
+  const showStates = view === "states" || view === "choropleth";
+
   return (
     <div className="bg-white-700 mx-auto my-5 w-[98%]">
       <div className="mb-2 flex items-center justify-start gap-2">
@@ -60,6 +62,7 @@ export function MapContainer({
           }}
         >
           <ToggleGroupItem value="locations">Ubicaciones</ToggleGroupItem>
+          <ToggleGroupItem value="states">Estados</ToggleGroupItem>
           <ToggleGroupItem value="choropleth">Coropleta</ToggleGroupItem>
           <ToggleGroupItem value="heatmap">Mapa de calor</ToggleGroupItem>
         </ToggleGroup>
@@ -67,10 +70,8 @@ export function MapContainer({
       <div className="h-120">
         <LeafletMap
           posix={[23.9345, -102.5528]}
-          locations={view === "choropleth" ? [] : mappableLocations}
-          statesData={
-            view === "choropleth" ? (statesData ?? undefined) : undefined
-          }
+          locations={showStates ? [] : mappableLocations}
+          statesData={showStates ? (statesData ?? undefined) : undefined}
           choroplethCounts={
             view === "choropleth" ? choroplethCounts : undefined
           }

@@ -115,15 +115,30 @@ def record_highlights(cur, competition_ids: list[str], *, newest_first: bool) ->
 
 
 def podium_count(cur, competition_ids: list[str]) -> int:
-    """Final-round podium places with a valid result, in official events."""
+    """Final-round podium places with a valid result, in official events.
+
+    Dual-aware: uses global_pos and includes Dual rounds co-linked with a Final.
+    """
     cur.execute(
         f"""
         SELECT COUNT(*)::int AS podium_count
         FROM results r
         WHERE r.competition_id = ANY(%s)
-          AND r.round_type_id IN ('f', 'c')
-          AND r.pos IN (1, 2, 3)
           AND r.best > 0
+          AND r.global_pos IN (1, 2, 3)
+          AND (
+            r.round_type_id IN ('f', 'c')
+            OR (
+              r.is_dual = true
+              AND EXISTS (
+                SELECT 1 FROM results r2
+                WHERE r2.competition_id = r.competition_id
+                  AND r2.event_id = r.event_id
+                  AND r2.is_dual = true
+                  AND r2.round_type_id IN ('f', 'c')
+              )
+            )
+          )
           AND r.event_id IN {OFFICIAL_EVENTS_SUBQUERY}
         """,
         (competition_ids,),

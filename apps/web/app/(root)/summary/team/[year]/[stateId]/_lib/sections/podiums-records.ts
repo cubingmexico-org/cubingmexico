@@ -9,6 +9,7 @@ import {
   result,
 } from "@workspace/db/schema";
 import { and, asc, desc, eq, gt, inArray, or, sql } from "drizzle-orm";
+import { medalEligibleSql } from "@/lib/medals";
 import { inOfficialEvents, isOfficialEvent } from "@/lib/official-events";
 import {
   FEATURED_CHAMPIONSHIP_TYPES,
@@ -52,22 +53,14 @@ export function queryPodiumsRecordsSection({
     // Podium aggregates
     db
       .select({
-        gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1)::int`,
-        silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2)::int`,
-        bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3)::int`,
+        gold: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 1)::int`,
+        silver: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 2)::int`,
+        bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 3)::int`,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .innerJoin(person, eq(result.personId, person.wcaId))
-      .where(
-        and(
-          memberYearFilter,
-          isOfficialResult,
-          inArray(result.roundTypeId, ["f", "c"]),
-          inArray(result.pos, [1, 2, 3]),
-          gt(result.best, 0),
-        ),
-      )
+      .where(and(memberYearFilter, isOfficialResult, medalEligibleSql()))
       .then((rows) => rows[0]),
 
     // Top podiumers
@@ -75,27 +68,19 @@ export function queryPodiumsRecordsSection({
       .select({
         wcaId: person.wcaId,
         name: person.name,
-        gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1)::int`,
-        silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2)::int`,
-        bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3)::int`,
+        gold: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 1)::int`,
+        silver: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 2)::int`,
+        bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 3)::int`,
         total: sql<number>`COUNT(*)::int`,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .innerJoin(person, eq(result.personId, person.wcaId))
-      .where(
-        and(
-          memberYearFilter,
-          isOfficialResult,
-          inArray(result.roundTypeId, ["f", "c"]),
-          inArray(result.pos, [1, 2, 3]),
-          gt(result.best, 0),
-        ),
-      )
+      .where(and(memberYearFilter, isOfficialResult, medalEligibleSql()))
       .groupBy(person.wcaId, person.name)
       .orderBy(
         desc(sql`COUNT(*)`),
-        desc(sql`COUNT(*) FILTER (WHERE ${result.pos} = 1)`),
+        desc(sql`COUNT(*) FILTER (WHERE ${result.globalPos} = 1)`),
         asc(person.name),
       )
       .limit(TOP_N),
@@ -106,28 +91,20 @@ export function queryPodiumsRecordsSection({
         eventId: result.eventId,
         eventName: event.name,
         eventRank: event.rank,
-        gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1)::int`,
-        silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2)::int`,
-        bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3)::int`,
+        gold: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 1)::int`,
+        silver: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 2)::int`,
+        bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 3)::int`,
         total: sql<number>`COUNT(*)::int`,
       })
       .from(result)
       .innerJoin(competition, eq(result.competitionId, competition.id))
       .innerJoin(person, eq(result.personId, person.wcaId))
       .innerJoin(event, eq(result.eventId, event.id))
-      .where(
-        and(
-          memberYearFilter,
-          isOfficialResult,
-          inArray(result.roundTypeId, ["f", "c"]),
-          inArray(result.pos, [1, 2, 3]),
-          gt(result.best, 0),
-        ),
-      )
+      .where(and(memberYearFilter, isOfficialResult, medalEligibleSql()))
       .groupBy(result.eventId, event.name, event.rank)
       .orderBy(
         desc(sql`COUNT(*)`),
-        desc(sql`COUNT(*) FILTER (WHERE ${result.pos} = 1)`),
+        desc(sql`COUNT(*) FILTER (WHERE ${result.globalPos} = 1)`),
         asc(event.rank),
       )
       .limit(TOP_N),

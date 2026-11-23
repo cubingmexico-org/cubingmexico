@@ -8,6 +8,7 @@ import {
   resultAttempts,
 } from "@workspace/db/schema";
 import { and, asc, desc, eq, sql, type SQL } from "drizzle-orm";
+import { medalEligibleSql } from "@/lib/medals";
 import type {
   PodiumByEvent,
   SolvesByEvent,
@@ -24,21 +25,14 @@ export async function computeYearPodiums(
       eventId: result.eventId,
       eventName: event.name,
       eventRank: event.rank,
-      gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1)::int`,
-      silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2)::int`,
-      bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3)::int`,
+      gold: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 1)::int`,
+      silver: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 2)::int`,
+      bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.globalPos} = 3)::int`,
     })
     .from(result)
     .innerJoin(competition, eq(result.competitionId, competition.id))
     .innerJoin(event, eq(result.eventId, event.id))
-    .where(
-      and(
-        yearOfficialFilter,
-        sql`${result.roundTypeId} IN ('f', 'c')`,
-        sql`${result.pos} IN (1, 2, 3)`,
-        sql`${result.best} > 0`,
-      ),
-    )
+    .where(and(yearOfficialFilter, medalEligibleSql()))
     .groupBy(result.eventId, event.name, event.rank)
     .orderBy(asc(event.rank));
 

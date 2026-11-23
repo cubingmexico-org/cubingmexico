@@ -24,6 +24,8 @@ export interface CompetitionResultRow {
   personState: string | null;
   roundTypeId: string | null;
   position: number | null;
+  globalPos: number | null;
+  isDual: boolean;
   best: number;
   average: number;
   solves: number[];
@@ -136,6 +138,8 @@ export async function getCompetitionMainEventResults(
         personState: state.name,
         roundTypeId: result.roundTypeId,
         position: result.pos,
+        globalPos: result.globalPos,
+        isDual: result.isDual,
         best: result.best,
         average: result.average,
       })
@@ -151,10 +155,14 @@ export async function getCompetitionMainEventResults(
           or(gt(result.best, 0), gt(result.average, 0)),
         ),
       )
-      .orderBy(result.pos);
+      .orderBy(result.globalPos, result.pos);
 
     const top3 = mainEventResults
-      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+      .sort(
+        (a, b) =>
+          (a.globalPos ?? a.position ?? 999) -
+          (b.globalPos ?? b.position ?? 999),
+      )
       .slice(0, 3);
 
     return {
@@ -163,6 +171,8 @@ export async function getCompetitionMainEventResults(
       mainEventResults: top3.map((row, index) => ({
         ...row,
         position: index + 1,
+        globalPos: row.globalPos ?? index + 1,
+        isDual: row.isDual ?? false,
         solves: [],
       })),
     };

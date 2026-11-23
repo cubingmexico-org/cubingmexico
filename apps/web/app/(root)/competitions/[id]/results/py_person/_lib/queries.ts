@@ -33,6 +33,8 @@ export async function getCompetitionResultsGroupedByPerson(
       personState: state.name,
       roundTypeId: result.roundTypeId,
       position: result.pos,
+      globalPos: result.globalPos,
+      isDual: result.isDual,
       best: result.best,
       average: result.average,
     })

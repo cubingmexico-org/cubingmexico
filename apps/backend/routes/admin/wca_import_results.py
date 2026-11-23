@@ -11,6 +11,7 @@ from typing import LiteralString
 import pandas as pd
 
 from common import execute_values, get_connection, log, named_row
+from routes.admin.dual_rounds import annotate_dual_fields
 from routes.admin.schedules import run_update_competition_schedules
 
 CHUNK_ROWS = 200_000
@@ -252,53 +253,83 @@ def _snapshot_social_state() -> _SocialSnapshot:
     return snapshot
 
 
+def _parse_pos(pos_val) -> int | None:
+    """Parse a TSV pos value; None means out of smallint range."""
+    if pd.isna(pos_val):
+        return 0
+    pos = int(pos_val)
+    if not -32768 <= pos <= 32767:
+        return None
+    return pos
+
+
+def _record_or_none(value):
+    if pd.isna(value) or value == "NaN":
+        return None
+    return value
+
+
+def _mexican_competition_ids(file_bytes: bytes) -> set[str]:
+    """Competition IDs that have at least one Mexican competitor result."""
+    ids: set[str] = set()
+    reader = pd.read_csv(
+        io.BytesIO(file_bytes),
+        delimiter="\t",
+        usecols=["competition_id", "person_country_id"],
+        skip_blank_lines=True,
+        na_values=["NULL"],
+        dtype={"competition_id": str, "person_country_id": str},
+        encoding_errors="ignore",
+        chunksize=CHUNK_ROWS,
+    )
+    for df_chunk in reader:
+        mexico = df_chunk[df_chunk["person_country_id"] == "Mexico"]
+        ids.update(mexico["competition_id"].dropna().astype(str).unique())
+    return ids
+
+
 def _parse_mexican_results(file_bytes: bytes, file_name: str) -> list[tuple] | None:
-    """Rows to insert for results of Mexican competitors, or None when a row is corrupted."""
-    rows: list[tuple] = []
+    """Rows to insert for Mexican competitors, with dual global_pos / is_dual filled in."""
+    mexican_comps = _mexican_competition_ids(file_bytes)
+    log.info(
+        "Found %s competitions with Mexican results; loading all countries for dual ranking.",
+        len(mexican_comps),
+    )
+
+    # All-country rows for those comps (needed so global_pos matches WCA).
+    relevant_rows: list[dict] = []
 
     for chunk_number, df_chunk in _read_tsv_chunks(file_bytes, file_name, "id"):
-        df_filtered = df_chunk[df_chunk["person_country_id"] == "Mexico"]
-
-        for _, row in df_filtered.iterrows():
+        df_relevant = df_chunk[df_chunk["competition_id"].astype(str).isin(mexican_comps)]
+        for _, row in df_relevant.iterrows():
             try:
-                pos_val = row["pos"]
-                if pd.isna(pos_val):
-                    pos = 0
-                else:
-                    pos = int(pos_val)
-                    if not -32768 <= pos <= 32767:
-                        log.error(
-                            "CORRUPTED DATA DETECTED: 'pos' value %s is out of smallint "
-                            "range. Problematic row: %s. Aborting update for %s. The "
-                            "'results' table will not be modified.",
-                            pos,
-                            row.to_dict(),
-                            file_name,
-                        )
-                        return None
-
-                # pandas reads missing records as NaN, and some exports spell them "NaN".
-                reg_single = row["regional_single_record"]
-                reg_average = row["regional_average_record"]
-                if pd.isna(reg_single) or reg_single == "NaN":
-                    reg_single = None
-                if pd.isna(reg_average) or reg_average == "NaN":
-                    reg_average = None
-
-                rows.append(
-                    (
-                        row["id"],
-                        row["competition_id"],
-                        row["event_id"],
-                        row["round_type_id"],
-                        pos,
-                        row["best"],
-                        row["average"],
-                        row["person_id"],
-                        row["format_id"],
-                        reg_single,
-                        reg_average,
+                pos = _parse_pos(row["pos"])
+                if pos is None:
+                    log.error(
+                        "CORRUPTED DATA DETECTED: 'pos' value %s is out of smallint "
+                        "range. Problematic row: %s. Aborting update for %s. The "
+                        "'results' table will not be modified.",
+                        row["pos"],
+                        row.to_dict(),
+                        file_name,
                     )
+                    return None
+
+                relevant_rows.append(
+                    {
+                        "id": str(row["id"]),
+                        "competition_id": str(row["competition_id"]),
+                        "event_id": str(row["event_id"]),
+                        "round_type_id": str(row["round_type_id"]) if not pd.isna(row["round_type_id"]) else None,
+                        "pos": pos,
+                        "best": int(row["best"]),
+                        "average": int(row["average"]),
+                        "person_id": str(row["person_id"]),
+                        "person_country_id": str(row["person_country_id"]),
+                        "format_id": str(row["format_id"]),
+                        "regional_single_record": _record_or_none(row["regional_single_record"]),
+                        "regional_average_record": _record_or_none(row["regional_average_record"]),
+                    }
                 )
             except (KeyError, ValueError, TypeError) as e:
                 log.error(
@@ -311,6 +342,33 @@ def _parse_mexican_results(file_bytes: bytes, file_name: str) -> list[tuple] | N
                     file_name,
                 )
                 return None
+
+    annotated = annotate_dual_fields(relevant_rows)
+    dual_count = sum(1 for _, is_dual in annotated.values() if is_dual)
+    log.info("Annotated dual fields for %s result rows (%s dual).", len(annotated), dual_count)
+
+    rows: list[tuple] = []
+    for row in relevant_rows:
+        if row["person_country_id"] != "Mexico":
+            continue
+        global_pos, is_dual = annotated.get(row["id"], (row["pos"], False))
+        rows.append(
+            (
+                row["id"],
+                row["competition_id"],
+                row["event_id"],
+                row["round_type_id"],
+                row["pos"],
+                global_pos,
+                is_dual,
+                row["best"],
+                row["average"],
+                row["person_id"],
+                row["format_id"],
+                row["regional_single_record"],
+                row["regional_average_record"],
+            )
+        )
 
     return rows
 
@@ -436,8 +494,8 @@ def import_results(z, file_name) -> bool:
             "results",
             """
             INSERT INTO results
-            (id, competition_id, event_id, round_type_id, pos, best, average,
-            person_id, format_id, regional_single_record, regional_average_record)
+            (id, competition_id, event_id, round_type_id, pos, global_pos, is_dual,
+            best, average, person_id, format_id, regional_single_record, regional_average_record)
             VALUES %s
             ON CONFLICT DO NOTHING
             """,
@@ -527,3 +585,63 @@ def import_result_attempts(z, file_name):
         log.info("'result_attempts' table cleared.")
 
     log.info("Finished processing all chunks for %s.", file_name)
+
+
+def run_backfill_dual_positions() -> dict:
+    """Recompute global_pos / is_dual from rows already in the database.
+
+    Uses only stored (typically Mexican) competitors, which matches WCA for
+    all-Mexican fields and is the best available backfill without re-importing
+    the full export.
+    """
+    with get_connection() as conn:
+        with conn.cursor(row_factory=named_row) as cur:
+            cur.execute(
+                """
+                SELECT id, competition_id, event_id, round_type_id, pos, best, average,
+                       person_id, format_id
+                FROM results
+                """
+            )
+            db_rows = cur.fetchall()
+
+    if not db_rows:
+        return {"success": True, "updated": 0, "dualRows": 0}
+
+    mapped = [
+        {
+            "id": row.id,
+            "competition_id": row.competition_id,
+            "event_id": row.event_id,
+            "round_type_id": row.round_type_id,
+            "pos": row.pos or 0,
+            "best": row.best,
+            "average": row.average,
+            "person_id": row.person_id,
+            "format_id": row.format_id,
+        }
+        for row in db_rows
+    ]
+    annotated = annotate_dual_fields(mapped)
+
+    updates = [(global_pos, is_dual, result_id) for result_id, (global_pos, is_dual) in annotated.items()]
+    dual_rows = sum(1 for _, is_dual, _ in updates if is_dual)
+
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            execute_values(
+                cur,
+                """
+                UPDATE results AS r
+                SET global_pos = data.global_pos,
+                    is_dual = data.is_dual
+                FROM (VALUES %s) AS data(global_pos, is_dual, id)
+                WHERE r.id = data.id
+                """,
+                updates,
+                template="(%s::smallint, %s::boolean, %s)",
+            )
+            conn.commit()
+
+    log.info("Backfilled dual positions for %s results (%s dual).", len(updates), dual_rows)
+    return {"success": True, "updated": len(updates), "dualRows": dual_rows}

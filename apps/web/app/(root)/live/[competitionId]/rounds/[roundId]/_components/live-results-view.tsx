@@ -22,6 +22,7 @@ import {
   liveRoundLabel,
   liveRoundSpectatorLabel,
 } from "@/lib/live/format";
+import { formatLiveResultPlace } from "@/lib/utils";
 import type {
   EnrichedLiveCompetitor,
   EnrichedLiveResult,
@@ -167,6 +168,8 @@ export function LiveResultsView({
         title={title}
         eventId={eventId}
         attemptCount={attemptCount}
+        timeLimit={data.timeLimit}
+        cutoff={data.cutoff}
         results={sortedResults}
         competitorsById={competitorsById}
         loading={roundLoading}
@@ -206,10 +209,25 @@ export function LiveResultsView({
               <Radio className="size-3.5 text-red-500 animate-pulse" />
               Actualización automática
             </span>
+            {data.cutoff ? (
+              <span>
+                Corte:{" "}
+                {formatLiveResultValue(
+                  eventId,
+                  data.cutoff.resultValue,
+                  "single",
+                )}{" "}
+                ({data.cutoff.numberOfAttempts} int.)
+              </span>
+            ) : null}
             {data.timeLimit ? (
               <span>
                 Límite:{" "}
-                {formatLiveResultValue(eventId, data.timeLimit.centiseconds)}
+                {formatLiveResultValue(
+                  eventId,
+                  data.timeLimit.centiseconds,
+                  "single",
+                )}
               </span>
             ) : null}
           </div>
@@ -300,13 +318,13 @@ function ResultRow({
   const attemptsByNumber = new Map(
     result.attempts.map((a) => [a.attempt_number, a.value]),
   );
-  const pos = result.local_pos ?? result.global_pos;
+  const placeLabel = formatLiveResultPlace(result.local_pos, result.global_pos);
   const name = competitor?.name ?? `Registrant ${result.registration_id}`;
   const wcaId = competitor?.wca_id;
 
   return (
     <TableRow>
-      <TableCell className="tabular-nums font-medium">{pos ?? "—"}</TableCell>
+      <TableCell className="tabular-nums font-medium">{placeLabel}</TableCell>
       <TableCell>
         {wcaId ? (
           <Link

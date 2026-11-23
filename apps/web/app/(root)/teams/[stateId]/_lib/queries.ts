@@ -15,6 +15,10 @@ import {
 } from "@workspace/db/schema";
 import { and, count, gt, eq, inArray, asc, desc, sql, or } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
+import {
+  medalTierCountsFromMergedSql,
+  mergedPodiumRowsSql,
+} from "@/lib/medals";
 import { inScopeEvents } from "@/lib/official-events";
 import type { EventScope } from "@/lib/constants";
 import { type GetMembersSchema } from "./validations";
@@ -241,19 +245,27 @@ export async function getTeamMedals(stateId: string): Promise<TeamMedals> {
   cacheLife("days");
   cacheTag(`team-podiums-${stateId}`);
 
-  const medalsRow = await db
-    .select({
-      gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1 AND ${result.roundTypeId} IN ('f', 'c'))`,
-      silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2 AND ${result.roundTypeId} IN ('f', 'c'))`,
-      bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3 AND ${result.roundTypeId} IN ('f', 'c'))`,
-    })
-    .from(result)
-    .innerJoin(person, eq(result.personId, person.wcaId))
-    .where(and(eq(person.stateId, stateId), gt(result.best, 0)));
+  const {
+    gold: goldSql,
+    silver: silverSql,
+    bronze: bronzeSql,
+  } = medalTierCountsFromMergedSql();
+  const medalsRows = (await db.execute(sql`
+    SELECT
+      ${goldSql} AS gold,
+      ${silverSql} AS silver,
+      ${bronzeSql} AS bronze
+    FROM (
+      ${mergedPodiumRowsSql(sql`r.person_id IN (
+        SELECT wca_id FROM persons WHERE state_id = ${stateId}
+      )`)}
+    ) ranked
+    WHERE ranked.rn = 1
+  `)) as unknown as Array<{ gold: number; silver: number; bronze: number }>;
 
-  const gold = Number(medalsRow[0]?.gold ?? 0);
-  const silver = Number(medalsRow[0]?.silver ?? 0);
-  const bronze = Number(medalsRow[0]?.bronze ?? 0);
+  const gold = Number(medalsRows[0]?.gold ?? 0);
+  const silver = Number(medalsRows[0]?.silver ?? 0);
+  const bronze = Number(medalsRows[0]?.bronze ?? 0);
 
   return {
     gold,

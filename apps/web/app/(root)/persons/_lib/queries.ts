@@ -21,6 +21,7 @@ import {
   sql,
 } from "drizzle-orm";
 import { accentInsensitiveContains } from "@/lib/search";
+import { medalEligibleSql } from "@/lib/medals";
 import { type GetPersonsSchema } from "./validations";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -52,12 +53,8 @@ export async function getCompetitors(input: GetPersonsSchema) {
                 : asc(countDistinct(competition.stateId));
             case "podiums":
               return item.desc
-                ? desc(
-                    sql`count(CASE WHEN ${result.roundTypeId} IN ('f', 'c') AND ${result.pos} IN (1, 2, 3) AND ${result.best} > 0 THEN 1 END)`,
-                  )
-                : asc(
-                    sql`count(CASE WHEN ${result.roundTypeId} IN ('f', 'c') AND ${result.pos} IN (1, 2, 3) AND ${result.best} > 0 THEN 1 END)`,
-                  );
+                ? desc(sql`count(CASE WHEN ${medalEligibleSql()} THEN 1 END)`)
+                : asc(sql`count(CASE WHEN ${medalEligibleSql()} THEN 1 END)`);
             default:
               return item.desc ? desc(person[item.id]) : asc(person[item.id]);
           }
@@ -73,14 +70,7 @@ export async function getCompetitors(input: GetPersonsSchema) {
         state: state.name,
         competitions: countDistinct(result.competitionId),
         states: countDistinct(competition.stateId),
-        podiums: count(
-          sql`CASE 
-                    WHEN ${result.roundTypeId} IN ('f', 'c') 
-                    AND ${result.pos} IN (1, 2, 3) 
-                    AND ${result.best} > 0 
-                    THEN 1 
-                  END`,
-        ),
+        podiums: count(sql`CASE WHEN ${medalEligibleSql()} THEN 1 END`),
       })
       .from(person)
       .leftJoin(state, eq(person.stateId, state.id))

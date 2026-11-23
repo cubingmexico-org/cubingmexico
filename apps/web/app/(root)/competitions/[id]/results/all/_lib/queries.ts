@@ -36,7 +36,9 @@ function groupRowsByRounds(
     rounds: Array.from(roundsMap.entries())
       .map(([roundTypeId, rows]) => ({
         roundTypeId,
-        roundLabel: roundTypeLabel(roundTypeId),
+        roundLabel: roundTypeLabel(roundTypeId, {
+          dual: rows.some((row) => row.isDual),
+        }),
         rows: rows
           .slice()
           .sort(
@@ -71,6 +73,8 @@ export async function getCompetitionResultsForEvent(
       personState: state.name,
       roundTypeId: result.roundTypeId,
       position: result.pos,
+      globalPos: result.globalPos,
+      isDual: result.isDual,
       best: result.best,
       average: result.average,
     })

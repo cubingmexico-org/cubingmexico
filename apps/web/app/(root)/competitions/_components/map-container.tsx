@@ -18,7 +18,7 @@ const LeafletMap = dynamic(
   { ssr: false, loading: () => <Skeleton className="w-full h-full" /> },
 );
 
-type MapView = "locations" | "choropleth" | "heatmap";
+type MapView = "locations" | "states" | "choropleth" | "heatmap";
 
 export function MapContainer({
   locations,
@@ -38,6 +38,8 @@ export function MapContainer({
     return counts;
   }, [locations]);
 
+  const showStates = view === "states" || view === "choropleth";
+
   return (
     <div className="bg-white-700 mx-auto my-5 w-[98%]">
       <div className="flex gap-2 items-center justify-start mb-2">
@@ -51,6 +53,7 @@ export function MapContainer({
           }}
         >
           <ToggleGroupItem value="locations">Ubicaciones</ToggleGroupItem>
+          <ToggleGroupItem value="states">Estados</ToggleGroupItem>
           <ToggleGroupItem value="choropleth">Coropleta</ToggleGroupItem>
           <ToggleGroupItem value="heatmap">Mapa de calor</ToggleGroupItem>
         </ToggleGroup>
@@ -58,10 +61,8 @@ export function MapContainer({
       <div className="h-120">
         <LeafletMap
           posix={[23.9345, -102.5528]}
-          locations={view === "choropleth" ? [] : locations}
-          statesData={
-            view === "choropleth" ? (statesData ?? undefined) : undefined
-          }
+          locations={showStates ? [] : locations}
+          statesData={showStates ? (statesData ?? undefined) : undefined}
           choroplethCounts={
             view === "choropleth" ? choroplethCounts : undefined
           }

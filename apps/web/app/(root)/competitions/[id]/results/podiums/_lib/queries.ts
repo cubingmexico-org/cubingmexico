@@ -9,8 +9,9 @@ import {
   state,
   resultAttempts,
 } from "@workspace/db/schema";
-import { and, eq, gt, inArray, or } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
+import { medalEligibleSql } from "@/lib/medals";
 import type { CompetitionResultRow } from "../../../_lib/results";
 
 export async function getCompetitionPodiumGroups(
@@ -30,6 +31,8 @@ export async function getCompetitionPodiumGroups(
       personState: state.name,
       roundTypeId: result.roundTypeId,
       position: result.pos,
+      globalPos: result.globalPos,
+      isDual: result.isDual,
       best: result.best,
       average: result.average,
     })
@@ -40,11 +43,12 @@ export async function getCompetitionPodiumGroups(
     .where(
       and(
         eq(result.competitionId, competitionId),
-        inArray(result.roundTypeId, ["f", "c"]),
-        or(gt(result.best, 0), gt(result.average, 0)),
+        medalEligibleSql(),
+        // Podium page shows finals / dual-final standings only.
+        sql`(${result.roundTypeId} IN ('f', 'c') OR ${result.isDual} = true)`,
       ),
     )
-    .orderBy(event.rank, result.pos, result.best);
+    .orderBy(event.rank, result.globalPos, result.best);
 
   if (rows.length === 0) {
     return [];
@@ -85,10 +89,33 @@ export async function getCompetitionPodiumGroups(
       return accumulator;
     }, new Map<string, CompetitionResultRow[]>()),
   ).map(([eventId, eventRows]) => {
-    const top3 = eventRows
-      .sort((a, b) => (a.position ?? 999) - (b.position ?? 999))
+    // One person per dual pair (keep better solve / lower global pos row).
+    const byPerson = new Map<string, (typeof eventRows)[number]>();
+    for (const row of eventRows) {
+      const existing = byPerson.get(row.personId);
+      if (
+        !existing ||
+        (row.globalPos ?? 999) < (existing.globalPos ?? 999) ||
+        ((row.globalPos ?? 999) === (existing.globalPos ?? 999) &&
+          row.best > 0 &&
+          (existing.best <= 0 || row.best < existing.best))
+      ) {
+        byPerson.set(row.personId, row);
+      }
+    }
+
+    const top3 = Array.from(byPerson.values())
+      .sort(
+        (a, b) =>
+          (a.globalPos ?? a.position ?? 999) -
+          (b.globalPos ?? b.position ?? 999),
+      )
       .slice(0, 3)
-      .map((row, index) => ({ ...row, position: index + 1 }));
+      .map((row, index) => ({
+        ...row,
+        position: index + 1,
+        globalPos: row.globalPos ?? index + 1,
+      }));
 
     return [eventId, top3] as [string, CompetitionResultRow[]];
   });

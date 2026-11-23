@@ -270,3 +270,11 @@ def update_existing_mexican_competitions():
     except Exception as e:
         log.exception("Error updating existing Mexican competitions: %s", e)
         return jsonify({"success": False, "message": "Error updating existing Mexican competitions"}), 500
+
+
+@admin_bp.route("/backfill-dual-positions", methods=["POST"])
+@require_cron_auth
+def backfill_dual_positions():
+    from routes.admin.wca_import_results import run_backfill_dual_positions
+
+    return job_response(run_backfill_dual_positions, "Error backfilling dual positions")

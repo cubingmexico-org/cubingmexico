@@ -24,6 +24,7 @@ import {
   type SQLWrapper,
 } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
+import { medalEligibleSql } from "@/lib/medals";
 import {
   computeKinchForPerson,
   computeSorForPerson,
@@ -115,9 +116,7 @@ async function podiumsInEvent(ctx: Context, eventId: string): Promise<number> {
         eq(result.personId, ctx.wcaId),
         eq(result.eventId, eventId),
         inOfficialEvents(result.eventId),
-        sql`${result.roundTypeId} IN ('f', 'c')`,
-        sql`${result.pos} IN (1, 2, 3)`,
-        sql`${result.best} > 0`,
+        medalEligibleSql(),
         gte(competition.startDate, ctx.yearStart),
         lte(competition.startDate, ctx.asOf),
       ),
@@ -129,7 +128,7 @@ async function yearCounts(ctx: Context): Promise<Record<CountMetric, number>> {
   // Competitions and states count every result, like the annual summary;
   // event-level counts only use official events.
   const official = inOfficialEvents(result.eventId);
-  const podium = sql`${official} AND ${result.roundTypeId} IN ('f', 'c') AND ${result.best} > 0`;
+  const podium = sql`${official} AND ${medalEligibleSql()}`;
   const hasRecord = (regional: SQLWrapper, state: SQLWrapper) =>
     sql`${official} AND (COALESCE(${regional}, '') <> '' OR ${state} = 'SR')`;
 
@@ -145,8 +144,8 @@ async function yearCounts(ctx: Context): Promise<Record<CountMetric, number>> {
           AND pc.start_date < ${ctx.yearStart.toISOString()}
       ))`,
       events: sql<number>`COUNT(DISTINCT ${result.eventId}) FILTER (WHERE ${official})`,
-      podiums: sql<number>`COUNT(*) FILTER (WHERE ${podium} AND ${result.pos} IN (1, 2, 3))`,
-      wins: sql<number>`COUNT(*) FILTER (WHERE ${podium} AND ${result.pos} = 1)`,
+      podiums: sql<number>`COUNT(*) FILTER (WHERE ${podium})`,
+      wins: sql<number>`COUNT(*) FILTER (WHERE ${podium} AND ${result.globalPos} = 1)`,
       records: sql<number>`COUNT(*) FILTER (WHERE ${hasRecord(result.regionalSingleRecord, result.stateSingleRecord)}) + COUNT(*) FILTER (WHERE ${hasRecord(result.regionalAverageRecord, result.stateAverageRecord)})`,
     })
     .from(result)

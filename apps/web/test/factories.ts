@@ -117,12 +117,18 @@ export async function insertResult(
   values: Partial<ResultInsert> &
     Pick<ResultInsert, "id" | "competitionId" | "eventId" | "personId">,
 ) {
-  await db.insert(result).values({
+  const merged = {
     best: 0,
     average: 0,
-    formatId: "a",
+    formatId: "a" as const,
     roundTypeId: null,
+    pos: 0,
+    isDual: false,
     ...values,
+  };
+  await db.insert(result).values({
+    ...merged,
+    globalPos: values.globalPos ?? merged.pos ?? 0,
   });
 }
 

@@ -311,6 +311,13 @@ export const result = pgTable(
   {
     id: varchar("id", { length: 64 }).primaryKey(),
     pos: smallint("pos").default(0),
+    /**
+     * Combined rank across a Dual Round pair (WCA `global_pos`).
+     * Equals `pos` for non-dual rounds.
+     */
+    globalPos: smallint("global_pos").notNull().default(0),
+    /** True when this round belongs to a Dual (linked) Round pair. */
+    isDual: boolean("is_dual").notNull().default(false),
     best: integer("best").notNull().default(0),
     average: integer("average").notNull().default(0),
     competitionId: varchar("competition_id", { length: 32 })
