@@ -83,12 +83,8 @@ def run_update_group_ranks(group_ids=None):
                 )
             log.info("Group ranks reset")
 
-            single_count = _write_group_ranks(
-                cur, "ranks_single", "group_ranks_single", group_ids
-            )
-            average_count = _write_group_ranks(
-                cur, "ranks_average", "group_ranks_average", group_ids
-            )
+            single_count = _write_group_ranks(cur, "ranks_single", "group_ranks_single", group_ids)
+            average_count = _write_group_ranks(cur, "ranks_average", "group_ranks_average", group_ids)
 
     log.info(
         "Group rankings updated successfully (singles=%s, averages=%s)",
@@ -179,9 +175,7 @@ def run_update_group_records(group_ids=None):
 
             log.info("Computing historical group records")
             _collect_group_records(conn, "best", "regional_single_record", group_ids, single_pairs)
-            _collect_group_records(
-                conn, "average", "regional_average_record", group_ids, average_pairs
-            )
+            _collect_group_records(conn, "average", "regional_average_record", group_ids, average_pairs)
 
             chunk_size = 500
             regional_markers = list(REGIONAL_RECORD_MARKERS)

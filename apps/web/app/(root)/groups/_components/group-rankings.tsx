@@ -69,6 +69,7 @@ export async function GroupRankings({
           </Link>
           <Link
             href={`/rankings/${eventId}/${rankType}`}
+            prefetch={false}
             className="text-muted-foreground hover:underline"
           >
             Rankings nacionales
@@ -99,6 +100,7 @@ export async function GroupRankings({
                   <TableCell>
                     <Link
                       href={`/persons/${row.personId}`}
+                      prefetch={false}
                       className="hover:underline"
                     >
                       {row.name}

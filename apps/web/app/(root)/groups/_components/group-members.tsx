@@ -44,6 +44,7 @@ export async function GroupMembers({ groupId }: { groupId: string }) {
                   <TableCell>
                     <Link
                       href={`/persons/${member.wcaId}`}
+                      prefetch={false}
                       className="font-medium hover:underline"
                     >
                       {member.name}
@@ -56,6 +57,7 @@ export async function GroupMembers({ groupId }: { groupId: string }) {
                     {member.stateId ? (
                       <Link
                         href={`/teams/${member.stateId}`}
+                        prefetch={false}
                         className="hover:underline"
                       >
                         {member.state}

@@ -13,6 +13,7 @@ from cloud_run_jobs import run_job
 from common import UPDATE_ALL_JOB, log, require_cron_auth
 from routes.admin.blueprint import admin_bp
 from routes.admin.cubing_contests import run_update_cubing_contests
+from routes.admin.groups import run_update_group_ranks, run_update_group_records
 from routes.admin.rankings import (
     run_update_kinch_ranks,
     run_update_nemesis_stats,
@@ -20,7 +21,6 @@ from routes.admin.rankings import (
     run_update_sum_of_ranks,
 )
 from routes.admin.schedules import run_update_competition_schedules
-from routes.admin.groups import run_update_group_ranks, run_update_group_records
 from routes.admin.state import run_update_state_ranks, run_update_state_records
 from routes.admin.wca_import import run_update_full_database
 from web_cache import UPDATE_ALL_TAGS, revalidate_web_tags

@@ -125,6 +125,7 @@ export async function GroupOverview({
                       <TableCell>
                         <Link
                           href={`/persons/${record.personId}`}
+                          prefetch={false}
                           className="hover:underline"
                         >
                           {record.personName}
@@ -168,6 +169,7 @@ export async function GroupOverview({
                 >
                   <Link
                     href={`/persons/${member.wcaId}`}
+                    prefetch={false}
                     className="truncate font-medium hover:underline"
                   >
                     {member.name}
