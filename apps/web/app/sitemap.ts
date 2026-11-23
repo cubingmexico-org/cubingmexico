@@ -1,7 +1,7 @@
 import { getEvents, getStates } from "@/db/queries";
 import { getCcRankingEvents } from "@/app/(root)/unofficial/_lib/queries";
 import { getGroupsByKind } from "@/app/(root)/groups/_lib/queries";
-import { groupHref } from "@/lib/groups";
+import { GROUPS_PUBLICLY_RELEASED, groupHref } from "@/lib/groups";
 import { rankTypeForEvent } from "@/lib/selectors";
 import type { MetadataRoute } from "next";
 import { cacheLife, cacheTag } from "next/cache";
@@ -14,10 +14,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const states = await getStates();
   const events = await getEvents();
   const ccEvents = await getCcRankingEvents();
-  const [communities, sponsors] = await Promise.all([
-    getGroupsByKind("community", { publicOnly: false }),
-    getGroupsByKind("sponsor", { publicOnly: true }),
-  ]);
+  const [communities, sponsors] = GROUPS_PUBLICLY_RELEASED
+    ? await Promise.all([
+        getGroupsByKind("community", { publicOnly: false }),
+        getGroupsByKind("sponsor", { publicOnly: true }),
+      ])
+    : [[], []];
 
   const unofficialRankingUrls = ccEvents.flatMap((event) =>
     (["single", "average"] as const).map((rankType) => ({
@@ -131,26 +133,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     ...teamUrls,
     ...teamSectionUrls,
-    {
-      url: "https://www.cubingmexico.net/communities",
-      changeFrequency: "monthly",
-      priority: 0.7,
-    },
-    ...communities.map((item) => ({
-      url: `https://www.cubingmexico.net${groupHref("community", item.id)}`,
-      changeFrequency: "monthly" as const,
-      priority: 0.6,
-    })),
-    {
-      url: "https://www.cubingmexico.net/sponsors",
-      changeFrequency: "monthly",
-      priority: 0.6,
-    },
-    ...sponsors.map((item) => ({
-      url: `https://www.cubingmexico.net${groupHref("sponsor", item.id)}`,
-      changeFrequency: "monthly" as const,
-      priority: 0.5,
-    })),
+    ...(GROUPS_PUBLICLY_RELEASED
+      ? [
+          {
+            url: "https://www.cubingmexico.net/communities",
+            changeFrequency: "monthly" as const,
+            priority: 0.7,
+          },
+          ...communities.map((item) => ({
+            url: `https://www.cubingmexico.net${groupHref("community", item.id)}`,
+            changeFrequency: "monthly" as const,
+            priority: 0.6,
+          })),
+          {
+            url: "https://www.cubingmexico.net/sponsors",
+            changeFrequency: "monthly" as const,
+            priority: 0.6,
+          },
+          ...sponsors.map((item) => ({
+            url: `https://www.cubingmexico.net${groupHref("sponsor", item.id)}`,
+            changeFrequency: "monthly" as const,
+            priority: 0.5,
+          })),
+        ]
+      : []),
     {
       url: "https://www.cubingmexico.net/competitions",
       changeFrequency: "weekly",

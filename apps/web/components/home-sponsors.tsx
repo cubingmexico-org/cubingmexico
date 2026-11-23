@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getPublicitySponsors } from "@/app/(root)/groups/_lib/queries";
-import { groupHref } from "@/lib/groups";
+import { GROUPS_PUBLICLY_RELEASED, groupHref } from "@/lib/groups";
 
 export async function HomeSponsors() {
+  if (!GROUPS_PUBLICLY_RELEASED) return null;
+
   const sponsors = await getPublicitySponsors();
   if (sponsors.length === 0) return null;
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   GROUP_ID_REGEX,
+  GROUPS_PUBLICLY_RELEASED,
+  canShowGroupsLinks,
   groupBasePath,
   groupHref,
   groupIdFromName,
@@ -9,6 +11,11 @@ import {
 } from "./groups";
 
 describe("groups helpers", () => {
+  it("gates public group links until launch", () => {
+    expect(canShowGroupsLinks(true)).toBe(true);
+    expect(canShowGroupsLinks(false)).toBe(GROUPS_PUBLICLY_RELEASED);
+  });
+
   it("maps kinds to public paths and labels", () => {
     expect(groupBasePath("community")).toBe("/communities");
     expect(groupBasePath("sponsor")).toBe("/sponsors");

@@ -1,5 +1,15 @@
 import type { GroupKind } from "@workspace/db/schema";
 
+/**
+ * Temporary feature gate: communities/sponsors stay superadmin-only until
+ * public launch. Flip to `true` to open directories, nav, sitemap, and search.
+ */
+export const GROUPS_PUBLICLY_RELEASED = false;
+
+export function canShowGroupsLinks(isSuperadmin = false): boolean {
+  return GROUPS_PUBLICLY_RELEASED || isSuperadmin;
+}
+
 export function groupBasePath(kind: GroupKind): "/communities" | "/sponsors" {
   return kind === "community" ? "/communities" : "/sponsors";
 }

@@ -1,3 +1,4 @@
+import { GROUPS_PUBLICLY_RELEASED } from "@/lib/groups";
 import { normalizeSearchText } from "@/lib/search";
 
 export type SitePage = {
@@ -24,16 +25,20 @@ export const SITE_PAGES: SitePage[] = [
     href: "/teams",
     keywords: ["equipos", "estados"],
   },
-  {
-    title: "Comunidades",
-    href: "/communities",
-    keywords: ["comunidad", "vallarta", "local"],
-  },
-  {
-    title: "Patrocinadores",
-    href: "/sponsors",
-    keywords: ["sponsor", "tienda", "cubos dany", "publicidad"],
-  },
+  ...(GROUPS_PUBLICLY_RELEASED
+    ? [
+        {
+          title: "Comunidades",
+          href: "/communities",
+          keywords: ["comunidad", "vallarta", "local"],
+        },
+        {
+          title: "Patrocinadores",
+          href: "/sponsors",
+          keywords: ["sponsor", "tienda", "cubos dany", "publicidad"],
+        },
+      ]
+    : []),
   {
     title: "Comparar teams",
     href: "/teams/compare",

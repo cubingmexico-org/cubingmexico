@@ -17,7 +17,7 @@ import {
   getLastCompetitionWithResults,
 } from "@/db/queries";
 import { getPublicitySponsors } from "@/app/(root)/groups/_lib/queries";
-import { groupHref } from "@/lib/groups";
+import { GROUPS_PUBLICLY_RELEASED, groupHref } from "@/lib/groups";
 import { DataSourcesNotice } from "./data-sources-notice";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -31,7 +31,7 @@ async function FooterContent() {
   const [competitions, dataSourceDates, sponsors] = await Promise.all([
     getLastCompetitionWithResults(),
     getDataSourceDates(),
-    getPublicitySponsors(),
+    GROUPS_PUBLICLY_RELEASED ? getPublicitySponsors() : Promise.resolve([]),
   ]);
 
   return (
