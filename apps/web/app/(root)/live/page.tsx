@@ -12,6 +12,7 @@ import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
 import { CompetitionLogo } from "@/components/competition-logo";
 import { PageHeading } from "@/components/page-heading";
+import { formatCityState } from "@/lib/format";
 import { formatDate } from "@/lib/utils";
 import { getInProgressLiveCompetitions } from "@/lib/live/queries";
 
@@ -84,9 +85,7 @@ export default async function LiveHubPage() {
                       {comp.name}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {[comp.cityName, comp.stateName]
-                        .filter(Boolean)
-                        .join(", ")}
+                      {formatCityState(comp.cityName, comp.stateName)}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {formatDate(comp.startDate, comp.endDate)}

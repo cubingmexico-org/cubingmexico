@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { connection } from "next/server";
 import { reportError } from "@/lib/report-error";
 import { fetchLiveCompetitionMeta, fetchLiveRounds } from "@/lib/live/wca";
-import { officialLiveUrl } from "@/lib/live/urls";
+import { officialLiveUrl, usesClassicWcaLive } from "@/lib/live/urls";
 
 const CACHE_HEADERS = {
   "Cache-Control": "public, s-maxage=10, stale-while-revalidate=20",
@@ -27,10 +27,7 @@ export async function GET(
   }
 
   try {
-    const [meta, rounds] = await Promise.all([
-      fetchLiveCompetitionMeta(competitionId),
-      fetchLiveRounds(competitionId),
-    ]);
+    const meta = await fetchLiveCompetitionMeta(competitionId);
 
     if (!meta) {
       return NextResponse.json(
@@ -38,6 +35,28 @@ export async function GET(
         { status: 404 },
       );
     }
+
+    if (usesClassicWcaLive(meta.scoretakingSoftware)) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: "wca_live",
+          message:
+            "This competition uses classic WCA Live; Cubing México live requires ILR",
+          data: {
+            competition: meta,
+            rounds: [],
+            officialLiveUrl: officialLiveUrl(
+              competitionId,
+              meta.scoretakingSoftware,
+            ),
+          },
+        },
+        { status: 422, headers: CACHE_HEADERS },
+      );
+    }
+
+    const rounds = await fetchLiveRounds(competitionId);
 
     return NextResponse.json(
       {

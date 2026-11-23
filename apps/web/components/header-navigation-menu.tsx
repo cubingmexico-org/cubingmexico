@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   ChartNoAxesColumnIncreasing,
   Medal,
@@ -31,6 +32,7 @@ import {
 } from "@workspace/ui/components/navigation-menu";
 import { CubingMexico } from "@workspace/icons";
 import { cn } from "@workspace/ui/lib/utils";
+import { HeaderLiveNavLink } from "./header-live-nav-link";
 import { HeaderNavLink } from "./header-nav-link";
 import { ResponsiveNavigationMenu } from "./responsive-navigation-menu";
 
@@ -54,9 +56,15 @@ export function HeaderNavigationMenu() {
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <HeaderNavLink href="/live" className={navItemClass}>
-            En vivo
-          </HeaderNavLink>
+          <Suspense
+            fallback={
+              <HeaderNavLink href="/live" className={navItemClass}>
+                En vivo
+              </HeaderNavLink>
+            }
+          >
+            <HeaderLiveNavLink className={navItemClass} />
+          </Suspense>
         </NavigationMenuItem>
 
         <NavigationMenuItem>

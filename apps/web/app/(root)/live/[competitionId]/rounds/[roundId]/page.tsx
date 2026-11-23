@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { enrichLiveRoundDetails } from "@/lib/live/enrich";
 import { liveRoundLabel } from "@/lib/live/format";
-import { officialLiveUrl } from "@/lib/live/urls";
+import { officialLiveUrl, usesClassicWcaLive } from "@/lib/live/urls";
 import {
   fetchLiveCompetitionMeta,
   fetchLiveRoundDetails,
 } from "@/lib/live/wca";
+import { WcaLiveUnsupported } from "../../../../_components/wca-live-unsupported";
 import { LiveResultsView } from "./_components/live-results-view";
 
 type Props = {
@@ -38,17 +39,37 @@ export default async function LiveRoundPage({ params }: Props) {
   const { competitionId, roundId } = await params;
 
   let meta;
-  let round;
   try {
-    [meta, round] = await Promise.all([
-      fetchLiveCompetitionMeta(competitionId),
-      fetchLiveRoundDetails(competitionId, roundId),
-    ]);
+    meta = await fetchLiveCompetitionMeta(competitionId);
   } catch {
     notFound();
   }
 
-  if (!meta || !round) {
+  if (!meta) {
+    notFound();
+  }
+
+  const officialUrl = officialLiveUrl(competitionId, meta.scoretakingSoftware);
+
+  if (usesClassicWcaLive(meta.scoretakingSoftware)) {
+    return (
+      <main className="grow container mx-auto px-4 py-8">
+        <WcaLiveUnsupported
+          competition={meta}
+          officialLiveUrl={officialUrl}
+        />
+      </main>
+    );
+  }
+
+  let round;
+  try {
+    round = await fetchLiveRoundDetails(competitionId, roundId);
+  } catch {
+    notFound();
+  }
+
+  if (!round) {
     notFound();
   }
 
@@ -64,10 +85,7 @@ export default async function LiveRoundPage({ params }: Props) {
         roundId={roundId}
         initial={{
           ...enriched,
-          officialLiveUrl: officialLiveUrl(
-            competitionId,
-            meta.scoretakingSoftware,
-          ),
+          officialLiveUrl: officialUrl,
         }}
       />
     </main>

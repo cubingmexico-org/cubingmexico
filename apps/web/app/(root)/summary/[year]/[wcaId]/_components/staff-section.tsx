@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatCityState } from "@/lib/format";
 import { Stat } from "../../../_components/summary-stat";
 import type { AnnualSummary } from "../_lib/queries";
 
@@ -25,7 +26,7 @@ function StaffCompetitionList({
               {comp.name}
             </Link>
             {comp.stateName || comp.cityName
-              ? ` — ${[comp.cityName, comp.stateName].filter(Boolean).join(", ")}`
+              ? ` — ${formatCityState(comp.cityName, comp.stateName)}`
               : ""}
           </li>
         ))}
