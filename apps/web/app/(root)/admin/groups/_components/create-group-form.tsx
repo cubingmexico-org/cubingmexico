@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
@@ -9,6 +10,7 @@ import { createGroupAction } from "@/app/(root)/groups/_lib/actions";
 import { groupIdFromName } from "@/lib/groups";
 
 export function CreateGroupForm() {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -45,6 +47,7 @@ export function CreateGroupForm() {
           }
           toast.success(`Grupo ${result.data?.id} creado`);
           resetForm(event.currentTarget);
+          router.refresh();
         });
       }}
     >
