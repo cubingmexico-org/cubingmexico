@@ -1,5 +1,4 @@
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { buttonVariants } from "@workspace/ui/components/button";
@@ -9,15 +8,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { Skeleton } from "@workspace/ui/components/skeleton";
 import { cn } from "@workspace/ui/lib/utils";
 import { stripMarkdownLinks } from "@/lib/calendar";
 import type { Competition } from "@/types/wca";
-
-const CompetitionMap = dynamic(() => import("./map").then((mod) => mod.Map), {
-  ssr: false,
-  loading: () => <Skeleton className="w-full h-full" />,
-});
+import { CompetitionMap } from "./competition-map";
 
 export function VenueTab({ competition }: { competition: Competition }) {
   return (
