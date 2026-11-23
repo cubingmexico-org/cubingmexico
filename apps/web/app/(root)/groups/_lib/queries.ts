@@ -18,7 +18,10 @@ import { and, asc, count, eq, gt, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import { inOfficialEvents } from "@/lib/official-events";
 
-export async function getGroupsByKind(kind: GroupKind, opts?: { publicOnly?: boolean }) {
+export async function getGroupsByKind(
+  kind: GroupKind,
+  opts?: { publicOnly?: boolean },
+) {
   cacheLife("days");
   cacheTag(`groups-directory-${kind}`);
 
@@ -308,9 +311,7 @@ export async function getPersonGroups(wcaId: string) {
     })
     .from(groupMembership)
     .innerJoin(group, eq(groupMembership.groupId, group.id))
-    .where(
-      and(eq(groupMembership.personId, wcaId), eq(group.isActive, true)),
-    )
+    .where(and(eq(groupMembership.personId, wcaId), eq(group.isActive, true)))
     .orderBy(asc(group.kind), asc(group.name));
 }
 

@@ -9,11 +9,14 @@ export default async function Layout({
   children: ReactNode;
   params: Promise<{ groupId: string }>;
 }) {
-  const { groupId } = await params;
   return (
     <main className="min-w-0 grow overflow-x-clip">
-      <Suspense fallback={<div className="p-8 text-sm text-muted-foreground">Cargando…</div>}>
-        <GroupFrame groupId={groupId} expectedKind="community">
+      <Suspense
+        fallback={
+          <div className="p-8 text-sm text-muted-foreground">Cargando…</div>
+        }
+      >
+        <GroupFrame params={params} expectedKind="community">
           {children}
         </GroupFrame>
       </Suspense>

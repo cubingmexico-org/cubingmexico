@@ -84,9 +84,7 @@ export async function setSponsorshipStatus({
     .update(group)
     .set({
       sponsorshipStatus,
-      ...(sponsorshipExpiresAt !== undefined
-        ? { sponsorshipExpiresAt }
-        : {}),
+      ...(sponsorshipExpiresAt !== undefined ? { sponsorshipExpiresAt } : {}),
       ...(publicityEnabled !== undefined ? { publicityEnabled } : {}),
     })
     .where(eq(group.id, id));

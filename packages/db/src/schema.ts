@@ -622,11 +622,7 @@ export type SocialPost = InferSelectModel<typeof socialPost>;
 export const groupKindEnum = ["community", "sponsor"] as const;
 export type GroupKind = (typeof groupKindEnum)[number];
 
-export const sponsorshipStatusEnum = [
-  "inactive",
-  "active",
-  "expired",
-] as const;
+export const sponsorshipStatusEnum = ["inactive", "active", "expired"] as const;
 export type SponsorshipStatus = (typeof sponsorshipStatusEnum)[number];
 
 export type GroupSocialLinks = {

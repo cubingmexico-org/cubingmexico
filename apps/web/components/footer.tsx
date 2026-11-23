@@ -112,9 +112,7 @@ async function FooterContent() {
               {sponsors.map((sponsor) => (
                 <Link
                   key={sponsor.id}
-                  href={
-                    sponsor.websiteUrl || groupHref("sponsor", sponsor.id)
-                  }
+                  href={sponsor.websiteUrl || groupHref("sponsor", sponsor.id)}
                   className="text-white/70 underline-offset-2 hover:text-white hover:underline"
                   {...(sponsor.websiteUrl
                     ? { target: "_blank", rel: "noopener noreferrer" }

@@ -164,12 +164,13 @@ describe("deleteGroupMembers", () => {
 describe("setSponsorshipAction", () => {
   it("is reserved for superadmins", async () => {
     signIn(ADMIN);
-    const result = await setSponsorshipAction({
-      groupId: "cubos-dany",
-      sponsorshipStatus: "active",
-      publicityEnabled: true,
-    });
-    expect(result.error).toBeTruthy();
+    await expect(
+      setSponsorshipAction({
+        groupId: "cubos-dany",
+        sponsorshipStatus: "active",
+        publicityEnabled: true,
+      }),
+    ).rejects.toMatchObject(UNAUTHORIZED);
   });
 
   it("lets a superadmin activate publicity", async () => {

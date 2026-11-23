@@ -15,7 +15,9 @@ type Props = { params: Promise<{ groupId: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { groupId } = await params;
   const group = await getGroupInfo(groupId);
-  return { title: `${group?.name ?? "Comunidad"} | Administrar | Cubing México` };
+  return {
+    title: `${group?.name ?? "Comunidad"} | Administrar | Cubing México`,
+  };
 }
 
 export default async function Page({ params }: Props) {

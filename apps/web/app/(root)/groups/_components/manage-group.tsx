@@ -74,9 +74,7 @@ export function ManageGroup({
         instagram: group.socialLinks?.instagram ?? "",
         twitter: group.socialLinks?.twitter ?? "",
         tiktok: group.socialLinks?.tiktok ?? "",
-        founded: group.founded
-          ? group.founded.toISOString().slice(0, 10)
-          : "",
+        founded: group.founded ? group.founded.toISOString().slice(0, 10) : "",
         isActive: group.isActive ? "on" : "",
         regionLabel: group.regionLabel ?? "",
         websiteUrl: group.websiteUrl ?? "",

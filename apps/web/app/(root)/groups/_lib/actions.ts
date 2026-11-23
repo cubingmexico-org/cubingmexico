@@ -114,7 +114,10 @@ export async function addGroupMemberFormAction(
     await requireGroupPermission(data.groupId, "group.members");
 
     const specialties = data.specialties
-      ? data.specialties.split(",").map((s) => s.trim()).filter(Boolean)
+      ? data.specialties
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : null;
 
     const [candidate] = await db
@@ -180,7 +183,10 @@ export async function updateGroupMemberAction(
     await requireGroupPermission(data.groupId, "group.members");
 
     const specialties = data.specialties
-      ? data.specialties.split(",").map((s) => s.trim()).filter(Boolean)
+      ? data.specialties
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
       : null;
 
     const [member] = await db
@@ -310,7 +316,9 @@ export async function updateGroupCoverAction(
   return { success: true };
 }
 
-export async function createGroupAction(input: z.infer<typeof createGroupSchema>) {
+export async function createGroupAction(
+  input: z.infer<typeof createGroupSchema>,
+) {
   try {
     await requireSuperadmin();
     const data = createGroupSchema.parse(input);
@@ -350,6 +358,7 @@ export async function setSponsorshipAction(
     updateTag("groups-publicity");
     return { data: null, error: null };
   } catch (error) {
+    // Re-throws unauthorized()/redirect() control-flow errors.
     return { data: null, error: getErrorMessage(error) };
   }
 }

@@ -10,14 +10,15 @@ import { getGroupShellData } from "../_lib/queries";
 import { GroupShell } from "./group-shell";
 
 export async function GroupFrame({
-  groupId,
+  params,
   expectedKind,
   children,
 }: {
-  groupId: string;
+  params: Promise<{ groupId: string }>;
   expectedKind: GroupKind;
   children: ReactNode;
 }) {
+  const { groupId } = await params;
   const data = await getGroupShellData(groupId);
   if (!data || data.group.kind !== expectedKind) {
     notFound();

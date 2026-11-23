@@ -24,7 +24,9 @@ export async function GroupMembers({ groupId }: { groupId: string }) {
       </div>
 
       {visible.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Sin miembros publicados.</p>
+        <p className="text-sm text-muted-foreground">
+          Sin miembros publicados.
+        </p>
       ) : (
         <div className="overflow-x-auto rounded-md border">
           <Table>

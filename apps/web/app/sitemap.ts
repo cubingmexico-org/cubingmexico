@@ -1,8 +1,6 @@
 import { getEvents, getStates } from "@/db/queries";
 import { getCcRankingEvents } from "@/app/(root)/unofficial/_lib/queries";
-import {
-  getGroupsByKind,
-} from "@/app/(root)/groups/_lib/queries";
+import { getGroupsByKind } from "@/app/(root)/groups/_lib/queries";
 import { groupHref } from "@/lib/groups";
 import { rankTypeForEvent } from "@/lib/selectors";
 import type { MetadataRoute } from "next";

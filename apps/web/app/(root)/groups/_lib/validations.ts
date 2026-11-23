@@ -99,13 +99,9 @@ export const addGroupMemberFormSchema = z.object({
 });
 
 export const createGroupSchema = z.object({
-  id: z
-    .string()
-    .min(2)
-    .max(32)
-    .regex(GROUP_ID_REGEX, {
-      message: "Usa solo minúsculas, números y guiones",
-    }),
+  id: z.string().min(2).max(32).regex(GROUP_ID_REGEX, {
+    message: "Usa solo minúsculas, números y guiones",
+  }),
   kind: z.enum(["community", "sponsor"]),
   name: z.string().min(2).max(50),
   description: z.string().max(1000).optional().nullable(),

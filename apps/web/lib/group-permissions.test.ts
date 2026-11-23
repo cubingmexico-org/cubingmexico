@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  canManageGroup,
-  groupRoleHasPermission,
-} from "./group-permissions";
+import { canManageGroup, groupRoleHasPermission } from "./group-permissions";
 
 describe("group permissions", () => {
   it("gives admins every permission and editors a subset", () => {
