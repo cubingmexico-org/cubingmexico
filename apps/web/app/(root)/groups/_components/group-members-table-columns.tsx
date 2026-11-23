@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@workspace/ui/components/select";
 import type { GroupMembership } from "@workspace/db/schema";
+import { StateLabel } from "@/components/state-flag";
 import type { GroupMember } from "../_types";
 import { updateGroupMemberRole } from "../_lib/actions";
 
@@ -204,7 +205,7 @@ export function getGroupMemberColumns({
             prefetch={false}
             className="hover:underline"
           >
-            {state}
+            <StateLabel stateId={stateId} stateName={state} />
           </Link>
         );
       },

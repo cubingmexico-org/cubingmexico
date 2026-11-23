@@ -64,6 +64,24 @@ export async function updateGroupLogo({
   });
 }
 
+export async function updateGroupIcon({
+  id,
+  icon,
+}: {
+  id: Group["id"];
+  icon: Group["icon"];
+}): Promise<Group["icon"]> {
+  return db.transaction(async (tx) => {
+    const [previous] = await tx
+      .select({ icon: group.icon })
+      .from(group)
+      .where(eq(group.id, id))
+      .for("update");
+    await tx.update(group).set({ icon }).where(eq(group.id, id));
+    return previous?.icon ?? null;
+  });
+}
+
 export async function updateGroupCover({
   id,
   coverImage,
@@ -86,6 +104,7 @@ export async function updateGroupCover({
 export async function deleteGroup(id: Group["id"]): Promise<{
   kind: Group["kind"];
   image: Group["image"];
+  icon: Group["icon"];
   coverImage: Group["coverImage"];
 } | null> {
   return db.transaction(async (tx) => {
@@ -93,6 +112,7 @@ export async function deleteGroup(id: Group["id"]): Promise<{
       .select({
         kind: group.kind,
         image: group.image,
+        icon: group.icon,
         coverImage: group.coverImage,
       })
       .from(group)

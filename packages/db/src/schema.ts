@@ -450,6 +450,7 @@ export const team = pgTable("teams", {
   name: varchar("name", { length: 50 }).notNull(),
   description: text("description"),
   image: varchar("image", { length: 191 }),
+  icon: varchar("icon", { length: 191 }),
   coverImage: varchar("cover_image", { length: 191 }),
   stateId: varchar("state_id", { length: 3 })
     .notNull()
@@ -653,6 +654,7 @@ export const group = pgTable(
     name: varchar("name", { length: 50 }).notNull(),
     description: text("description"),
     image: varchar("image", { length: 191 }),
+    icon: varchar("icon", { length: 191 }),
     coverImage: varchar("cover_image", { length: 191 }),
     founded: timestamp("founded"),
     socialLinks: jsonb("social_links").$type<GroupSocialLinks>(),

@@ -33,9 +33,11 @@ import { cn } from "@workspace/ui/lib/utils";
 import {
   deleteTeamAction,
   deleteTeamCoverAction,
+  deleteTeamIconAction,
   deleteTeamLogoAction,
 } from "../_lib/actions";
 import { ImageUploader } from "./image-uploader";
+import { IconUploader } from "./icon-uploader";
 import { CoverUploader } from "./cover-uploader";
 import { getMembers, getMembersGenderCounts } from "../../_lib/queries";
 import { SaveTeamForm } from "./save-team-form";
@@ -53,6 +55,7 @@ export function ManageTeam({
     name: string;
     description: string | null;
     image: string | null;
+    icon: string | null;
     coverImage: string | null;
     state: string;
     founded: Date | null;
@@ -253,7 +256,7 @@ export function ManageTeam({
                 <CardHeader>
                   <CardTitle>Logo del Team</CardTitle>
                   <CardDescription>
-                    Sube la imagen del logo de tu team
+                    Imagen completa para encabezados y tarjetas
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -315,6 +318,70 @@ export function ManageTeam({
 
               <Card>
                 <CardHeader>
+                  <CardTitle>Ícono del Team</CardTitle>
+                  <CardDescription>
+                    Versión simplificada para badges y tamaños pequeños
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-center">
+                    <div className="relative w-24 h-24">
+                      <Image
+                        src={teamData.icon || "/placeholder.svg"}
+                        alt="Ícono del team"
+                        className="w-full h-full object-cover rounded-md border-2 border-gray-200"
+                        layout="fill"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-md opacity-0 hover:opacity-100 transition-opacity">
+                        <IconUploader stateId={stateId} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-center text-sm text-muted-foreground">
+                    Tamaño recomendado: 128x128 píxeles (cuadrado)
+                  </div>
+                  <div className="flex justify-center pt-2">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700"
+                          type="button"
+                          disabled={!teamData.icon}
+                        >
+                          <Trash2 />
+                          Eliminar Ícono
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            ¿Estás completamente seguro?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción eliminará el ícono de tu team. Si no hay
+                            ícono, se usará el logo como respaldo.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              await deleteTeamIconAction(stateId);
+                            }}
+                          >
+                            Continuar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
+                <CardHeader>
                   <CardTitle>Imagen de Portada</CardTitle>
                   <CardDescription>
                     Sube la imagen de portada de tu team
@@ -355,8 +422,8 @@ export function ManageTeam({
                             ¿Estás completamente seguro?
                           </AlertDialogTitle>
                           <AlertDialogDescription>
-                            Esta acción eliminará el logo de tu team. No podrás
-                            deshacer esta acción.
+                            Esta acción eliminará la portada de tu team. No
+                            podrás deshacer esta acción.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -383,40 +450,47 @@ export function ManageTeam({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <h3 className="font-semibold flex items-center">
-                          <ImageIcon className="w-4 h-4 mr-2" />
-                          Guías para el Logo
-                        </h3>
-                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                          <li>Usa una imagen cuadrada (proporción 1:1)</li>
-                          <li>Manténlo simple y reconocible</li>
-                          <li>
-                            Asegúrate de que se vea bien en tamaños pequeños
-                          </li>
-                          <li>Usa formato PNG para mejor calidad</li>
-                          <li>Tamaño máximo del archivo: 2MB</li>
-                        </ul>
-                      </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold flex items-center">
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Guías para el Logo
+                      </h3>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                        <li>Para encabezados y tarjetas</li>
+                        <li>Usa una imagen cuadrada (proporción 1:1)</li>
+                        <li>Manténlo simple y reconocible</li>
+                        <li>Usa formato PNG para mejor calidad</li>
+                        <li>Tamaño máximo del archivo: 2MB</li>
+                      </ul>
                     </div>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <h3 className="font-semibold flex items-center">
-                          <ImageIcon className="w-4 h-4 mr-2" />
-                          Guías para la Imagen de Portada
-                        </h3>
-                        <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                          <li>
-                            Usa una imagen ancha (proporción recomendada 3:1)
-                          </li>
-                          <li>Elige imágenes de alta resolución</li>
-                          <li>Evita texto en la imagen</li>
-                          <li>Usa formato JPG para fotos</li>
-                          <li>Tamaño máximo del archivo: 4MB</li>
-                        </ul>
-                      </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold flex items-center">
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Guías para el Ícono
+                      </h3>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                        <li>Para badges (~14px) y chips pequeños</li>
+                        <li>Marca simplificada, poco o nada de texto</li>
+                        <li>Alto contraste; legible en tamaño diminuto</li>
+                        <li>PNG transparente preferido</li>
+                        <li>Tamaño máximo del archivo: 1MB</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="font-semibold flex items-center">
+                        <ImageIcon className="w-4 h-4 mr-2" />
+                        Guías para la Imagen de Portada
+                      </h3>
+                      <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                        <li>
+                          Usa una imagen ancha (proporción recomendada 3:1)
+                        </li>
+                        <li>Elige imágenes de alta resolución</li>
+                        <li>Evita texto en la imagen</li>
+                        <li>Usa formato JPG para fotos</li>
+                        <li>Tamaño máximo del archivo: 4MB</li>
+                      </ul>
                     </div>
                   </div>
                 </CardContent>

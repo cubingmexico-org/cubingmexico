@@ -12,6 +12,7 @@ import {
   saveGroup,
   setSponsorshipStatus,
   updateGroupCover,
+  updateGroupIcon,
   updateGroupLogo,
   updateGroupMemberRole as setGroupMemberRole,
 } from "@/db/group-mutations";
@@ -382,6 +383,10 @@ export async function deleteGroupLogoAction(groupId: string) {
   return updateGroupLogoAction(groupId, null);
 }
 
+export async function deleteGroupIconAction(groupId: string) {
+  return updateGroupIconAction(groupId, null);
+}
+
 export async function deleteGroupCoverAction(groupId: string) {
   return updateGroupCoverAction(groupId, null);
 }
@@ -401,6 +406,27 @@ export async function updateGroupLogoAction(
   updateTag("groups-directory-sponsor");
   updateTag("groups-publicity");
   if (previous !== image) {
+    await deleteUploadedFileIfUnused(previous);
+  }
+
+  return { success: true };
+}
+
+export async function updateGroupIconAction(
+  groupId: string,
+  icon: string | null,
+) {
+  await requireGroupPermission(groupId, "group.media");
+
+  const previous = await updateGroupIcon({
+    id: groupId,
+    icon: groupImageSchema.parse(icon),
+  });
+  updateTag(`group-info-${groupId}`);
+  updateTag("groups-directory-community");
+  updateTag("groups-directory-sponsor");
+  updateTag("groups-publicity");
+  if (previous !== icon) {
     await deleteUploadedFileIfUnused(previous);
   }
 
@@ -438,6 +464,7 @@ export async function deleteGroupAction(groupId: string) {
   updateTag("groups-publicity");
   await Promise.all([
     deleteUploadedFileIfUnused(previous.image),
+    deleteUploadedFileIfUnused(previous.icon),
     deleteUploadedFileIfUnused(previous.coverImage),
   ]);
   redirect("/admin/groups");

@@ -36,12 +36,14 @@ import { groupHref, groupKindLabel } from "@/lib/groups";
 import {
   deleteGroupAction,
   deleteGroupCoverAction,
+  deleteGroupIconAction,
   deleteGroupLogoAction,
   setSponsorshipAction,
 } from "../_lib/actions";
 import type { GroupMember } from "../_types";
 import { AddGroupMemberForm } from "./add-group-member-form";
 import { GroupCoverUploader } from "./group-cover-uploader";
+import { GroupIconUploader } from "./group-icon-uploader";
 import { GroupImageUploader } from "./group-image-uploader";
 import { SaveGroupForm } from "./save-group-form";
 
@@ -51,6 +53,7 @@ type GroupData = {
   name: string;
   description: string | null;
   image: string | null;
+  icon: string | null;
   coverImage: string | null;
   regionLabel: string | null;
   websiteUrl: string | null;
@@ -147,7 +150,7 @@ export function ManageGroup({
                 <CardHeader>
                   <CardTitle>Logo del grupo</CardTitle>
                   <CardDescription>
-                    Sube la imagen del logo de tu grupo
+                    Imagen completa para encabezados y tarjetas
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -211,6 +214,73 @@ export function ManageGroup({
               </Card>
 
               <Card>
+                <CardHeader>
+                  <CardTitle>Ícono del grupo</CardTitle>
+                  <CardDescription>
+                    Versión simplificada para badges y tamaños pequeños
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-center">
+                    <div className="relative h-24 w-24">
+                      <Image
+                        src={group.icon || "/placeholder.svg"}
+                        alt="Ícono del grupo"
+                        className="h-full w-full rounded-md border-2 border-gray-200 object-cover"
+                        fill
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40 opacity-0 transition-opacity hover:opacity-100">
+                        <GroupIconUploader groupId={group.id} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-center text-sm text-muted-foreground">
+                    Tamaño recomendado: 128x128 píxeles (cuadrado)
+                  </div>
+                  <div className="flex justify-center pt-2">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-500 hover:text-red-700"
+                          type="button"
+                          disabled={!group.icon}
+                        >
+                          <Trash2 />
+                          Eliminar ícono
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            ¿Estás completamente seguro?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta acción eliminará el ícono del grupo. Si no hay
+                            ícono, se usará el logo como respaldo.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() =>
+                              startTransition(async () => {
+                                await deleteGroupIconAction(group.id);
+                                toast.success("Ícono eliminado");
+                              })
+                            }
+                          >
+                            Continuar
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="md:col-span-2">
                 <CardHeader>
                   <CardTitle>Imagen de portada</CardTitle>
                   <CardDescription>
@@ -283,20 +353,31 @@ export function ManageGroup({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                     <div className="space-y-2">
                       <h3 className="flex items-center font-semibold">
                         <ImageIcon className="mr-2 h-4 w-4" />
                         Guías para el logo
                       </h3>
                       <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                        <li>Para encabezados y tarjetas</li>
                         <li>Usa una imagen cuadrada (proporción 1:1)</li>
                         <li>Manténlo simple y reconocible</li>
-                        <li>
-                          Asegúrate de que se vea bien en tamaños pequeños
-                        </li>
                         <li>Usa formato PNG para mejor calidad</li>
                         <li>Tamaño máximo del archivo: 2MB</li>
+                      </ul>
+                    </div>
+                    <div className="space-y-2">
+                      <h3 className="flex items-center font-semibold">
+                        <ImageIcon className="mr-2 h-4 w-4" />
+                        Guías para el ícono
+                      </h3>
+                      <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                        <li>Para badges (~14px) y chips pequeños</li>
+                        <li>Marca simplificada, poco o nada de texto</li>
+                        <li>Alto contraste; legible en tamaño diminuto</li>
+                        <li>PNG transparente preferido</li>
+                        <li>Tamaño máximo del archivo: 1MB</li>
                       </ul>
                     </div>
                     <div className="space-y-2">

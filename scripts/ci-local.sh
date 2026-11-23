@@ -85,8 +85,10 @@ pnpm turbo run lint check-types test --force
 step "Migration drift"
 DATABASE_URL="postgresql://unused@localhost/unused" pnpm --filter @workspace/db generate
 DATABASE_URL="postgresql://unused@localhost/unused" pnpm --filter @workspace/db export-columns
+# Unstaged edits or untracked files mean generate/export drifted. Staged
+# migration/fixture changes are fine (pre-commit includes them in the commit).
 git diff --exit-code -- packages/db/drizzle fixtures/schema
-test -z "$(git status --porcelain -- packages/db/drizzle fixtures/schema)"
+test -z "$(git ls-files --others --exclude-standard -- packages/db/drizzle fixtures/schema)"
 
 # --- integration / build / e2e need Postgres ---------------------------------
 ensure_postgres

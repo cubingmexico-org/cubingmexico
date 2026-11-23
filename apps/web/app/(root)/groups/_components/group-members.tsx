@@ -8,6 +8,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { Badge } from "@workspace/ui/components/badge";
+import { StateLabel } from "@/components/state-flag";
 import { getGroupMembers } from "../_lib/queries";
 
 export async function GroupMembers({ groupId }: { groupId: string }) {
@@ -67,13 +68,16 @@ export async function GroupMembers({ groupId }: { groupId: string }) {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {member.stateId ? (
+                    {member.stateId && member.state ? (
                       <Link
                         href={`/teams/${member.stateId}`}
                         prefetch={false}
                         className="hover:underline"
                       >
-                        {member.state}
+                        <StateLabel
+                          stateId={member.stateId}
+                          stateName={member.state}
+                        />
                       </Link>
                     ) : (
                       <span className="text-muted-foreground">—</span>

@@ -102,6 +102,7 @@ export async function queryCrossedTeams({
       stateId: person.stateId,
       teamName: team.name,
       teamImage: team.image,
+      teamIcon: team.icon,
       sharedCompetitions: countDistinct(result.competitionId),
       competitorsMet: countDistinct(person.wcaId),
     })
@@ -110,7 +111,7 @@ export async function queryCrossedTeams({
     .innerJoin(person, eq(result.personId, person.wcaId))
     .innerJoin(team, eq(person.stateId, team.stateId))
     .where(and(isNotNull(person.stateId), ne(person.stateId, stateId)))
-    .groupBy(person.stateId, team.name, team.image)
+    .groupBy(person.stateId, team.name, team.image, team.icon)
     .orderBy(
       desc(countDistinct(result.competitionId)),
       desc(countDistinct(person.wcaId)),

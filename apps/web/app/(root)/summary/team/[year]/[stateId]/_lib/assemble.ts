@@ -1,3 +1,4 @@
+import { brandMarkSrc } from "@/lib/brand-image";
 import type { queryHostedSection } from "./sections/hosted";
 import type { querySeasonSection } from "./sections/season";
 import type { queryCrossedTeams, queryTravelSection } from "./sections/travel";
@@ -138,7 +139,7 @@ export function assembleTeamAnnualSummary({
     .map((row) => ({
       stateId: row.stateId,
       teamName: row.teamName,
-      teamImage: row.teamImage,
+      teamImage: brandMarkSrc(row.teamIcon, row.teamImage),
       sharedCompetitions: Number(row.sharedCompetitions),
       competitorsMet: Number(row.competitorsMet),
     }));

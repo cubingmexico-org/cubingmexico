@@ -8,6 +8,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import type { GroupKind } from "@workspace/db/schema";
+import { StateLabel } from "@/components/state-flag";
 import { formatAttemptValue } from "@/lib/utils";
 import { groupBasePath, groupRecordLabel } from "@/lib/groups";
 import { getGroupInfo, getGroupRanks } from "../_lib/queries";
@@ -106,7 +107,22 @@ export async function GroupRankings({
                       {row.name}
                     </Link>
                   </TableCell>
-                  <TableCell>{row.state ?? "—"}</TableCell>
+                  <TableCell>
+                    {row.stateId && row.state ? (
+                      <Link
+                        href={`/teams/${row.stateId}`}
+                        prefetch={false}
+                        className="hover:underline"
+                      >
+                        <StateLabel
+                          stateId={row.stateId}
+                          stateName={row.state}
+                        />
+                      </Link>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right font-mono">
                     {formatAttemptValue(eventId, row.best, rankType)}
                   </TableCell>

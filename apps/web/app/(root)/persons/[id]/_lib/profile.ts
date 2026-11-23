@@ -78,6 +78,7 @@ export async function getPersonData(
     id: string;
     name: string;
     image: string | null;
+    icon: string | null;
   } | null;
   competitionCount: number;
   solveCount: number;
@@ -98,6 +99,7 @@ export async function getPersonData(
       stateId: person.stateId,
       teamName: team.name,
       teamImage: team.image,
+      teamIcon: team.icon,
     })
     .from(person)
     .leftJoin(state, eq(person.stateId, state.id))
@@ -255,6 +257,7 @@ export async function getPersonData(
             id: personDataRow.stateId,
             name: personDataRow.teamName,
             image: personDataRow.teamImage ?? null,
+            icon: personDataRow.teamIcon ?? null,
           }
         : null,
     competitionCount,

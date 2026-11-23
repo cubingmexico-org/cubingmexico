@@ -11,11 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { brandMarkSrc } from "@/lib/brand-image";
 
 export type TeamOption = {
   id: string;
   name: string;
   image: string | null;
+  icon: string | null;
 };
 
 function buildCompareHref(
@@ -48,21 +50,24 @@ function TeamSelect({
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
-        {teams.map((team) => (
-          <SelectItem key={team.id} value={team.id}>
-            {team.image ? (
-              // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
-              <img
-                src={team.image}
-                alt=""
-                width={16}
-                height={16}
-                className="size-4 rounded-sm object-cover"
-              />
-            ) : null}
-            {team.name}
-          </SelectItem>
-        ))}
+        {teams.map((team) => {
+          const mark = brandMarkSrc(team.icon, team.image);
+          return (
+            <SelectItem key={team.id} value={team.id}>
+              {mark ? (
+                // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
+                <img
+                  src={mark}
+                  alt=""
+                  width={16}
+                  height={16}
+                  className="size-4 rounded-sm object-cover"
+                />
+              ) : null}
+              {team.name}
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   );

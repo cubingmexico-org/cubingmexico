@@ -81,6 +81,7 @@ export default async function Page({ searchParams }: Props) {
           id: team.id,
           name: team.name,
           image: team.image,
+          icon: team.icon,
         }))}
         a={a?.stateId ?? null}
         b={b?.stateId ?? null}

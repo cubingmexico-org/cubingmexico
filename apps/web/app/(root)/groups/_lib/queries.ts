@@ -86,6 +86,7 @@ export async function getPublicitySponsors() {
       id: group.id,
       name: group.name,
       image: group.image,
+      icon: group.icon,
       websiteUrl: group.websiteUrl,
       publicityBlurb: group.publicityBlurb,
     })
@@ -112,6 +113,7 @@ export async function getGroupInfo(groupId: string) {
       name: group.name,
       description: group.description,
       image: group.image,
+      icon: group.icon,
       coverImage: group.coverImage,
       founded: group.founded,
       socialLinks: group.socialLinks,
@@ -307,6 +309,7 @@ export async function getPersonGroups(wcaId: string) {
       kind: group.kind,
       name: group.name,
       image: group.image,
+      icon: group.icon,
       role: groupMembership.role,
     })
     .from(groupMembership)
@@ -332,6 +335,7 @@ export async function getGroupRanks(
       best: table.best,
       groupRank: table.groupRank,
       state: state.name,
+      stateId: person.stateId,
       gender: person.gender,
     })
     .from(table)

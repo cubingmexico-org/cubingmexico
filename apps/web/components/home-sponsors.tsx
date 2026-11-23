@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getPublicitySponsors } from "@/app/(root)/groups/_lib/queries";
+import { brandMarkSrc } from "@/lib/brand-image";
 import { GROUPS_PUBLICLY_RELEASED, groupHref } from "@/lib/groups";
 
 export async function HomeSponsors() {
@@ -43,7 +44,10 @@ export async function HomeSponsors() {
               >
                 <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-muted">
                   <Image
-                    src={sponsor.image || "/placeholder.svg"}
+                    src={
+                      brandMarkSrc(sponsor.icon, sponsor.image) ||
+                      "/placeholder.svg"
+                    }
                     alt={sponsor.name}
                     fill
                     className="object-cover"
