@@ -69,7 +69,8 @@ export function LeafletMap({
 
     if (heatmap) {
       // eslint-disable-next-line @typescript-eslint/no-require-imports -- leaflet.heat must load client-side
-      require("leaflet.heat");
+      const { HeatLayer } =
+        require("leaflet.heat") as typeof import("leaflet.heat");
 
       const points: [number, number, number][] = [];
       for (const { latitude, longitude } of locations) {
@@ -80,7 +81,14 @@ export function LeafletMap({
         points.push([lat, lng, 1]);
       }
 
-      L.heatLayer(points, { radius: 25, blur: 15, maxZoom: 10 }).addTo(map);
+      // leaflet.heat ships Leaflet 2 typings; cast for our Leaflet 1.x map.
+      map.addLayer(
+        new HeatLayer(points, {
+          radius: 25,
+          blur: 15,
+          maxZoom: 10,
+        }) as unknown as import("leaflet").Layer,
+      );
     } else {
       for (const { name, stateName, latitude, longitude } of locations) {
         const lat = (latitude && latitude / 1000000) || 0;
