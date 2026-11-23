@@ -15,8 +15,9 @@ files, then lint + typecheck + unit tests for the packages you touched (with
 turbo `--force` so cache cannot hide failures). When the commit touches
 `apps/backend`, `fixtures/schema`, or `packages/db/src/schema.ts`, it also runs
 backend lint, pyright, and unit tests, and refreshes
-`fixtures/schema/columns.json` from the Drizzle schema. Skip it only when you
-must with `git commit --no-verify` — that is what lets type errors reach CI.
+`fixtures/schema/columns.json` from the Drizzle schema. Paths are normalized
+because lint-staged passes absolute paths by default. Skip the hook only when
+you must with `git commit --no-verify`.
 
 CI runs these on every pull request. Run them locally first:
 

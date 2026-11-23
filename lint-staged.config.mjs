@@ -7,8 +7,17 @@
  *
  * Uses turbo `--force` so a stale remote/local cache cannot mask failures.
  * Integration / e2e / knip / migration generate still only run in CI.
+ *
+ * lint-staged passes absolute paths by default (`--relative` is opt-in), so
+ * every path check normalizes to the repo-relative form first.
  */
+import path from "node:path";
+
 const prettier = "prettier --write";
+
+function toRepoRelative(file) {
+  return path.isAbsolute(file) ? path.relative(process.cwd(), file) : file;
+}
 
 /**
  * Map staged paths to turbo `--filter` selectors.
@@ -18,7 +27,7 @@ const prettier = "prettier --write";
 function packageFilters(filenames) {
   const filters = new Set();
 
-  for (const file of filenames) {
+  for (const file of filenames.map(toRepoRelative)) {
     if (file.startsWith("apps/web/")) filters.add("web");
     else if (file.startsWith("apps/organizer/")) filters.add("organizer");
     else if (file.startsWith("packages/db/")) filters.add("...@workspace/db");
@@ -39,11 +48,13 @@ function packageFilters(filenames) {
 }
 
 function schemaSourceTouched(filenames) {
-  return filenames.some(
-    (file) =>
-      file === "packages/db/src/schema.ts" ||
-      file.startsWith("packages/db/src/schema/"),
-  );
+  return filenames
+    .map(toRepoRelative)
+    .some(
+      (file) =>
+        file === "packages/db/src/schema.ts" ||
+        file.startsWith("packages/db/src/schema/"),
+    );
 }
 
 function backendQualityCommands(filenames) {
