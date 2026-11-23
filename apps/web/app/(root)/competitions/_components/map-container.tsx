@@ -8,11 +8,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
-import {
-  filterStatesGeoJSON,
-  type LeafletMapLocation,
-  type StateChoroplethCounts,
+import type {
+  LeafletMapLocation,
+  StateChoroplethCounts,
 } from "@/components/leaflet-map";
+import { filterStatesGeoJSON } from "@/lib/filter-states-geojson";
 
 const LeafletMap = dynamic(
   () => import("@/components/leaflet-map").then((mod) => mod.LeafletMap),
