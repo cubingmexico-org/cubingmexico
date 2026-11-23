@@ -1,6 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { HomeHero } from "@/components/home-hero";
-import { HomeLiveBanner } from "@/components/home-live-banner";
+import { HomeLiveBannerSection } from "@/components/home-live-banner-section";
 import { HomeUpcomingCompetitions } from "@/components/home-upcoming-competitions";
 import { HomeRecentRecords } from "@/components/home-recent-records";
 import { HomeCommunityStats } from "@/components/home-community-stats";
@@ -10,7 +11,6 @@ import {
   getNumberOfPersons,
   getNumberOfCompetitions,
 } from "@/app/(root)/about/_lib/queries";
-import { getInProgressLiveCompetitions } from "@/lib/live/queries";
 
 const shortcuts = [
   { href: "/rankings/333/single", label: "Rankings" },
@@ -21,24 +21,20 @@ const shortcuts = [
 ] as const;
 
 export default async function Page() {
-  const [
-    upcomingCompetitions,
-    recentRecords,
-    persons,
-    competitions,
-    liveCompetitions,
-  ] = await Promise.all([
-    getUpcomingCompetitions(5),
-    getRecentNationalRecords(5),
-    getNumberOfPersons(),
-    getNumberOfCompetitions(),
-    getInProgressLiveCompetitions(),
-  ]);
+  const [upcomingCompetitions, recentRecords, persons, competitions] =
+    await Promise.all([
+      getUpcomingCompetitions(5),
+      getRecentNationalRecords(5),
+      getNumberOfPersons(),
+      getNumberOfCompetitions(),
+    ]);
 
   return (
     <main className="grow">
       <HomeHero />
-      <HomeLiveBanner competitions={liveCompetitions} />
+      <Suspense fallback={null}>
+        <HomeLiveBannerSection />
+      </Suspense>
 
       <nav
         aria-label="Accesos rápidos"
