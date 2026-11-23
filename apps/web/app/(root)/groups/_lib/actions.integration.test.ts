@@ -8,6 +8,8 @@ import {
   deleteGroupAction,
   deleteGroupMembers,
   setSponsorshipAction,
+  updateGroupMember,
+  updateGroupMemberRole,
 } from "./actions";
 import {
   insertGroup,
@@ -160,6 +162,59 @@ describe("deleteGroupMembers", () => {
       .from(person)
       .where(eq(person.wcaId, MEMBER));
     expect(row?.stateId).toBe("JAL");
+  });
+});
+
+describe("updateGroupMember", () => {
+  it("updates specialties for an existing member", async () => {
+    signIn(ADMIN);
+    await insertGroupMembership({ groupId: "vallarta", personId: MEMBER });
+
+    const result = await updateGroupMember(
+      null,
+      memberForm({
+        groupId: "vallarta",
+        personId: MEMBER,
+        specialties: "333,444",
+      }),
+    );
+    expect(result.success).toBe(true);
+
+    const [row] = await db
+      .select({ specialties: groupMembership.specialties })
+      .from(groupMembership)
+      .where(
+        and(
+          eq(groupMembership.groupId, "vallarta"),
+          eq(groupMembership.personId, MEMBER),
+        ),
+      );
+    expect(row?.specialties).toEqual(["333", "444"]);
+  });
+});
+
+describe("updateGroupMemberRole", () => {
+  it("lets an admin assign editor", async () => {
+    signIn(ADMIN);
+    await insertGroupMembership({ groupId: "vallarta", personId: MEMBER });
+
+    const result = await updateGroupMemberRole({
+      groupId: "vallarta",
+      personId: MEMBER,
+      role: "editor",
+    });
+    expect(result.error).toBeNull();
+
+    const [row] = await db
+      .select({ role: groupMembership.role })
+      .from(groupMembership)
+      .where(
+        and(
+          eq(groupMembership.groupId, "vallarta"),
+          eq(groupMembership.personId, MEMBER),
+        ),
+      );
+    expect(row?.role).toBe("editor");
   });
 });
 

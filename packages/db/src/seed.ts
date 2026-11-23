@@ -30,8 +30,7 @@ async function seed() {
         name: "Vallarta Speed",
         description:
           "Comunidad de speedcubing de la zona metropolitana de Puerto Vallarta.",
-        regionLabel:
-          "Zona metropolitana de Puerto Vallarta (Jalisco y Bahía de Banderas, Nayarit)",
+        regionLabel: "Zona metropolitana de Puerto Vallarta",
         isActive: true,
         sponsorshipStatus: "inactive",
         publicityEnabled: false,

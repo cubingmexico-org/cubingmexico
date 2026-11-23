@@ -43,6 +43,9 @@ export default defineConfig({
           include: ["**/*.test.tsx"],
           exclude,
           setupFiles: ["./test/components-setup.ts"],
+          // Dialog/Select interactions are slower under parallel CI load.
+          testTimeout: 15_000,
+          hookTimeout: 15_000,
         },
       },
     ],

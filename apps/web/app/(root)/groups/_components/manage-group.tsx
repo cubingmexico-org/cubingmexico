@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, ImageIcon, Trash2 } from "lucide-react";
@@ -24,15 +24,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@workspace/ui/components/card";
-import { Input } from "@workspace/ui/components/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table";
 import {
   Tabs,
   TabsContent,
@@ -43,23 +34,16 @@ import { cn } from "@workspace/ui/lib/utils";
 import type { GroupKind } from "@workspace/db/schema";
 import { groupHref, groupKindLabel } from "@/lib/groups";
 import {
-  addGroupMemberFormAction,
   deleteGroupAction,
   deleteGroupCoverAction,
   deleteGroupLogoAction,
-  deleteGroupMembers,
   setSponsorshipAction,
 } from "../_lib/actions";
+import type { GroupMember } from "../_types";
+import { AddGroupMemberForm } from "./add-group-member-form";
 import { GroupCoverUploader } from "./group-cover-uploader";
 import { GroupImageUploader } from "./group-image-uploader";
 import { SaveGroupForm } from "./save-group-form";
-
-type Member = {
-  wcaId: string;
-  name: string | null;
-  state: string | null;
-  role: "admin" | "editor" | null;
-};
 
 type GroupData = {
   id: string;
@@ -92,26 +76,12 @@ export function ManageGroup({
   isSuperadmin,
 }: {
   group: GroupData;
-  members: Member[];
+  members: GroupMember[];
   canManageRoles: boolean;
   isSuperadmin: boolean;
 }) {
   const href = groupHref(group.kind, group.id);
-  const [memberState, memberAction, memberPending] = useActionState(
-    addGroupMemberFormAction,
-    {
-      defaultValues: {
-        groupId: group.id,
-        personId: "",
-        specialties: "",
-      } as Record<string, string>,
-      success: false,
-      errors: "" as string,
-      warning: null,
-    },
-  );
   const [pending, startTransition] = useTransition();
-  const [selected, setSelected] = useState<string[]>([]);
 
   return (
     <>
@@ -162,131 +132,13 @@ export function ManageGroup({
             <SaveGroupForm group={group} />
           </TabsContent>
 
-          <TabsContent value="members" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Agregar miembro</CardTitle>
-                <CardDescription>
-                  Añade personas al roster con su WCA ID
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <form
-                  action={memberAction}
-                  className="flex flex-wrap items-end gap-3"
-                >
-                  <input type="hidden" name="groupId" value={group.id} />
-                  <div className="space-y-2">
-                    <Input
-                      name="personId"
-                      placeholder="WCA ID"
-                      className="max-w-xs"
-                      required
-                    />
-                  </div>
-                  <Input
-                    name="specialties"
-                    placeholder="Especialidades (opcional)"
-                    className="max-w-xs"
-                  />
-                  <Button type="submit" disabled={memberPending}>
-                    Agregar
-                  </Button>
-                </form>
-                {memberState.success ? (
-                  <p className="text-sm text-green-600">
-                    Miembro agregado.
-                    {memberState.warning ? ` ${memberState.warning}` : ""}
-                  </p>
-                ) : null}
-                {memberState.errors ? (
-                  <p className="text-sm text-destructive">
-                    {memberState.errors}
-                  </p>
-                ) : null}
-                {canManageRoles ? (
-                  <p className="text-xs text-muted-foreground">
-                    Los roles admin/editor se asignan desde esta misma membresía
-                    en una próxima iteración; por ahora agrega como miembro.
-                  </p>
-                ) : null}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0">
-                <div>
-                  <CardTitle>Roster</CardTitle>
-                  <CardDescription>
-                    {members.length} miembro{members.length === 1 ? "" : "s"}
-                  </CardDescription>
-                </div>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  disabled={pending || selected.length === 0}
-                  onClick={() =>
-                    startTransition(async () => {
-                      const result = await deleteGroupMembers({
-                        groupId: group.id,
-                        ids: selected,
-                      });
-                      if (result.error) toast.error(result.error);
-                      else {
-                        toast.success("Miembros eliminados");
-                        setSelected([]);
-                      }
-                      if (result.warning) toast.message(result.warning);
-                    })
-                  }
-                >
-                  Quitar seleccionados
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-10" />
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>WCA ID</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead>Rol</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {members.map((member) => (
-                        <TableRow key={member.wcaId}>
-                          <TableCell>
-                            <input
-                              type="checkbox"
-                              className="size-4"
-                              checked={selected.includes(member.wcaId)}
-                              onChange={(event) => {
-                                const checked = event.target.checked;
-                                setSelected((prev) =>
-                                  checked
-                                    ? [...prev, member.wcaId]
-                                    : prev.filter((id) => id !== member.wcaId),
-                                );
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>{member.name}</TableCell>
-                          <TableCell className="font-mono text-sm">
-                            {member.wcaId}
-                          </TableCell>
-                          <TableCell>{member.state ?? "—"}</TableCell>
-                          <TableCell>{member.role ?? "—"}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
+          <TabsContent value="members">
+            <AddGroupMemberForm
+              groupId={group.id}
+              groupKind={group.kind}
+              members={members}
+              canManageRoles={canManageRoles}
+            />
           </TabsContent>
 
           <TabsContent value="images">

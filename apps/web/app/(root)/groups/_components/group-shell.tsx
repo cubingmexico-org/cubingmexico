@@ -48,9 +48,9 @@ export function GroupShell({
 
   return (
     <>
-      <div className="relative h-72 overflow-hidden bg-gray-200 sm:h-80">
+      <div className="relative h-100 overflow-hidden bg-gray-200">
         <Image
-          src={coverImage || image || "/placeholder.svg"}
+          src={coverImage || "/placeholder.svg"}
           alt={`${name} cover`}
           className="h-full w-full object-cover"
           width={1200}
@@ -97,7 +97,7 @@ export function GroupShell({
                     </div>
                   ) : null}
                   <div className="flex items-center">
-                    <Users className="mr-1 h-4 w-4" />
+                    <Users className="mr-1 h-4 w-4 shrink-0" />
                     {totalMembers} miembros
                   </div>
                   {founded ? (
@@ -113,11 +113,12 @@ export function GroupShell({
               {websiteUrl ? (
                 <Link
                   className={cn(
-                    buttonVariants({ variant: "secondary", size: "sm" }),
+                    buttonVariants({ variant: "secondary", size: "default" }),
                   )}
                   href={websiteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  prefetch={false}
                 >
                   Sitio web
                 </Link>
@@ -125,19 +126,33 @@ export function GroupShell({
               {canManage ? (
                 <Link
                   className={cn(
-                    buttonVariants({ variant: "secondary", size: "sm" }),
+                    buttonVariants({ variant: "default", size: "default" }),
                   )}
                   href={`${basePath}/${groupId}/manage`}
+                  prefetch={false}
                 >
-                  <Settings className="mr-1 h-4 w-4" />
+                  <Settings />
                   Administrar
                 </Link>
               ) : null}
+              <Link
+                className={cn(
+                  buttonVariants({
+                    variant: "ghost",
+                    size: "default",
+                  }),
+                  "bg-black/20 text-white hover:bg-black/30 hover:text-white",
+                )}
+                href={basePath}
+                prefetch={false}
+              >
+                <Users /> Ver todos
+              </Link>
             </div>
           </div>
         </div>
       </div>
-      <div className="container mx-auto px-4 py-6 sm:px-6">
+      <div className="container mx-auto min-w-0 px-4 py-8">
         <GroupTabsNav groupId={groupId} kind={kind} />
         {children}
       </div>

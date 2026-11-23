@@ -48,11 +48,15 @@ export function PersonTimeline({
   onSelectPerson: (wcaUserId: number | null) => void;
 }) {
   const people = useMemo(() => personsWithAssignments(wcif), [wcif]);
-  const [localId, setLocalId] = useState<string>(
+  // Keep a local draft so the select stays controlled even when the parent
+  // still passes `null` after onSelectPerson (avoids uncontrolled→controlled).
+  const [localId, setLocalId] = useState(
     selectedWcaUserId != null ? String(selectedWcaUserId) : "",
   );
 
-  const activeId = selectedWcaUserId ?? (localId ? Number(localId) : null);
+  const selectedId =
+    selectedWcaUserId != null ? String(selectedWcaUserId) : localId;
+  const activeId = selectedId ? Number(selectedId) : null;
 
   const rows = useMemo(
     () => (activeId != null ? buildPersonTimeline(wcif, activeId) : []),
@@ -64,7 +68,7 @@ export function PersonTimeline({
       <div className="space-y-2 max-w-sm">
         <Label htmlFor="timeline-person">Persona</Label>
         <Select
-          value={activeId != null ? String(activeId) : undefined}
+          value={selectedId}
           onValueChange={(value) => {
             setLocalId(value);
             onSelectPerson(Number(value));

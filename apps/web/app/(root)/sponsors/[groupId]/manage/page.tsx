@@ -40,8 +40,12 @@ export default async function Page({ params }: Props) {
       members={members.map((m) => ({
         wcaId: m.wcaId,
         name: m.name,
+        gender: m.gender,
         state: m.state,
+        stateId: m.stateId,
         role: m.role,
+        hideFromRoster: m.hideFromRoster,
+        specialties: m.specialties,
       }))}
       canManageRoles={groupRoleHasPermission(role, "group.roles")}
       isSuperadmin={isSuperadmin(userId)}

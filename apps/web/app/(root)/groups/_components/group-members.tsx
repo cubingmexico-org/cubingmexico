@@ -32,26 +32,39 @@ export async function GroupMembers({ groupId }: { groupId: string }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nombre</TableHead>
                 <TableHead>WCA ID</TableHead>
+                <TableHead>Nombre</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead>Rol</TableHead>
+                <TableHead>Especialidades</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {visible.map((member) => (
                 <TableRow key={member.wcaId}>
-                  <TableCell>
+                  <TableCell className="font-mono text-sm">
                     <Link
-                      href={`/persons/${member.wcaId}`}
-                      prefetch={false}
-                      className="font-medium hover:underline"
+                      className="text-accent-foreground hover:underline"
+                      href={`https://www.worldcubeassociation.org/persons/${member.wcaId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
                     >
-                      {member.name}
+                      {member.wcaId}
                     </Link>
                   </TableCell>
-                  <TableCell className="font-mono text-sm">
-                    {member.wcaId}
+                  <TableCell>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/persons/${member.wcaId}`}
+                        prefetch={false}
+                        className="font-medium text-link hover:text-link/80"
+                      >
+                        {member.name}
+                      </Link>
+                      {member.role === "admin" ? <Badge>Admin</Badge> : null}
+                      {member.role === "editor" ? (
+                        <Badge variant="secondary">Editor</Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {member.stateId ? (
@@ -63,14 +76,21 @@ export async function GroupMembers({ groupId }: { groupId: string }) {
                         {member.state}
                       </Link>
                     ) : (
-                      "—"
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    {member.role ? (
-                      <Badge variant="secondary">{member.role}</Badge>
+                    {member.specialties?.length ? (
+                      <div className="flex space-x-2">
+                        {member.specialties.map((specialty) => (
+                          <span
+                            className={`cubing-icon event-${specialty}`}
+                            key={specialty}
+                          />
+                        ))}
+                      </div>
                     ) : (
-                      "—"
+                      <span className="text-muted-foreground">—</span>
                     )}
                   </TableCell>
                 </TableRow>

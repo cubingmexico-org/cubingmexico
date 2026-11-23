@@ -195,3 +195,23 @@ export async function removeGroupMembers({
       );
   }
 }
+
+export async function updateGroupMemberRole({
+  groupId,
+  personId,
+  role,
+}: {
+  groupId: Group["id"];
+  personId: Person["wcaId"];
+  role: GroupMembership["role"];
+}) {
+  await db
+    .update(groupMembership)
+    .set({ role })
+    .where(
+      and(
+        eq(groupMembership.groupId, groupId),
+        eq(groupMembership.personId, personId),
+      ),
+    );
+}

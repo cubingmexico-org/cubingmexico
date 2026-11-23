@@ -36,15 +36,20 @@ afterEach(() => {
   push.mockReset();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  vi.useRealTimers();
 });
 
 describe("HeaderSearch", () => {
   it("doesn't query the API for fewer than 2 characters", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     render(<HeaderSearch />);
-    const { user, input } = await openSearch();
+    const { user, input } = await openSearch({
+      advanceTimers: vi.advanceTimersByTimeAsync,
+    });
 
     await user.type(input, "x");
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    // Debounce is 250ms; advance past it without a real wall-clock wait.
+    await vi.advanceTimersByTimeAsync(400);
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -79,7 +84,7 @@ describe("HeaderSearch", () => {
   it("shows no results when the search fails", async () => {
     fetchMock.mockRejectedValue(new TypeError("fetch failed"));
     render(<HeaderSearch />);
-    const { user, input } = await openSearch();
+    const { user, input } = await openSearch({ delay: null });
 
     await user.type(input, "zzqx");
 
