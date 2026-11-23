@@ -174,6 +174,7 @@ export function LeafletMap({
     return () => {
       map.remove();
       mapRef.current = null;
+      delete node._leaflet_id;
     };
   }, [
     posix,

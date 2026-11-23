@@ -29,7 +29,8 @@ export function CreateTeamForm({
       className="grid max-w-lg gap-4 rounded-lg border p-4"
       onSubmit={(event) => {
         event.preventDefault();
-        const form = new FormData(event.currentTarget);
+        const formElement = event.currentTarget;
+        const form = new FormData(formElement);
         const stateId = String(form.get("stateId") ?? "");
         startTransition(async () => {
           const result = await createTeamAction({
@@ -42,7 +43,7 @@ export function CreateTeamForm({
             return;
           }
           toast.success(`Team ${result.data?.stateId} creado`);
-          event.currentTarget.reset();
+          formElement.reset();
           router.refresh();
         });
       }}

@@ -28,7 +28,8 @@ export function CreateGroupForm() {
       className="grid max-w-lg gap-4 rounded-lg border p-4"
       onSubmit={(event) => {
         event.preventDefault();
-        const form = new FormData(event.currentTarget);
+        const formElement = event.currentTarget;
+        const form = new FormData(formElement);
         const id = slug || groupIdFromName(name);
         startTransition(async () => {
           const result = await createGroupAction({
@@ -46,7 +47,7 @@ export function CreateGroupForm() {
             return;
           }
           toast.success(`Grupo ${result.data?.id} creado`);
-          resetForm(event.currentTarget);
+          resetForm(formElement);
           router.refresh();
         });
       }}
