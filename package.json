@@ -14,6 +14,7 @@
     "test:integration": "turbo test:integration",
     "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,mjs,json,css,md,yml,yaml}\"",
+    "ci:local": "bash scripts/ci-local.sh",
     "clean": "rm -rf .turbo node_modules apps/*/node_modules apps/*/.next apps/*/.turbo packages/*/node_modules packages/*/dist packages/*/.turbo",
     "db:up": "docker compose up db -d",
     "db:down": "docker compose down",
