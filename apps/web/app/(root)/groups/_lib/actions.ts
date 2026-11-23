@@ -13,6 +13,7 @@ import {
   setSponsorshipStatus,
   updateGroupCover,
   updateGroupLogo,
+  updateGroupMemberRole as setGroupMemberRole,
 } from "@/db/group-mutations";
 import { getErrorMessage } from "@/lib/handle-error";
 import { requireGroupPermission } from "@/lib/group-auth";
@@ -20,6 +21,7 @@ import {
   GROUP_ROSTER_REFRESH_PENDING,
   refreshGroupsAfterRosterChange,
 } from "@/lib/group-roster-refresh";
+import { invalidateGroupMemberTags } from "@/lib/cache-tags";
 import { requireSuperadmin } from "@/lib/superadmin";
 import { deleteUploadedFileIfUnused } from "@/lib/uploadthing-files";
 import { uploadThingFileKey } from "@/lib/uploadthing-key";
@@ -211,6 +213,120 @@ export async function deleteGroupMembers(input: {
       data: null,
       error: getErrorMessage(error),
       warning: null,
+    };
+  }
+}
+
+export async function updateGroupMember(
+  _prevState: unknown,
+  formData: FormData,
+) {
+  const defaultValues = z
+    .record(z.string(), z.string())
+    .parse(Object.fromEntries(formData.entries()));
+
+  try {
+    const data = addGroupMemberFormSchema.parse(Object.fromEntries(formData));
+    await requireGroupPermission(data.groupId, "group.members");
+
+    const specialties = data.specialties
+      ? data.specialties
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : null;
+
+    const [member] = await db
+      .select({ personId: groupMembership.personId })
+      .from(groupMembership)
+      .where(
+        and(
+          eq(groupMembership.groupId, data.groupId),
+          eq(groupMembership.personId, data.personId),
+        ),
+      )
+      .limit(1);
+
+    if (!member) {
+      return {
+        defaultValues,
+        success: false,
+        errors: "El miembro no pertenece a este grupo",
+      };
+    }
+
+    await addGroupMember({
+      groupId: data.groupId,
+      personId: data.personId,
+      specialties,
+      achievements: null,
+    });
+
+    invalidateGroupMemberTags(data.groupId);
+
+    return {
+      defaultValues: {
+        groupId: data.groupId,
+        personId: data.personId,
+        specialties: specialties?.join(",") ?? "",
+      },
+      success: true,
+      errors: null,
+    };
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return {
+        defaultValues,
+        success: false,
+        errors: getErrorMessage(error),
+      };
+    }
+    throw error;
+  }
+}
+
+export async function updateGroupMemberRole(input: {
+  personId: string;
+  groupId: string;
+  role: "admin" | "editor" | null;
+}) {
+  try {
+    await requireGroupPermission(input.groupId, "group.roles");
+
+    const [member] = await db
+      .select({ personId: groupMembership.personId })
+      .from(groupMembership)
+      .where(
+        and(
+          eq(groupMembership.groupId, input.groupId),
+          eq(groupMembership.personId, input.personId),
+        ),
+      )
+      .limit(1);
+
+    if (!member) {
+      return {
+        data: null,
+        error: "El miembro no pertenece a este grupo",
+      };
+    }
+
+    await setGroupMemberRole({
+      groupId: input.groupId,
+      personId: input.personId,
+      role: input.role,
+    });
+
+    invalidateGroupMemberTags(input.groupId);
+
+    return {
+      data: null,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      error: getErrorMessage(err),
     };
   }
 }

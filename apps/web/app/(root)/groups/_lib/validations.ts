@@ -94,7 +94,9 @@ export const groupFormSchema = z.object({
 
 export const addGroupMemberFormSchema = z.object({
   groupId: z.string().min(1),
-  personId: z.string().min(10),
+  personId: z.string().min(10, {
+    message: "Selecciona una persona",
+  }),
   specialties: z.string().optional(),
 });
 

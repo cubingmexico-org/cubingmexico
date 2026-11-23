@@ -22,6 +22,7 @@ describe("PersonTimeline", () => {
   });
 
   it("lists people alphabetically and shows the chosen person's assignments", async () => {
+    const user = userEvent.setup();
     const onSelectPerson = vi.fn();
     render(
       <PersonTimeline
@@ -31,17 +32,16 @@ describe("PersonTimeline", () => {
       />,
     );
 
-    await userEvent.click(screen.getByRole("combobox"));
-    expect(
-      screen.getAllByRole("option").map((option) => option.textContent),
-    ).toEqual([
+    await user.click(screen.getByRole("combobox"));
+    const options = await screen.findAllByRole("option");
+    expect(options.map((option) => option.textContent)).toEqual([
       "Ana López",
       "Beto Martínez (贝托)",
       "Carla Núñez",
       "Diego Ramírez",
     ]);
 
-    await userEvent.click(screen.getByRole("option", { name: "Ana López" }));
+    await user.click(screen.getByRole("option", { name: "Ana López" }));
     expect(onSelectPerson).toHaveBeenCalledWith(1001);
 
     const rows = screen.getAllByRole("row").slice(1);

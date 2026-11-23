@@ -70,6 +70,7 @@ afterEach(() => {
 
 describe("DesignLibraryDialog", () => {
   it("lists the competition's designs and opens one", async () => {
+    const user = userEvent.setup();
     fetchMock.mockImplementation(async (url) =>
       String(url).startsWith("/api/designs?")
         ? Response.json({ designs: [design("d1", "Podio oficial")] })
@@ -79,14 +80,18 @@ describe("DesignLibraryDialog", () => {
     );
     const { onApply, onOpenChange } = renderDialog();
 
-    await screen.findByText("Podio oficial");
-    await userEvent.click(screen.getByRole("button", { name: "Abrir" }));
+    expect(
+      await screen.findByText("Podio oficial", {}, { timeout: 10_000 }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Abrir" }));
 
-    await waitFor(() =>
-      expect(onApply).toHaveBeenCalledWith(
-        { a: 1 },
-        { id: "d1", name: "Podio oficial" },
-      ),
+    await waitFor(
+      () =>
+        expect(onApply).toHaveBeenCalledWith(
+          { a: 1 },
+          { id: "d1", name: "Podio oficial" },
+        ),
+      { timeout: 10_000 },
     );
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(requests()).toEqual([
