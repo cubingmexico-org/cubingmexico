@@ -1,5 +1,13 @@
 [
   {
+    "rule": "/backfill-dual-positions",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.backfill_dual_positions",
+    "cron_auth": true
+  },
+  {
     "rule": "/competitions",
     "methods": [
       "GET"
