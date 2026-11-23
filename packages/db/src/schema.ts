@@ -311,6 +311,13 @@ export const result = pgTable(
   {
     id: varchar("id", { length: 64 }).primaryKey(),
     pos: smallint("pos").default(0),
+    /**
+     * Combined rank across a Dual Round pair (WCA `global_pos`).
+     * Equals `pos` for non-dual rounds.
+     */
+    globalPos: smallint("global_pos").notNull().default(0),
+    /** True when this round belongs to a Dual (linked) Round pair. */
+    isDual: boolean("is_dual").notNull().default(false),
     best: integer("best").notNull().default(0),
     average: integer("average").notNull().default(0),
     competitionId: varchar("competition_id", { length: 32 })
@@ -619,23 +626,151 @@ export const socialPost = pgTable(
 
 export type SocialPost = InferSelectModel<typeof socialPost>;
 
-export const sponsor = pgTable("sponsors", {
-  id: varchar("id", { length: 32 }).primaryKey(),
-  name: varchar("name", { length: 50 }).notNull(),
-  description: text("description"),
-  logo: varchar("logo", { length: 191 }),
-  socialLinks: jsonb("social_links").$type<{
-    email?: string;
-    whatsapp?: string;
-    facebook?: string;
-    instagram?: string;
-    twitter?: string;
-    tiktok?: string;
-  }>(),
-  active: boolean("active").notNull().default(false),
-});
+export const groupKindEnum = ["community", "sponsor"] as const;
+export type GroupKind = (typeof groupKindEnum)[number];
 
-export type Sponsor = InferSelectModel<typeof sponsor>;
+export const sponsorshipStatusEnum = ["inactive", "active", "expired"] as const;
+export type SponsorshipStatus = (typeof sponsorshipStatusEnum)[number];
+
+export type GroupSocialLinks = {
+  email?: string;
+  whatsapp?: string;
+  facebook?: string;
+  instagram?: string;
+  twitter?: string;
+  tiktok?: string;
+};
+
+/** Non-state orgs: local communities and paid sponsor teams. */
+export const group = pgTable(
+  "groups",
+  {
+    id: varchar("id", { length: 32 }).primaryKey(),
+    kind: varchar("kind", {
+      length: 16,
+      enum: groupKindEnum,
+    }).notNull(),
+    name: varchar("name", { length: 50 }).notNull(),
+    description: text("description"),
+    image: varchar("image", { length: 191 }),
+    coverImage: varchar("cover_image", { length: 191 }),
+    founded: timestamp("founded"),
+    socialLinks: jsonb("social_links").$type<GroupSocialLinks>(),
+    isActive: boolean("is_active").notNull().default(true),
+    /** Community region label, e.g. metro area spanning multiple states. */
+    regionLabel: varchar("region_label", { length: 120 }),
+    websiteUrl: varchar("website_url", { length: 200 }),
+    sponsorshipStatus: varchar("sponsorship_status", {
+      length: 16,
+      enum: sponsorshipStatusEnum,
+    })
+      .notNull()
+      .default("inactive"),
+    sponsorshipExpiresAt: timestamp("sponsorship_expires_at"),
+    publicityEnabled: boolean("publicity_enabled").notNull().default(false),
+    publicityBlurb: varchar("publicity_blurb", { length: 240 }),
+  },
+  (t) => [
+    index("groups_kind_idx").on(t.kind),
+    index("groups_sponsorship_status_idx").on(t.sponsorshipStatus),
+  ],
+);
+
+export type Group = InferSelectModel<typeof group>;
+
+export const groupMembership = pgTable(
+  "group_memberships",
+  {
+    groupId: varchar("group_id", { length: 32 })
+      .notNull()
+      .references(() => group.id, { onDelete: "cascade" }),
+    personId: varchar("person_id", { length: 10 })
+      .notNull()
+      .references(() => person.wcaId, { onDelete: "cascade" }),
+    specialties: jsonb("specialties").$type<string[]>(),
+    achievements: jsonb("achievements").$type<string[]>(),
+    role: varchar("role", { length: 20 }).$type<"admin" | "editor">(),
+    hideFromRoster: boolean("hide_from_roster").notNull().default(false),
+  },
+  (t) => [
+    primaryKey({ columns: [t.groupId, t.personId] }),
+    index("group_memberships_person_idx").on(t.personId),
+  ],
+);
+
+export type GroupMembership = InferSelectModel<typeof groupMembership>;
+
+export const groupRankSingle = pgTable(
+  "group_ranks_single",
+  {
+    groupId: varchar("group_id", { length: 32 })
+      .notNull()
+      .references(() => group.id, { onDelete: "cascade" }),
+    personId: varchar("person_id", { length: 10 })
+      .notNull()
+      .references(() => person.wcaId, { onDelete: "cascade" }),
+    eventId: varchar("event_id", { length: 6 })
+      .notNull()
+      .references(() => event.id, { onDelete: "cascade" }),
+    best: integer("best").notNull().default(0),
+    groupRank: integer("group_rank").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.groupId, t.personId, t.eventId] }),
+    index("group_ranks_single_event_idx").on(t.groupId, t.eventId, t.groupRank),
+  ],
+);
+
+export type GroupRankSingle = InferSelectModel<typeof groupRankSingle>;
+
+export const groupRankAverage = pgTable(
+  "group_ranks_average",
+  {
+    groupId: varchar("group_id", { length: 32 })
+      .notNull()
+      .references(() => group.id, { onDelete: "cascade" }),
+    personId: varchar("person_id", { length: 10 })
+      .notNull()
+      .references(() => person.wcaId, { onDelete: "cascade" }),
+    eventId: varchar("event_id", { length: 6 })
+      .notNull()
+      .references(() => event.id, { onDelete: "cascade" }),
+    best: integer("best").notNull().default(0),
+    groupRank: integer("group_rank").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.groupId, t.personId, t.eventId] }),
+    index("group_ranks_average_event_idx").on(
+      t.groupId,
+      t.eventId,
+      t.groupRank,
+    ),
+  ],
+);
+
+export type GroupRankAverage = InferSelectModel<typeof groupRankAverage>;
+
+export const groupRecordMarker = pgTable(
+  "group_record_markers",
+  {
+    groupId: varchar("group_id", { length: 32 })
+      .notNull()
+      .references(() => group.id, { onDelete: "cascade" }),
+    resultId: varchar("result_id", { length: 64 })
+      .notNull()
+      .references(() => result.id, { onDelete: "cascade" }),
+    recordType: varchar("record_type", {
+      length: 8,
+      enum: ["single", "average"],
+    }).notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.groupId, t.resultId, t.recordType] }),
+    index("group_record_markers_result_idx").on(t.resultId),
+  ],
+);
+
+export type GroupRecordMarker = InferSelectModel<typeof groupRecordMarker>;
 
 export const designModuleEnum = [
   "certificate_podium",

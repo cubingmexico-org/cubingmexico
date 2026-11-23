@@ -17,6 +17,7 @@ import {
   liveRoundLabel,
   liveRoundSpectatorLabel,
 } from "@/lib/live/format";
+import { formatLiveResultPlace } from "@/lib/utils";
 import type {
   EnrichedLiveCompetitor,
   EnrichedLiveResult,
@@ -25,7 +26,7 @@ import type {
 import { LiveRegion } from "../../../../_components/live-region";
 
 const ROW_HEIGHT_PX = 52;
-const CHROME_HEIGHT_PX = 120;
+const CHROME_HEIGHT_PX = 148;
 const SHOWING_MS = 800;
 const SHOWN_MS = 8_000;
 const HIDING_MS = 600;
@@ -47,6 +48,8 @@ export function LiveProjector({
   rounds,
   eventId,
   attemptCount,
+  timeLimit,
+  cutoff,
   results,
   competitorsById,
   loading,
@@ -59,6 +62,8 @@ export function LiveProjector({
   rounds: LiveRoundSummary[];
   eventId: string;
   attemptCount: number;
+  timeLimit: LiveRoundSummary["timeLimit"];
+  cutoff: LiveRoundSummary["cutoff"];
   results: EnrichedLiveResult[];
   competitorsById: Map<number, EnrichedLiveCompetitor>;
   loading: boolean;
@@ -183,6 +188,27 @@ export function LiveProjector({
               </SelectContent>
             </Select>
           </div>
+          {cutoff || timeLimit ? (
+            <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-400">
+              {cutoff ? (
+                <span>
+                  Corte:{" "}
+                  {formatLiveResultValue(eventId, cutoff.resultValue, "single")}{" "}
+                  ({cutoff.numberOfAttempts} int.)
+                </span>
+              ) : null}
+              {timeLimit ? (
+                <span>
+                  Límite:{" "}
+                  {formatLiveResultValue(
+                    eventId,
+                    timeLimit.centiseconds,
+                    "single",
+                  )}
+                </span>
+              ) : null}
+            </p>
+          ) : null}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Button
@@ -233,7 +259,10 @@ export function LiveProjector({
               const attemptsByNumber = new Map(
                 result.attempts.map((a) => [a.attempt_number, a.value]),
               );
-              const pos = result.local_pos ?? result.global_pos;
+              const placeLabel = formatLiveResultPlace(
+                result.local_pos,
+                result.global_pos,
+              );
               const name =
                 competitor?.name ?? `Registrant ${result.registration_id}`;
 
@@ -244,7 +273,7 @@ export function LiveProjector({
                   style={{ height: ROW_HEIGHT_PX }}
                 >
                   <td className="px-3 tabular-nums font-semibold">
-                    {pos ?? "—"}
+                    {placeLabel}
                   </td>
                   <td className="px-3 font-medium">{name}</td>
                   <td className="px-3">

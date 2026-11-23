@@ -67,3 +67,24 @@ export function personStateRecordTags(personIds: string[]): string[] {
     `person-record-history-${wcaId}`,
   ]);
 }
+
+export function groupMemberTags(groupId: string): string[] {
+  return [
+    `group-info-${groupId}`,
+    `group-members-${groupId}`,
+    `group-members-gender-${groupId}`,
+    `group-total-members-${groupId}`,
+    `group-top-members-${groupId}`,
+    `group-records-${groupId}`,
+    `group-ranks-${groupId}`,
+  ];
+}
+
+export function tagsAfterGroupRanksChange(groupId: string): string[] {
+  return [
+    ...groupMemberTags(groupId),
+    "groups-directory-community",
+    "groups-directory-sponsor",
+    "groups-publicity",
+  ];
+}

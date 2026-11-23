@@ -13,7 +13,11 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
-import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
+import {
+  formatAttemptValue,
+  formatResultPlace,
+  roundTypeLabel,
+} from "@/lib/utils";
 import { cn } from "@workspace/ui/lib/utils";
 import { eventNames } from "@/lib/constants";
 import type {
@@ -32,12 +36,16 @@ function getPodiumRowClass(
   position?: number | null,
   roundTypeId?: string | null,
   best?: number | null,
+  isDual?: boolean | null,
+  globalPos?: number | null,
 ) {
-  if ((roundTypeId !== "c" && roundTypeId !== "f") || !best || best <= 0) {
+  const medalPos = isDual ? globalPos : position;
+  const isFinalRound = roundTypeId === "c" || roundTypeId === "f" || isDual;
+  if (!isFinalRound || !best || best <= 0) {
     return "";
   }
 
-  switch (position) {
+  switch (medalPos) {
     case 1:
       return "border-amber-500/30 bg-amber-500/10";
     case 2:
@@ -146,6 +154,8 @@ export function PersonResultsTab({
                   resultRow.position,
                   resultRow.roundTypeId,
                   resultRow.best,
+                  resultRow.isDual,
+                  resultRow.globalPos,
                 );
 
                 return (
@@ -165,10 +175,16 @@ export function PersonResultsTab({
                       ) : null}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
-                      {roundTypeLabel(resultRow.roundTypeId)}
+                      {roundTypeLabel(resultRow.roundTypeId, {
+                        dual: resultRow.isDual,
+                      })}
                     </TableCell>
                     <TableCell className="text-center">
-                      {resultRow.position ?? "—"}
+                      {formatResultPlace(
+                        resultRow.position,
+                        resultRow.globalPos,
+                        resultRow.isDual,
+                      )}
                     </TableCell>
                     <TableCell
                       className={cn(

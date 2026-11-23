@@ -4,6 +4,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { person, teamMember } from "@workspace/db/schema";
 import { auth } from "@/lib/auth";
+import { isSuperadmin } from "@/lib/superadmin";
 import {
   canManageTeam,
   roleHasPermission,
@@ -27,6 +28,10 @@ export async function getTeamRole(
 ): Promise<TeamRole | null> {
   if (!personId) {
     return null;
+  }
+
+  if (isSuperadmin(personId)) {
+    return "admin";
   }
 
   const rows = await db

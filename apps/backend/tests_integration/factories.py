@@ -108,6 +108,10 @@ def insert_result(
     average: int = 0,
     **values: Any,
 ) -> None:
+    # Mirror apps/web/test/factories.ts: non-dual rows keep global_pos == pos.
+    pos = values.get("pos", 0)
+    values.setdefault("global_pos", pos if pos is not None else 0)
+    values.setdefault("is_dual", False)
     _insert(
         conn,
         "results",

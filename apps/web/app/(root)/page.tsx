@@ -5,20 +5,25 @@ import { HomeLiveBannerSection } from "@/components/home-live-banner-section";
 import { HomeUpcomingCompetitions } from "@/components/home-upcoming-competitions";
 import { HomeRecentRecords } from "@/components/home-recent-records";
 import { HomeCommunityStats } from "@/components/home-community-stats";
+import { HomeSponsors } from "@/components/home-sponsors";
 import { getUpcomingCompetitions } from "@/app/(root)/competitions/_lib/queries";
 import { getRecentNationalRecords } from "@/app/(root)/records/_lib/queries";
 import {
   getNumberOfPersons,
   getNumberOfCompetitions,
 } from "@/app/(root)/about/_lib/queries";
+import { GROUPS_PUBLICLY_RELEASED } from "@/lib/groups";
 
 const shortcuts = [
   { href: "/rankings/333/single", label: "Rankings" },
   { href: "/records", label: "Récords" },
   { href: "/teams", label: "Teams" },
+  ...(GROUPS_PUBLICLY_RELEASED
+    ? [{ href: "/communities", label: "Comunidades" }]
+    : []),
   { href: "/kinch", label: "Kinch" },
   { href: "/live", label: "En vivo" },
-] as const;
+];
 
 export default async function Page() {
   const [upcomingCompetitions, recentRecords, persons, competitions] =
@@ -63,6 +68,7 @@ export default async function Page() {
       </div>
 
       <HomeCommunityStats persons={persons} competitions={competitions} />
+      <HomeSponsors />
     </main>
   );
 }

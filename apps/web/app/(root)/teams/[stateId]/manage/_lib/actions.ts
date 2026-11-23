@@ -6,6 +6,7 @@ import { updateTag } from "next/cache";
 
 import {
   addMember,
+  deleteTeam,
   saveTeam,
   updateTeamCover,
   updateTeamLogo,
@@ -17,9 +18,11 @@ import {
   refreshStatesAfterRosterChange,
   ROSTER_REFRESH_PENDING,
 } from "@/lib/roster-refresh";
+import { requireSuperadmin } from "@/lib/superadmin";
 import { deleteUploadedFileIfUnused } from "@/lib/uploadthing-files";
 import { uploadThingFileKey } from "@/lib/uploadthing-key";
 import { person, teamMember } from "@workspace/db/schema";
+import { redirect } from "next/navigation";
 
 import { addMemberFormSchema, teamFormSchema } from "@/lib/validations";
 import { z } from "zod";
@@ -85,6 +88,17 @@ export async function teamFormAction(_prevState: unknown, formData: FormData) {
 
     throw error;
   }
+}
+
+export async function deleteTeamAction(stateId: string) {
+  await requireSuperadmin();
+  const previous = await deleteTeam(stateId);
+  updateTag(`team-info-${stateId}`);
+  await Promise.all([
+    deleteUploadedFileIfUnused(previous.image),
+    deleteUploadedFileIfUnused(previous.coverImage),
+  ]);
+  redirect("/admin/teams");
 }
 
 export async function addMemberFormAction(

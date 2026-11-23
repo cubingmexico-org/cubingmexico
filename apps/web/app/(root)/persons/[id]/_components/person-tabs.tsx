@@ -141,7 +141,7 @@ export function PersonTabs({
     const data = await loadPersonMapData(wcaId);
     return {
       ...data,
-      statesData: data.statesData as GeoJSONProps["data"] | undefined,
+      statesData: data.statesData as GeoJSONProps["data"] | null,
     };
   });
   const unofficialResults = useTabData(
@@ -320,7 +320,7 @@ export function PersonTabs({
             </h2>
             <MapContainer
               locations={mapData.locations}
-              statesData={mapData.statesData as GeoJSONProps["data"]}
+              statesData={mapData.statesData}
             />
           </>
         )}

@@ -10,18 +10,20 @@ Thanks for helping with Cubing México. This guide covers what a change needs be
 
 ## Checks
 
-CI runs these on every pull request. Run them locally first:
+A Husky pre-commit hook runs Prettier on staged files, then the full local CI
+suite via `pnpm ci:local` (`scripts/ci-local.sh`): format, knip, lint,
+typecheck, unit tests, migration drift, integration tests, production builds,
+and both Playwright e2e suites. It needs Docker Postgres (`pnpm db:up`) and
+uses a dedicated `cubing_mexico_ci` database so your local `cubing_mexico` data
+is left alone. Expect several minutes per commit. The remote `migrate` job is
+CI-only (it applies to Neon). Skip the hook only when you must with
+`git commit --no-verify`.
+
+Run the same suite anytime:
 
 ```bash
-pnpm format:check
-pnpm knip
-pnpm turbo run lint check-types test
+pnpm ci:local
 ```
-
-Run the slower suites when your change touches what they cover:
-
-- **Integration tests** (queries, server actions, backend jobs): `pnpm db:up && pnpm test:integration`. They use their own `*_test` databases, so your dev data is safe.
-- **End-to-end smoke tests** (pages, navigation, sign-in, printables): see [Testing in the README](./README.md#testing) for the web and organizer Playwright suites.
 
 New behavior needs tests. Pure logic goes in `*.test.ts`, React components in `*.test.tsx` (jsdom and Testing Library), and anything that reads or writes Postgres in `*.integration.test.ts`.
 

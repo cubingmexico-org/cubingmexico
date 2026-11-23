@@ -23,7 +23,11 @@ import {
   type ResultsByEventGroup,
 } from "../../_lib/results";
 import { StateLabel } from "@/components/state-flag";
-import { roundTypeLabel, formatAttemptValue } from "@/lib/utils";
+import {
+  formatAttemptValue,
+  formatResultPlace,
+  roundTypeLabel,
+} from "@/lib/utils";
 
 interface CompetitionHeaderData {
   event_ids: string[];
@@ -103,7 +107,13 @@ export function ResultsPodiumsView({ podiumGroups }: ResultsPodiumsViewProps) {
                             <TableRow
                               key={`${resultRow.eventId}-${resultRow.personId}-${resultRow.position ?? 0}`}
                             >
-                              <TableCell>{resultRow.position ?? "—"}</TableCell>
+                              <TableCell>
+                                {formatResultPlace(
+                                  resultRow.position,
+                                  resultRow.globalPos,
+                                  resultRow.isDual,
+                                )}
+                              </TableCell>
                               <TableCell className="font-medium">
                                 <div>
                                   <Link
@@ -124,7 +134,9 @@ export function ResultsPodiumsView({ podiumGroups }: ResultsPodiumsViewProps) {
                                 )}
                               </TableCell>
                               <TableCell>
-                                {roundTypeLabel(resultRow.roundTypeId)}
+                                {roundTypeLabel(resultRow.roundTypeId, {
+                                  dual: resultRow.isDual,
+                                })}
                               </TableCell>
                               <TableCell className="text-right font-bold">
                                 {formatBestResult(resultRow)}
@@ -287,7 +299,11 @@ export function ResultsAllView({
                                 key={`${resultRow.eventId}-${resultRow.personId}-${resultRow.position ?? 0}`}
                               >
                                 <TableCell>
-                                  {resultRow.position ?? "—"}
+                                  {formatResultPlace(
+                                    resultRow.position,
+                                    resultRow.globalPos,
+                                    resultRow.isDual,
+                                  )}
                                 </TableCell>
                                 <TableCell className="font-medium">
                                   <div>

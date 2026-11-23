@@ -30,7 +30,11 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@workspace/ui/lib/utils";
-import { deleteTeamCoverAction, deleteTeamLogoAction } from "../_lib/actions";
+import {
+  deleteTeamAction,
+  deleteTeamCoverAction,
+  deleteTeamLogoAction,
+} from "../_lib/actions";
 import { ImageUploader } from "./image-uploader";
 import { CoverUploader } from "./cover-uploader";
 import { getMembers, getMembersGenderCounts } from "../../_lib/queries";
@@ -42,6 +46,7 @@ export function ManageTeam({
   teamData,
   promises,
   canManageRoles,
+  isSuperadmin = false,
 }: {
   stateId: string;
   teamData: {
@@ -68,6 +73,7 @@ export function ManageTeam({
     ]
   >;
   canManageRoles: boolean;
+  isSuperadmin?: boolean;
 }) {
   return (
     <>
@@ -106,6 +112,9 @@ export function ManageTeam({
               <TabsTrigger value="members">Miembros</TabsTrigger>
               {/* <TabsTrigger value="achievements">Logros</TabsTrigger> */}
               <TabsTrigger value="images">Imágenes</TabsTrigger>
+              {isSuperadmin ? (
+                <TabsTrigger value="danger">Zona de peligro</TabsTrigger>
+              ) : null}
             </TabsList>
           </div>
 
@@ -414,6 +423,55 @@ export function ManageTeam({
               </Card>
             </div>
           </TabsContent>
+
+          {isSuperadmin ? (
+            <TabsContent value="danger">
+              <Card className="border-destructive/40">
+                <CardHeader>
+                  <CardTitle className="text-destructive">
+                    Eliminar team
+                  </CardTitle>
+                  <CardDescription>
+                    Esto borra permanentemente el perfil del team estatal. Los
+                    competidores del estado no se eliminan. Preferible
+                    desactivar el team desde General si solo quieres ocultarlo.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" type="button">
+                        <Trash2 />
+                        Eliminar permanentemente
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          ¿Eliminar «{teamData.name}»?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Se borrará el team de {teamData.state}. Esta acción es
+                          irreversible.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={async () => {
+                            await deleteTeamAction(stateId);
+                          }}
+                        >
+                          Eliminar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          ) : null}
         </Tabs>
       </div>
     </>

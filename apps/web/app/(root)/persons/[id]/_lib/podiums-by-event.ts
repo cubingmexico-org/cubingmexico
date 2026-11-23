@@ -1,11 +1,14 @@
 import "server-only";
 
 import { db } from "@workspace/db";
-import { result, event } from "@workspace/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import type { EventScope } from "@/lib/constants";
-import { inScopeEvents } from "@/lib/official-events";
+import {
+  medalTierCountsFromMergedSql,
+  mergedPodiumRowsSql,
+} from "@/lib/medals";
+import { eventIdsSql } from "@/lib/official-events";
 
 export type PersonPodiumsByEvent = {
   eventId: string;
@@ -25,21 +28,37 @@ export async function getPersonPodiumsByEvent(
   cacheLife("weeks");
   cacheTag(`person-podiums-by-event-${wcaId}`);
 
-  const rows = await db
-    .select({
-      eventId: event.id,
-      eventName: event.name,
-      eventRank: event.rank,
-      gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1 AND ${result.roundTypeId} IN('f','c') AND ${result.best} > 0)`,
-      silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2 AND ${result.roundTypeId} IN('f','c') AND ${result.best} > 0)`,
-      bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3 AND ${result.roundTypeId} IN('f','c') AND ${result.best} > 0)`,
-    })
-    .from(result)
-    .innerJoin(event, eq(result.eventId, event.id))
-    .where(
-      and(eq(result.personId, wcaId), inScopeEvents(result.eventId, scope)),
-    )
-    .groupBy(event.id, event.name, event.rank);
+  const {
+    gold: goldSql,
+    silver: silverSql,
+    bronze: bronzeSql,
+  } = medalTierCountsFromMergedSql();
+
+  const rows = (await db.execute(sql`
+    SELECT
+      ranked.event_id AS "eventId",
+      e.name AS "eventName",
+      e.rank AS "eventRank",
+      ${goldSql} AS gold,
+      ${silverSql} AS silver,
+      ${bronzeSql} AS bronze
+    FROM (
+      ${mergedPodiumRowsSql(sql`
+        r.person_id = ${wcaId}
+        AND r.event_id IN ${eventIdsSql(scope)}
+      `)}
+    ) ranked
+    INNER JOIN events e ON e.id = ranked.event_id
+    WHERE ranked.rn = 1
+    GROUP BY ranked.event_id, e.name, e.rank
+  `)) as unknown as Array<{
+    eventId: string;
+    eventName: string;
+    eventRank: number;
+    gold: number;
+    silver: number;
+    bronze: number;
+  }>;
 
   return rows
     .map((row) => {
@@ -56,6 +75,7 @@ export async function getPersonPodiumsByEvent(
         total: gold + silver + bronze,
       };
     })
+    .filter((row) => row.total > 0)
     .sort(
       (a, b) =>
         b.gold - a.gold ||

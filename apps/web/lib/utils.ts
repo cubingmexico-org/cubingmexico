@@ -241,29 +241,73 @@ export function getTierClass(tier: Tier): string {
   }
 }
 
-export function roundTypeLabel(id?: string | null) {
+export function roundTypeLabel(
+  id?: string | null,
+  options?: { dual?: boolean | null },
+) {
   if (!id) return "";
+  let label: string;
   switch (id) {
     case "0":
     case "h":
-      return "Ronda clasificatoria";
+      label = "Ronda clasificatoria";
+      break;
     case "1":
     case "d":
-      return "Primera ronda";
+      label = "Primera ronda";
+      break;
     case "2":
     case "e":
-      return "Segunda ronda";
+      label = "Segunda ronda";
+      break;
     case "3":
     case "g":
-      return "Semi Final";
+      label = "Semi Final";
+      break;
     case "b":
-      return "B Final";
+      label = "B Final";
+      break;
     case "c":
     case "f":
-      return "Final";
+      label = "Final";
+      break;
     default:
-      return id;
+      label = id;
   }
+  return options?.dual ? `${label} (Dual)` : label;
+}
+
+/** WCA-style place: `pos (globalPos)` for Dual rounds, otherwise `pos`. */
+export function formatResultPlace(
+  pos?: number | null,
+  globalPos?: number | null,
+  isDual?: boolean | null,
+): string {
+  if (pos == null) return "—";
+  if (isDual && globalPos != null) {
+    return `${pos} (${globalPos})`;
+  }
+  return String(pos);
+}
+
+/**
+ * Live results place. WCA shows `local (global)` for Dual rounds; when the
+ * linked flag is unknown, differing ranks are treated as Dual.
+ */
+export function formatLiveResultPlace(
+  localPos?: number | null,
+  globalPos?: number | null,
+  isLinked?: boolean | null,
+): string {
+  if (
+    localPos != null &&
+    globalPos != null &&
+    (isLinked || localPos !== globalPos)
+  ) {
+    return `${localPos} (${globalPos})`;
+  }
+  const pos = localPos ?? globalPos;
+  return pos == null ? "—" : String(pos);
 }
 
 export type ResultValueType = "single" | "average";

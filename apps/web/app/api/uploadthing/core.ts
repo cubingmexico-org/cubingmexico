@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { createUploadthing } from "uploadthing/next";
 import { UploadThingError } from "uploadthing/server";
 import type { FileRouter } from "uploadthing/next";
+import { hasGroupPermission } from "@/lib/group-auth";
 import { hasTeamPermission } from "@/lib/team-auth";
 import { isSuperadmin } from "@/lib/superadmin";
 
@@ -32,6 +33,32 @@ async function requireMediaPermission(req: Request) {
   }
 
   return { userId: session.user.wcaId, stateId };
+}
+
+async function requireGroupMediaPermission(req: Request) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user?.wcaId) {
+    throw new UploadThingError("Unauthorized");
+  }
+
+  const groupId = req.headers.get("x-group-id") ?? "";
+  if (!groupId) {
+    throw new UploadThingError("Missing groupId");
+  }
+
+  const allowed = await hasGroupPermission(
+    groupId,
+    session.user.wcaId,
+    "group.media",
+  );
+  if (!allowed) {
+    throw new UploadThingError("Unauthorized");
+  }
+
+  return { userId: session.user.wcaId, groupId };
 }
 
 async function requireCompetitionLogoPermission(req: Request) {
@@ -82,6 +109,26 @@ export const ourFileRouter: FileRouter = {
     .middleware(async ({ req }) => requireCompetitionLogoPermission(req))
     .onUploadComplete(async ({ metadata, file }) => {
       return { competitionId: metadata.competitionId, logo: file.ufsUrl };
+    }),
+  groupImageUploader: f({
+    image: {
+      maxFileSize: "2MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async ({ req }) => requireGroupMediaPermission(req))
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { groupId: metadata.groupId, image: file.ufsUrl };
+    }),
+  groupCoverUploader: f({
+    image: {
+      maxFileSize: "4MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async ({ req }) => requireGroupMediaPermission(req))
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { groupId: metadata.groupId, coverImage: file.ufsUrl };
     }),
 };
 

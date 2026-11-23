@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@workspace/ui/components/button";
 import {
   Card,
@@ -68,10 +68,12 @@ export function SaveTeamForm({
     success: false,
     errors: null,
   });
+  const [isActive, setIsActive] = useState(Boolean(teamData.isActive));
 
   return (
     <form action={formAction}>
       <input type="hidden" name="stateId" defaultValue={stateId} readOnly />
+      <input type="hidden" name="isActive" value={isActive ? "on" : ""} />
 
       {state.success ? (
         <div className="container mx-auto px-4 py-3">
@@ -182,9 +184,9 @@ export function SaveTeamForm({
             <div className="flex items-center space-x-2">
               <Switch
                 id="isActive"
-                name="isActive"
-                defaultChecked={state.defaultValues.isActive ? true : false}
+                checked={isActive}
                 disabled={pending}
+                onCheckedChange={setIsActive}
               />
               <Label htmlFor="isActive">El Team está activo</Label>
             </div>

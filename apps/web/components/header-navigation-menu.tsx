@@ -32,6 +32,7 @@ import {
 } from "@workspace/ui/components/navigation-menu";
 import { CubingMexico } from "@workspace/icons";
 import { cn } from "@workspace/ui/lib/utils";
+import { GROUPS_PUBLICLY_RELEASED } from "@/lib/groups";
 import { HeaderLiveNavLink } from "./header-live-nav-link";
 import { HeaderNavLink } from "./header-nav-link";
 import { ResponsiveNavigationMenu } from "./responsive-navigation-menu";
@@ -72,6 +73,22 @@ export function HeaderNavigationMenu() {
             Teams estatales
           </HeaderNavLink>
         </NavigationMenuItem>
+
+        {GROUPS_PUBLICLY_RELEASED ? (
+          <>
+            <NavigationMenuItem>
+              <HeaderNavLink href="/communities" className={navItemClass}>
+                Comunidades
+              </HeaderNavLink>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
+              <HeaderNavLink href="/sponsors" className={navItemClass}>
+                Patrocinadores
+              </HeaderNavLink>
+            </NavigationMenuItem>
+          </>
+        ) : null}
 
         <NavigationMenuItem>
           <NavigationMenuTrigger className={triggerClass}>

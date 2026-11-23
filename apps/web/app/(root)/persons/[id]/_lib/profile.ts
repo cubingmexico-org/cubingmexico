@@ -34,6 +34,11 @@ import {
 import { and, countDistinct, eq, gt, inArray, sql } from "drizzle-orm";
 import { inScopeEvents } from "@/lib/official-events";
 import type { EventScope } from "@/lib/constants";
+import {
+  medalEligibleSql,
+  medalTierCountsFromMergedSql,
+  mergedPodiumRowsSql,
+} from "@/lib/medals";
 import { reportError } from "@/lib/report-error";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -130,23 +135,31 @@ export async function getPersonData(
 
   const solveCount = Number(solveCountRow[0]?.solveCount ?? 0);
 
-  const medalsRow = await db
-    .select({
-      gold: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 1 AND ${result.roundTypeId} IN('f','c'))`,
-      silver: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 2 AND ${result.roundTypeId} IN('f','c'))`,
-      bronze: sql<number>`COUNT(*) FILTER (WHERE ${result.pos} = 3 AND ${result.roundTypeId} IN('f','c'))`,
-    })
-    .from(result)
-    .where(and(eq(result.personId, wcaId), gt(result.best, 0)));
+  const {
+    gold: goldSql,
+    silver: silverSql,
+    bronze: bronzeSql,
+  } = medalTierCountsFromMergedSql();
+  const medalsRows = (await db.execute(sql`
+    SELECT
+      ${goldSql} AS gold,
+      ${silverSql} AS silver,
+      ${bronzeSql} AS bronze
+    FROM (
+      ${mergedPodiumRowsSql(sql`r.person_id = ${wcaId}`)}
+    ) ranked
+    WHERE ranked.rn = 1
+  `)) as unknown as Array<{ gold: number; silver: number; bronze: number }>;
+  const medalsRow = medalsRows[0];
 
   const medals = {
-    gold: Number(medalsRow[0]?.gold ?? 0),
-    silver: Number(medalsRow[0]?.silver ?? 0),
-    bronze: Number(medalsRow[0]?.bronze ?? 0),
+    gold: Number(medalsRow?.gold ?? 0),
+    silver: Number(medalsRow?.silver ?? 0),
+    bronze: Number(medalsRow?.bronze ?? 0),
     total:
-      Number(medalsRow[0]?.gold ?? 0) +
-      Number(medalsRow[0]?.silver ?? 0) +
-      Number(medalsRow[0]?.bronze ?? 0),
+      Number(medalsRow?.gold ?? 0) +
+      Number(medalsRow?.silver ?? 0) +
+      Number(medalsRow?.bronze ?? 0),
   };
 
   const recordsRow = await db
@@ -264,8 +277,8 @@ export async function getMembershipData(wcaId: string, eventIds: string[]) {
       numberOfSpeedsolvingAverages: sql<number>`COUNT(DISTINCT CASE WHEN ${result.eventId} IN(${sql.join(SPEEDSOLVING_AVERAGES_EVENTS, sql`, `)}) AND ${result.average} > 0 THEN ${result.eventId} ELSE NULL END)`,
       numberOfBLDFMCMeans: sql<number>`COUNT(DISTINCT CASE WHEN ${result.eventId} IN(${sql.join(BLD_FMC_MEANS_EVENTS, sql`, `)}) AND ${result.average} > 0 THEN ${result.eventId} ELSE NULL END)`,
       hasWorldRecord: sql<boolean>`MAX(CASE WHEN ${result.regionalSingleRecord} = 'WR' OR ${result.regionalAverageRecord} = 'WR' THEN 1 ELSE 0 END) = 1`,
-      hasWorldChampionshipPodium: sql<boolean>`MAX(CASE WHEN ${result.pos} IN(1, 2, 3) AND ${result.roundTypeId} IN('f', 'c') AND ${championship.championshipType} = 'world' THEN 1 ELSE 0 END) = 1`,
-      eventsWon: sql<number>`COUNT(DISTINCT CASE WHEN ${result.pos} = 1 AND ${result.roundTypeId} IN('f', 'c') THEN ${result.eventId} ELSE NULL END)`,
+      hasWorldChampionshipPodium: sql<boolean>`MAX(CASE WHEN ${medalEligibleSql()} AND ${championship.championshipType} = 'world' THEN 1 ELSE 0 END) = 1`,
+      eventsWon: sql<number>`COUNT(DISTINCT CASE WHEN ${medalEligibleSql()} AND ${result.globalPos} = 1 THEN ${result.eventId} ELSE NULL END)`,
     })
     .from(result)
     .leftJoin(

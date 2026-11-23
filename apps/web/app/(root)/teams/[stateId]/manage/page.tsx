@@ -16,6 +16,7 @@ import {
   getTeamRole,
   roleHasPermission,
 } from "@/lib/team-auth";
+import { isSuperadmin } from "@/lib/superadmin";
 
 type Props = {
   params: Promise<{ stateId: string }>;
@@ -77,6 +78,7 @@ export default async function Page(props: {
       teamData={team}
       promises={promises}
       canManageRoles={roleHasPermission(role, "team.roles")}
+      isSuperadmin={isSuperadmin(userId)}
     />
   );
 }

@@ -17,6 +17,11 @@ import {
   teamMember,
   resultAttempts,
   team,
+  group,
+  groupMembership,
+  groupRankSingle,
+  groupRankAverage,
+  groupRecordMarker,
 } from "./schema";
 
 export const competitionRelations = relations(competition, ({ many, one }) => ({
@@ -59,6 +64,7 @@ export const personRelations = relations(person, ({ many, one }) => ({
     fields: [person.wcaId],
     references: [teamMember.personId],
   }),
+  groupMemberships: many(groupMembership),
   state: one(state, { fields: [person.stateId], references: [state.id] }),
 }));
 
@@ -73,6 +79,7 @@ export const resultRelations = relations(result, ({ one, many }) => ({
   }),
   event: one(event, { fields: [result.eventId], references: [event.id] }),
   attempts: many(resultAttempts),
+  groupRecordMarkers: many(groupRecordMarker),
 }));
 
 export const resultAttemptsRelations = relations(resultAttempts, ({ one }) => ({
@@ -87,3 +94,74 @@ export const stateRelations = relations(state, ({ many, one }) => ({
   persons: many(person),
   team: one(team, { fields: [state.id], references: [team.stateId] }),
 }));
+
+export const groupRelations = relations(group, ({ many }) => ({
+  memberships: many(groupMembership),
+  ranksSingle: many(groupRankSingle),
+  ranksAverage: many(groupRankAverage),
+  recordMarkers: many(groupRecordMarker),
+}));
+
+export const groupMembershipRelations = relations(
+  groupMembership,
+  ({ one }) => ({
+    group: one(group, {
+      fields: [groupMembership.groupId],
+      references: [group.id],
+    }),
+    person: one(person, {
+      fields: [groupMembership.personId],
+      references: [person.wcaId],
+    }),
+  }),
+);
+
+export const groupRankSingleRelations = relations(
+  groupRankSingle,
+  ({ one }) => ({
+    group: one(group, {
+      fields: [groupRankSingle.groupId],
+      references: [group.id],
+    }),
+    person: one(person, {
+      fields: [groupRankSingle.personId],
+      references: [person.wcaId],
+    }),
+    event: one(event, {
+      fields: [groupRankSingle.eventId],
+      references: [event.id],
+    }),
+  }),
+);
+
+export const groupRankAverageRelations = relations(
+  groupRankAverage,
+  ({ one }) => ({
+    group: one(group, {
+      fields: [groupRankAverage.groupId],
+      references: [group.id],
+    }),
+    person: one(person, {
+      fields: [groupRankAverage.personId],
+      references: [person.wcaId],
+    }),
+    event: one(event, {
+      fields: [groupRankAverage.eventId],
+      references: [event.id],
+    }),
+  }),
+);
+
+export const groupRecordMarkerRelations = relations(
+  groupRecordMarker,
+  ({ one }) => ({
+    group: one(group, {
+      fields: [groupRecordMarker.groupId],
+      references: [group.id],
+    }),
+    result: one(result, {
+      fields: [groupRecordMarker.resultId],
+      references: [result.id],
+    }),
+  }),
+);

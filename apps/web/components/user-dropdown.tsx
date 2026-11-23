@@ -21,6 +21,7 @@ import {
   canShowGoalsLinks,
   getDefaultSummaryYear,
 } from "@/app/(root)/summary/_lib/summary-year";
+import { GROUPS_PUBLICLY_RELEASED, canShowGroupsLinks } from "@/lib/groups";
 import {
   Avatar,
   AvatarImage,
@@ -133,6 +134,23 @@ export function UserDropdown({
             Organización
           </a>
         </DropdownMenuItem>
+        {canShowGroupsLinks(isSuperadmin) && !GROUPS_PUBLICLY_RELEASED ? (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Users />
+              <Link href="/communities" className="w-full" prefetch={false}>
+                Comunidades
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Award />
+              <Link href="/sponsors" className="w-full" prefetch={false}>
+                Patrocinadores
+              </Link>
+            </DropdownMenuItem>
+          </>
+        ) : null}
         {isSuperadmin ? (
           <>
             <DropdownMenuSeparator />

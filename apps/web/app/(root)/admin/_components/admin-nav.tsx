@@ -14,6 +14,8 @@ const NAV_ITEMS: {
   { href: "/admin/ops", label: "Ops" },
   { href: "/admin/social", label: "Social" },
   { href: "/admin/people", label: "Personas" },
+  { href: "/admin/teams", label: "Teams" },
+  { href: "/admin/groups", label: "Grupos" },
   { href: "/admin/competitions", label: "Competencias" },
   { href: "/admin/schedules", label: "Horarios" },
 ];

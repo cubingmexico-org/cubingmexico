@@ -162,6 +162,20 @@
       "when": 1794500000000,
       "tag": "0022_certificate_shares",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794600000000,
+      "tag": "0023_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794700000000,
+      "tag": "0024_dual_round_positions",
+      "breakpoints": true
     }
   ]
 }

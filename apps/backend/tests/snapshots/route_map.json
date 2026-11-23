@@ -1,5 +1,13 @@
 [
   {
+    "rule": "/backfill-dual-positions",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.backfill_dual_positions",
+    "cron_auth": true
+  },
+  {
     "rule": "/competitions",
     "methods": [
       "GET"
@@ -517,6 +525,38 @@
       "POST"
     ],
     "endpoint": "admin.update_existing_mexican_competitions",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-group-ranks",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_group_ranks",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-group-ranks/<group_id>",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_one_group_ranks",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-group-records",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_group_records",
+    "cron_auth": true
+  },
+  {
+    "rule": "/update-group-records/<group_id>",
+    "methods": [
+      "POST"
+    ],
+    "endpoint": "admin.update_one_group_records",
     "cron_auth": true
   },
   {
