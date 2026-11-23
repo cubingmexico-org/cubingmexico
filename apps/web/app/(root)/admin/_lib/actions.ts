@@ -5,6 +5,7 @@ export {
   updatePersonHideFromRoster,
   updateCompetitionState,
 } from "./actions/people";
+export { createTeamAction } from "./actions/teams";
 export {
   updateCompetitionLogo,
   clearCompetitionLogo,

@@ -44,6 +44,23 @@ export async function saveTeam({
     .where(eq(team.stateId, stateId));
 }
 
+export async function createTeam({
+  stateId,
+  name,
+  description,
+}: {
+  stateId: State["id"];
+  name: Team["name"];
+  description?: Team["description"];
+}) {
+  await db.insert(team).values({
+    stateId,
+    name,
+    description: description ?? null,
+    isActive: true,
+  });
+}
+
 export async function saveProfile({
   stateId,
   personId,

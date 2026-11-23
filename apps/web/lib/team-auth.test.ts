@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const limit = vi.hoisted(() => vi.fn());
+const isSuperadmin = vi.hoisted(() => vi.fn(() => false));
 
 vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
 vi.mock("@/lib/auth", () => ({ auth: { api: { getSession: vi.fn() } } }));
+vi.mock("@/lib/superadmin", () => ({ isSuperadmin }));
 vi.mock("@workspace/db", () => ({
   db: {
     select: () => ({
@@ -16,9 +18,17 @@ import { getTeamRole, hasTeamPermission } from "./team-auth";
 
 afterEach(() => {
   limit.mockReset();
+  isSuperadmin.mockReset();
+  isSuperadmin.mockReturnValue(false);
 });
 
 describe("getTeamRole", () => {
+  it("returns admin for superadmins without querying membership", async () => {
+    isSuperadmin.mockReturnValue(true);
+    await expect(getTeamRole("JAL", "2015SUPE01")).resolves.toBe("admin");
+    expect(limit).not.toHaveBeenCalled();
+  });
+
   it("returns the member's role", async () => {
     limit.mockResolvedValue([{ role: "editor" }]);
     await expect(getTeamRole("JAL", "2015ABCD01")).resolves.toBe("editor");
