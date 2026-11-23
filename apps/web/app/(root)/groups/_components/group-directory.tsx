@@ -14,8 +14,8 @@ export async function GroupDirectory({ kind }: { kind: GroupKind }) {
         <PageHeading>{title}</PageHeading>
         <p className="max-w-2xl text-muted-foreground">
           {kind === "community"
-            ? "Comunidades locales de speedcubing. Son independientes de los teams estatales."
-            : "Equipos patrocinados por tiendas y marcas. Los teams estatales siguen siendo el foco principal."}
+            ? "Comunidades locales de speedcubing."
+            : "Equipos patrocinados por tiendas y marcas."}
         </p>
       </div>
 
