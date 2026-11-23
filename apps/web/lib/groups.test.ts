@@ -3,6 +3,7 @@ import {
   GROUP_ID_REGEX,
   groupBasePath,
   groupHref,
+  groupIdFromName,
   groupKindLabel,
   groupRecordLabel,
 } from "./groups";
@@ -24,5 +25,12 @@ describe("groups helpers", () => {
     expect(GROUP_ID_REGEX.test("cubos-dany")).toBe(true);
     expect(GROUP_ID_REGEX.test("Cubos")).toBe(false);
     expect(GROUP_ID_REGEX.test("-bad")).toBe(false);
+  });
+
+  it("derives slug ids from names", () => {
+    expect(groupIdFromName("Vallarta Speed")).toBe("vallarta-speed");
+    expect(groupIdFromName("Cubos Dany")).toBe("cubos-dany");
+    expect(groupIdFromName("  México Ñandú  ")).toBe("mexico-nandu");
+    expect(GROUP_ID_REGEX.test(groupIdFromName("Vallarta Speed"))).toBe(true);
   });
 });

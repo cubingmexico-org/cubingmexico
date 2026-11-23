@@ -1,14 +1,25 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Button } from "@workspace/ui/components/button";
 import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { createGroupAction } from "@/app/(root)/groups/_lib/actions";
+import { groupIdFromName } from "@/lib/groups";
 
 export function CreateGroupForm() {
   const [pending, startTransition] = useTransition();
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
+
+  function resetForm(form: HTMLFormElement) {
+    form.reset();
+    setName("");
+    setSlug("");
+    setSlugEdited(false);
+  }
 
   return (
     <form
@@ -16,9 +27,10 @@ export function CreateGroupForm() {
       onSubmit={(event) => {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
+        const id = slug || groupIdFromName(name);
         startTransition(async () => {
           const result = await createGroupAction({
-            id: String(form.get("id") ?? ""),
+            id,
             kind: String(form.get("kind") ?? "community") as
               | "community"
               | "sponsor",
@@ -32,7 +44,7 @@ export function CreateGroupForm() {
             return;
           }
           toast.success(`Grupo ${result.data?.id} creado`);
-          event.currentTarget.reset();
+          resetForm(event.currentTarget);
         });
       }}
     >
@@ -49,12 +61,46 @@ export function CreateGroupForm() {
         </select>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="id">Slug</Label>
-        <Input id="id" name="id" placeholder="vallarta" required />
+        <Label htmlFor="name">Nombre</Label>
+        <Input
+          id="name"
+          name="name"
+          required
+          value={name}
+          onChange={(event) => {
+            const next = event.target.value;
+            setName(next);
+            if (!slugEdited) {
+              setSlug(groupIdFromName(next));
+            }
+          }}
+        />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="name">Nombre</Label>
-        <Input id="name" name="name" required />
+        <Label htmlFor="id">Slug</Label>
+        <Input
+          id="id"
+          name="id"
+          placeholder="vallarta"
+          required
+          value={slug}
+          onChange={(event) => {
+            setSlugEdited(true);
+            setSlug(
+              event.target.value
+                .normalize("NFD")
+                .replace(/\p{M}/gu, "")
+                .toLowerCase()
+                .replace(/[^a-z0-9-]+/g, "-")
+                .replace(/-{2,}/g, "-")
+                .replace(/^-+/, "")
+                .slice(0, 32),
+            );
+          }}
+        />
+        <p className="text-xs text-muted-foreground">
+          Se genera desde el nombre; puedes editarlo.
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="description">Descripción</Label>
