@@ -46,6 +46,64 @@ export async function saveGroup({
     .where(eq(group.id, id));
 }
 
+export async function updateGroupLogo({
+  id,
+  image,
+}: {
+  id: Group["id"];
+  image: Group["image"];
+}): Promise<Group["image"]> {
+  return db.transaction(async (tx) => {
+    const [previous] = await tx
+      .select({ image: group.image })
+      .from(group)
+      .where(eq(group.id, id))
+      .for("update");
+    await tx.update(group).set({ image }).where(eq(group.id, id));
+    return previous?.image ?? null;
+  });
+}
+
+export async function updateGroupCover({
+  id,
+  coverImage,
+}: {
+  id: Group["id"];
+  coverImage: Group["coverImage"];
+}): Promise<Group["coverImage"]> {
+  return db.transaction(async (tx) => {
+    const [previous] = await tx
+      .select({ coverImage: group.coverImage })
+      .from(group)
+      .where(eq(group.id, id))
+      .for("update");
+    await tx.update(group).set({ coverImage }).where(eq(group.id, id));
+    return previous?.coverImage ?? null;
+  });
+}
+
+/** Hard-delete a group and cascaded memberships/ranks/records. Returns image URLs for cleanup. */
+export async function deleteGroup(id: Group["id"]): Promise<{
+  kind: Group["kind"];
+  image: Group["image"];
+  coverImage: Group["coverImage"];
+} | null> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({
+        kind: group.kind,
+        image: group.image,
+        coverImage: group.coverImage,
+      })
+      .from(group)
+      .where(eq(group.id, id))
+      .for("update");
+    if (!row) return null;
+    await tx.delete(group).where(eq(group.id, id));
+    return row;
+  });
+}
+
 export async function createGroup(values: {
   id: Group["id"];
   kind: Group["kind"];

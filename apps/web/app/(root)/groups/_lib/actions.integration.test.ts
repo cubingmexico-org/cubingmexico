@@ -2,8 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { db } from "@workspace/db";
 import { groupMembership, person } from "@workspace/db/schema";
+import { group } from "@workspace/db/schema";
 import {
   addGroupMemberFormAction,
+  deleteGroupAction,
   deleteGroupMembers,
   setSponsorshipAction,
 } from "./actions";
@@ -185,5 +187,42 @@ describe("setSponsorshipAction", () => {
       publicityEnabled: true,
     });
     expect(result.error).toBeNull();
+  });
+});
+
+describe("deleteGroupAction", () => {
+  it("is reserved for superadmins", async () => {
+    signIn(ADMIN);
+    await expect(deleteGroupAction("vallarta")).rejects.toMatchObject(
+      UNAUTHORIZED,
+    );
+    const [row] = await db
+      .select({ id: group.id })
+      .from(group)
+      .where(eq(group.id, "vallarta"));
+    expect(row?.id).toBe("vallarta");
+  });
+
+  it("lets a superadmin hard-delete a group", async () => {
+    const SUPERADMIN = "2015SUPE01";
+    vi.stubEnv("SUPERADMIN_WCA_IDS", SUPERADMIN);
+    await insertPerson({ wcaId: SUPERADMIN });
+    signIn(SUPERADMIN);
+
+    await expect(deleteGroupAction("vallarta")).rejects.toMatchObject({
+      digest: expect.stringContaining("NEXT_REDIRECT"),
+    });
+
+    const rows = await db
+      .select({ id: group.id })
+      .from(group)
+      .where(eq(group.id, "vallarta"));
+    expect(rows).toHaveLength(0);
+
+    const memberships = await db
+      .select()
+      .from(groupMembership)
+      .where(eq(groupMembership.groupId, "vallarta"));
+    expect(memberships).toHaveLength(0);
   });
 });

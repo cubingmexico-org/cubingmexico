@@ -5,6 +5,7 @@ import { person, team, teamMember } from "@workspace/db/schema";
 import {
   addMemberFormAction,
   deleteMembers,
+  deleteTeamAction,
   deleteTeamLogoAction,
   teamFormAction,
   updateMember,
@@ -310,5 +311,25 @@ describe("addMemberFormAction", () => {
 
     expect(result.success).toBe(false);
     expect(await stateOf(OTHER_STATE_MEMBER)).toBe("CMX");
+  });
+});
+
+describe("deleteTeamAction", () => {
+  it("is reserved for superadmins", async () => {
+    signIn(ADMIN);
+    await expect(deleteTeamAction("JAL")).rejects.toMatchObject(UNAUTHORIZED);
+    expect(await teamRow("JAL")).toBeTruthy();
+  });
+
+  it("lets a superadmin hard-delete a team", async () => {
+    const SUPERADMIN = "2015SUPE01";
+    vi.stubEnv("SUPERADMIN_WCA_IDS", SUPERADMIN);
+    await insertPerson({ wcaId: SUPERADMIN });
+    signIn(SUPERADMIN);
+
+    await expect(deleteTeamAction("JAL")).rejects.toMatchObject({
+      digest: expect.stringContaining("NEXT_REDIRECT"),
+    });
+    expect(await teamRow("JAL")).toBeUndefined();
   });
 });

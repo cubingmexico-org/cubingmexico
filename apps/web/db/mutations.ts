@@ -44,6 +44,25 @@ export async function saveTeam({
     .where(eq(team.stateId, stateId));
 }
 
+/** Hard-delete a state team row. Returns previous image URLs for cleanup. */
+export async function deleteTeam(stateId: State["id"]): Promise<{
+  image: Team["image"];
+  coverImage: Team["coverImage"];
+}> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ image: team.image, coverImage: team.coverImage })
+      .from(team)
+      .where(eq(team.stateId, stateId))
+      .for("update");
+    await tx.delete(team).where(eq(team.stateId, stateId));
+    return {
+      image: row?.image ?? null,
+      coverImage: row?.coverImage ?? null,
+    };
+  });
+}
+
 export async function createTeam({
   stateId,
   name,

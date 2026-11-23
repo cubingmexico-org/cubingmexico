@@ -7,9 +7,12 @@ import { z } from "zod";
 import {
   addGroupMember,
   createGroup,
+  deleteGroup,
   removeGroupMembers,
   saveGroup,
   setSponsorshipStatus,
+  updateGroupCover,
+  updateGroupLogo,
 } from "@/db/group-mutations";
 import { getErrorMessage } from "@/lib/handle-error";
 import { requireGroupPermission } from "@/lib/group-auth";
@@ -18,13 +21,21 @@ import {
   refreshGroupsAfterRosterChange,
 } from "@/lib/group-roster-refresh";
 import { requireSuperadmin } from "@/lib/superadmin";
+import { deleteUploadedFileIfUnused } from "@/lib/uploadthing-files";
+import { uploadThingFileKey } from "@/lib/uploadthing-key";
 import { groupMembership, person } from "@workspace/db/schema";
+import { redirect } from "next/navigation";
 import {
   addGroupMemberFormSchema,
   createGroupSchema,
   groupFormSchema,
   setSponsorshipSchema,
 } from "./validations";
+
+const groupImageSchema = z
+  .string()
+  .refine((url) => uploadThingFileKey(url) !== null, "Imagen no válida")
+  .nullable();
 
 export async function groupFormAction(_prevState: unknown, formData: FormData) {
   const formDataEntries = Object.fromEntries(formData.entries());
@@ -249,4 +260,69 @@ export async function setSponsorshipAction(
     // Re-throws unauthorized()/redirect() control-flow errors.
     return { data: null, error: getErrorMessage(error) };
   }
+}
+
+export async function deleteGroupLogoAction(groupId: string) {
+  return updateGroupLogoAction(groupId, null);
+}
+
+export async function deleteGroupCoverAction(groupId: string) {
+  return updateGroupCoverAction(groupId, null);
+}
+
+export async function updateGroupLogoAction(
+  groupId: string,
+  image: string | null,
+) {
+  await requireGroupPermission(groupId, "group.media");
+
+  const previous = await updateGroupLogo({
+    id: groupId,
+    image: groupImageSchema.parse(image),
+  });
+  updateTag(`group-info-${groupId}`);
+  updateTag("groups-directory-community");
+  updateTag("groups-directory-sponsor");
+  updateTag("groups-publicity");
+  if (previous !== image) {
+    await deleteUploadedFileIfUnused(previous);
+  }
+
+  return { success: true };
+}
+
+export async function updateGroupCoverAction(
+  groupId: string,
+  coverImage: string | null,
+) {
+  await requireGroupPermission(groupId, "group.media");
+
+  const previous = await updateGroupCover({
+    id: groupId,
+    coverImage: groupImageSchema.parse(coverImage),
+  });
+  updateTag(`group-info-${groupId}`);
+  updateTag("groups-directory-community");
+  updateTag("groups-directory-sponsor");
+  if (previous !== coverImage) {
+    await deleteUploadedFileIfUnused(previous);
+  }
+
+  return { success: true };
+}
+
+export async function deleteGroupAction(groupId: string) {
+  await requireSuperadmin();
+  const previous = await deleteGroup(groupId);
+  if (!previous) {
+    return { data: null, error: "Grupo no encontrado" };
+  }
+  updateTag(`group-info-${groupId}`);
+  updateTag(`groups-directory-${previous.kind}`);
+  updateTag("groups-publicity");
+  await Promise.all([
+    deleteUploadedFileIfUnused(previous.image),
+    deleteUploadedFileIfUnused(previous.coverImage),
+  ]);
+  redirect("/admin/groups");
 }
