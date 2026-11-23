@@ -10,9 +10,6 @@ import {
   removeGroupMembers,
   saveGroup,
   setSponsorshipStatus,
-  updateGroupCover,
-  updateGroupLogo,
-  updateGroupMemberMeta,
 } from "@/db/group-mutations";
 import { getErrorMessage } from "@/lib/handle-error";
 import { requireGroupPermission } from "@/lib/group-auth";
@@ -21,8 +18,6 @@ import {
   refreshGroupsAfterRosterChange,
 } from "@/lib/group-roster-refresh";
 import { requireSuperadmin } from "@/lib/superadmin";
-import { deleteUploadedFileIfUnused } from "@/lib/uploadthing-files";
-import { uploadThingFileKey } from "@/lib/uploadthing-key";
 import { groupMembership, person } from "@workspace/db/schema";
 import {
   addGroupMemberFormSchema,
@@ -170,73 +165,6 @@ export async function addGroupMemberFormAction(
   }
 }
 
-export async function updateGroupMemberAction(
-  _prevState: unknown,
-  formData: FormData,
-) {
-  const defaultValues = z
-    .record(z.string(), z.string())
-    .parse(Object.fromEntries(formData.entries()));
-
-  try {
-    const data = addGroupMemberFormSchema.parse(Object.fromEntries(formData));
-    await requireGroupPermission(data.groupId, "group.members");
-
-    const specialties = data.specialties
-      ? data.specialties
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-      : null;
-
-    const [member] = await db
-      .select({ personId: groupMembership.personId })
-      .from(groupMembership)
-      .where(
-        and(
-          eq(groupMembership.groupId, data.groupId),
-          eq(groupMembership.personId, data.personId),
-        ),
-      )
-      .limit(1);
-
-    if (!member) {
-      return {
-        defaultValues,
-        success: false,
-        errors: "El miembro no pertenece a este grupo",
-      };
-    }
-
-    await updateGroupMemberMeta({
-      groupId: data.groupId,
-      personId: data.personId,
-      specialties,
-    });
-
-    updateTag(`group-members-${data.groupId}`);
-
-    return {
-      defaultValues: {
-        groupId: data.groupId,
-        personId: data.personId,
-        specialties: specialties?.join(", ") ?? "",
-      },
-      success: true,
-      errors: null,
-    };
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return {
-        defaultValues,
-        success: false,
-        errors: getErrorMessage(error),
-      };
-    }
-    throw error;
-  }
-}
-
 export async function deleteGroupMembers(input: {
   ids: string[];
   groupId: string;
@@ -274,46 +202,6 @@ export async function deleteGroupMembers(input: {
       warning: null,
     };
   }
-}
-
-const groupImageSchema = z
-  .string()
-  .refine((url) => uploadThingFileKey(url) !== null, "Imagen no válida")
-  .nullable();
-
-export async function updateGroupLogoAction(
-  groupId: string,
-  image: string | null,
-) {
-  await requireGroupPermission(groupId, "group.media");
-  const previous = await updateGroupLogo({
-    id: groupId,
-    image: groupImageSchema.parse(image),
-  });
-  updateTag(`group-info-${groupId}`);
-  updateTag("groups-directory-community");
-  updateTag("groups-directory-sponsor");
-  updateTag("groups-publicity");
-  if (previous !== image) {
-    await deleteUploadedFileIfUnused(previous);
-  }
-  return { success: true };
-}
-
-export async function updateGroupCoverAction(
-  groupId: string,
-  coverImage: string | null,
-) {
-  await requireGroupPermission(groupId, "group.media");
-  const previous = await updateGroupCover({
-    id: groupId,
-    coverImage: groupImageSchema.parse(coverImage),
-  });
-  updateTag(`group-info-${groupId}`);
-  if (previous !== coverImage) {
-    await deleteUploadedFileIfUnused(previous);
-  }
-  return { success: true };
 }
 
 export async function createGroupAction(

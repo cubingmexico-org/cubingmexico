@@ -90,42 +90,6 @@ export async function setSponsorshipStatus({
     .where(eq(group.id, id));
 }
 
-export async function updateGroupLogo({
-  id,
-  image,
-}: {
-  id: Group["id"];
-  image: Group["image"];
-}): Promise<Group["image"]> {
-  return db.transaction(async (tx) => {
-    const [previous] = await tx
-      .select({ image: group.image })
-      .from(group)
-      .where(eq(group.id, id))
-      .for("update");
-    await tx.update(group).set({ image }).where(eq(group.id, id));
-    return previous?.image ?? null;
-  });
-}
-
-export async function updateGroupCover({
-  id,
-  coverImage,
-}: {
-  id: Group["id"];
-  coverImage: Group["coverImage"];
-}): Promise<Group["coverImage"]> {
-  return db.transaction(async (tx) => {
-    const [previous] = await tx
-      .select({ coverImage: group.coverImage })
-      .from(group)
-      .where(eq(group.id, id))
-      .for("update");
-    await tx.update(group).set({ coverImage }).where(eq(group.id, id));
-    return previous?.coverImage ?? null;
-  });
-}
-
 export async function addGroupMember({
   groupId,
   personId,
@@ -152,31 +116,6 @@ export async function addGroupMember({
         achievements,
       },
     });
-}
-
-export async function updateGroupMemberMeta({
-  groupId,
-  personId,
-  specialties,
-  role,
-}: {
-  groupId: Group["id"];
-  personId: Person["wcaId"];
-  specialties: GroupMembership["specialties"];
-  role?: GroupMembership["role"];
-}) {
-  await db
-    .update(groupMembership)
-    .set({
-      specialties,
-      ...(role !== undefined ? { role } : {}),
-    })
-    .where(
-      and(
-        eq(groupMembership.groupId, groupId),
-        eq(groupMembership.personId, personId),
-      ),
-    );
 }
 
 export async function removeGroupMembers({
