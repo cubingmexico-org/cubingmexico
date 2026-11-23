@@ -105,6 +105,8 @@ def format_place_line(city_name: str | None, state_name: str | None = None) -> s
     if not city:
         return state
 
+    if city.lower() == state.lower():
+        return city
     if city.lower().endswith(f", {state.lower()}"):
         return city
     if "," in city:

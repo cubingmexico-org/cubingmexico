@@ -65,11 +65,13 @@ describe("securityHeaders", () => {
 
   it("appends the app's extra script sources", () => {
     const csp = header(
-      securityHeaders({ scriptSrc: ["'wasm-unsafe-eval'"] }),
+      securityHeaders({
+        scriptSrc: ["'unsafe-eval'", "'wasm-unsafe-eval'", "blob:"],
+      }),
       "Content-Security-Policy-Report-Only",
     );
     expect(csp).toMatch(
-      /script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval';/,
+      /script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob:;/,
     );
   });
 

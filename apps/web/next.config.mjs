@@ -19,8 +19,10 @@ const nextConfig = {
           enforce: true,
           sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
           environment: process.env.NEXT_PUBLIC_VERCEL_ENV,
-          // IMG.LY background-removal: wasm + blob: script URLs for its workers.
-          scriptSrc: ["'wasm-unsafe-eval'", "blob:"],
+          // IMG.LY / ONNX Runtime Web: wasm compile, blob: workers, and
+          // 'unsafe-eval' for ndarray/ort `new Function` (wasm-unsafe-eval alone
+          // is not enough — see Sentry WEB-1 on /admin/competitions).
+          scriptSrc: ["'unsafe-eval'", "'wasm-unsafe-eval'", "blob:"],
           // UploadThing uploads, and the background-removal model for competition logos.
           connectSrc: [
             "https://*.uploadthing.com",

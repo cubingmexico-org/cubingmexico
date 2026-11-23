@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { HomeHero } from "@/components/home-hero";
+import { HomeLiveBannerSection } from "@/components/home-live-banner-section";
 import { HomeUpcomingCompetitions } from "@/components/home-upcoming-competitions";
 import { HomeRecentRecords } from "@/components/home-recent-records";
 import { HomeCommunityStats } from "@/components/home-community-stats";
@@ -30,6 +32,9 @@ export default async function Page() {
   return (
     <main className="grow">
       <HomeHero />
+      <Suspense fallback={null}>
+        <HomeLiveBannerSection />
+      </Suspense>
 
       <nav
         aria-label="Accesos rápidos"

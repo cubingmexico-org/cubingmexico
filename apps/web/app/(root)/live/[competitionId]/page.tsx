@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { fetchLiveCompetitionMeta, fetchLiveRounds } from "@/lib/live/wca";
-import { officialLiveUrl } from "@/lib/live/urls";
+import { officialLiveUrl, usesClassicWcaLive } from "@/lib/live/urls";
+import { WcaLiveUnsupported } from "../_components/wca-live-unsupported";
 import { LiveCompetitionView } from "./_components/live-competition-view";
 
 type Props = {
@@ -35,17 +36,30 @@ export default async function LiveCompetitionPage({ params }: Props) {
   const { competitionId } = await params;
 
   let meta;
-  let rounds;
   try {
-    [meta, rounds] = await Promise.all([
-      fetchLiveCompetitionMeta(competitionId),
-      fetchLiveRounds(competitionId),
-    ]);
+    meta = await fetchLiveCompetitionMeta(competitionId);
   } catch {
     notFound();
   }
 
   if (!meta) {
+    notFound();
+  }
+
+  const officialUrl = officialLiveUrl(competitionId, meta.scoretakingSoftware);
+
+  if (usesClassicWcaLive(meta.scoretakingSoftware)) {
+    return (
+      <main className="grow container mx-auto px-4 py-8">
+        <WcaLiveUnsupported competition={meta} officialLiveUrl={officialUrl} />
+      </main>
+    );
+  }
+
+  let rounds;
+  try {
+    rounds = await fetchLiveRounds(competitionId);
+  } catch {
     notFound();
   }
 
@@ -56,10 +70,7 @@ export default async function LiveCompetitionPage({ params }: Props) {
         initial={{
           competition: meta,
           rounds: rounds.rounds,
-          officialLiveUrl: officialLiveUrl(
-            competitionId,
-            meta.scoretakingSoftware,
-          ),
+          officialLiveUrl: officialUrl,
         }}
       />
     </main>

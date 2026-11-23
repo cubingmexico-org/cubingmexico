@@ -35,16 +35,20 @@ export function officialLiveUrl(
 
 /**
  * In-app "En vivo" link for the competitions table.
- * In-progress comps go to Cubing México live; others to official ILR.
+ * Always routes to Cubing México live.
  */
-export function competitionsTableLiveHref(
-  competitionId: string,
-  status: "past" | "in_progress" | "upcoming",
-): string {
-  if (status === "in_progress") {
-    return cubingMexicoLiveUrl(competitionId);
-  }
-  return wcaIlrLiveUrl(competitionId);
+export function competitionsTableLiveHref(competitionId: string): string {
+  return cubingMexicoLiveUrl(competitionId);
+}
+
+/**
+ * Classic standalone WCA Live (not ILR). Cubing México `/live` only works with
+ * internal scoretaking; WCA Live is scheduled for deprecation in 2027.
+ */
+export function usesClassicWcaLive(
+  scoretakingSoftware: ScoretakingSoftware | null | undefined,
+): boolean {
+  return scoretakingSoftware === "wca_live";
 }
 
 export function parseScoretakingSoftware(

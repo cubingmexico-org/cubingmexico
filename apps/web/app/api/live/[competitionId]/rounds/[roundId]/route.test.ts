@@ -103,4 +103,28 @@ describe("GET /api/live/[competitionId]/rounds/[roundId]", () => {
 
     expect(response.status).toBe(404);
   });
+
+  it("returns 422 for classic WCA Live without calling ILR round details", async () => {
+    fetchLiveCompetitionMeta.mockResolvedValue({
+      id: "Foo2026",
+      name: "Foo 2026",
+      scoretakingSoftware: "wca_live",
+      startDate: null,
+      endDate: null,
+      city: null,
+      venue: null,
+    });
+
+    const response = await request("Foo2026", "333-r1");
+    const body = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(body.success).toBe(false);
+    expect(body.code).toBe("wca_live");
+    expect(body.data.officialLiveUrl).toContain(
+      "live.worldcubeassociation.org",
+    );
+    expect(fetchLiveRoundDetails).not.toHaveBeenCalled();
+    expect(enrichLiveRoundDetails).not.toHaveBeenCalled();
+  });
 });

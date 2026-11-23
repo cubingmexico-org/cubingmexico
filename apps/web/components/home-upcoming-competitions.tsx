@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CompetitionLogo } from "@/components/competition-logo";
+import { formatCityState } from "@/lib/format";
 import { formatDate } from "@/lib/utils";
 
 type UpcomingCompetition = {
@@ -46,9 +47,7 @@ export function HomeUpcomingCompetitions({
       ) : (
         <ul className="mt-6">
           {competitions.map((comp) => {
-            const location = [comp.cityName, comp.state]
-              .filter(Boolean)
-              .join(", ");
+            const location = formatCityState(comp.cityName, comp.state);
 
             return (
               <li key={comp.id} className="border-t border-border">

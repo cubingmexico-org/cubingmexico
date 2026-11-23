@@ -4,6 +4,7 @@ import {
   cubingMexicoLiveUrl,
   officialLiveUrl,
   parseScoretakingSoftware,
+  usesClassicWcaLive,
   wcaClassicLiveUrl,
   wcaIlrLiveUrl,
 } from "./urls";
@@ -40,17 +41,8 @@ describe("live urls", () => {
     );
   });
 
-  it("routes the competitions table to local live when in progress", () => {
-    expect(competitionsTableLiveHref("Foo2026", "in_progress")).toBe(
-      "/live/Foo2026",
-    );
-    vi.stubEnv("WCA_ORIGIN", "");
-    expect(competitionsTableLiveHref("Foo2026", "upcoming")).toBe(
-      "https://www.worldcubeassociation.org/competitions/Foo2026/live",
-    );
-    expect(competitionsTableLiveHref("Foo2026", "past")).toBe(
-      "https://www.worldcubeassociation.org/competitions/Foo2026/live",
-    );
+  it("routes the competitions table to Cubing México live", () => {
+    expect(competitionsTableLiveHref("Foo2026")).toBe("/live/Foo2026");
   });
 
   it("parses scoretaking software values", () => {
@@ -59,5 +51,12 @@ describe("live urls", () => {
     expect(parseScoretakingSoftware("external")).toBe("external");
     expect(parseScoretakingSoftware("other")).toBeNull();
     expect(parseScoretakingSoftware(undefined)).toBeNull();
+  });
+
+  it("detects classic WCA Live scoretaking", () => {
+    expect(usesClassicWcaLive("wca_live")).toBe(true);
+    expect(usesClassicWcaLive("internal")).toBe(false);
+    expect(usesClassicWcaLive("external")).toBe(false);
+    expect(usesClassicWcaLive(null)).toBe(false);
   });
 });

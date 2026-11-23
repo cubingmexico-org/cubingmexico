@@ -11,7 +11,7 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import { stripMarkdownLinks } from "@/lib/calendar";
 import type { Competition } from "@/types/wca";
-import { Map as CompetitionMap } from "./map";
+import { CompetitionMap } from "./competition-map";
 
 export function VenueTab({ competition }: { competition: Competition }) {
   return (

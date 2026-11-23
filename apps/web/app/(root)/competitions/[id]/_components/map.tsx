@@ -1,14 +1,14 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import type { LatLngExpression } from "leaflet";
+import { useEffect, useRef } from "react";
+import type { LatLngExpression, Map as LeafletMapType } from "leaflet";
+import { useTheme } from "next-themes";
+
+import { getMapTileConfig } from "@/lib/map-tiles";
+
 import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 import "leaflet-defaulticon-compatibility";
-import { useTheme } from "next-themes";
-import React from "react";
-
-import { getMapTileConfig } from "@/lib/map-tiles";
 
 interface MarkerItem {
   id: string;
@@ -30,28 +30,20 @@ const DEFAULTS = {
   height: "100%",
 };
 
-/** small helper: accepts degrees or integer microdegrees and returns degrees */
+/** Accepts degrees or integer microdegrees and returns degrees. */
 function normalizeCoord(value?: number | null) {
   if (value == null) return 0;
   const abs = Math.abs(value);
-  // microdegrees are typically > 180 in absolute value
   if (abs > 180) return value / 1_000_000;
   return value;
 }
 
-/** helper component to reset view when center/zoom change */
-function ResetView({
-  center,
-  zoom,
-}: {
-  center: LatLngExpression;
-  zoom?: number;
-}) {
-  const map = useMap();
-  React.useEffect(() => {
-    map.setView(center, zoom ?? DEFAULTS.zoom);
-  }, [map, center, zoom]);
-  return null;
+function toLatLng(center: LatLngExpression): [number, number] {
+  if (Array.isArray(center)) {
+    return [Number(center[0]), Number(center[1])];
+  }
+  const point = center as { lat: number; lng: number };
+  return [point.lat, point.lng];
 }
 
 export function Map({
@@ -60,40 +52,68 @@ export function Map({
   markers = [],
   height = DEFAULTS.height,
 }: MapProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<LeafletMapType | null>(null);
   const { resolvedTheme } = useTheme();
+  const [lat, lng] = toLatLng(center);
+  // Stable dep so parent re-renders with a new markers array don't remount the map
+  const markersKey = JSON.stringify(markers);
 
-  const tiles = getMapTileConfig(resolvedTheme);
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    if (mapRef.current) {
+      mapRef.current.remove();
+      mapRef.current = null;
+    }
+
+    // Leaflet stamps _leaflet_id on the node; clear it before re-init
+    const node = containerRef.current as HTMLDivElement & {
+      _leaflet_id?: number;
+    };
+    delete node._leaflet_id;
+
+    // eslint-disable-next-line @typescript-eslint/no-require-imports -- Leaflet must load client-side
+    const L = require("leaflet") as typeof import("leaflet");
+
+    const map = L.map(containerRef.current).setView([lat, lng], zoom);
+    mapRef.current = map;
+
+    const tiles = getMapTileConfig(resolvedTheme);
+    L.tileLayer(tiles.url, {
+      attribution: tiles.attribution,
+      ...(tiles.subdomains ? { subdomains: tiles.subdomains } : {}),
+    }).addTo(map);
+
+    const parsedMarkers = JSON.parse(markersKey) as MarkerItem[];
+    for (const { venue, address, latitude, longitude } of parsedMarkers) {
+      const markerLat = normalizeCoord(latitude);
+      const markerLng = normalizeCoord(longitude);
+      if (!Number.isFinite(markerLat) || !Number.isFinite(markerLng)) continue;
+
+      const popupParts = [
+        venue ? `<b>${venue}</b>` : "",
+        address ? `<p>${address}</p>` : "",
+      ].filter(Boolean);
+      const marker = L.marker([markerLat, markerLng]).addTo(map);
+      const popupHtml = popupParts.join("");
+      if (popupHtml) {
+        marker.bindPopup(popupHtml);
+      }
+    }
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+      delete node._leaflet_id;
+    };
+  }, [lat, lng, zoom, markersKey, resolvedTheme]);
 
   return (
-    <div className="isolate z-0" style={{ height, width: "100%" }}>
-      <MapContainer
-        center={center}
-        zoom={zoom}
-        scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%" }}
-      >
-        <ResetView center={center} zoom={zoom} />
-        <TileLayer
-          key={resolvedTheme}
-          attribution={tiles.attribution}
-          url={tiles.url}
-          {...(tiles.subdomains ? { subdomains: tiles.subdomains } : {})}
-        />
-        {markers.map(({ id, venue, address, latitude, longitude }) => {
-          const lat = normalizeCoord(latitude);
-          const lon = normalizeCoord(longitude);
-          // skip invalid coordinates
-          if (!isFinite(lat) || !isFinite(lon)) return null;
-          return (
-            <Marker key={id} position={[lat, lon] as LatLngExpression}>
-              <Popup>
-                <b>{venue}</b>
-                <p>{address}</p>
-              </Popup>
-            </Marker>
-          );
-        })}
-      </MapContainer>
-    </div>
+    <div
+      ref={containerRef}
+      className="isolate z-0"
+      style={{ height, width: "100%" }}
+    />
   );
 }

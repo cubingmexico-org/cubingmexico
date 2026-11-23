@@ -15,6 +15,14 @@ export type InProgressLiveCompetition = {
   cityName: string | null;
 };
 
+const inProgressMexicoWhere = and(
+  eq(competition.countryId, "Mexico"),
+  sql`
+    ${competition.startDate} <= NOW()
+    AND ${competition.endDate} + INTERVAL '1 day' >= NOW()
+  `,
+);
+
 /** Mexican competitions currently in progress (date-window, same as competitions list). */
 export async function getInProgressLiveCompetitions(): Promise<
   InProgressLiveCompetition[]
@@ -33,14 +41,18 @@ export async function getInProgressLiveCompetitions(): Promise<
     })
     .from(competition)
     .leftJoin(state, eq(competition.stateId, state.id))
-    .where(
-      and(
-        eq(competition.countryId, "Mexico"),
-        sql`
-          ${competition.startDate} <= NOW()
-          AND ${competition.endDate} + INTERVAL '1 day' >= NOW()
-        `,
-      ),
-    )
+    .where(inProgressMexicoWhere)
     .orderBy(asc(competition.startDate), asc(competition.name));
+}
+
+/** Count of Mexican competitions currently in progress. */
+export async function getInProgressLiveCompetitionsCount(): Promise<number> {
+  await connection();
+
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int`.mapWith(Number) })
+    .from(competition)
+    .where(inProgressMexicoWhere);
+
+  return row?.count ?? 0;
 }

@@ -8,8 +8,7 @@ import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { Badge } from "@workspace/ui/components/badge";
 import { formatStatusName, getStatusIcon } from "../_lib/utils";
-import { ExternalLink, Trophy } from "lucide-react";
-import { WcaMonochrome } from "@workspace/icons";
+import { ExternalLink, Radio, Trophy } from "lucide-react";
 import { StateLabel } from "@/components/state-flag";
 import { CompetitionLogo } from "@/components/competition-logo";
 import { competitionsTableLiveHref } from "@/lib/live/urls";
@@ -200,22 +199,14 @@ export function getColumns({
         <DataTableColumnHeader column={column} title="En vivo" />
       ),
       cell: ({ row }) => {
-        const href = competitionsTableLiveHref(
-          row.original.id,
-          row.original.status as "past" | "in_progress" | "upcoming",
-        );
-        const external = href.startsWith("http");
         return (
           <div className="flex space-x-2">
             <Link
               className="flex items-center truncate hover:underline"
-              href={href}
+              href={competitionsTableLiveHref(row.original.id)}
               prefetch={false}
-              {...(external
-                ? { target: "_blank", rel: "noopener noreferrer" }
-                : {})}
             >
-              <WcaMonochrome className="mr-1 size-4" />
+              <Radio className="mr-1 size-4" />
               En vivo
             </Link>
           </div>
