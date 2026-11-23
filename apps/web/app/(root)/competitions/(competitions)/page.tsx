@@ -60,14 +60,6 @@ export default async function Page(props: PageProps) {
     getStatesGeoJSON(),
   ]);
 
-  const statesIds = Array.from(
-    new Set(locations.map((location) => location.stateId)),
-  );
-
-  const filteredStatesData = statesData?.features.filter((feature) =>
-    statesIds?.includes(feature.properties.id),
-  ) as unknown as GeoJSONProps["data"];
-
   return (
     <>
       <div className="grid gap-6">
@@ -92,7 +84,10 @@ export default async function Page(props: PageProps) {
           <CompetitionsTable promises={promises} />
         </React.Suspense>
       </div>
-      <MapContainer locations={locations} statesData={filteredStatesData} />
+      <MapContainer
+        locations={locations}
+        statesData={statesData as GeoJSONProps["data"] | null}
+      />
     </>
   );
 }

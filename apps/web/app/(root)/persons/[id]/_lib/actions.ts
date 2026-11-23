@@ -92,19 +92,9 @@ export async function loadPersonMapData(wcaId: string) {
     .map((location) => location.stateId)
     .filter((stateId): stateId is string => stateId !== null);
 
-  const filteredStatesData = statesData?.features.filter((feature) =>
-    stateIds.includes(feature.properties.id),
-  );
-
-  const filteredLocations = locations.filter((location) => {
-    const latitude = location.latitude ?? 0;
-    const longitude = location.longitude ?? 0;
-    return latitude !== 0 && longitude !== 0;
-  });
-
   return {
-    locations: filteredLocations,
-    statesData: filteredStatesData,
+    locations,
+    statesData,
     visitedStateCount: new Set(stateIds).size,
   };
 }
