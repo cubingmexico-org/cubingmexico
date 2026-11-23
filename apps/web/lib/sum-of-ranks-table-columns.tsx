@@ -7,7 +7,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import { getSumOfRanksBaseEventIds } from "@/lib/sum-of-ranks-events";
 import { DEPRECATED_EVENT_IDS, type EventScope } from "@/lib/constants";
 
-export type SumOfRanksRankKey = "countryRank" | "stateRank";
+export type SumOfRanksRankKey = "countryRank" | "stateRank" | "groupRank";
 
 export { getSumOfRanksBaseEventIds } from "@/lib/sum-of-ranks-events";
 
@@ -16,6 +16,7 @@ type SumOfRanksEvent = {
   completed: boolean;
   countryRank?: number;
   stateRank?: number;
+  groupRank?: number;
 };
 
 type SumOfRanksRow = {

@@ -33,6 +33,7 @@ export async function getTeamInfo(stateId: string) {
       name: team.name,
       description: team.description,
       image: team.image,
+      icon: team.icon,
       coverImage: team.coverImage,
       state: state.name,
       founded: team.founded,

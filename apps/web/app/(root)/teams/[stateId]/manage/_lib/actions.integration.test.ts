@@ -6,10 +6,12 @@ import {
   addMemberFormAction,
   deleteMembers,
   deleteTeamAction,
+  deleteTeamIconAction,
   deleteTeamLogoAction,
   teamFormAction,
   updateMember,
   updateMemberRole,
+  updateTeamIconAction,
   updateTeamLogoAction,
 } from "./actions";
 import { insertPerson, insertTeam, insertTeamMember } from "@/test/factories";
@@ -270,6 +272,58 @@ describe("updateTeamLogoAction", () => {
 
     await updateTeamLogoAction("JAL", NEW_LOGO);
 
+    expect(deleteFiles).not.toHaveBeenCalled();
+  });
+});
+
+describe("updateTeamIconAction", () => {
+  const OLD_ICON = "https://app.ufs.sh/f/old-icon";
+  const NEW_ICON = "https://app.ufs.sh/f/new-icon";
+
+  beforeEach(() => {
+    vi.stubEnv("UPLOADTHING_TOKEN", "test-token");
+    deleteFiles.mockClear();
+  });
+
+  it("rejects anonymous users", async () => {
+    await expect(updateTeamIconAction("JAL", NEW_ICON)).rejects.toMatchObject(
+      UNAUTHORIZED,
+    );
+    expect((await teamRow("JAL"))?.icon).toBeNull();
+  });
+
+  it("only accepts UploadThing URLs", async () => {
+    signIn(EDITOR);
+    await expect(
+      updateTeamIconAction("JAL", "https://example.com/icon.png"),
+    ).rejects.toThrow();
+    expect((await teamRow("JAL"))?.icon).toBeNull();
+  });
+
+  it("lets an editor change the icon and deletes the old file", async () => {
+    await db
+      .update(team)
+      .set({ icon: OLD_ICON })
+      .where(eq(team.stateId, "JAL"));
+    signIn(EDITOR);
+
+    await updateTeamIconAction("JAL", NEW_ICON);
+
+    expect((await teamRow("JAL"))?.icon).toBe(NEW_ICON);
+    expect(deleteFiles).toHaveBeenCalledExactlyOnceWith("old-icon");
+  });
+
+  it("keeps a file another row still uses", async () => {
+    await insertTeam({ stateId: "CMX", image: OLD_ICON });
+    await db
+      .update(team)
+      .set({ icon: OLD_ICON })
+      .where(eq(team.stateId, "JAL"));
+    signIn(EDITOR);
+
+    await deleteTeamIconAction("JAL");
+
+    expect((await teamRow("JAL"))?.icon).toBeNull();
     expect(deleteFiles).not.toHaveBeenCalled();
   });
 });

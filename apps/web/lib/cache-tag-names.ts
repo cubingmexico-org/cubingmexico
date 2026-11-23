@@ -77,6 +77,11 @@ export function groupMemberTags(groupId: string): string[] {
     `group-top-members-${groupId}`,
     `group-records-${groupId}`,
     `group-ranks-${groupId}`,
+    `group-sor-${groupId}-single`,
+    `group-sor-${groupId}-average`,
+    `group-sor-gender-counts-${groupId}-single`,
+    `group-sor-gender-counts-${groupId}-average`,
+    `group-kinch-${groupId}`,
   ];
 }
 

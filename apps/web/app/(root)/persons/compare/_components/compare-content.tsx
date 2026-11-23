@@ -12,6 +12,7 @@ import {
 } from "@workspace/ui/components/table";
 import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
+import { brandMarkSrc } from "@/lib/brand-image";
 import { StateLabel } from "@/components/state-flag";
 import {
   betterSide,
@@ -44,6 +45,7 @@ function PersonHeader({
   wcaData: WcaData;
 }) {
   const { person, team } = data;
+  const teamMark = team ? brandMarkSrc(team.icon, team.image) : null;
 
   return (
     <div className="flex flex-col items-center gap-2 text-center min-w-0">
@@ -70,10 +72,10 @@ function PersonHeader({
       {team && (
         <Badge variant="outline" asChild>
           <Link href={`/teams/${team.id}`} prefetch={false} className="gap-1.5">
-            {team.image ? (
+            {teamMark ? (
               // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
               <img
-                src={team.image}
+                src={teamMark}
                 alt=""
                 width={14}
                 height={14}

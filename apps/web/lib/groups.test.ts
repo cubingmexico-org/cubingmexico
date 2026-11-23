@@ -23,7 +23,7 @@ describe("groups helpers", () => {
     expect(groupHref("sponsor", "cubos-dany")).toBe("/sponsors/cubos-dany");
     expect(groupKindLabel("community")).toBe("Comunidad");
     expect(groupKindLabel("sponsor")).toBe("Patrocinador");
-    expect(groupRecordLabel("community")).toBe("CR");
+    expect(groupRecordLabel("community")).toBeNull();
     expect(groupRecordLabel("sponsor")).toBe("SpR");
   });
 

@@ -18,8 +18,8 @@ function resolveImageUrl(
     return `/api/image-proxy?url=${encodeURIComponent(person.avatar.url)}`;
   }
   if (imageUrl === "/team-logo.svg") {
-    const teamImage = teams.find((t) => t.stateId === person.stateId)?.image;
-    return teamImage || "/logo.svg";
+    const team = teams.find((t) => t.stateId === person.stateId);
+    return team?.icon || team?.image || "/logo.svg";
   }
   if (imageUrl === "/competition-logo.svg") {
     return competitionLogoUrl

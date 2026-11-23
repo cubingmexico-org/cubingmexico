@@ -9,6 +9,7 @@ import {
   deleteTeam,
   saveTeam,
   updateTeamCover,
+  updateTeamIcon,
   updateTeamLogo,
 } from "@/db/mutations";
 import { getErrorMessage } from "@/lib/handle-error";
@@ -179,6 +180,10 @@ export async function deleteTeamLogoAction(stateId: string) {
   return updateTeamLogoAction(stateId, null);
 }
 
+export async function deleteTeamIconAction(stateId: string) {
+  return updateTeamIconAction(stateId, null);
+}
+
 export async function deleteTeamCoverAction(stateId: string) {
   return updateTeamCoverAction(stateId, null);
 }
@@ -200,6 +205,26 @@ export async function updateTeamLogoAction(
   });
   updateTag(`team-info-${stateId}`);
   if (previous !== image) {
+    await deleteUploadedFileIfUnused(previous);
+  }
+
+  return {
+    success: true,
+  };
+}
+
+export async function updateTeamIconAction(
+  stateId: string,
+  icon: string | null,
+) {
+  await requireTeamPermission(stateId, "team.media");
+
+  const previous = await updateTeamIcon({
+    stateId,
+    icon: teamImageSchema.parse(icon),
+  });
+  updateTag(`team-info-${stateId}`);
+  if (previous !== icon) {
     await deleteUploadedFileIfUnused(previous);
   }
 

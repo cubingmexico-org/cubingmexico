@@ -13,12 +13,20 @@ async function isStillReferenced(url: string): Promise<boolean> {
     db
       .select({ stateId: team.stateId })
       .from(team)
-      .where(or(eq(team.image, url), eq(team.coverImage, url)))
+      .where(
+        or(eq(team.image, url), eq(team.icon, url), eq(team.coverImage, url)),
+      )
       .limit(1),
     db
       .select({ id: group.id })
       .from(group)
-      .where(or(eq(group.image, url), eq(group.coverImage, url)))
+      .where(
+        or(
+          eq(group.image, url),
+          eq(group.icon, url),
+          eq(group.coverImage, url),
+        ),
+      )
       .limit(1),
     db
       .select({ id: competition.id })

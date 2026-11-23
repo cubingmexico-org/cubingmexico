@@ -36,6 +36,7 @@ export function SaveTeamForm({
     name: string;
     description: string | null;
     image: string | null;
+    icon: string | null;
     coverImage: string | null;
     state: string;
     founded: Date | null;

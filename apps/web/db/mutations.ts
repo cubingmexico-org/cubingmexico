@@ -135,6 +135,25 @@ export async function updateTeamLogo({
   });
 }
 
+/** Sets (or clears, with null) the team icon and returns the previous one. */
+export async function updateTeamIcon({
+  stateId,
+  icon,
+}: {
+  stateId: State["id"];
+  icon: Team["icon"];
+}): Promise<Team["icon"]> {
+  return db.transaction(async (tx) => {
+    const [previous] = await tx
+      .select({ icon: team.icon })
+      .from(team)
+      .where(eq(team.stateId, stateId))
+      .for("update");
+    await tx.update(team).set({ icon }).where(eq(team.stateId, stateId));
+    return previous?.icon ?? null;
+  });
+}
+
 /** Sets (or clears, with null) the team cover and returns the previous one. */
 export async function updateTeamCover({
   stateId,

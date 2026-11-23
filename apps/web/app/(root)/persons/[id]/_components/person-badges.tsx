@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Crown, Skull, Swords } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
+import { brandMarkSrc } from "@/lib/brand-image";
 import { getTierClass, type getTier } from "@/lib/utils";
 import { formatDelegateLevel } from "@/lib/delegate-level";
 import { groupHref } from "@/lib/groups";
@@ -24,17 +25,25 @@ export function PersonBadges({
     gender: string | null;
     delegateStatus: Parameters<typeof formatDelegateLevel>[0];
   };
-  team: { id: string; name: string; image: string | null } | null;
+  team: {
+    id: string;
+    name: string;
+    image: string | null;
+    icon: string | null;
+  } | null;
   groups?: {
     id: string;
     kind: GroupKind;
     name: string;
     image: string | null;
+    icon: string | null;
   }[];
   tier: ReturnType<typeof getTier>;
   organizerStatus: OrganizerStatus;
   nemesisStats: PersonNemesisStats | null;
 }) {
+  const teamMark = team ? brandMarkSrc(team.icon, team.image) : null;
+
   return (
     <div className="w-full flex flex-wrap justify-center gap-2 mb-2">
       {tier && <Badge className={getTierClass(tier)}>Miembro {tier}</Badge>}
@@ -51,10 +60,10 @@ export function PersonBadges({
       {team && (
         <Badge variant="outline" asChild>
           <Link href={`/teams/${team.id}`} prefetch={false} className="gap-1.5">
-            {team.image ? (
+            {teamMark ? (
               // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
               <img
-                src={team.image}
+                src={teamMark}
                 alt=""
                 width={14}
                 height={14}
@@ -65,27 +74,30 @@ export function PersonBadges({
           </Link>
         </Badge>
       )}
-      {(groups ?? []).map((group) => (
-        <Badge key={group.id} variant="outline" asChild>
-          <Link
-            href={groupHref(group.kind, group.id)}
-            prefetch={false}
-            className="gap-1.5"
-          >
-            {group.image ? (
-              // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
-              <img
-                src={group.image}
-                alt=""
-                width={14}
-                height={14}
-                className="size-3.5 rounded-sm object-cover"
-              />
-            ) : null}
-            {group.name}
-          </Link>
-        </Badge>
-      ))}
+      {(groups ?? []).map((group) => {
+        const mark = brandMarkSrc(group.icon, group.image);
+        return (
+          <Badge key={group.id} variant="outline" asChild>
+            <Link
+              href={groupHref(group.kind, group.id)}
+              prefetch={false}
+              className="gap-1.5"
+            >
+              {mark ? (
+                // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
+                <img
+                  src={mark}
+                  alt=""
+                  width={14}
+                  height={14}
+                  className="size-3.5 rounded-sm object-cover"
+                />
+              ) : null}
+              {group.name}
+            </Link>
+          </Badge>
+        );
+      })}
       <Badge variant="outline" asChild>
         <Link
           href={`/persons/compare?a=${wcaId}`}

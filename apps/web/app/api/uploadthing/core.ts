@@ -89,6 +89,16 @@ export const ourFileRouter: FileRouter = {
     .onUploadComplete(async ({ metadata, file }) => {
       return { stateId: metadata.stateId, image: file.ufsUrl };
     }),
+  iconUploader: f({
+    image: {
+      maxFileSize: "1MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async ({ req }) => requireMediaPermission(req))
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { stateId: metadata.stateId, icon: file.ufsUrl };
+    }),
   coverUploader: f({
     image: {
       maxFileSize: "4MB",
@@ -119,6 +129,16 @@ export const ourFileRouter: FileRouter = {
     .middleware(async ({ req }) => requireGroupMediaPermission(req))
     .onUploadComplete(async ({ metadata, file }) => {
       return { groupId: metadata.groupId, image: file.ufsUrl };
+    }),
+  groupIconUploader: f({
+    image: {
+      maxFileSize: "1MB",
+      maxFileCount: 1,
+    },
+  })
+    .middleware(async ({ req }) => requireGroupMediaPermission(req))
+    .onUploadComplete(async ({ metadata, file }) => {
+      return { groupId: metadata.groupId, icon: file.ufsUrl };
     }),
   groupCoverUploader: f({
     image: {
