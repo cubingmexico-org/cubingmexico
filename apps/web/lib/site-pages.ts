@@ -24,6 +24,11 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["live", "resultados en vivo", "ilr", "wca live"],
   },
   {
+    title: "Eventos no oficiales",
+    href: "/competitions/unofficial",
+    keywords: ["cubing contests", "no oficiales", "unofficial", "competencias"],
+  },
+  {
     title: "Teams estatales",
     href: "/teams",
     keywords: ["equipos", "estados"],

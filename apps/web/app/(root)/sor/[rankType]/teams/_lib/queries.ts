@@ -10,6 +10,8 @@ import { cacheLife, cacheTag } from "next/cache";
 interface TeamData {
   stateId: string;
   name: string;
+  icon: string | null;
+  image: string | null;
   overall: number;
   events: {
     eventId: string;
@@ -37,6 +39,8 @@ export async function getSORTeamsAverage(
             SELECT DISTINCT ON (p.state_id, e.event_id)
               t.name,
               t.state_id,
+              t.icon,
+              t.image,
               e.event_id,
               ev.rank AS event_rank,
               p.wca_id AS person_id,
@@ -61,6 +65,8 @@ export async function getSORTeamsAverage(
           SELECT
             bpe.name,
             bpe.state_id,
+            bpe.icon,
+            bpe.image,
             json_agg(
               json_build_object(
                 'eventId', bpe.event_id,
@@ -74,7 +80,7 @@ export async function getSORTeamsAverage(
             ) AS events,
             SUM(bpe.best_rank) AS overall
           FROM best_person_event bpe
-          GROUP BY bpe.name, bpe.state_id
+          GROUP BY bpe.name, bpe.state_id, bpe.icon, bpe.image
           ORDER BY SUM(bpe.best_rank)
         `,
   );
@@ -99,6 +105,8 @@ export async function getSORTeamsSingle(
       SELECT DISTINCT ON (p.state_id, e.event_id)
         t.name,
         t.state_id,
+        t.icon,
+        t.image,
         e.event_id,
         ev.rank AS event_rank,
         p.wca_id AS person_id,
@@ -123,6 +131,8 @@ export async function getSORTeamsSingle(
     SELECT
       bpe.name,
       bpe.state_id,
+      bpe.icon,
+      bpe.image,
       json_agg(
         json_build_object(
           'eventId', bpe.event_id,
@@ -136,7 +146,7 @@ export async function getSORTeamsSingle(
       ) AS events,
       SUM(bpe.best_rank) AS overall
     FROM best_person_event bpe
-    GROUP BY bpe.name, bpe.state_id
+    GROUP BY bpe.name, bpe.state_id, bpe.icon, bpe.image
     ORDER BY SUM(bpe.best_rank)
   `,
   );

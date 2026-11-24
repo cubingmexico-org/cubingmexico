@@ -10,6 +10,8 @@ import { cacheLife, cacheTag } from "next/cache";
 interface KinchRanksTeams {
   stateId: string;
   name: string;
+  icon: string | null;
+  image: string | null;
   overall: number;
   events: {
     personId: string;
@@ -111,6 +113,8 @@ export async function getKinchRanksTeams(
             SELECT
               t.name,
               t.state_id,
+              t.icon,
+              t.image,
               json_agg(
                 json_build_object(
                   'eventId', e.id,
@@ -125,7 +129,7 @@ export async function getKinchRanksTeams(
             CROSS JOIN events e
             LEFT JOIN TeamKinch tk ON t.state_id = tk.state_id AND e.id = tk.event_id
             WHERE e.id IN ${scopeEventIds}
-            GROUP BY t.name, t.state_id
+            GROUP BY t.name, t.state_id, t.icon, t.image
             ORDER BY overall DESC;
           `,
   );

@@ -64,7 +64,14 @@ export function HeaderNavigationMenu() {
                   linkClassName={dropdownLinkClass}
                 >
                   <Trophy className="size-4" />
-                  Competencias
+                  Competencias oficiales (WCA)
+                </HeaderNavLink>
+                <HeaderNavLink
+                  href="/competitions/unofficial"
+                  linkClassName={dropdownLinkClass}
+                >
+                  <Shapes className="size-4" />
+                  Eventos no oficiales (Cubing Contests)
                 </HeaderNavLink>
                 <Suspense
                   fallback={
