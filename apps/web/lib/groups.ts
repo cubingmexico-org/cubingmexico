@@ -4,9 +4,10 @@ import type { GroupKind } from "@workspace/db/schema";
 export const COMMUNITIES_PUBLICLY_RELEASED = true;
 
 /**
- * Sponsors directory, nav, sitemap, search, and home/footer promo are public.
+ * Sponsors directory, nav, sitemap, search, and home/footer promo stay gated
+ * until public launch; superadmins can still open routes via the layout gate.
  */
-export const SPONSORS_PUBLICLY_RELEASED = true;
+export const SPONSORS_PUBLICLY_RELEASED = false;
 
 export function isGroupKindPubliclyReleased(kind: GroupKind): boolean {
   return kind === "community"
