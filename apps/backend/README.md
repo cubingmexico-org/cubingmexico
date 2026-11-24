@@ -109,7 +109,8 @@ The read endpoints below are kept for external consumers. The apps in this repo 
   - `GET /persons/<wca_id>` — Get person by WCA ID
 
 - **Database & Rankings (admin/cron)**
-  - `POST /update-database` — Update the full database from WCA exports, and store the export's `export_date` (`export_metadata.wca_export_date`) for the footer's WCA attribution
+  - `POST /update-database` — Update the full database from WCA exports, and store the export's `export_date` (`export_metadata.wca_export_date`) for the footer's WCA attribution. Dual Round `global_pos` / `is_dual` come from the [WCA developer dump](https://www.worldcubeassociation.org/export/developer) (`results.global_pos`, `rounds.linked_round_id`), not WCIF heuristics. Set `WCA_DEVELOPER_DUMP_PATH` to a local zip to skip the download.
+  - `POST /backfill-dual-positions` — Recompute `global_pos` / `is_dual` for rows already in `results` from the developer dump (same source as import)
   - `POST /update-state-ranks` — Update state ranks
   - `POST /update-state-records` — Update historical state record markers (SR)
   - `POST /update-state-ranks/<state_id>` and `POST /update-state-records/<state_id>` — Same, for the current members of one state. The web app calls them when a team edits its roster; the records route also returns the members' `personIds` so the web can invalidate their pages. 404 for an unknown state.

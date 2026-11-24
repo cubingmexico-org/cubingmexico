@@ -1,4 +1,10 @@
-"""Detect Dual (linked) Rounds and compute WCA-style global_pos from results rows."""
+"""Detect Dual (linked) Rounds and compute WCA-style global_pos from results rows.
+
+Import and `/backfill-dual-positions` use the WCA developer dump
+(`wca_developer_dump.py`) for authoritative `global_pos` / `linked_round_id`.
+This module remains for unit tests and for understanding WCA dual ranking
+semantics (WCIF / overlap heuristics are not used on the import path).
+"""
 
 from __future__ import annotations
 

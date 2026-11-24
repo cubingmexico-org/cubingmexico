@@ -152,10 +152,28 @@ def _export_zip(files=EXPORT_FILES):
     return zipfile.ZipFile(buffer)
 
 
+def _tiny_developer_dump_zip(path):
+    """Minimal developer dump so import exercises dump parsing without a network download."""
+    sql = """
+INSERT INTO `results` VALUES
+(1,800,700,'MexicoOpen2024','Mexico','333','a',1,'2015MEXI01','Ana Mexicana',1,NULL,NULL,10,'f','2024-08-01 00:00:00'),
+(2,1000,900,'MexicoOpen2024','Mexico','333','a',2,'2016MEXI02','Beto Mexicano',1,NULL,NULL,10,'f','2024-08-01 00:00:00'),
+(3,850,750,'USNationals2024','Mexico','333','a',3,'2015MEXI01','Ana Mexicana',1,NULL,NULL,11,'f','2024-08-01 00:00:00');
+INSERT INTO `rounds` VALUES
+(10,NULL,1,'2024-01-01 00:00:00',NULL,'a',0,NULL,1,NULL,NULL,1,'CompetitionEvent',NULL,1,NULL,1,'2024-01-01 00:00:00'),
+(11,NULL,2,'2024-01-01 00:00:00',NULL,'a',0,NULL,1,NULL,NULL,2,'CompetitionEvent',NULL,1,NULL,1,'2024-01-01 00:00:00');
+"""
+    with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("wca-developer-database-dump.sql", sql)
+
+
 @pytest.fixture(autouse=True)
-def no_schedule_fetch(monkeypatch):
+def no_schedule_fetch(monkeypatch, tmp_path):
     calls = []
     monkeypatch.setattr(wca_import_results, "run_update_competition_schedules", lambda: calls.append(1) or {})
+    dump_path = tmp_path / "wca-developer-database-dump.zip"
+    _tiny_developer_dump_zip(dump_path)
+    monkeypatch.setenv("WCA_DEVELOPER_DUMP_PATH", str(dump_path))
     return calls
 
 

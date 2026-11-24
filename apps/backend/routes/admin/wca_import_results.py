@@ -11,12 +11,8 @@ from typing import LiteralString
 import pandas as pd
 
 from common import execute_values, get_connection, log, named_row
-from routes.admin.dual_rounds import (
-    annotate_dual_fields,
-    competition_ids_needing_wcif,
-    fetch_wcif_pairs_for_competitions,
-)
 from routes.admin.schedules import run_update_competition_schedules
+from routes.admin.wca_developer_dump import apply_dump_annotations, load_dual_annotations_for_result_ids
 
 CHUNK_ROWS = 200_000
 
@@ -273,39 +269,13 @@ def _record_or_none(value):
     return value
 
 
-def _mexican_competition_ids(file_bytes: bytes) -> set[str]:
-    """Competition IDs that have at least one Mexican competitor result."""
-    ids: set[str] = set()
-    reader = pd.read_csv(
-        io.BytesIO(file_bytes),
-        delimiter="\t",
-        usecols=["competition_id", "person_country_id"],
-        skip_blank_lines=True,
-        na_values=["NULL"],
-        dtype={"competition_id": str, "person_country_id": str},
-        encoding_errors="ignore",
-        chunksize=CHUNK_ROWS,
-    )
-    for df_chunk in reader:
-        mexico = df_chunk[df_chunk["person_country_id"] == "Mexico"]
-        ids.update(mexico["competition_id"].dropna().astype(str).unique())
-    return ids
-
-
 def _parse_mexican_results(file_bytes: bytes, file_name: str) -> list[tuple] | None:
-    """Rows to insert for Mexican competitors, with dual global_pos / is_dual filled in."""
-    mexican_comps = _mexican_competition_ids(file_bytes)
-    log.info(
-        "Found %s competitions with Mexican results; loading all countries for dual ranking.",
-        len(mexican_comps),
-    )
-
-    # All-country rows for those comps (needed so global_pos matches WCA).
-    relevant_rows: list[dict] = []
+    """Rows to insert for Mexican competitors, with dump-backed global_pos / is_dual."""
+    mexican_rows: list[dict] = []
 
     for chunk_number, df_chunk in _read_tsv_chunks(file_bytes, file_name, "id"):
-        df_relevant = df_chunk[df_chunk["competition_id"].astype(str).isin(mexican_comps)]
-        for _, row in df_relevant.iterrows():
+        df_mexico = df_chunk[df_chunk["person_country_id"] == "Mexico"]
+        for _, row in df_mexico.iterrows():
             try:
                 pos = _parse_pos(row["pos"])
                 if pos is None:
@@ -319,7 +289,7 @@ def _parse_mexican_results(file_bytes: bytes, file_name: str) -> list[tuple] | N
                     )
                     return None
 
-                relevant_rows.append(
+                mexican_rows.append(
                     {
                         "id": str(row["id"]),
                         "competition_id": str(row["competition_id"]),
@@ -329,7 +299,6 @@ def _parse_mexican_results(file_bytes: bytes, file_name: str) -> list[tuple] | N
                         "best": int(row["best"]),
                         "average": int(row["average"]),
                         "person_id": str(row["person_id"]),
-                        "person_country_id": str(row["person_country_id"]),
                         "format_id": str(row["format_id"]),
                         "regional_single_record": _record_or_none(row["regional_single_record"]),
                         "regional_average_record": _record_or_none(row["regional_average_record"]),
@@ -347,16 +316,21 @@ def _parse_mexican_results(file_bytes: bytes, file_name: str) -> list[tuple] | N
                 )
                 return None
 
-    wcif_comps = competition_ids_needing_wcif(relevant_rows)
-    wcif_pairs = fetch_wcif_pairs_for_competitions(wcif_comps) if wcif_comps else {}
-    annotated = annotate_dual_fields(relevant_rows, wcif_pairs_by_competition=wcif_pairs)
+    log.info("Parsed %s Mexican result rows from TSV; loading dual fields from developer dump.", len(mexican_rows))
+    dump_annotations = load_dual_annotations_for_result_ids([row["id"] for row in mexican_rows])
+    annotated = apply_dump_annotations(mexican_rows, dump_annotations)
     dual_count = sum(1 for _, is_dual in annotated.values() if is_dual)
+    missing = len(mexican_rows) - len(dump_annotations)
+    if missing:
+        log.warning(
+            "Developer dump missing %s/%s Mexican result ids; those rows keep local pos / is_dual=false.",
+            missing,
+            len(mexican_rows),
+        )
     log.info("Annotated dual fields for %s result rows (%s dual).", len(annotated), dual_count)
 
     rows: list[tuple] = []
-    for row in relevant_rows:
-        if row["person_country_id"] != "Mexico":
-            continue
+    for row in mexican_rows:
         global_pos, is_dual = annotated.get(row["id"], (row["pos"], False))
         rows.append(
             (
@@ -594,47 +568,22 @@ def import_result_attempts(z, file_name):
 
 
 def run_backfill_dual_positions() -> dict:
-    """Recompute global_pos / is_dual from rows already in the database.
+    """Recompute global_pos / is_dual from the WCA developer dump.
 
-    Mexican-only rows plus public WCIF (2026+ only). Overlap heuristic is off —
-    it false-positives normal multi-round events when only Mexican competitors
-    are stored. Mixed-nationality dual ranking is best fixed by a full re-import.
+    Uses authoritative `results.global_pos` and `rounds.linked_round_id` — not WCIF
+    or person-overlap heuristics.
     """
     with get_connection() as conn:
         with conn.cursor(row_factory=named_row) as cur:
-            cur.execute(
-                """
-                SELECT id, competition_id, event_id, round_type_id, pos, best, average,
-                       person_id, format_id
-                FROM results
-                """
-            )
+            cur.execute("SELECT id, pos FROM results")
             db_rows = cur.fetchall()
 
     if not db_rows:
-        return {"success": True, "updated": 0, "dualRows": 0, "wcifCompetitions": 0}
+        return {"success": True, "updated": 0, "dualRows": 0, "dumpMatched": 0}
 
-    mapped = [
-        {
-            "id": row.id,
-            "competition_id": row.competition_id,
-            "event_id": row.event_id,
-            "round_type_id": row.round_type_id,
-            "pos": row.pos or 0,
-            "best": row.best,
-            "average": row.average,
-            "person_id": row.person_id,
-            "format_id": row.format_id,
-        }
-        for row in db_rows
-    ]
-    wcif_comps = competition_ids_needing_wcif(mapped)
-    wcif_pairs = fetch_wcif_pairs_for_competitions(wcif_comps) if wcif_comps else {}
-    annotated = annotate_dual_fields(
-        mapped,
-        wcif_pairs_by_competition=wcif_pairs,
-        allow_overlap_heuristic=False,
-    )
+    mapped = [{"id": row.id, "pos": row.pos or 0} for row in db_rows]
+    dump_annotations = load_dual_annotations_for_result_ids([row["id"] for row in mapped])
+    annotated = apply_dump_annotations(mapped, dump_annotations)
 
     updates = [(global_pos, is_dual, result_id) for result_id, (global_pos, is_dual) in annotated.items()]
     dual_rows = sum(1 for _, is_dual, _ in updates if is_dual)
@@ -660,5 +609,5 @@ def run_backfill_dual_positions() -> dict:
         "success": True,
         "updated": len(updates),
         "dualRows": dual_rows,
-        "wcifCompetitions": len(wcif_pairs),
+        "dumpMatched": len(dump_annotations),
     }
