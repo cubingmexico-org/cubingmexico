@@ -339,8 +339,8 @@ export function ManageTeam({
                     </div>
                   </div>
                   <div className="text-center text-sm text-muted-foreground">
-                    Se sube como PNG transparente (fondo eliminado
-                    automáticamente)
+                    PNG, WebP o JPEG (máx. 1MB). Preferible PNG con fondo
+                    transparente
                   </div>
                   <div className="flex justify-center pt-2">
                     <AlertDialog>
@@ -475,7 +475,7 @@ export function ManageTeam({
                         <li>Para badges (~14px) y chips pequeños</li>
                         <li>Marca simplificada, poco o nada de texto</li>
                         <li>Alto contraste; legible en tamaño diminuto</li>
-                        <li>PNG transparente (fondo se elimina al subir)</li>
+                        <li>Preferible PNG con fondo transparente</li>
                         <li>Tamaño máximo del archivo: 1MB</li>
                       </ul>
                     </div>

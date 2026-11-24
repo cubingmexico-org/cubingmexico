@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { UploadThingError } from "uploadthing/server";
 import { Button } from "@workspace/ui/components/button";
 import { uploadFiles } from "@/lib/uploadthing";
-import { prepareTransparentIconFile } from "@/lib/prepare-transparent-icon";
 import { updateGroupIconAction } from "../_lib/actions";
 
 function uploadErrorMessage(error: unknown): string {
@@ -33,12 +32,8 @@ export function GroupIconUploader({ groupId }: { groupId: string }) {
       await toast
         .promise(
           (async () => {
-            const transparentFile = await prepareTransparentIconFile(
-              file,
-              `${groupId}-icon.png`,
-            );
             const data = await uploadFiles("groupIconUploader", {
-              files: [transparentFile],
+              files: [file],
               headers: { "x-group-id": groupId },
             });
             await updateGroupIconAction(
@@ -48,8 +43,8 @@ export function GroupIconUploader({ groupId }: { groupId: string }) {
             router.refresh();
           })(),
           {
-            loading: "Eliminando fondo y subiendo ícono...",
-            success: "Ícono transparente subido correctamente",
+            loading: "Subiendo ícono...",
+            success: "Ícono subido correctamente",
             error: uploadErrorMessage,
           },
         )
