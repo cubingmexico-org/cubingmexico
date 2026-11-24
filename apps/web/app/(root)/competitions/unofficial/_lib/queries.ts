@@ -22,7 +22,7 @@ export interface CompetitionWithUnofficialEvents {
   events: CompetitionUnofficialEvent[];
 }
 
-/** WCA competitions that have at least one Cubing Contests (unofficial) result. */
+/** Mexican WCA competitions that have at least one Cubing Contests result. */
 export async function getCompetitionsWithUnofficialEvents(): Promise<
   CompetitionWithUnofficialEvents[]
 > {
@@ -50,6 +50,7 @@ export async function getCompetitionsWithUnofficialEvents(): Promise<
     ) r ON r.competition_id = c.id
     JOIN cc_events e ON e.id = r.event_id
     LEFT JOIN states s ON s.id = c.state_id
+    WHERE c.country_id = 'Mexico'
     GROUP BY
       c.id,
       c.name,
