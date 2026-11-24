@@ -22,13 +22,15 @@ import {
   ChartBar,
   Shapes,
   Award,
+  Handshake,
+  Trophy,
+  Radio,
 } from "lucide-react";
 import {
   NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuList,
   NavigationMenuTrigger,
-  navigationMenuTriggerStyle,
 } from "@workspace/ui/components/navigation-menu";
 import { CubingMexico } from "@workspace/icons";
 import { cn } from "@workspace/ui/lib/utils";
@@ -40,58 +42,84 @@ import { HeaderLiveNavLink } from "./header-live-nav-link";
 import { HeaderNavLink } from "./header-nav-link";
 import { ResponsiveNavigationMenu } from "./responsive-navigation-menu";
 
-const navItemClass = cn(
-  navigationMenuTriggerStyle(),
-  "bg-transparent text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white data-[active=true]:bg-white/10 data-[state=open]:bg-white/10 data-[state=open]:text-white data-[state=open]:hover:bg-white/15 data-[state=open]:focus:bg-white/15",
-);
-
 const triggerClass = cn(
   "bg-transparent text-white hover:bg-white/10 hover:text-white focus:bg-white/10 focus:text-white data-[active=true]:bg-white/10 data-[state=open]:bg-white/10 data-[state=open]:text-white data-[state=open]:hover:bg-white/15 data-[state=open]:focus:bg-white/15",
 );
+
+const dropdownLinkClass = "flex-row items-center gap-2";
 
 export function HeaderNavigationMenu() {
   return (
     <ResponsiveNavigationMenu>
       <NavigationMenuList className="flex-wrap">
         <NavigationMenuItem>
-          <HeaderNavLink href="/competitions" className={navItemClass}>
+          <NavigationMenuTrigger className={triggerClass}>
             Competencias
-          </HeaderNavLink>
+          </NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <ul className="grid w-62.5 gap-4">
+              <li>
+                <HeaderNavLink
+                  href="/competitions"
+                  linkClassName={dropdownLinkClass}
+                >
+                  <Trophy className="size-4" />
+                  Competencias
+                </HeaderNavLink>
+                <Suspense
+                  fallback={
+                    <HeaderNavLink
+                      href="/live"
+                      linkClassName={dropdownLinkClass}
+                    >
+                      <Radio className="size-4" />
+                      En vivo
+                    </HeaderNavLink>
+                  }
+                >
+                  <HeaderLiveNavLink linkClassName={dropdownLinkClass} />
+                </Suspense>
+              </li>
+            </ul>
+          </NavigationMenuContent>
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <Suspense
-            fallback={
-              <HeaderNavLink href="/live" className={navItemClass}>
-                En vivo
-              </HeaderNavLink>
-            }
-          >
-            <HeaderLiveNavLink className={navItemClass} />
-          </Suspense>
+          <NavigationMenuTrigger className={triggerClass}>
+            Comunidades
+          </NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <ul className="grid w-62.5 gap-4">
+              <li>
+                <HeaderNavLink
+                  href="/teams"
+                  linkClassName="flex-row items-center gap-2"
+                >
+                  <MapPinned className="size-4" />
+                  Teams estatales
+                </HeaderNavLink>
+                {COMMUNITIES_PUBLICLY_RELEASED ? (
+                  <HeaderNavLink
+                    href="/communities"
+                    linkClassName="flex-row items-center gap-2"
+                  >
+                    <Users className="size-4" />
+                    Comunidades locales
+                  </HeaderNavLink>
+                ) : null}
+                {SPONSORS_PUBLICLY_RELEASED ? (
+                  <HeaderNavLink
+                    href="/sponsors"
+                    linkClassName="flex-row items-center gap-2"
+                  >
+                    <Handshake className="size-4" />
+                    Patrocinadores
+                  </HeaderNavLink>
+                ) : null}
+              </li>
+            </ul>
+          </NavigationMenuContent>
         </NavigationMenuItem>
-
-        <NavigationMenuItem>
-          <HeaderNavLink href="/teams" className={navItemClass}>
-            Teams estatales
-          </HeaderNavLink>
-        </NavigationMenuItem>
-
-        {COMMUNITIES_PUBLICLY_RELEASED ? (
-          <NavigationMenuItem>
-            <HeaderNavLink href="/communities" className={navItemClass}>
-              Comunidades
-            </HeaderNavLink>
-          </NavigationMenuItem>
-        ) : null}
-
-        {SPONSORS_PUBLICLY_RELEASED ? (
-          <NavigationMenuItem>
-            <HeaderNavLink href="/sponsors" className={navItemClass}>
-              Patrocinadores
-            </HeaderNavLink>
-          </NavigationMenuItem>
-        ) : null}
 
         <NavigationMenuItem>
           <NavigationMenuTrigger className={triggerClass}>

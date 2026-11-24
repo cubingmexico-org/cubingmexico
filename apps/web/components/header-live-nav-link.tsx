@@ -1,12 +1,24 @@
+import { Radio } from "lucide-react";
 import { Badge } from "@workspace/ui/components/badge";
 import { getInProgressLiveCompetitionsCount } from "@/lib/live/queries";
 import { HeaderNavLink } from "./header-nav-link";
 
-export async function HeaderLiveNavLink({ className }: { className: string }) {
+export async function HeaderLiveNavLink({
+  className,
+  linkClassName,
+}: {
+  className?: string;
+  linkClassName?: string;
+}) {
   const count = await getInProgressLiveCompetitionsCount();
 
   return (
-    <HeaderNavLink href="/live" className={className}>
+    <HeaderNavLink
+      href="/live"
+      className={className}
+      linkClassName={linkClassName}
+    >
+      <Radio className="size-4" />
       <span className="inline-flex items-center gap-1.5">
         En vivo
         {count > 0 ? (

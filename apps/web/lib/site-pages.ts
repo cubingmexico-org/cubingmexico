@@ -31,9 +31,9 @@ export const SITE_PAGES: SitePage[] = [
   ...(COMMUNITIES_PUBLICLY_RELEASED
     ? [
         {
-          title: "Comunidades",
+          title: "Comunidades locales",
           href: "/communities",
-          keywords: ["comunidad", "vallarta", "local"],
+          keywords: ["comunidad", "comunidades", "vallarta", "local"],
         },
       ]
     : []),

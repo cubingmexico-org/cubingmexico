@@ -154,18 +154,20 @@ export function useCompetitionLogo({
   }
 
   async function handleEraseBackground() {
+    if (erasedBlob) {
+      toast.message(
+        "El fondo ya está eliminado — usa Deshacer para reintentar",
+      );
+      return;
+    }
+
     setErasing(true);
     let temporaryBlobUrl: string | null = null;
 
     try {
       let source: string | Blob;
 
-      if (erasedBlob) {
-        source = erasedBlob;
-      } else if (
-        previewUrl?.startsWith("blob:") ||
-        previewUrl?.startsWith("data:")
-      ) {
+      if (previewUrl?.startsWith("blob:") || previewUrl?.startsWith("data:")) {
         source = previewUrl;
       } else if (logo || previewUrl) {
         // Remote URLs (WCA Active Storage) need a server fetch to avoid CORS.
@@ -179,10 +181,9 @@ export function useCompetitionLogo({
         return;
       }
 
-      const { removeBackground } = await import("@imgly/background-removal");
-      const blob = await removeBackground(source, {
-        output: { format: "image/png", quality: 0.9 },
-      });
+      const { removeImageBackground } =
+        await import("@/lib/remove-image-background");
+      const blob = await removeImageBackground(source);
       if (previewUrl?.startsWith("blob:")) {
         URL.revokeObjectURL(previewUrl);
       }

@@ -145,7 +145,7 @@ export function UserDropdown({
               <DropdownMenuItem>
                 <Users />
                 <Link href="/communities" className="w-full" prefetch={false}>
-                  Comunidades
+                  Comunidades locales
                 </Link>
               </DropdownMenuItem>
             ) : null}

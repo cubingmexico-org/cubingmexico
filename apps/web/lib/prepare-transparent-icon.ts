@@ -49,9 +49,7 @@ export async function prepareTransparentIconFile(
   source: Blob,
   fileName: string,
 ): Promise<File> {
-  const { removeBackground } = await import("@imgly/background-removal");
-  const transparent = await removeBackground(source, {
-    output: { format: "image/png", quality: 0.9 },
-  });
+  const { removeImageBackground } = await import("./remove-image-background");
+  const transparent = await removeImageBackground(source);
   return downscalePng(transparent, fileName);
 }

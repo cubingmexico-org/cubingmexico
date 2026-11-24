@@ -8,6 +8,7 @@ import {
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group";
 import { PageHeading } from "@/components/page-heading";
+import { SponsorsSupportNotice } from "@/components/sponsors-support-notice";
 import { normalizeSearchText } from "@/lib/search";
 import type { GroupKind } from "@workspace/db/schema";
 import { groupKindPluralLabel } from "@/lib/groups";
@@ -53,11 +54,13 @@ export function GroupDirectoryView({
     <main className="container mx-auto grow px-4 py-8 sm:px-6">
       <div className="mb-6 flex flex-col gap-4">
         <PageHeading>{title}</PageHeading>
-        <p className="text-muted-foreground">
-          {kind === "community"
-            ? "Descubre y conecta con comunidades locales de speedcubing"
-            : "Equipos patrocinados por tiendas y marcas"}
-        </p>
+        {kind === "community" ? (
+          <p className="text-muted-foreground">
+            Descubre y conecta con comunidades locales de speedcubing
+          </p>
+        ) : (
+          <SponsorsSupportNotice className="text-muted-foreground [&_a]:text-brand" />
+        )}
       </div>
 
       <div className="mb-6 flex flex-col gap-4 md:flex-row">

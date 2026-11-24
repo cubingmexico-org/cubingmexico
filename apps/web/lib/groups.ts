@@ -4,10 +4,9 @@ import type { GroupKind } from "@workspace/db/schema";
 export const COMMUNITIES_PUBLICLY_RELEASED = true;
 
 /**
- * Sponsors stay superadmin-only until public launch.
- * Flip to `true` to open directory, nav, sitemap, search, and home/footer promo.
+ * Sponsors directory, nav, sitemap, search, and home/footer promo are public.
  */
-export const SPONSORS_PUBLICLY_RELEASED = false;
+export const SPONSORS_PUBLICLY_RELEASED = true;
 
 export function isGroupKindPubliclyReleased(kind: GroupKind): boolean {
   return kind === "community"
@@ -39,7 +38,7 @@ export function groupKindLabel(kind: GroupKind): string {
 }
 
 export function groupKindPluralLabel(kind: GroupKind): string {
-  return kind === "community" ? "Comunidades" : "Patrocinadores";
+  return kind === "community" ? "Comunidades locales" : "Patrocinadores";
 }
 
 export const GROUP_ID_REGEX = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
