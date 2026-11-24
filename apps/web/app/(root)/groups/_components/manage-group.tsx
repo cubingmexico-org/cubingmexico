@@ -32,6 +32,7 @@ import {
 } from "@workspace/ui/components/tabs";
 import { cn } from "@workspace/ui/lib/utils";
 import type { GroupKind } from "@workspace/db/schema";
+import { TransparentImagePreview } from "@/components/transparent-image-preview";
 import { groupHref, groupKindLabel } from "@/lib/groups";
 import {
   deleteGroupAction,
@@ -223,11 +224,11 @@ export function ManageGroup({
                 <CardContent className="space-y-4">
                   <div className="flex justify-center">
                     <div className="relative h-24 w-24">
-                      <Image
-                        src={group.icon || "/placeholder.svg"}
+                      <TransparentImagePreview
+                        src={group.icon}
                         alt="Ícono del grupo"
-                        className="h-full w-full rounded-md border-2 border-gray-200 object-cover"
-                        fill
+                        className="h-full w-full border-2 border-gray-200"
+                        emptyLabel="Sin ícono"
                       />
                       <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40 opacity-0 transition-opacity hover:opacity-100">
                         <GroupIconUploader groupId={group.id} />
@@ -235,7 +236,8 @@ export function ManageGroup({
                     </div>
                   </div>
                   <div className="text-center text-sm text-muted-foreground">
-                    Tamaño recomendado: 128x128 píxeles (cuadrado)
+                    Se sube como PNG transparente (fondo eliminado
+                    automáticamente)
                   </div>
                   <div className="flex justify-center pt-2">
                     <AlertDialog>
@@ -376,7 +378,7 @@ export function ManageGroup({
                         <li>Para badges (~14px) y chips pequeños</li>
                         <li>Marca simplificada, poco o nada de texto</li>
                         <li>Alto contraste; legible en tamaño diminuto</li>
-                        <li>PNG transparente preferido</li>
+                        <li>PNG transparente (fondo se elimina al subir)</li>
                         <li>Tamaño máximo del archivo: 1MB</li>
                       </ul>
                     </div>
