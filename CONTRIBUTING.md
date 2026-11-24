@@ -10,20 +10,20 @@ Thanks for helping with Cubing México. This guide covers what a change needs be
 
 ## Checks
 
-A Husky pre-commit hook runs Prettier on staged files, then the full local CI
-suite via `pnpm ci:local` (`scripts/ci-local.sh`): format, knip, lint,
-typecheck, unit tests, migration drift, integration tests, production builds,
-and both Playwright e2e suites. It needs Docker Postgres (`pnpm db:up`) and
-uses a dedicated `cubing_mexico_ci` database so your local `cubing_mexico` data
-is left alone. Expect several minutes per commit. The remote `migrate` job is
-CI-only (it applies to Neon). Skip the hook only when you must with
-`git commit --no-verify`.
-
-Run the same suite anytime:
+A Husky pre-commit hook runs Prettier on staged files via lint-staged (seconds).
+The full local CI suite is optional — run it yourself before a risky change or
+rely on GitHub Actions on the PR:
 
 ```bash
 pnpm ci:local
 ```
+
+`scripts/ci-local.sh` mirrors CI: format, knip, lint, typecheck, unit tests,
+migration drift, integration tests, production builds, and both Playwright e2e
+suites. It needs Docker Postgres (`pnpm db:up`) and uses a dedicated
+`cubing_mexico_ci` database so your local `cubing_mexico` data is left alone.
+Expect several minutes. The remote `migrate` job is CI-only (it applies to
+Neon). Skip the pre-commit hook only when you must with `git commit --no-verify`.
 
 New behavior needs tests. Pure logic goes in `*.test.ts`, React components in `*.test.tsx` (jsdom and Testing Library), and anything that reads or writes Postgres in `*.integration.test.ts`.
 
