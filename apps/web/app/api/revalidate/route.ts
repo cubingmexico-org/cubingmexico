@@ -7,9 +7,18 @@ import { parseJsonBody } from "@/lib/route-input";
 /** Tags the backend may revalidate after its data jobs (see apps/backend/web_cache.py). */
 const REVALIDATABLE_TAGS = new Set(["cc-results", "data-source-dates"]);
 
+function isRevalidatableTag(tag: string): boolean {
+  return (
+    REVALIDATABLE_TAGS.has(tag) ||
+    tag.startsWith("person-data-") ||
+    tag.startsWith("person-data-wca-") ||
+    tag.startsWith("person-data-wca-v2-")
+  );
+}
+
 const bodySchema = z.object({
   tags: z.array(
-    z.string().refine((tag) => REVALIDATABLE_TAGS.has(tag), {
+    z.string().refine(isRevalidatableTag, {
       message: "Invalid tags",
     }),
   ),

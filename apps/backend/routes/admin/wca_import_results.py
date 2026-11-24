@@ -11,7 +11,11 @@ from typing import LiteralString
 import pandas as pd
 
 from common import execute_values, get_connection, log, named_row
-from routes.admin.dual_rounds import annotate_dual_fields
+from routes.admin.dual_rounds import (
+    annotate_dual_fields,
+    competition_ids_needing_wcif,
+    fetch_wcif_pairs_for_competitions,
+)
 from routes.admin.schedules import run_update_competition_schedules
 
 CHUNK_ROWS = 200_000
@@ -343,7 +347,9 @@ def _parse_mexican_results(file_bytes: bytes, file_name: str) -> list[tuple] | N
                 )
                 return None
 
-    annotated = annotate_dual_fields(relevant_rows)
+    wcif_comps = competition_ids_needing_wcif(relevant_rows)
+    wcif_pairs = fetch_wcif_pairs_for_competitions(wcif_comps) if wcif_comps else {}
+    annotated = annotate_dual_fields(relevant_rows, wcif_pairs_by_competition=wcif_pairs)
     dual_count = sum(1 for _, is_dual in annotated.values() if is_dual)
     log.info("Annotated dual fields for %s result rows (%s dual).", len(annotated), dual_count)
 
@@ -590,9 +596,9 @@ def import_result_attempts(z, file_name):
 def run_backfill_dual_positions() -> dict:
     """Recompute global_pos / is_dual from rows already in the database.
 
-    Uses only stored (typically Mexican) competitors, which matches WCA for
-    all-Mexican fields and is the best available backfill without re-importing
-    the full export.
+    Mexican-only rows plus public WCIF (2026+ only). Overlap heuristic is off —
+    it false-positives normal multi-round events when only Mexican competitors
+    are stored. Mixed-nationality dual ranking is best fixed by a full re-import.
     """
     with get_connection() as conn:
         with conn.cursor(row_factory=named_row) as cur:
@@ -606,7 +612,7 @@ def run_backfill_dual_positions() -> dict:
             db_rows = cur.fetchall()
 
     if not db_rows:
-        return {"success": True, "updated": 0, "dualRows": 0}
+        return {"success": True, "updated": 0, "dualRows": 0, "wcifCompetitions": 0}
 
     mapped = [
         {
@@ -622,7 +628,13 @@ def run_backfill_dual_positions() -> dict:
         }
         for row in db_rows
     ]
-    annotated = annotate_dual_fields(mapped)
+    wcif_comps = competition_ids_needing_wcif(mapped)
+    wcif_pairs = fetch_wcif_pairs_for_competitions(wcif_comps) if wcif_comps else {}
+    annotated = annotate_dual_fields(
+        mapped,
+        wcif_pairs_by_competition=wcif_pairs,
+        allow_overlap_heuristic=False,
+    )
 
     updates = [(global_pos, is_dual, result_id) for result_id, (global_pos, is_dual) in annotated.items()]
     dual_rows = sum(1 for _, is_dual, _ in updates if is_dual)
@@ -644,4 +656,9 @@ def run_backfill_dual_positions() -> dict:
             conn.commit()
 
     log.info("Backfilled dual positions for %s results (%s dual).", len(updates), dual_rows)
-    return {"success": True, "updated": len(updates), "dualRows": dual_rows}
+    return {
+        "success": True,
+        "updated": len(updates),
+        "dualRows": dual_rows,
+        "wcifCompetitions": len(wcif_pairs),
+    }

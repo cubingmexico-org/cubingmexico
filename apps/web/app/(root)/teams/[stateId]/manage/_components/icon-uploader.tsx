@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 import { uploadFiles } from "@/lib/uploadthing";
-import { prepareTransparentIconFile } from "@/lib/prepare-transparent-icon";
 import { UploadThingError } from "uploadthing/server";
 import { updateTeamIconAction } from "../_lib/actions";
 
@@ -33,12 +32,8 @@ export function IconUploader({ stateId }: { stateId: string }) {
       await toast
         .promise(
           (async () => {
-            const transparentFile = await prepareTransparentIconFile(
-              file,
-              `${stateId}-icon.png`,
-            );
             const data = await uploadFiles("iconUploader", {
-              files: [transparentFile],
+              files: [file],
               headers: {
                 "x-state-id": stateId,
               },
@@ -50,8 +45,8 @@ export function IconUploader({ stateId }: { stateId: string }) {
             router.refresh();
           })(),
           {
-            loading: "Eliminando fondo y subiendo ícono...",
-            success: "Ícono transparente subido correctamente",
+            loading: "Subiendo ícono...",
+            success: "Ícono subido correctamente",
             error: uploadErrorMessage,
           },
         )
