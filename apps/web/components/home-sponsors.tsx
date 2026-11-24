@@ -3,12 +3,12 @@ import Link from "next/link";
 import { getPublicitySponsors } from "@/app/(root)/groups/_lib/queries";
 import { brandMarkSrc } from "@/lib/brand-image";
 import { SPONSORS_PUBLICLY_RELEASED, groupHref } from "@/lib/groups";
+import { SponsorsSupportNotice } from "./sponsors-support-notice";
 
 export async function HomeSponsors() {
   if (!SPONSORS_PUBLICLY_RELEASED) return null;
 
   const sponsors = await getPublicitySponsors();
-  if (sponsors.length === 0) return null;
 
   return (
     <section className="border-t border-border bg-card">
@@ -18,55 +18,56 @@ export async function HomeSponsors() {
             <h2 className="font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Patrocinadores
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Tiendas y marcas que apoyan a la comunidad.
-            </p>
+            <SponsorsSupportNotice className="mt-1 max-w-2xl text-sm text-muted-foreground [&_a]:text-brand" />
           </div>
           <Link
             href="/sponsors"
-            className="text-sm font-medium text-brand hover:underline"
+            className="shrink-0 text-sm font-medium text-brand hover:underline"
           >
             Ver todos
           </Link>
         </div>
-        <div className="flex flex-wrap items-center gap-6">
-          {sponsors.map((sponsor) => {
-            const href = sponsor.websiteUrl || groupHref("sponsor", sponsor.id);
-            const external = Boolean(sponsor.websiteUrl);
-            return (
-              <Link
-                key={sponsor.id}
-                href={href}
-                className="flex max-w-xs items-center gap-3 rounded-md border border-border/60 bg-background px-3 py-2 transition-colors hover:border-brand/40"
-                {...(external
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
-              >
-                <div className="relative size-10 shrink-0 overflow-hidden rounded-md">
-                  <Image
-                    src={
-                      brandMarkSrc(sponsor.icon, sponsor.image) ||
-                      "/placeholder.svg"
-                    }
-                    alt={sponsor.name}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-semibold">
-                    {sponsor.name}
+        {sponsors.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-6">
+            {sponsors.map((sponsor) => {
+              const href =
+                sponsor.websiteUrl || groupHref("sponsor", sponsor.id);
+              const external = Boolean(sponsor.websiteUrl);
+              return (
+                <Link
+                  key={sponsor.id}
+                  href={href}
+                  className="flex max-w-xs items-center gap-3 rounded-md border border-border/60 bg-background px-3 py-2 transition-colors hover:border-brand/40"
+                  {...(external
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                >
+                  <div className="relative size-10 shrink-0 overflow-hidden rounded-md">
+                    <Image
+                      src={
+                        brandMarkSrc(sponsor.icon, sponsor.image) ||
+                        "/placeholder.svg"
+                      }
+                      alt={sponsor.name}
+                      fill
+                      className="object-contain"
+                    />
                   </div>
-                  {sponsor.publicityBlurb ? (
-                    <div className="truncate text-xs text-muted-foreground">
-                      {sponsor.publicityBlurb}
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">
+                      {sponsor.name}
                     </div>
-                  ) : null}
-                </div>
-              </Link>
-            );
-          })}
-        </div>
+                    {sponsor.publicityBlurb ? (
+                      <div className="truncate text-xs text-muted-foreground">
+                        {sponsor.publicityBlurb}
+                      </div>
+                    ) : null}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     </section>
   );

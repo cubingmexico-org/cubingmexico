@@ -19,7 +19,7 @@ const shortcuts = [
   { href: "/records", label: "Récords" },
   { href: "/teams", label: "Teams" },
   ...(COMMUNITIES_PUBLICLY_RELEASED
-    ? [{ href: "/communities", label: "Comunidades" }]
+    ? [{ href: "/communities", label: "Comunidades locales" }]
     : []),
   { href: "/kinch", label: "Kinch" },
   { href: "/live", label: "En vivo" },

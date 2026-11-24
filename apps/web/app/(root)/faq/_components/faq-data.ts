@@ -29,7 +29,7 @@ export const faqData = {
     {
       question: "¿Cubing México ofrece patrocinios o apoyo para competidores?",
       answer:
-        "Actualmente, Cubing México no ofrece programas de apoyo para competidores.",
+        "Cubing México no ofrece programas de apoyo económico para competidores. El sitio se mantiene con el apoyo de patrocinadores: quienes patrocinan pueden tener su equipo activo en el sitio (con rankings, récords y más). Si quieres que tu equipo aparezca, escríbenos por Instagram (@cubingmexico).",
     },
   ],
   competitions: [
