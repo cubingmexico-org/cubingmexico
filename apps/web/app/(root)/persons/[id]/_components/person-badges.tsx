@@ -67,7 +67,7 @@ export function PersonBadges({
                 alt=""
                 width={14}
                 height={14}
-                className="size-3.5 rounded-sm object-cover"
+                className="size-3.5 object-contain"
               />
             ) : null}
             {team.name}
@@ -90,7 +90,7 @@ export function PersonBadges({
                   alt=""
                   width={14}
                   height={14}
-                  className="size-3.5 rounded-sm object-cover"
+                  className="size-3.5 object-contain"
                 />
               ) : null}
               {group.name}

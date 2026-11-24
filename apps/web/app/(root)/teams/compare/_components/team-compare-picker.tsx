@@ -61,7 +61,7 @@ function TeamSelect({
                   alt=""
                   width={16}
                   height={16}
-                  className="size-4 rounded-sm object-cover"
+                  className="size-4 object-contain"
                 />
               ) : null}
               {team.name}

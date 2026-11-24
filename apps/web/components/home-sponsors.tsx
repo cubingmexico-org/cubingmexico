@@ -42,7 +42,7 @@ export async function HomeSponsors() {
                   ? { target: "_blank", rel: "noopener noreferrer" }
                   : {})}
               >
-                <div className="relative size-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                <div className="relative size-10 shrink-0 overflow-hidden rounded-md">
                   <Image
                     src={
                       brandMarkSrc(sponsor.icon, sponsor.image) ||
@@ -50,7 +50,7 @@ export async function HomeSponsors() {
                     }
                     alt={sponsor.name}
                     fill
-                    className="object-cover"
+                    className="object-contain"
                   />
                 </div>
                 <div className="min-w-0">

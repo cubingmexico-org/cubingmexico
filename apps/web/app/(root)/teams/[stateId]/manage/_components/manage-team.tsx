@@ -30,6 +30,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@workspace/ui/lib/utils";
+import { TransparentImagePreview } from "@/components/transparent-image-preview";
 import {
   deleteTeamAction,
   deleteTeamCoverAction,
@@ -325,20 +326,21 @@ export function ManageTeam({
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-center">
-                    <div className="relative w-24 h-24">
-                      <Image
-                        src={teamData.icon || "/placeholder.svg"}
+                    <div className="relative h-24 w-24">
+                      <TransparentImagePreview
+                        src={teamData.icon}
                         alt="Ícono del team"
-                        className="w-full h-full object-cover rounded-md border-2 border-gray-200"
-                        layout="fill"
+                        className="h-full w-full border-2 border-gray-200"
+                        emptyLabel="Sin ícono"
                       />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-md opacity-0 hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40 opacity-0 transition-opacity hover:opacity-100">
                         <IconUploader stateId={stateId} />
                       </div>
                     </div>
                   </div>
                   <div className="text-center text-sm text-muted-foreground">
-                    Tamaño recomendado: 128x128 píxeles (cuadrado)
+                    Se sube como PNG transparente (fondo eliminado
+                    automáticamente)
                   </div>
                   <div className="flex justify-center pt-2">
                     <AlertDialog>
@@ -473,7 +475,7 @@ export function ManageTeam({
                         <li>Para badges (~14px) y chips pequeños</li>
                         <li>Marca simplificada, poco o nada de texto</li>
                         <li>Alto contraste; legible en tamaño diminuto</li>
-                        <li>PNG transparente preferido</li>
+                        <li>PNG transparente (fondo se elimina al subir)</li>
                         <li>Tamaño máximo del archivo: 1MB</li>
                       </ul>
                     </div>

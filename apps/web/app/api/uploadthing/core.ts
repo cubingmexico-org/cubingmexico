@@ -90,7 +90,8 @@ export const ourFileRouter: FileRouter = {
       return { stateId: metadata.stateId, image: file.ufsUrl };
     }),
   iconUploader: f({
-    image: {
+    // Icons are prepared client-side as transparent PNGs.
+    "image/png": {
       maxFileSize: "1MB",
       maxFileCount: 1,
     },
@@ -131,7 +132,8 @@ export const ourFileRouter: FileRouter = {
       return { groupId: metadata.groupId, image: file.ufsUrl };
     }),
   groupIconUploader: f({
-    image: {
+    // Icons are prepared client-side as transparent PNGs.
+    "image/png": {
       maxFileSize: "1MB",
       maxFileCount: 1,
     },
