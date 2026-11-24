@@ -19,6 +19,7 @@ import { Metadata } from "next";
 import { createSearchParamsCache } from "nuqs/server";
 import { getSORTeamsAverage, getSORTeamsSingle } from "./_lib/queries";
 import { DeprecatedEventsSwitch } from "@/components/deprecated-events-switch";
+import { brandMarkSrc } from "@/lib/brand-image";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
 import { deprecatedParser } from "@/lib/search-params";
 import type { SearchParams } from "@/types";
@@ -85,41 +86,54 @@ export default async function Page(props: PageProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {teams.map((team, index) => (
-            <TableRow key={team.stateId}>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell className="whitespace-nowrap">
-                <Link
-                  prefetch={false}
-                  className="text-link hover:text-link/80"
-                  href={`/teams/${team.stateId}`}
-                >
-                  {team.name}
-                </Link>
-              </TableCell>
-              <TableCell className="font-semibold">{team.overall}</TableCell>
-              {team.events.map((event) => (
-                <TableCell
-                  className={cn(
-                    event.bestRank <= 10 &&
-                      "text-green-800 dark:text-green-400 font-semibold",
-                    !event.completed &&
-                      "text-red-700 dark:text-red-400 font-semibold",
-                  )}
-                  key={event.eventId}
-                >
-                  <Tooltip>
-                    <TooltipTrigger>{event.bestRank}</TooltipTrigger>
-                    {event.personName && (
-                      <TooltipContent>
-                        <p>{event.personName}</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
+          {teams.map((team, index) => {
+            const mark = brandMarkSrc(team.icon, team.image);
+            return (
+              <TableRow key={team.stateId}>
+                <TableCell>{index + 1}</TableCell>
+                <TableCell className="whitespace-nowrap">
+                  <Link
+                    prefetch={false}
+                    className="inline-flex items-center gap-1.5 text-link hover:text-link/80"
+                    href={`/teams/${team.stateId}`}
+                  >
+                    {mark ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- external UploadThing URL
+                      <img
+                        src={mark}
+                        alt=""
+                        width={16}
+                        height={16}
+                        className="size-4 object-contain"
+                      />
+                    ) : null}
+                    {team.name}
+                  </Link>
                 </TableCell>
-              ))}
-            </TableRow>
-          ))}
+                <TableCell className="font-semibold">{team.overall}</TableCell>
+                {team.events.map((event) => (
+                  <TableCell
+                    className={cn(
+                      event.bestRank <= 10 &&
+                        "text-green-800 dark:text-green-400 font-semibold",
+                      !event.completed &&
+                        "text-red-700 dark:text-red-400 font-semibold",
+                    )}
+                    key={event.eventId}
+                  >
+                    <Tooltip>
+                      <TooltipTrigger>{event.bestRank}</TooltipTrigger>
+                      {event.personName && (
+                        <TooltipContent>
+                          <p>{event.personName}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TableCell>
+                ))}
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </>
