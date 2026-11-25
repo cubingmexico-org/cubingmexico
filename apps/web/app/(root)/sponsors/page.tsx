@@ -4,7 +4,7 @@ import { GroupDirectory } from "../groups/_components/group-directory";
 export const metadata: Metadata = {
   title: "Patrocinadores | Cubing México",
   description:
-    "Cubing México existe gracias a sus patrocinadores. Conoce los equipos que mantienen el sitio y cómo sumar el tuyo.",
+    "Cubing México existe gracias a sus patrocinadores. Mira quién mantiene el sitio y cómo sumarte.",
 };
 
 export default function Page() {

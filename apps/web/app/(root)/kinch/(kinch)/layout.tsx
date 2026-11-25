@@ -5,7 +5,7 @@ import { PageHeading } from "@/components/page-heading";
 export const metadata: Metadata = {
   title: "Kinch Ranks | Cubing México",
   description:
-    "Encuentra los mejores cuberos de México en cada evento de la WCA. Filtra por estado, género y más.",
+    "Clasificación Kinch nacional: cada evento vale de 0 a 100 según qué tan cerca estés del récord nacional.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -14,30 +14,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col gap-4 mb-6">
         <PageHeading>Kinch Ranks nacionales</PageHeading>
         <p>
-          Los Kinch Ranks son un sistema de clasificación innovador diseñado
-          para evaluar la habilidad de un cubero en los 17 eventos oficiales de
-          la WCA. Este sistema utiliza un enfoque único para calcular la
-          puntuación de cada competidor en función de sus resultados en cada
-          evento. Cada evento se puntúa en una escala del 0 al 100, considerando
-          tanto los{" "}
+          En Kinch, cada evento se puntúa de 0 a 100 según qué tan cerca estás
+          del{" "}
           <Link
             className="underline text-link hover:text-link/80"
             href="/records"
           >
-            récords nacionales (NR)
+            récord nacional (NR)
           </Link>{" "}
-          como los récords personales (PR) de los competidores. A través de este
-          enfoque, se busca equilibrar la clasificación entre todos los eventos,
-          eliminando las desventajas percibidas en sistemas tradicionales como
-          el{" "}
+          con tu mejor resultado (PR). El total es el promedio de todos los
+          eventos: sirve para comparar rendimiento general sin el sesgo del{" "}
           <Link
             className="underline text-link hover:text-link/80"
             href="/sor/single"
           >
-            SOR
-          </Link>{" "}
-          y promoviendo una visión más integral de las habilidades en la
-          resolución de rompecabezas.
+            Sum of Ranks
+          </Link>
+          .
         </p>
       </div>
       <div className="grid gap-6">{children}</div>

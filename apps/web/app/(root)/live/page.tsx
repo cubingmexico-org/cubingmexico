@@ -8,7 +8,7 @@ import { LiveHubList } from "./_components/live-hub-list";
 export const metadata: Metadata = {
   title: "En vivo | Cubing México",
   description:
-    "Resultados en vivo de competencias WCA en México, con enriquecimiento estatal.",
+    "Resultados en tiempo casi real de competencias WCA en México, con contexto estatal.",
 };
 
 export default function LiveHubPage() {

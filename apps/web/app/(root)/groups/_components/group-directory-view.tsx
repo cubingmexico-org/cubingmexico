@@ -56,7 +56,7 @@ export function GroupDirectoryView({
         <PageHeading>{title}</PageHeading>
         {kind === "community" ? (
           <p className="text-muted-foreground">
-            Descubre y conecta con comunidades locales de speedcubing
+            Grupos locales de práctica y speedcubing en México.
           </p>
         ) : (
           <SponsorsSupportNotice className="text-muted-foreground [&_a]:text-brand" />

@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${team?.name} | Cubing México`,
-    description: `${team?.name} es un equipo de ${team?.state} que compite en competencias de la World Cube Association.`,
+    description: `${team?.name} es el Team de ${team?.state} en competencias oficiales de la WCA.`,
   };
 }
 

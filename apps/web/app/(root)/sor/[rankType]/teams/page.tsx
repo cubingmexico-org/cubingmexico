@@ -25,9 +25,9 @@ import { deprecatedParser } from "@/lib/search-params";
 import type { SearchParams } from "@/types";
 
 export const metadata: Metadata = {
-  title: "Sum Of Ranks de Teams | Cubing México",
+  title: "Sum of Ranks de Teams | Cubing México",
   description:
-    "Encuentra el ranking de los mejores equipos de speedcubing en México en cada evento de la WCA. Filtra por estado, género y más.",
+    "Sum of Ranks por Team: suma las mejores posiciones de sus miembros en cada evento.",
 };
 
 const searchParamsCache = createSearchParamsCache({
@@ -62,10 +62,9 @@ export default async function Page(props: PageProps) {
           {`Sum of Ranks de Teams (${rankType === "single" ? "Single" : "Average"})`}
         </h1>
         <p>
-          El Sum of Ranks de Teams combina los mejores resultados de cada
-          miembro del team en cada evento, sumando sus posiciones. Un número más
-          bajo indica un mejor desempeño. Este ranking refleja el rendimiento
-          colectivo del equipo en competencias oficiales.
+          Por cada evento se toma el mejor resultado de un miembro del Team y se
+          suma su posición nacional. Un total más bajo indica mejor desempeño
+          colectivo.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <RankTypeSelector selectedRankType={rankType} />

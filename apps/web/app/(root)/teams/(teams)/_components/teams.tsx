@@ -70,7 +70,7 @@ export function Teams({
         Intenta ajustar tu búsqueda o verifica la ortografía.
       </p>
       <p className="text-muted-foreground">
-        Si no encuentras lo que buscas, considera crear un nuevo Team.
+        Si falta el Team de tu estado, contáctanos para registrarlo.
       </p>
     </div>
   );
@@ -80,7 +80,7 @@ export function Teams({
       <div className="flex flex-col gap-4 mb-6">
         <PageHeading>Teams estatales</PageHeading>
         <p className="text-muted-foreground">
-          Descubre y conecta con los Teams de speedcubers en México
+          Un Team por estado: miembros, rankings y récords.
         </p>
       </div>
 

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Cubing México",
     short_name: "Cubing México",
     description:
-      "Rankings y récords estatales mexicanos basados en los resultados de la WCA.",
+      "Rankings estatales, récords nacionales y el calendario WCA de México.",
     start_url: "/",
     scope: "/",
     display: "standalone",

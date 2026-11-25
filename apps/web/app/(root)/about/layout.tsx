@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Acerca de | Cubing México",
   description:
-    "Cubing México es un sitio web de apasionados por el speedcubing y diseñado con el propósito de unir a la comunidad de speedcubers en México.",
+    "Rankings estatales, récords, Teams y el calendario WCA de México, con datos de la World Cube Association.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -15,27 +15,21 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         Acerca de Cubing México
       </h1>
       <p className="pb-2">
-        Cubing México es un sitio web de apasionados por el speedcubing y
-        diseñado con el propósito de unir a la comunidad de speedcubers en
-        México. Nuestra dedicación es inquebrantable y la misión es clara:
-        fomentar el crecimiento y la celebración de la prosperidad del
-        speedcubing en nuestro país.
+        Cubing México es un sitio de la comunidad de speedcubing en México. Aquí
+        puedes ver rankings estatales, récords, Teams, resultados en vivo y el
+        calendario de competencias oficiales.
       </p>
       <p className="pb-2">
-        En el corazón de Cubing México se encuentra una meta esencial:
-        proporcionar una fuente integral de información sobre los rankings y
-        récords estatales a lo largo del territorio. Nos basamos en los datos
-        proporcionados por la{" "}
+        Los datos vienen de la{" "}
         <Link
           className="hover:underline text-accent-foreground"
           href="https://www.worldcubeassociation.org"
         >
           World Cube Association
         </Link>
-        , que coordina y supervisa 17 eventos diferentes en este apasionante
-        deporte. En Cubing México, creemos en la importancia de llevar un
-        registro detallado de los logros de nuestros speedcubers y compartir
-        estos logros con orgullo.
+        , que organiza las competencias oficiales y sus eventos. La idea es
+        simple: tener a la mano lo que pasa en el speedcubing mexicano y
+        celebrar lo que logran los competidores del país.
       </p>
       {children}
       <Image

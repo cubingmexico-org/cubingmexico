@@ -4,7 +4,7 @@ import { PageHeading } from "@/components/page-heading";
 export const metadata: Metadata = {
   title: "Kinch Ranks de Teams | Cubing México",
   description:
-    "Encuentra el ranking de los mejores equipos de speedcubing en México en cada evento de la WCA. Filtra por estado, género y más.",
+    "Kinch por Team: el mejor resultado de cada miembro, comparado con el récord nacional.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -13,13 +13,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col gap-4 mb-6">
         <PageHeading>Kinch Ranks de Teams</PageHeading>
         <p>
-          Los Kinch Ranks de teams son una forma de medir el rendimiento de un
-          team en comparación con otros teams. Se calcula tomando el mejor
-          resultado de cada miembro del team en cada evento y comparándolo con
-          el mejor resultado nacional en ese evento. El resultado se expresa
-          como un porcentaje, donde 100% significa que el team tiene el mejor
-          resultado nacional en ese evento. Un porcentaje más bajo indica un
-          rendimiento inferior en comparación con el mejor resultado nacional.
+          Para cada evento se toma el mejor resultado de un miembro del Team y
+          se compara con el mejor resultado nacional. 100% significa empatar o
+          superar ese referente; un porcentaje más bajo indica más distancia.
         </p>
       </div>
       {children}

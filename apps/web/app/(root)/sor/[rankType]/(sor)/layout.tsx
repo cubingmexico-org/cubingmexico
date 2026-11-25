@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sum Of Ranks | Cubing México",
+  title: "Sum of Ranks | Cubing México",
   description:
-    "Encuentra el ranking de los mejores cuberos de México en cada evento de la WCA. Filtra por estado, género y más.",
+    "Sum of Ranks nacional: suma de tus posiciones en cada evento. Más bajo es mejor.",
 };
 
 export default async function Layout({

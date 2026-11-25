@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `Kinch Ranks de ${team?.state} | Cubing México`,
-    description: `Encuentra el ranking del ${team?.name} de speedcubing en México en cada evento de la WCA. Filtra por estado, género y más.`,
+    description: `Kinch Ranks de ${team?.state}: puntuación 0–100 por evento frente al récord estatal.`,
   };
 }
 
@@ -65,31 +65,23 @@ export default async function Page(props: {
           Kinch Ranks estatales de {stateName}
         </h1>
         <p>
-          Los Kinch Ranks son un sistema de clasificación innovador diseñado
-          para evaluar la habilidad de un cubero en los 17 eventos oficiales de
-          la WCA. Este sistema utiliza un enfoque único para calcular la
-          puntuación de cada competidor en función de sus resultados en cada
-          evento. Cada evento se puntúa en una escala del 0 al 100, considerando
-          tanto los{" "}
+          Misma idea que el Kinch nacional, pero frente a los{" "}
           <Link
             className="text-muted-foreground hover:underline"
             href={`/records/${stateId}`}
             prefetch={false}
           >
             récords estatales (SR)
-          </Link>{" "}
-          como los récords personales (PR) de los competidores. A través de este
-          enfoque, se busca equilibrar la clasificación entre todos los eventos,
-          eliminando las desventajas percibidas en sistemas tradicionales como
-          el{" "}
+          </Link>
+          : cada evento vale de 0 a 100 según qué tan cerca está tu PR. El total
+          promedia todos los eventos y equilibra mejor que el{" "}
           <Link
             className="text-muted-foreground hover:underline"
             href="/sor/single"
           >
-            SOR
-          </Link>{" "}
-          y promoviendo una visión más integral de las habilidades en la
-          resolución de rompecabezas.
+            Sum of Ranks
+          </Link>
+          .
         </p>
         <StateSelector states={states} stateName={stateName!} />
         <DeprecatedEventsSwitch />

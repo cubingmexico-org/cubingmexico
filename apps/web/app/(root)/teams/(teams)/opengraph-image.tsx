@@ -6,9 +6,8 @@ export const contentType = OG_CONTENT_TYPE;
 
 export default async function Image() {
   return renderOgImage({
-    title: "Equipos estatales",
-    subtitle:
-      "Encuentra tu Team de speedcubing en México y conéctate con otros cuberos.",
-    badge: "Equipos",
+    title: "Teams estatales",
+    subtitle: "Teams de speedcubing por estado en México.",
+    badge: "Teams",
   });
 }

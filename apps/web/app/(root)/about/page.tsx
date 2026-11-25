@@ -7,13 +7,12 @@ export default async function Page(): Promise<React.JSX.Element> {
 
   return (
     <p className="pb-2">
-      Desde el año 2008, hemos sido testigos de un crecimiento fenomenal en la
-      comunidad de speedcubing en México. ¡Un asombroso total de{" "}
-      <b>{persons} mexicanos</b> han participado en nada menos que{" "}
-      <b>{competitions} competencias oficiales</b> celebradas en todo el país!
-      Estos números son un testimonio del compromiso y la pasión que los
-      speedcubers mexicanos tienen por su deporte, y estamos orgullosos de ser
-      parte de esta emocionante travesía.
+      Desde 2008,{" "}
+      <b>{persons.toLocaleString("es-MX")} competidores mexicanos</b> han
+      participado en{" "}
+      <b>{competitions.toLocaleString("es-MX")} competencias oficiales</b> en el
+      país. Esos números cuentan la historia de una comunidad que no ha dejado
+      de crecer.
     </p>
   );
 }
