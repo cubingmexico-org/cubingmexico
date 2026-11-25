@@ -13,9 +13,9 @@ import { PageHeading } from "@/components/page-heading";
 import { eventScopeFromDeprecated } from "@/lib/official-events";
 
 export const metadata: Metadata = {
-  title: "Sum Of Ranks | Cubing México",
+  title: "Sum of Ranks | Cubing México",
   description:
-    "Encuentra el ranking de los mejores cuberos de México en cada evento de la WCA. Filtra por estado, género y más.",
+    "Sum of Ranks nacional: suma de tus posiciones en cada evento. Más bajo es mejor.",
 };
 
 interface PageProps {
@@ -51,22 +51,15 @@ export default async function Page(props: PageProps) {
           {`Sum of Ranks (${rankType === "single" ? "Single" : "Average"})`}
         </PageHeading>
         <p>
-          Sum Of Ranks (SOR) o &quot;suma de rankings&quot;, es un método
-          utilizado para calcular la habilidad de un cubero en los 17 eventos de
-          la WCA. La suma de rankings se calcula sumando el{" "}
+          Sum of Ranks (SOR) suma tu{" "}
           <Link
             className="underline text-link hover:text-link/80"
             href="/rankings/333/single"
           >
             ranking nacional
           </Link>{" "}
-          obtenido por un cubero en cada evento.
-        </p>
-        <p>
-          Se utiliza a menudo como una medida del rendimiento general o la
-          consistencia en varios eventos. Una suma de rankings más baja indica
-          un mejor rendimiento general, ya que significa que el cubero logró
-          consistentemente rankings más altos en los eventos.
+          en cada evento de la WCA. Un total más bajo suele indicar mejor
+          rendimiento general: estuviste más arriba en más eventos.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <RankTypeSelector selectedRankType={rankType} />

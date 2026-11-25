@@ -4,7 +4,7 @@ import { PageHeading } from "@/components/page-heading";
 export const metadata: Metadata = {
   title: "Competidores | Cubing México",
   description:
-    "Encuentra el directorio de todos los competidores mexicanos de la WCA. Filtra por estado, género y más.",
+    "Directorio de competidores mexicanos de la WCA. Busca por nombre, estado o género.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {

@@ -6,9 +6,9 @@ export function SponsorsSupportNotice({ className }: { className?: string }) {
 
   return (
     <p className={className}>
-      Este sitio existe gracias a sus patrocinadores. Quienes patrocinan tienen
-      su equipo activo en el sitio con rankings y récords. Si quieres que tu
-      equipo aparezca, escríbenos por Instagram{" "}
+      Este sitio existe gracias a sus patrocinadores. Quienes patrocinan
+      aparecen aquí con rankings y récords. Si quieres sumarte, escríbenos por
+      Instagram{" "}
       <a
         href={CUBING_MEXICO_INSTAGRAM_URL}
         target="_blank"

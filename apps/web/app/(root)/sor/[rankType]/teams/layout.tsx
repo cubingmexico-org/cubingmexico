@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sum Of Ranks de Teams | Cubing México",
+  title: "Sum of Ranks de Teams | Cubing México",
   description:
-    "Encuentra el ranking de los mejores equipos de speedcubing en México en cada evento de la WCA. Filtra por estado, género y más.",
+    "Sum of Ranks por Team: suma las mejores posiciones de sus miembros en cada evento.",
 };
 
 export default async function Layout({

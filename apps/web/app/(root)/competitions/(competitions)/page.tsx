@@ -33,7 +33,7 @@ export async function generateMetadata({
   return {
     title: `Competencias ${search.state ? `en ${search.state} ` : ""}| Cubing México`,
     description:
-      "Encuentra competencias oficiales de la WCA en México y conéctate con otros cuberos.",
+      "Competencias oficiales de la WCA en México: fechas, sedes y resultados.",
   };
 }
 

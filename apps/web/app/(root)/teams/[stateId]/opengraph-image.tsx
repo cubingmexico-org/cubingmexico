@@ -1,7 +1,7 @@
 import { getTeamInfo } from "./_lib/queries";
 import { renderOgImage, OG_CONTENT_TYPE, OG_SIZE } from "@/lib/og/render";
 
-export const alt = "Equipo | Cubing México";
+export const alt = "Team | Cubing México";
 export const size = OG_SIZE;
 export const contentType = OG_CONTENT_TYPE;
 
@@ -16,15 +16,15 @@ export default async function Image({ params }: Props) {
   if (!team) {
     return renderOgImage({
       title: "Cubing México",
-      subtitle: "Equipos estatales de speedcubing en México.",
-      badge: "Equipos",
+      subtitle: "Teams estatales de speedcubing en México.",
+      badge: "Teams",
     });
   }
 
   return renderOgImage({
-    title: team.name ?? "Equipo",
-    subtitle: `Equipo de ${team.state} · Cubing México`,
-    badge: "Equipo",
+    title: team.name ?? "Team",
+    subtitle: `Team de ${team.state} · Cubing México`,
+    badge: "Team",
     imageSrc: team.image,
     initials: team.name ?? stateId,
   });

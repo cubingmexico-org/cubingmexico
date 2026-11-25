@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Cubing México",
   applicationName: "Cubing México",
   description:
-    "Cubing México es un sitio web que recopila rankings y récords estatales mexicanos basado en los resultados de la WCA.",
+    "Rankings estatales, récords nacionales y el calendario WCA de México.",
   appleWebApp: {
     capable: true,
     title: "Cubing México",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Cubing México",
     description:
-      "Cubing México es un sitio web que recopila rankings y récords estatales mexicanos basado en los resultados de la WCA.",
+      "Rankings estatales, récords nacionales y el calendario WCA de México.",
     url: "https://www.cubingmexico.net",
     siteName: "Cubing México",
     locale: "es_MX",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Cubing México",
     description:
-      "Cubing México es un sitio web que recopila rankings y récords estatales mexicanos basado en los resultados de la WCA.",
+      "Rankings estatales, récords nacionales y el calendario WCA de México.",
   },
 };
 

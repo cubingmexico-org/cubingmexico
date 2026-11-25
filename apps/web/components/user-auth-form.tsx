@@ -19,8 +19,8 @@ export function UserAuthForm(): React.JSX.Element {
         });
       } catch (error) {
         reportError(error);
-        toast.error("Failed to sign in with WCA", {
-          description: "Please try again",
+        toast.error("No se pudo iniciar sesión con la WCA", {
+          description: "Inténtalo de nuevo",
         });
       }
     });

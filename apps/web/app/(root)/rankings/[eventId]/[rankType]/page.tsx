@@ -38,15 +38,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (rankType === "single") {
     return {
       title: `${eventName} · Ranking de Singles | Cubing México`,
-      description:
-        "Encuentra el ranking de los mejores cuberos de México en cada evento de la WCA. Filtra por estado, género y más.",
+      description: `Ranking nacional de single en ${eventName}.`,
     };
   }
 
   return {
     title: `${eventName} · Ranking de Averages | Cubing México`,
-    description:
-      "Encuentra el ranking de los mejores cuberos de México en cada evento de la WCA. Filtra por estado, género y más.",
+    description: `Ranking nacional de average en ${eventName}.`,
   };
 }
 

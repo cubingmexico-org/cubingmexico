@@ -99,10 +99,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </CardHeader>
           <CardContent>
             <p className="mb-4">
-              El sistema comienza con el nivel Bronce, que requiere tener al
-              menos un resultado en cada uno de los 17 eventos oficiales de la
-              WCA. Esto demuestra versatilidad y un interés en todos los
-              aspectos del speedcubing.
+              El sistema empieza en Bronce: hace falta al menos un resultado en
+              cada evento oficial de la WCA.
             </p>
             <p className="mb-4">
               A partir de ahí, los niveles avanzan progresivamente:

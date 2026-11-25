@@ -7,8 +7,7 @@ export const contentType = OG_CONTENT_TYPE;
 export default async function Image() {
   return renderOgImage({
     title: "Kinch Ranks nacionales",
-    subtitle:
-      "Clasificación Kinch de los mejores cuberos de México en los eventos oficiales de la WCA.",
+    subtitle: "Puntuación 0–100 por evento frente al récord nacional.",
     badge: "Kinch",
   });
 }

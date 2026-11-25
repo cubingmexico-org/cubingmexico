@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Delegados | Cubing México",
-  description:
-    "Encuentra el directorio de todos los delegados mexicanos de la WCA. Filtra por estado, género y más.",
+  description: "Directorio de delegados WCA en México.",
 };
 
 export default function Layout({ children }: { children: React.ReactNode }) {
