@@ -162,6 +162,8 @@
     "result_id"
   ],
   "groups": [
+    "address",
+    "city",
     "cover_image",
     "description",
     "founded",
@@ -170,6 +172,8 @@
     "image",
     "is_active",
     "kind",
+    "latitude",
+    "longitude",
     "name",
     "publicity_blurb",
     "publicity_enabled",
@@ -177,6 +181,7 @@
     "social_links",
     "sponsorship_expires_at",
     "sponsorship_status",
+    "state_id",
     "website_url"
   ],
   "job_runs": [

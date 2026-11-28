@@ -184,6 +184,7 @@ export async function GroupOverview({
                     latitude={info.latitude}
                     longitude={info.longitude}
                     label={info.name}
+                    address={info.address}
                   />
                 ) : null}
               </CardContent>
