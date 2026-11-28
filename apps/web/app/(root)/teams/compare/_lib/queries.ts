@@ -33,11 +33,6 @@ export type CollectiveBestRecords = Record<
   { single?: CollectiveBestRecord; average?: CollectiveBestRecord }
 >;
 
-/** @deprecated Prefer CollectiveBestRecord — kept for existing imports/tests. */
-export type TeamBestRecord = CollectiveBestRecord;
-/** @deprecated Prefer CollectiveBestRecords — kept for existing imports/tests. */
-export type TeamBestRecords = CollectiveBestRecords;
-
 export type CollectiveCompareOption = {
   ref: CollectiveRef;
   name: string;
