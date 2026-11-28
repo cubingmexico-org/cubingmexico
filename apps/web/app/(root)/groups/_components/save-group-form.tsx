@@ -120,17 +120,29 @@ export function SaveGroupForm({ group }: { group: GroupData }) {
                 defaultValue={state.defaultValues.name}
               />
             </div>
-            {group.kind === "community" ? (
-              <div className="space-y-2">
-                <Label htmlFor="regionLabel">Región</Label>
-                <Input
-                  id="regionLabel"
-                  name="regionLabel"
-                  disabled={pending}
-                  defaultValue={state.defaultValues.regionLabel}
-                />
-              </div>
-            ) : (
+            <div className="space-y-2">
+              <Label htmlFor="regionLabel">
+                {group.kind === "community" ? "Región" : "Ubicación"}
+              </Label>
+              <Input
+                id="regionLabel"
+                name="regionLabel"
+                disabled={pending}
+                placeholder={
+                  group.kind === "community"
+                    ? "Zona metropolitana de…"
+                    : "Ciudad, Estado"
+                }
+                defaultValue={state.defaultValues.regionLabel}
+              />
+              {group.kind === "sponsor" ? (
+                <p className="text-xs text-muted-foreground">
+                  Ciudad y estado de la tienda, por ejemplo “Guadalajara,
+                  Jalisco”.
+                </p>
+              ) : null}
+            </div>
+            {group.kind === "sponsor" ? (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="websiteUrl">Sitio web</Label>
@@ -151,7 +163,7 @@ export function SaveGroupForm({ group }: { group: GroupData }) {
                   />
                 </div>
               </>
-            )}
+            ) : null}
             <div className="space-y-2">
               <Label htmlFor="founded">Fecha de fundación</Label>
               <Input

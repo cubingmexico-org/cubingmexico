@@ -10,6 +10,7 @@ import {
   getGroupSOR,
   getGroupSORGenderCounts,
 } from "../_lib/queries";
+import { redirectIfSponsorHasNoRoster } from "../_lib/roster";
 import { groupSorSearchParamsCache } from "../_lib/sor-validations";
 import { GroupSORRankTypeSelector } from "./group-sor-rank-type-selector";
 import { GroupSORTable } from "./group-sor-table";
@@ -25,6 +26,8 @@ export async function GroupSOR({
   rankType: "single" | "average";
   searchParams: SearchParams;
 }) {
+  await redirectIfSponsorHasNoRoster(groupId, kind);
+
   const info = await getGroupInfo(groupId);
   if (!info || info.kind !== kind) {
     return null;

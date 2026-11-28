@@ -41,6 +41,8 @@ export async function GroupFrame({
   const userId = await getSessionUserId();
   const role = userId ? await getGroupRole(groupId, userId) : null;
 
+  const hasRoster = data.group.kind !== "sponsor" || data.totalMembers > 0;
+
   return (
     <GroupShell
       groupId={groupId}
@@ -52,6 +54,7 @@ export async function GroupFrame({
       regionLabel={data.group.regionLabel}
       websiteUrl={data.group.websiteUrl}
       totalMembers={data.totalMembers}
+      hasRoster={hasRoster}
       founded={data.group.founded}
       canManage={canManageGroup(role)}
     >

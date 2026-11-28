@@ -16,7 +16,9 @@ import {
   getGroupInfo,
   getGroupMedals,
   getGroupTopMembersByPodiums,
+  getGroupTotalMembers,
 } from "../_lib/queries";
+import { groupHasRoster } from "../_lib/roster";
 
 const EXPLORE_LINKS = [
   { suffix: "/rankings/333/single", label: "Rankings" },
@@ -32,22 +34,37 @@ export async function GroupOverview({
   groupId: string;
   kind: GroupKind;
 }) {
-  const [info, medals, topMembers] = await Promise.all([
+  const [info, totalMembers] = await Promise.all([
     getGroupInfo(groupId),
-    getGroupMedals(groupId),
-    getGroupTopMembersByPodiums(groupId),
+    getGroupTotalMembers(groupId),
   ]);
 
   if (!info || info.kind !== kind) {
     return null;
   }
 
+  const hasRoster = groupHasRoster(kind, totalMembers);
   const socialLinks = getTeamSocialLinks(info.socialLinks);
   const base = groupHref(kind, groupId);
 
+  const [medals, topMembers] = hasRoster
+    ? await Promise.all([
+        getGroupMedals(groupId),
+        getGroupTopMembersByPodiums(groupId),
+      ])
+    : [null, [] as Awaited<ReturnType<typeof getGroupTopMembersByPodiums>>];
+
   return (
-    <div className="grid min-w-0 gap-6 lg:grid-cols-3">
-      <div className="min-w-0 space-y-6 lg:col-span-2">
+    <div
+      className={
+        hasRoster ? "grid min-w-0 gap-6 lg:grid-cols-3" : "grid min-w-0 gap-6"
+      }
+    >
+      <div
+        className={
+          hasRoster ? "min-w-0 space-y-6 lg:col-span-2" : "min-w-0 space-y-6"
+        }
+      >
         <Card>
           <CardHeader>
             <CardTitle>Acerca de</CardTitle>
@@ -61,7 +78,7 @@ export async function GroupOverview({
               <p className="text-sm text-muted-foreground">
                 {kind === "community"
                   ? "Esta comunidad aún no tiene descripción."
-                  : "Este equipo aún no tiene descripción."}
+                  : "Este patrocinador aún no tiene descripción."}
               </p>
             )}
             {socialLinks.length > 0 ? (
@@ -87,81 +104,88 @@ export async function GroupOverview({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Podios</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Medallas oficiales de los miembros del grupo en finales WCA.
-            </p>
-            <MedalStrip medals={medals} />
-            <KeyStat label="Podios totales" value={medals.total} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Estadísticas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Rankings, récords, SOR y Kinch se calculan con los resultados del
-              grupo.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {EXPLORE_LINKS.map((link) => (
-                <Link
-                  key={link.suffix}
-                  href={`${base}${link.suffix}`}
-                  className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="min-w-0 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Top miembros</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {topMembers.length === 0 ? (
+        {hasRoster && medals ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Podios</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <p className="text-sm text-muted-foreground">
-                Aún no hay podios registrados.
+                Medallas oficiales de los miembros del grupo en finales WCA.
               </p>
-            ) : (
-              topMembers.map((member) => (
-                <div
-                  key={member.wcaId}
-                  className="flex items-center justify-between gap-3 text-sm"
-                >
+              <MedalStrip medals={medals} />
+              <KeyStat label="Podios totales" value={medals.total} />
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {hasRoster ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Estadísticas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Rankings, récords, SOR y Kinch se calculan con los resultados
+                del grupo.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {EXPLORE_LINKS.map((link) => (
                   <Link
-                    href={`/persons/${member.wcaId}`}
-                    prefetch={false}
-                    className="truncate font-medium hover:underline"
+                    key={link.suffix}
+                    href={`${base}${link.suffix}`}
+                    className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-muted"
                   >
-                    {member.name}
+                    {link.label}
                   </Link>
-                  <span className="shrink-0 text-muted-foreground">
-                    {member.podiums} {member.podiums === 1 ? "podio" : "podios"}
-                  </span>
-                </div>
-              ))
-            )}
-            <Link
-              href={`${base}/members`}
-              className="inline-block text-sm text-brand hover:underline"
-            >
-              Ver roster completo
-            </Link>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : null}
       </div>
+
+      {hasRoster ? (
+        <div className="min-w-0 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Top miembros</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {topMembers.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aún no hay podios registrados.
+                </p>
+              ) : (
+                topMembers.map((member) => (
+                  <div
+                    key={member.wcaId}
+                    className="flex items-center justify-between gap-3 text-sm"
+                  >
+                    <Link
+                      href={`/persons/${member.wcaId}`}
+                      prefetch={false}
+                      className="truncate font-medium hover:underline"
+                    >
+                      {member.name}
+                    </Link>
+                    <span className="shrink-0 text-muted-foreground">
+                      {member.podiums}{" "}
+                      {member.podiums === 1 ? "podio" : "podios"}
+                    </span>
+                  </div>
+                ))
+              )}
+              <Link
+                href={`${base}/members`}
+                className="inline-block text-sm text-brand hover:underline"
+              >
+                Ver roster completo
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
     </div>
   );
 }

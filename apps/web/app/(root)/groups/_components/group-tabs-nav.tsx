@@ -6,7 +6,7 @@ import { cn } from "@workspace/ui/lib/utils";
 import type { GroupKind } from "@workspace/db/schema";
 import { groupBasePath } from "@/lib/groups";
 
-const TABS = [
+const ALL_TABS = [
   { key: "overview", suffix: "", label: "Resumen" },
   { key: "members", suffix: "/members", label: "Miembros" },
   { key: "rankings", suffix: "/rankings/333/single", label: "Rankings" },
@@ -27,14 +27,21 @@ function tabClass(isActive: boolean) {
 export function GroupTabsNav({
   groupId,
   kind,
+  hasRoster,
 }: {
   groupId: string;
   kind: GroupKind;
+  hasRoster: boolean;
 }) {
   const pathname = usePathname();
   const basePath = `${groupBasePath(kind)}/${groupId}`;
 
   if (pathname.startsWith(`${basePath}/manage`)) return null;
+
+  const tabs =
+    kind === "sponsor" && !hasRoster
+      ? ALL_TABS.filter((tab) => tab.key === "overview")
+      : ALL_TABS;
 
   const activeTab = pathname.includes(`${basePath}/members`)
     ? "members"
@@ -53,7 +60,7 @@ export function GroupTabsNav({
   return (
     <div className="mb-8 w-full min-w-0 overflow-x-auto">
       <div className="inline-flex min-w-full items-center justify-start gap-2 rounded-lg bg-muted p-1">
-        {TABS.map((tab) => (
+        {tabs.map((tab) => (
           <Link
             key={tab.key}
             className={tabClass(activeTab === tab.key)}

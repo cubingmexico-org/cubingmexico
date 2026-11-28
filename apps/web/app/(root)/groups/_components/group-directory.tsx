@@ -15,7 +15,7 @@ export async function GroupDirectory({ kind }: { kind: GroupKind }) {
         description: item.description,
         image: item.image,
         coverImage: item.coverImage,
-        subtitle: kind === "community" ? item.regionLabel : item.websiteUrl,
+        subtitle: item.regionLabel,
         founded: item.founded,
         isActive: item.isActive,
         members: Number(item.members),

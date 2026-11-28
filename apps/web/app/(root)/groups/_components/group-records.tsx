@@ -15,6 +15,7 @@ import {
   getGroupHistoricalRecordCount,
   getGroupInfo,
 } from "../_lib/queries";
+import { redirectIfSponsorHasNoRoster } from "../_lib/roster";
 
 export async function GroupRecords({
   groupId,
@@ -23,6 +24,8 @@ export async function GroupRecords({
   groupId: string;
   kind: GroupKind;
 }) {
+  await redirectIfSponsorHasNoRoster(groupId, kind);
+
   const [info, records, historicalCount] = await Promise.all([
     getGroupInfo(groupId),
     getGroupCurrentRecords(groupId),

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Users } from "lucide-react";
+import { MapPin, Users } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -68,8 +68,9 @@ export function GroupCard({
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
           {subtitle ? (
-            <div className="text-sm font-medium text-muted-foreground">
-              {subtitle}
+            <div className="flex items-center text-sm font-medium text-muted-foreground">
+              <MapPin className="mr-1 h-4 w-4 shrink-0" />
+              <span className="truncate">{subtitle}</span>
             </div>
           ) : null}
           {founded ? (
@@ -77,12 +78,14 @@ export function GroupCard({
               Fundado en {new Date(founded).getFullYear()}
             </div>
           ) : null}
-          <div className="flex items-center text-sm text-muted-foreground">
-            <Users className="mr-1 h-4 w-4" />
-            <span>
-              {members} miembro{members === 1 ? "" : "s"}
-            </span>
-          </div>
+          {kind === "sponsor" && members === 0 ? null : (
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Users className="mr-1 h-4 w-4" />
+              <span>
+                {members} miembro{members === 1 ? "" : "s"}
+              </span>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="bg-muted/50 p-2">
           <div className="flex w-full items-center justify-end text-xs text-muted-foreground">

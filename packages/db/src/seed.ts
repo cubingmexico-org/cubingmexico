@@ -40,6 +40,7 @@ async function seed() {
         kind: "sponsor",
         name: "Cubos Dany",
         description: "Equipo patrocinado por Cubos Dany.",
+        regionLabel: "Ciudad de México, CDMX",
         isActive: true,
         sponsorshipStatus: "active",
         publicityEnabled: true,

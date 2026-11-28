@@ -25,6 +25,7 @@ type GroupShellProps = {
   regionLabel: string | null;
   websiteUrl: string | null;
   totalMembers: number;
+  hasRoster: boolean;
   founded: Date | null;
   canManage: boolean;
   children: ReactNode;
@@ -40,6 +41,7 @@ export function GroupShell({
   regionLabel,
   websiteUrl,
   totalMembers,
+  hasRoster,
   founded,
   canManage,
   children,
@@ -96,10 +98,12 @@ export function GroupShell({
                       <span className="truncate">{regionLabel}</span>
                     </div>
                   ) : null}
-                  <div className="flex items-center">
-                    <Users className="mr-1 h-4 w-4 shrink-0" />
-                    {totalMembers} miembros
-                  </div>
+                  {hasRoster ? (
+                    <div className="flex items-center">
+                      <Users className="mr-1 h-4 w-4 shrink-0" />
+                      {totalMembers} miembros
+                    </div>
+                  ) : null}
                   {founded ? (
                     <div className="flex items-center">
                       Desde{" "}
@@ -153,7 +157,7 @@ export function GroupShell({
         </div>
       </div>
       <div className="container mx-auto min-w-0 px-4 py-8">
-        <GroupTabsNav groupId={groupId} kind={kind} />
+        <GroupTabsNav groupId={groupId} kind={kind} hasRoster={hasRoster} />
         {children}
       </div>
     </>

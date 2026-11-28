@@ -12,6 +12,8 @@ import {
   groupRankSingle,
   groupRecordMarker,
   person,
+  rankAverage,
+  rankSingle,
   result,
   state,
   type GroupKind,
@@ -454,6 +456,7 @@ export async function getGroupRanks(
   cacheTag(`group-ranks-${groupId}`);
 
   const table = rankType === "single" ? groupRankSingle : groupRankAverage;
+  const national = rankType === "single" ? rankSingle : rankAverage;
 
   return db
     .select({
@@ -461,6 +464,7 @@ export async function getGroupRanks(
       name: person.name,
       best: table.best,
       groupRank: table.groupRank,
+      countryRank: national.countryRank,
       state: state.name,
       stateId: person.stateId,
       gender: person.gender,
@@ -473,6 +477,13 @@ export async function getGroupRanks(
     })
     .from(table)
     .innerJoin(person, eq(table.personId, person.wcaId))
+    .innerJoin(
+      national,
+      and(
+        eq(national.personId, table.personId),
+        eq(national.eventId, table.eventId),
+      ),
+    )
     .leftJoin(state, eq(person.stateId, state.id))
     .where(and(eq(table.groupId, groupId), eq(table.eventId, eventId)))
     .orderBy(asc(table.groupRank));
