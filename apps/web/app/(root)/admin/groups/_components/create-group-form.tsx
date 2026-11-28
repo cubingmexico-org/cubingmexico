@@ -111,15 +111,15 @@ export function CreateGroupForm() {
         <Input id="description" name="description" />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="regionLabel">Ubicación / Región</Label>
+        <Label htmlFor="regionLabel">Región (comunidades)</Label>
         <Input
           id="regionLabel"
           name="regionLabel"
-          placeholder="Ciudad, Estado"
+          placeholder="Zona metropolitana de…"
         />
         <p className="text-xs text-muted-foreground">
-          Comunidades: zona o región. Patrocinadores: ciudad y estado de la
-          tienda.
+          La dirección de tiendas de patrocinadores se captura después en
+          Administrar.
         </p>
       </div>
       <div className="space-y-2">

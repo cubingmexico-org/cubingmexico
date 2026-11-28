@@ -86,6 +86,10 @@ export async function getGroupsByKind(
       image: group.image,
       coverImage: group.coverImage,
       regionLabel: group.regionLabel,
+      address: group.address,
+      city: group.city,
+      stateId: group.stateId,
+      stateName: state.name,
       websiteUrl: group.websiteUrl,
       founded: group.founded,
       isActive: group.isActive,
@@ -93,6 +97,7 @@ export async function getGroupsByKind(
       members: count(groupMembership.personId),
     })
     .from(group)
+    .leftJoin(state, eq(group.stateId, state.id))
     .leftJoin(
       groupMembership,
       and(
@@ -109,6 +114,10 @@ export async function getGroupsByKind(
       group.image,
       group.coverImage,
       group.regionLabel,
+      group.address,
+      group.city,
+      group.stateId,
+      state.name,
       group.websiteUrl,
       group.founded,
       group.isActive,
@@ -161,6 +170,12 @@ export async function getGroupInfo(groupId: string) {
       socialLinks: group.socialLinks,
       isActive: group.isActive,
       regionLabel: group.regionLabel,
+      address: group.address,
+      city: group.city,
+      stateId: group.stateId,
+      stateName: state.name,
+      latitude: group.latitude,
+      longitude: group.longitude,
       websiteUrl: group.websiteUrl,
       sponsorshipStatus: group.sponsorshipStatus,
       sponsorshipExpiresAt: group.sponsorshipExpiresAt,
@@ -168,6 +183,7 @@ export async function getGroupInfo(groupId: string) {
       publicityBlurb: group.publicityBlurb,
     })
     .from(group)
+    .leftJoin(state, eq(group.stateId, state.id))
     .where(eq(group.id, groupId))
     .limit(1);
 

@@ -18,6 +18,11 @@ export async function saveGroup({
   founded,
   isActive,
   regionLabel,
+  address,
+  city,
+  stateId,
+  latitude,
+  longitude,
   websiteUrl,
   publicityBlurb,
 }: {
@@ -28,6 +33,11 @@ export async function saveGroup({
   founded: Group["founded"];
   isActive: Group["isActive"];
   regionLabel?: Group["regionLabel"];
+  address?: Group["address"];
+  city?: Group["city"];
+  stateId?: Group["stateId"];
+  latitude?: Group["latitude"];
+  longitude?: Group["longitude"];
   websiteUrl?: Group["websiteUrl"];
   publicityBlurb?: Group["publicityBlurb"];
 }) {
@@ -40,6 +50,11 @@ export async function saveGroup({
       founded,
       isActive,
       ...(regionLabel !== undefined ? { regionLabel } : {}),
+      ...(address !== undefined ? { address } : {}),
+      ...(city !== undefined ? { city } : {}),
+      ...(stateId !== undefined ? { stateId } : {}),
+      ...(latitude !== undefined ? { latitude } : {}),
+      ...(longitude !== undefined ? { longitude } : {}),
       ...(websiteUrl !== undefined ? { websiteUrl } : {}),
       ...(publicityBlurb !== undefined ? { publicityBlurb } : {}),
     })

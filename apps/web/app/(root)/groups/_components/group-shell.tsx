@@ -22,7 +22,7 @@ type GroupShellProps = {
   image: string | null;
   coverImage: string | null;
   isActive: boolean;
-  regionLabel: string | null;
+  locationLabel: string | null;
   websiteUrl: string | null;
   totalMembers: number;
   hasRoster: boolean;
@@ -38,7 +38,7 @@ export function GroupShell({
   image,
   coverImage,
   isActive,
-  regionLabel,
+  locationLabel,
   websiteUrl,
   totalMembers,
   hasRoster,
@@ -92,10 +92,10 @@ export function GroupShell({
                   ) : null}
                 </div>
                 <div className="mt-2 flex flex-col items-start gap-2 text-sm text-white/90 sm:flex-row sm:items-center sm:gap-4">
-                  {regionLabel ? (
+                  {locationLabel ? (
                     <div className="flex min-w-0 items-center">
                       <MapPin className="mr-1 h-4 w-4 shrink-0" />
-                      <span className="truncate">{regionLabel}</span>
+                      <span className="truncate">{locationLabel}</span>
                     </div>
                   ) : null}
                   {hasRoster ? (

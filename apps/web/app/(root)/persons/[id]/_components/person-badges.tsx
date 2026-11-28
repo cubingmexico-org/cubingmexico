@@ -46,15 +46,26 @@ export function PersonBadges({
 
   return (
     <div className="w-full flex flex-wrap justify-center gap-2 mb-2">
-      {tier && <Badge className={getTierClass(tier)}>Miembro {tier}</Badge>}
+      {tier && (
+        <Badge className={getTierClass(tier)} asChild>
+          <Link href="/members" prefetch={false}>
+            Miembro {tier}
+          </Link>
+        </Badge>
+      )}
       {person.delegateStatus !== null && (
-        <Badge>
-          {formatDelegateLevel(person.delegateStatus, person.gender)}
+        <Badge asChild>
+          <Link href="/delegates" prefetch={false}>
+            {formatDelegateLevel(person.delegateStatus, person.gender)}
+          </Link>
         </Badge>
       )}
       {organizerStatus && (
-        <Badge variant="outline">
-          Organizador{person.gender === "f" ? "a" : ""} {organizerStatus.level}
+        <Badge variant="outline" asChild>
+          <Link href="/organizers" prefetch={false}>
+            Organizador{person.gender === "f" ? "a" : ""}{" "}
+            {organizerStatus.level}
+          </Link>
         </Badge>
       )}
       {team && (

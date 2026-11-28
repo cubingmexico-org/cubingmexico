@@ -25,6 +25,7 @@ import { Input } from "@workspace/ui/components/input";
 import { Label } from "@workspace/ui/components/label";
 import { Switch } from "@workspace/ui/components/switch";
 import { Textarea } from "@workspace/ui/components/textarea";
+import { MEXICAN_STATES } from "@workspace/db/states";
 import type { GroupKind } from "@workspace/db/schema";
 import { groupFormAction } from "../_lib/actions";
 
@@ -34,6 +35,11 @@ type GroupData = {
   name: string;
   description: string | null;
   regionLabel: string | null;
+  address: string | null;
+  city: string | null;
+  stateId: string | null;
+  latitude: number | null;
+  longitude: number | null;
   websiteUrl: string | null;
   publicityBlurb: string | null;
   socialLinks: {
@@ -62,6 +68,11 @@ export function SaveGroupForm({ group }: { group: GroupData }) {
       founded: group.founded ? group.founded.toISOString().slice(0, 10) : "",
       isActive: group.isActive ? "on" : "",
       regionLabel: group.regionLabel ?? "",
+      address: group.address ?? "",
+      city: group.city ?? "",
+      stateId: group.stateId ?? "",
+      latitude: group.latitude == null ? "" : String(group.latitude),
+      longitude: group.longitude == null ? "" : String(group.longitude),
       websiteUrl: group.websiteUrl ?? "",
       publicityBlurb: group.publicityBlurb ?? "",
     },
@@ -120,30 +131,83 @@ export function SaveGroupForm({ group }: { group: GroupData }) {
                 defaultValue={state.defaultValues.name}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="regionLabel">
-                {group.kind === "community" ? "Región" : "Ubicación"}
-              </Label>
-              <Input
-                id="regionLabel"
-                name="regionLabel"
-                disabled={pending}
-                placeholder={
-                  group.kind === "community"
-                    ? "Zona metropolitana de…"
-                    : "Ciudad, Estado"
-                }
-                defaultValue={state.defaultValues.regionLabel}
-              />
-              {group.kind === "sponsor" ? (
-                <p className="text-xs text-muted-foreground">
-                  Ciudad y estado de la tienda, por ejemplo “Guadalajara,
-                  Jalisco”.
-                </p>
-              ) : null}
-            </div>
-            {group.kind === "sponsor" ? (
+            {group.kind === "community" ? (
+              <div className="space-y-2">
+                <Label htmlFor="regionLabel">Región</Label>
+                <Input
+                  id="regionLabel"
+                  name="regionLabel"
+                  disabled={pending}
+                  placeholder="Zona metropolitana de…"
+                  defaultValue={state.defaultValues.regionLabel}
+                />
+              </div>
+            ) : (
               <>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Dirección</Label>
+                  <Input
+                    id="address"
+                    name="address"
+                    disabled={pending}
+                    placeholder="Calle y número"
+                    defaultValue={state.defaultValues.address}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Ciudad</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    disabled={pending}
+                    placeholder="Ciudad"
+                    defaultValue={state.defaultValues.city}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stateId">Estado</Label>
+                  <select
+                    id="stateId"
+                    name="stateId"
+                    disabled={pending}
+                    defaultValue={state.defaultValues.stateId}
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-xs"
+                  >
+                    <option value="">Sin estado</option>
+                    {MEXICAN_STATES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="latitude">Latitud</Label>
+                    <Input
+                      id="latitude"
+                      name="latitude"
+                      disabled={pending}
+                      inputMode="decimal"
+                      placeholder="19.433971"
+                      defaultValue={state.defaultValues.latitude}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="longitude">Longitud</Label>
+                    <Input
+                      id="longitude"
+                      name="longitude"
+                      disabled={pending}
+                      inputMode="decimal"
+                      placeholder="-99.1297615"
+                      defaultValue={state.defaultValues.longitude}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Latitud y longitud colocan el pin en el mapa del perfil.
+                </p>
                 <div className="space-y-2">
                   <Label htmlFor="websiteUrl">Sitio web</Label>
                   <Input
@@ -163,7 +227,7 @@ export function SaveGroupForm({ group }: { group: GroupData }) {
                   />
                 </div>
               </>
-            ) : null}
+            )}
             <div className="space-y-2">
               <Label htmlFor="founded">Fecha de fundación</Label>
               <Input

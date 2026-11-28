@@ -1,5 +1,6 @@
 import { Skeleton } from "@workspace/ui/components/skeleton";
 
+/** Full group shell skeleton — used while GroupFrame loads the first time. */
 export function GroupPageSkeleton() {
   return (
     <>
@@ -27,16 +28,22 @@ export function GroupPageSkeleton() {
 
       <div className="container mx-auto min-w-0 space-y-8 px-4 py-8">
         <Skeleton className="h-11 w-full max-w-2xl rounded-lg" />
-
-        <div className="grid min-w-0 gap-6 lg:grid-cols-3">
-          <div className="min-w-0 space-y-6 lg:col-span-2">
-            <Skeleton className="h-40 w-full rounded-lg" />
-            <Skeleton className="h-48 w-full rounded-lg" />
-            <Skeleton className="h-48 w-full rounded-lg" />
-          </div>
-          <Skeleton className="h-56 w-full min-w-0 rounded-lg" />
-        </div>
+        <GroupContentSkeleton />
       </div>
     </>
+  );
+}
+
+/** Tab body only — used by [groupId]/loading while the shell/tabs stay mounted. */
+export function GroupContentSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Skeleton className="h-6 w-36" />
+        <Skeleton className="h-4 w-64 max-w-full" />
+      </div>
+      <Skeleton className="h-10 w-full max-w-md rounded-lg" />
+      <Skeleton className="h-64 w-full rounded-lg" />
+    </div>
   );
 }

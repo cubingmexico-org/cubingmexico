@@ -8,9 +8,20 @@ export function groupHref(kind: GroupKind, groupId: string): string {
   return `${groupBasePath(kind)}/${groupId}`;
 }
 
-/** Record code shown in UI; communities omit a code (avoid clashing with WCA CR). */
-export function groupRecordLabel(kind: GroupKind): "SpR" | null {
-  return kind === "community" ? null : "SpR";
+/** Short location line for cards/shell: "Ciudad, Estado" or community region. */
+export function formatGroupLocationLine(input: {
+  kind: GroupKind;
+  regionLabel?: string | null;
+  city?: string | null;
+  stateName?: string | null;
+}): string | null {
+  if (input.kind === "community") {
+    return input.regionLabel?.trim() || null;
+  }
+  const city = input.city?.trim() || null;
+  const stateName = input.stateName?.trim() || null;
+  if (city && stateName) return `${city}, ${stateName}`;
+  return city || stateName || input.regionLabel?.trim() || null;
 }
 
 export function groupKindLabel(kind: GroupKind): string {

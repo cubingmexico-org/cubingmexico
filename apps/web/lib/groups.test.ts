@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   GROUP_ID_REGEX,
+  formatGroupLocationLine,
   groupBasePath,
   groupHref,
   groupIdFromName,
   groupKindLabel,
-  groupRecordLabel,
 } from "./groups";
 
 describe("groups helpers", () => {
@@ -16,8 +16,22 @@ describe("groups helpers", () => {
     expect(groupHref("sponsor", "cubos-dany")).toBe("/sponsors/cubos-dany");
     expect(groupKindLabel("community")).toBe("Comunidad");
     expect(groupKindLabel("sponsor")).toBe("Patrocinador");
-    expect(groupRecordLabel("community")).toBeNull();
-    expect(groupRecordLabel("sponsor")).toBe("SpR");
+  });
+
+  it("formats location lines", () => {
+    expect(
+      formatGroupLocationLine({
+        kind: "community",
+        regionLabel: "Zona metropolitana de Puerto Vallarta",
+      }),
+    ).toBe("Zona metropolitana de Puerto Vallarta");
+    expect(
+      formatGroupLocationLine({
+        kind: "sponsor",
+        city: "Ciudad de México",
+        stateName: "Ciudad de México",
+      }),
+    ).toBe("Ciudad de México, Ciudad de México");
   });
 
   it("validates slug ids", () => {

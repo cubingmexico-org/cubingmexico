@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MapPin } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -6,7 +7,7 @@ import {
   CardTitle,
 } from "@workspace/ui/components/card";
 import type { GroupKind } from "@workspace/db/schema";
-import { groupHref } from "@/lib/groups";
+import { formatGroupLocationLine, groupHref } from "@/lib/groups";
 import { getTeamSocialLinks } from "@/app/(root)/teams/[stateId]/_lib/social-links";
 import {
   KeyStat,
@@ -19,6 +20,7 @@ import {
   getGroupTotalMembers,
 } from "../_lib/queries";
 import { groupHasRoster } from "../_lib/roster";
+import { GroupLocationMap } from "./group-location-map";
 
 const EXPLORE_LINKS = [
   { suffix: "/rankings/333/single", label: "Rankings" },
@@ -46,6 +48,19 @@ export async function GroupOverview({
   const hasRoster = groupHasRoster(kind, totalMembers);
   const socialLinks = getTeamSocialLinks(info.socialLinks);
   const base = groupHref(kind, groupId);
+  const locationLine = formatGroupLocationLine({
+    kind,
+    regionLabel: info.regionLabel,
+    city: info.city,
+    stateName: info.stateName,
+  });
+  const hasMap =
+    info.latitude != null &&
+    info.longitude != null &&
+    Number.isFinite(info.latitude) &&
+    Number.isFinite(info.longitude);
+  const showLocationCard =
+    kind === "sponsor" && Boolean(info.address || locationLine || hasMap);
 
   const [medals, topMembers] = hasRoster
     ? await Promise.all([
@@ -54,15 +69,17 @@ export async function GroupOverview({
       ])
     : [null, [] as Awaited<ReturnType<typeof getGroupTopMembersByPodiums>>];
 
+  const showSidebar = hasRoster || showLocationCard;
+
   return (
     <div
       className={
-        hasRoster ? "grid min-w-0 gap-6 lg:grid-cols-3" : "grid min-w-0 gap-6"
+        showSidebar ? "grid min-w-0 gap-6 lg:grid-cols-3" : "grid min-w-0 gap-6"
       }
     >
       <div
         className={
-          hasRoster ? "min-w-0 space-y-6 lg:col-span-2" : "min-w-0 space-y-6"
+          showSidebar ? "min-w-0 space-y-6 lg:col-span-2" : "min-w-0 space-y-6"
         }
       >
         <Card>
@@ -145,45 +162,73 @@ export async function GroupOverview({
         ) : null}
       </div>
 
-      {hasRoster ? (
+      {showSidebar ? (
         <div className="min-w-0 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Top miembros</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {topMembers.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Aún no hay podios registrados.
-                </p>
-              ) : (
-                topMembers.map((member) => (
-                  <div
-                    key={member.wcaId}
-                    className="flex items-center justify-between gap-3 text-sm"
-                  >
-                    <Link
-                      href={`/persons/${member.wcaId}`}
-                      prefetch={false}
-                      className="truncate font-medium hover:underline"
+          {showLocationCard ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Ubicación</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {info.address ? (
+                  <p className="text-sm leading-relaxed">{info.address}</p>
+                ) : null}
+                {locationLine ? (
+                  <p className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>{locationLine}</span>
+                  </p>
+                ) : null}
+                {hasMap ? (
+                  <GroupLocationMap
+                    latitude={info.latitude}
+                    longitude={info.longitude}
+                    label={info.name}
+                  />
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {hasRoster ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Top miembros</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {topMembers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Aún no hay podios registrados.
+                  </p>
+                ) : (
+                  topMembers.map((member) => (
+                    <div
+                      key={member.wcaId}
+                      className="flex items-center justify-between gap-3 text-sm"
                     >
-                      {member.name}
-                    </Link>
-                    <span className="shrink-0 text-muted-foreground">
-                      {member.podiums}{" "}
-                      {member.podiums === 1 ? "podio" : "podios"}
-                    </span>
-                  </div>
-                ))
-              )}
-              <Link
-                href={`${base}/members`}
-                className="inline-block text-sm text-brand hover:underline"
-              >
-                Ver roster completo
-              </Link>
-            </CardContent>
-          </Card>
+                      <Link
+                        href={`/persons/${member.wcaId}`}
+                        prefetch={false}
+                        className="truncate font-medium hover:underline"
+                      >
+                        {member.name}
+                      </Link>
+                      <span className="shrink-0 text-muted-foreground">
+                        {member.podiums}{" "}
+                        {member.podiums === 1 ? "podio" : "podios"}
+                      </span>
+                    </div>
+                  ))
+                )}
+                <Link
+                  href={`${base}/members`}
+                  className="inline-block text-sm text-brand hover:underline"
+                >
+                  Ver roster completo
+                </Link>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       ) : null}
     </div>

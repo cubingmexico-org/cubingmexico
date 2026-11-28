@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { buttonVariants } from "@workspace/ui/components/button";
 import { cn } from "@workspace/ui/lib/utils";
-import { groupHref, groupKindLabel } from "@/lib/groups";
+import {
+  formatGroupLocationLine,
+  groupHref,
+  groupKindLabel,
+} from "@/lib/groups";
 import { getAdminGroups } from "../_lib/queries/groups";
 import { CreateGroupForm } from "./_components/create-group-form";
 
@@ -17,7 +21,13 @@ function groupStatusLabel(
     else parts.push("patrocinio inactivo");
     if (item.publicityEnabled) parts.push("publicidad");
   }
-  if (item.regionLabel) parts.push(item.regionLabel);
+  const location = formatGroupLocationLine({
+    kind: item.kind,
+    regionLabel: item.regionLabel,
+    city: item.city,
+    stateName: item.stateName,
+  });
+  if (location) parts.push(location);
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
