@@ -15,6 +15,32 @@ export const groupFormSchema = z.object({
     })
     .nullable(),
   regionLabel: z.string().max(120).optional().nullable(),
+  address: z.string().max(200).optional().nullable(),
+  city: z.string().max(80).optional().nullable(),
+  stateId: z
+    .string()
+    .max(3)
+    .optional()
+    .nullable()
+    .transform((value) => (value ? value : null)),
+  latitude: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((value) => {
+      if (value == null || value === "") return null;
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    }),
+  longitude: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((value) => {
+      if (value == null || value === "") return null;
+      const n = Number(value);
+      return Number.isFinite(n) ? n : null;
+    }),
   websiteUrl: z
     .string()
     .refine(

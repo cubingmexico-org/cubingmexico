@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@workspace/ui/components/table";
+import { cn } from "@workspace/ui/lib/utils";
 import type { GroupKind } from "@workspace/db/schema";
 import { StateLabel } from "@/components/state-flag";
 import { getEvents } from "@/db/queries";
@@ -15,6 +16,7 @@ import { formatAttemptValue } from "@/lib/utils";
 import { groupBasePath } from "@/lib/groups";
 import { rankTypeForEvent } from "@/lib/selectors";
 import { getGroupInfo, getGroupRanks } from "../_lib/queries";
+import { redirectIfSponsorHasNoRoster } from "../_lib/roster";
 import { GroupRankingsEventSelector } from "./group-rankings-event-selector";
 
 export async function GroupRankings({
@@ -28,6 +30,8 @@ export async function GroupRankings({
   eventId: string;
   rankType: "single" | "average";
 }) {
+  await redirectIfSponsorHasNoRoster(groupId, kind);
+
   const [info, events, ranks] = await Promise.all([
     getGroupInfo(groupId),
     getEvents(),
@@ -69,6 +73,7 @@ export async function GroupRankings({
             <TableHeader>
               <TableRow>
                 <TableHead>#</TableHead>
+                <TableHead>NR</TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Estado</TableHead>
                 <TableHead className="text-right">Resultado</TableHead>
@@ -79,6 +84,16 @@ export async function GroupRankings({
               {ranks.map((row) => (
                 <TableRow key={row.personId}>
                   <TableCell>{row.groupRank}</TableCell>
+                  <TableCell>
+                    <div
+                      className={cn(
+                        "font-display text-lg font-bold tabular-nums tracking-wide",
+                        row.countryRank <= 3 ? "text-brand" : "text-foreground",
+                      )}
+                    >
+                      {row.countryRank}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Link
                       href={`/persons/${row.personId}`}

@@ -2,6 +2,7 @@ import "server-only";
 
 export type {
   SharedCuber,
+  CommunityCompanions,
   StateVisits,
   RecordByEvent,
   YearRecords,
@@ -27,6 +28,7 @@ export {
   computeTravelKm,
   enhanceStatesWithFirstTime,
   computeTeammates,
+  computeCommunityCompanions,
 } from "./summary-extra/travel";
 export {
   computeRankProgress,

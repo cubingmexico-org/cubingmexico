@@ -17,7 +17,7 @@ import {
   getLastCompetitionWithResults,
 } from "@/db/queries";
 import { getPublicitySponsors } from "@/app/(root)/groups/_lib/queries";
-import { SPONSORS_PUBLICLY_RELEASED, groupHref } from "@/lib/groups";
+import { groupHref } from "@/lib/groups";
 import { DataSourcesNotice } from "./data-sources-notice";
 import { SponsorsSupportNotice } from "./sponsors-support-notice";
 import { cacheLife, cacheTag } from "next/cache";
@@ -32,7 +32,7 @@ async function FooterContent() {
   const [competitions, dataSourceDates, sponsors] = await Promise.all([
     getLastCompetitionWithResults(),
     getDataSourceDates(),
-    SPONSORS_PUBLICLY_RELEASED ? getPublicitySponsors() : Promise.resolve([]),
+    getPublicitySponsors(),
   ]);
 
   return (
@@ -104,32 +104,28 @@ async function FooterContent() {
           ) : null}
         </div>
 
-        {SPONSORS_PUBLICLY_RELEASED ? (
-          <div className="mt-6 border-t border-white/10 pt-4">
-            <p className="mb-2 text-center text-xs uppercase tracking-wide text-white/50 sm:text-left">
-              Patrocinadores
-            </p>
-            {sponsors.length > 0 ? (
-              <div className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm sm:justify-start">
-                {sponsors.map((sponsor) => (
-                  <Link
-                    key={sponsor.id}
-                    href={
-                      sponsor.websiteUrl || groupHref("sponsor", sponsor.id)
-                    }
-                    className="text-white/70 underline-offset-2 hover:text-white hover:underline"
-                    {...(sponsor.websiteUrl
-                      ? { target: "_blank", rel: "noopener noreferrer" }
-                      : {})}
-                  >
-                    {sponsor.name}
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-            <SponsorsSupportNotice className="text-center text-xs text-white/70 sm:text-left [&_a]:text-white [&_a:hover]:text-white/90" />
-          </div>
-        ) : null}
+        <div className="mt-6 border-t border-white/10 pt-4">
+          <p className="mb-2 text-center text-xs uppercase tracking-wide text-white/50 sm:text-left">
+            Patrocinadores
+          </p>
+          {sponsors.length > 0 ? (
+            <div className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-sm sm:justify-start">
+              {sponsors.map((sponsor) => (
+                <Link
+                  key={sponsor.id}
+                  href={sponsor.websiteUrl || groupHref("sponsor", sponsor.id)}
+                  className="text-white/70 underline-offset-2 hover:text-white hover:underline"
+                  {...(sponsor.websiteUrl
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+                >
+                  {sponsor.name}
+                </Link>
+              ))}
+            </div>
+          ) : null}
+          <SponsorsSupportNotice className="text-center text-xs text-white/70 sm:text-left [&_a]:text-white [&_a:hover]:text-white/90" />
+        </div>
 
         <DataSourcesNotice
           className="mt-6 space-y-1 text-center text-xs text-white/70 sm:text-left [&_a]:text-white [&_a:hover]:text-white/90"

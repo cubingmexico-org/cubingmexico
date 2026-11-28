@@ -17,6 +17,7 @@ import type { GroupKind } from "@workspace/db/schema";
 import type { SearchParams } from "@/types";
 import { createSearchParamsCache } from "nuqs/server";
 import { getGroupInfo, getGroupKinch } from "../_lib/queries";
+import { redirectIfSponsorHasNoRoster } from "../_lib/roster";
 
 const searchParamsCache = createSearchParamsCache({
   deprecated: deprecatedParser,
@@ -31,6 +32,8 @@ export async function GroupKinch({
   kind: GroupKind;
   searchParams: SearchParams;
 }) {
+  await redirectIfSponsorHasNoRoster(groupId, kind);
+
   const info = await getGroupInfo(groupId);
   if (!info || info.kind !== kind) {
     return null;

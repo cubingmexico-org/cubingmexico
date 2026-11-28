@@ -18,6 +18,11 @@ export async function saveGroup({
   founded,
   isActive,
   regionLabel,
+  address,
+  city,
+  stateId,
+  latitude,
+  longitude,
   websiteUrl,
   publicityBlurb,
 }: {
@@ -28,6 +33,11 @@ export async function saveGroup({
   founded: Group["founded"];
   isActive: Group["isActive"];
   regionLabel?: Group["regionLabel"];
+  address?: Group["address"];
+  city?: Group["city"];
+  stateId?: Group["stateId"];
+  latitude?: Group["latitude"];
+  longitude?: Group["longitude"];
   websiteUrl?: Group["websiteUrl"];
   publicityBlurb?: Group["publicityBlurb"];
 }) {
@@ -40,6 +50,11 @@ export async function saveGroup({
       founded,
       isActive,
       ...(regionLabel !== undefined ? { regionLabel } : {}),
+      ...(address !== undefined ? { address } : {}),
+      ...(city !== undefined ? { city } : {}),
+      ...(stateId !== undefined ? { stateId } : {}),
+      ...(latitude !== undefined ? { latitude } : {}),
+      ...(longitude !== undefined ? { longitude } : {}),
       ...(websiteUrl !== undefined ? { websiteUrl } : {}),
       ...(publicityBlurb !== undefined ? { publicityBlurb } : {}),
     })
@@ -173,11 +188,14 @@ export async function addGroupMember({
   personId,
   specialties,
   achievements,
+  hideFromRoster,
 }: {
   groupId: Group["id"];
   personId: Person["wcaId"];
   specialties: GroupMembership["specialties"];
   achievements: GroupMembership["achievements"];
+  /** When set, also writes the flag (insert + conflict). Omit on specialty-only edits. */
+  hideFromRoster?: boolean;
 }) {
   await db
     .insert(groupMembership)
@@ -186,12 +204,14 @@ export async function addGroupMember({
       personId,
       specialties,
       achievements,
+      hideFromRoster: hideFromRoster ?? false,
     })
     .onConflictDoUpdate({
       target: [groupMembership.groupId, groupMembership.personId],
       set: {
         specialties,
         achievements,
+        ...(hideFromRoster !== undefined ? { hideFromRoster } : {}),
       },
     });
 }
@@ -228,6 +248,26 @@ export async function updateGroupMemberRole({
   await db
     .update(groupMembership)
     .set({ role })
+    .where(
+      and(
+        eq(groupMembership.groupId, groupId),
+        eq(groupMembership.personId, personId),
+      ),
+    );
+}
+
+export async function updateGroupMemberHideFromRoster({
+  groupId,
+  personId,
+  hideFromRoster,
+}: {
+  groupId: Group["id"];
+  personId: Person["wcaId"];
+  hideFromRoster: boolean;
+}) {
+  await db
+    .update(groupMembership)
+    .set({ hideFromRoster })
     .where(
       and(
         eq(groupMembership.groupId, groupId),

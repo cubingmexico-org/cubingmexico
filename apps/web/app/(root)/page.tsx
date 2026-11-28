@@ -12,15 +12,11 @@ import {
   getNumberOfPersons,
   getNumberOfCompetitions,
 } from "@/app/(root)/about/_lib/queries";
-import { COMMUNITIES_PUBLICLY_RELEASED } from "@/lib/groups";
-
 const shortcuts = [
   { href: "/rankings/333/single", label: "Rankings" },
   { href: "/records", label: "Récords" },
   { href: "/teams", label: "Teams" },
-  ...(COMMUNITIES_PUBLICLY_RELEASED
-    ? [{ href: "/communities", label: "Comunidades locales" }]
-    : []),
+  { href: "/communities", label: "Comunidades locales" },
   { href: "/kinch", label: "Kinch" },
   { href: "/live", label: "En vivo" },
 ];

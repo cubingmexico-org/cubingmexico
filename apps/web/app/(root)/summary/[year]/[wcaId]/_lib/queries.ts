@@ -6,6 +6,7 @@ import { inOfficialEvents } from "@/lib/official-events";
 import { and, countDistinct, eq, gte, lt, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 import {
+  computeCommunityCompanions,
   computeRankProgress,
   computeTeammates,
   computeTravelKm,
@@ -50,7 +51,7 @@ async function getAnnualSummaryCached(
 ): Promise<AnnualSummary | null> {
   "use cache";
   cacheLife("days");
-  cacheTag(`person-summary-v7-${year}-${wcaId}`);
+  cacheTag(`person-summary-v8-${year}-${wcaId}`);
 
   const [personRow] = await db
     .select({
@@ -129,6 +130,7 @@ async function getAnnualSummaryCached(
     prStreak,
     travelKm,
     teammates,
+    communityCompanions,
     rankProgress,
     mollerz,
     kinchSor,
@@ -139,6 +141,7 @@ async function getAnnualSummaryCached(
     computeYearPrStreak(wcaId, yearStart, yearEnd),
     computeTravelKm(wcaId, yearStart, yearEnd),
     computeTeammates(wcaId, personRow.stateId, sharedCubers),
+    computeCommunityCompanions(wcaId, sharedCubers),
     computeRankProgress(wcaId, personRow.stateId, yearStart, yearEnd),
     computeYearMollerz(wcaId, yearStart, yearEnd),
     computeYearKinchSor(wcaId, yearStart, yearEnd),
@@ -171,6 +174,7 @@ async function getAnnualSummaryCached(
       topShared: sharedCubers.slice(0, 10),
       distribution,
       teammates,
+      communityCompanions,
     },
     states: statesEnhanced,
     travelKm,

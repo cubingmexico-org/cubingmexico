@@ -56,6 +56,7 @@ def _write_group_ranks(cur, source_table, dest_table, group_ids):
             FROM {source_table} t
             INNER JOIN group_memberships gm ON gm.person_id = t.person_id
             WHERE t.country_rank <> 0
+              AND gm.hide_from_roster = false
               AND {group_condition}
               AND t.event_id IN {WITH_DEPRECATED_EVENTS_SUBQUERY}
         ) ranked
@@ -132,6 +133,7 @@ def _collect_group_records(conn, value_column, regional_column, group_ids, out_p
              AND crd.event_id = r.event_id
              AND crd.round_type_id = r.round_type_id
             WHERE {group_condition}
+              AND gm.hide_from_roster = false
               AND r.event_id IN {WITH_DEPRECATED_EVENTS_SUBQUERY}
               AND r.{value_column} > 0
             ORDER BY gm.group_id ASC,

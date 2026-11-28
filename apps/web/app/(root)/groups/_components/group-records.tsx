@@ -9,12 +9,12 @@ import {
 } from "@workspace/ui/components/table";
 import type { GroupKind } from "@workspace/db/schema";
 import { formatAttemptValue } from "@/lib/utils";
-import { groupRecordLabel } from "@/lib/groups";
 import {
   getGroupCurrentRecords,
   getGroupHistoricalRecordCount,
   getGroupInfo,
 } from "../_lib/queries";
+import { redirectIfSponsorHasNoRoster } from "../_lib/roster";
 
 export async function GroupRecords({
   groupId,
@@ -23,6 +23,8 @@ export async function GroupRecords({
   groupId: string;
   kind: GroupKind;
 }) {
+  await redirectIfSponsorHasNoRoster(groupId, kind);
+
   const [info, records, historicalCount] = await Promise.all([
     getGroupInfo(groupId),
     getGroupCurrentRecords(groupId),
@@ -33,13 +35,10 @@ export async function GroupRecords({
     return null;
   }
 
-  const recordLabel = groupRecordLabel(kind);
-  const title = recordLabel ? `Récords (${recordLabel})` : "Récords";
-
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold">{title}</h2>
+        <h2 className="text-lg font-semibold">Récords</h2>
         <p className="text-sm text-muted-foreground">
           Mejores marcas actuales del grupo.
         </p>
@@ -116,8 +115,7 @@ export async function GroupRecords({
 
       {historicalCount > 0 ? (
         <p className="text-xs text-muted-foreground">
-          {historicalCount} marcadores históricos
-          {recordLabel ? ` ${recordLabel}` : ""} en resultados.
+          {historicalCount} marcadores históricos en resultados.
         </p>
       ) : null}
     </div>

@@ -92,14 +92,16 @@ export const resultAttemptsRelations = relations(resultAttempts, ({ one }) => ({
 export const stateRelations = relations(state, ({ many, one }) => ({
   competitions: many(competition),
   persons: many(person),
+  groups: many(group),
   team: one(team, { fields: [state.id], references: [team.stateId] }),
 }));
 
-export const groupRelations = relations(group, ({ many }) => ({
+export const groupRelations = relations(group, ({ many, one }) => ({
   memberships: many(groupMembership),
   ranksSingle: many(groupRankSingle),
   ranksAverage: many(groupRankAverage),
   recordMarkers: many(groupRecordMarker),
+  state: one(state, { fields: [group.stateId], references: [state.id] }),
 }));
 
 export const groupMembershipRelations = relations(

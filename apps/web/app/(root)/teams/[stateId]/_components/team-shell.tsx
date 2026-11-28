@@ -11,6 +11,7 @@ import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
 import { CalendarRange, MapPin, Settings, Swords, Users } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
+import { buildCollectiveCompareHref } from "@/lib/collective-compare";
 import type { getTeamInfo } from "../_lib/queries";
 import { TeamTabsNav } from "./team-tabs-nav";
 
@@ -132,7 +133,10 @@ export function TeamShell({
                   }),
                   "bg-black/20 text-white hover:bg-black/30 hover:text-white",
                 )}
-                href={`/teams/compare?a=${stateId}`}
+                href={buildCollectiveCompareHref(
+                  { kind: "team", id: stateId },
+                  null,
+                )}
                 prefetch={false}
               >
                 <Swords /> Comparar

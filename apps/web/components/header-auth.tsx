@@ -10,7 +10,11 @@ import { authClient } from "@/lib/auth-client";
 import { UserAuthForm } from "./user-auth-form";
 import { UserDropdown } from "./user-dropdown";
 
-const EMPTY_CONTEXT: HeaderContext = { team: null, isSuperadmin: false };
+const EMPTY_CONTEXT: HeaderContext = {
+  team: null,
+  communities: [],
+  isSuperadmin: false,
+};
 
 export function HeaderAuth() {
   const { data: session, isPending } = authClient.useSession();
@@ -49,6 +53,7 @@ export function HeaderAuth() {
     <UserDropdown
       user={session.user}
       team={context.team}
+      communities={context.communities}
       isSuperadmin={context.isSuperadmin}
     />
   );

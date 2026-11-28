@@ -57,6 +57,11 @@ type GroupData = {
   icon: string | null;
   coverImage: string | null;
   regionLabel: string | null;
+  address: string | null;
+  city: string | null;
+  stateId: string | null;
+  latitude: number | null;
+  longitude: number | null;
   websiteUrl: string | null;
   publicityBlurb: string | null;
   socialLinks: {

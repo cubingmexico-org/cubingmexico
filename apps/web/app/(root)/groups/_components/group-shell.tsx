@@ -9,9 +9,10 @@ import {
 } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
-import { MapPin, Settings, Users } from "lucide-react";
+import { CalendarRange, MapPin, Settings, Swords, Users } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import type { GroupKind } from "@workspace/db/schema";
+import { buildCollectiveCompareHref } from "@/lib/collective-compare";
 import { groupBasePath, groupKindLabel } from "@/lib/groups";
 import { GroupTabsNav } from "./group-tabs-nav";
 
@@ -22,11 +23,14 @@ type GroupShellProps = {
   image: string | null;
   coverImage: string | null;
   isActive: boolean;
-  regionLabel: string | null;
+  locationLabel: string | null;
   websiteUrl: string | null;
   totalMembers: number;
+  hasRoster: boolean;
   founded: Date | null;
   canManage: boolean;
+  /** Year the "Resumen anual" link opens, or null to hide the link. */
+  summaryYear: number | null;
   children: ReactNode;
 };
 
@@ -37,11 +41,13 @@ export function GroupShell({
   image,
   coverImage,
   isActive,
-  regionLabel,
+  locationLabel,
   websiteUrl,
   totalMembers,
+  hasRoster,
   founded,
   canManage,
+  summaryYear,
   children,
 }: GroupShellProps) {
   const basePath = groupBasePath(kind);
@@ -90,16 +96,18 @@ export function GroupShell({
                   ) : null}
                 </div>
                 <div className="mt-2 flex flex-col items-start gap-2 text-sm text-white/90 sm:flex-row sm:items-center sm:gap-4">
-                  {regionLabel ? (
+                  {locationLabel ? (
                     <div className="flex min-w-0 items-center">
                       <MapPin className="mr-1 h-4 w-4 shrink-0" />
-                      <span className="truncate">{regionLabel}</span>
+                      <span className="truncate">{locationLabel}</span>
                     </div>
                   ) : null}
-                  <div className="flex items-center">
-                    <Users className="mr-1 h-4 w-4 shrink-0" />
-                    {totalMembers} miembros
-                  </div>
+                  {hasRoster ? (
+                    <div className="flex items-center">
+                      <Users className="mr-1 h-4 w-4 shrink-0" />
+                      {totalMembers} miembros
+                    </div>
+                  ) : null}
                   {founded ? (
                     <div className="flex items-center">
                       Desde{" "}
@@ -135,6 +143,36 @@ export function GroupShell({
                   Administrar
                 </Link>
               ) : null}
+              {kind === "community" && hasRoster && summaryYear !== null ? (
+                <Link
+                  className={cn(
+                    buttonVariants({
+                      variant: "ghost",
+                      size: "default",
+                    }),
+                    "bg-black/20 text-white hover:bg-black/30 hover:text-white",
+                  )}
+                  href={`/summary/community/${summaryYear}/${groupId}`}
+                  prefetch={false}
+                >
+                  <CalendarRange /> Resumen anual
+                </Link>
+              ) : null}
+              {hasRoster ? (
+                <Link
+                  className={cn(
+                    buttonVariants({
+                      variant: "ghost",
+                      size: "default",
+                    }),
+                    "bg-black/20 text-white hover:bg-black/30 hover:text-white",
+                  )}
+                  href={buildCollectiveCompareHref({ kind, id: groupId }, null)}
+                  prefetch={false}
+                >
+                  <Swords /> Comparar
+                </Link>
+              ) : null}
               <Link
                 className={cn(
                   buttonVariants({
@@ -153,7 +191,7 @@ export function GroupShell({
         </div>
       </div>
       <div className="container mx-auto min-w-0 px-4 py-8">
-        <GroupTabsNav groupId={groupId} kind={kind} />
+        <GroupTabsNav groupId={groupId} kind={kind} hasRoster={hasRoster} />
         {children}
       </div>
     </>

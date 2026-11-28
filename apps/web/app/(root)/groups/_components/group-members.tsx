@@ -8,10 +8,19 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import { Badge } from "@workspace/ui/components/badge";
+import type { GroupKind } from "@workspace/db/schema";
 import { StateLabel } from "@/components/state-flag";
 import { getGroupMembers } from "../_lib/queries";
+import { redirectIfSponsorHasNoRoster } from "../_lib/roster";
 
-export async function GroupMembers({ groupId }: { groupId: string }) {
+export async function GroupMembers({
+  groupId,
+  kind,
+}: {
+  groupId: string;
+  kind: GroupKind;
+}) {
+  await redirectIfSponsorHasNoRoster(groupId, kind);
   const members = await getGroupMembers(groupId);
   const visible = members.filter((member) => !member.hideFromRoster);
 

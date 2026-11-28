@@ -14,5 +14,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function Page({ params }: Props) {
   const { groupId } = await params;
-  return <GroupMembers groupId={groupId} />;
+  return <GroupMembers groupId={groupId} kind="community" />;
 }

@@ -2,12 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { getPublicitySponsors } from "@/app/(root)/groups/_lib/queries";
 import { brandMarkSrc } from "@/lib/brand-image";
-import { SPONSORS_PUBLICLY_RELEASED, groupHref } from "@/lib/groups";
+import { groupHref } from "@/lib/groups";
 import { SponsorsSupportNotice } from "./sponsors-support-notice";
 
 export async function HomeSponsors() {
-  if (!SPONSORS_PUBLICLY_RELEASED) return null;
-
   const sponsors = await getPublicitySponsors();
 
   return (

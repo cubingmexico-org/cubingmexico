@@ -1,31 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  COMMUNITIES_PUBLICLY_RELEASED,
   GROUP_ID_REGEX,
-  SPONSORS_PUBLICLY_RELEASED,
-  canShowGroupsLinks,
+  formatGroupLocationLine,
   groupBasePath,
   groupHref,
   groupIdFromName,
   groupKindLabel,
-  groupRecordLabel,
-  isGroupKindPubliclyReleased,
 } from "./groups";
 
 describe("groups helpers", () => {
-  it("gates public group links until launch", () => {
-    expect(canShowGroupsLinks(true)).toBe(true);
-    expect(canShowGroupsLinks(false)).toBe(
-      COMMUNITIES_PUBLICLY_RELEASED || SPONSORS_PUBLICLY_RELEASED,
-    );
-    expect(isGroupKindPubliclyReleased("community")).toBe(
-      COMMUNITIES_PUBLICLY_RELEASED,
-    );
-    expect(isGroupKindPubliclyReleased("sponsor")).toBe(
-      SPONSORS_PUBLICLY_RELEASED,
-    );
-  });
-
   it("maps kinds to public paths and labels", () => {
     expect(groupBasePath("community")).toBe("/communities");
     expect(groupBasePath("sponsor")).toBe("/sponsors");
@@ -33,8 +16,22 @@ describe("groups helpers", () => {
     expect(groupHref("sponsor", "cubos-dany")).toBe("/sponsors/cubos-dany");
     expect(groupKindLabel("community")).toBe("Comunidad");
     expect(groupKindLabel("sponsor")).toBe("Patrocinador");
-    expect(groupRecordLabel("community")).toBeNull();
-    expect(groupRecordLabel("sponsor")).toBe("SpR");
+  });
+
+  it("formats location lines", () => {
+    expect(
+      formatGroupLocationLine({
+        kind: "community",
+        regionLabel: "Zona metropolitana de Puerto Vallarta",
+      }),
+    ).toBe("Zona metropolitana de Puerto Vallarta");
+    expect(
+      formatGroupLocationLine({
+        kind: "sponsor",
+        city: "Ciudad de México",
+        stateName: "Ciudad de México",
+      }),
+    ).toBe("Ciudad de México, Ciudad de México");
   });
 
   it("validates slug ids", () => {

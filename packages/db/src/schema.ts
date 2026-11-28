@@ -661,6 +661,14 @@ export const group = pgTable(
     isActive: boolean("is_active").notNull().default(true),
     /** Community region label, e.g. metro area spanning multiple states. */
     regionLabel: varchar("region_label", { length: 120 }),
+    /** Physical store / venue address (sponsors). */
+    address: varchar("address", { length: 200 }),
+    city: varchar("city", { length: 80 }),
+    stateId: varchar("state_id", { length: 3 }).references(() => state.id, {
+      onDelete: "set null",
+    }),
+    latitude: doublePrecision("latitude"),
+    longitude: doublePrecision("longitude"),
     websiteUrl: varchar("website_url", { length: 200 }),
     sponsorshipStatus: varchar("sponsorship_status", {
       length: 16,
@@ -675,6 +683,7 @@ export const group = pgTable(
   (t) => [
     index("groups_kind_idx").on(t.kind),
     index("groups_sponsorship_status_idx").on(t.sponsorshipStatus),
+    index("groups_state_idx").on(t.stateId),
   ],
 );
 

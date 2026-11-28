@@ -6,6 +6,12 @@ import {
   getGroupRole,
   getSessionUserId,
 } from "@/lib/group-auth";
+import { formatGroupLocationLine } from "@/lib/groups";
+import { isSuperadmin } from "@/lib/superadmin";
+import {
+  canShowAnnualSummaryLinks,
+  getDefaultSummaryYear,
+} from "@/app/(root)/summary/_lib/summary-year";
 import { getGroupShellData } from "../_lib/queries";
 import { GroupShell } from "./group-shell";
 
@@ -41,6 +47,20 @@ export async function GroupFrame({
   const userId = await getSessionUserId();
   const role = userId ? await getGroupRole(groupId, userId) : null;
 
+  const hasRoster = data.group.kind !== "sponsor" || data.totalMembers > 0;
+  const locationLabel = formatGroupLocationLine({
+    kind: data.group.kind,
+    regionLabel: data.group.regionLabel,
+    city: data.group.city,
+    stateName: data.group.stateName,
+  });
+  const summaryYear =
+    data.group.kind === "community" &&
+    hasRoster &&
+    canShowAnnualSummaryLinks(isSuperadmin(userId ?? ""))
+      ? getDefaultSummaryYear()
+      : null;
+
   return (
     <GroupShell
       groupId={groupId}
@@ -49,11 +69,13 @@ export async function GroupFrame({
       image={data.group.image}
       coverImage={data.group.coverImage}
       isActive={data.group.isActive}
-      regionLabel={data.group.regionLabel}
+      locationLabel={locationLabel}
       websiteUrl={data.group.websiteUrl}
       totalMembers={data.totalMembers}
+      hasRoster={hasRoster}
       founded={data.group.founded}
       canManage={canManageGroup(role)}
+      summaryYear={summaryYear}
     >
       {children}
     </GroupShell>

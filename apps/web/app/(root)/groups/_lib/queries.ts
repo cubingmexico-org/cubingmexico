@@ -12,6 +12,8 @@ import {
   groupRankSingle,
   groupRecordMarker,
   person,
+  rankAverage,
+  rankSingle,
   result,
   state,
   type GroupKind,
@@ -84,6 +86,10 @@ export async function getGroupsByKind(
       image: group.image,
       coverImage: group.coverImage,
       regionLabel: group.regionLabel,
+      address: group.address,
+      city: group.city,
+      stateId: group.stateId,
+      stateName: state.name,
       websiteUrl: group.websiteUrl,
       founded: group.founded,
       isActive: group.isActive,
@@ -91,6 +97,7 @@ export async function getGroupsByKind(
       members: count(groupMembership.personId),
     })
     .from(group)
+    .leftJoin(state, eq(group.stateId, state.id))
     .leftJoin(
       groupMembership,
       and(
@@ -107,6 +114,10 @@ export async function getGroupsByKind(
       group.image,
       group.coverImage,
       group.regionLabel,
+      group.address,
+      group.city,
+      group.stateId,
+      state.name,
       group.websiteUrl,
       group.founded,
       group.isActive,
@@ -159,6 +170,12 @@ export async function getGroupInfo(groupId: string) {
       socialLinks: group.socialLinks,
       isActive: group.isActive,
       regionLabel: group.regionLabel,
+      address: group.address,
+      city: group.city,
+      stateId: group.stateId,
+      stateName: state.name,
+      latitude: group.latitude,
+      longitude: group.longitude,
       websiteUrl: group.websiteUrl,
       sponsorshipStatus: group.sponsorshipStatus,
       sponsorshipExpiresAt: group.sponsorshipExpiresAt,
@@ -166,6 +183,7 @@ export async function getGroupInfo(groupId: string) {
       publicityBlurb: group.publicityBlurb,
     })
     .from(group)
+    .leftJoin(state, eq(group.stateId, state.id))
     .where(eq(group.id, groupId))
     .limit(1);
 
@@ -340,7 +358,12 @@ export async function getGroupCurrentRecords(
   const memberIds = await db
     .select({ personId: groupMembership.personId })
     .from(groupMembership)
-    .where(eq(groupMembership.groupId, groupId));
+    .where(
+      and(
+        eq(groupMembership.groupId, groupId),
+        eq(groupMembership.hideFromRoster, false),
+      ),
+    );
 
   if (memberIds.length === 0) {
     return [];
@@ -449,6 +472,7 @@ export async function getGroupRanks(
   cacheTag(`group-ranks-${groupId}`);
 
   const table = rankType === "single" ? groupRankSingle : groupRankAverage;
+  const national = rankType === "single" ? rankSingle : rankAverage;
 
   return db
     .select({
@@ -456,6 +480,7 @@ export async function getGroupRanks(
       name: person.name,
       best: table.best,
       groupRank: table.groupRank,
+      countryRank: national.countryRank,
       state: state.name,
       stateId: person.stateId,
       gender: person.gender,
@@ -468,6 +493,13 @@ export async function getGroupRanks(
     })
     .from(table)
     .innerJoin(person, eq(table.personId, person.wcaId))
+    .innerJoin(
+      national,
+      and(
+        eq(national.personId, table.personId),
+        eq(national.eventId, table.eventId),
+      ),
+    )
     .leftJoin(state, eq(person.stateId, state.id))
     .where(and(eq(table.groupId, groupId), eq(table.eventId, eventId)))
     .orderBy(asc(table.groupRank));
@@ -529,7 +561,9 @@ export async function getGroupSOR(
         SELECT DISTINCT p.wca_id
         FROM ${person} p
         INNER JOIN ${groupMembership} gm
-          ON gm.person_id = p.wca_id AND gm.group_id = ${groupId}
+          ON gm.person_id = p.wca_id
+         AND gm.group_id = ${groupId}
+         AND gm.hide_from_roster = false
         INNER JOIN ${rankTable} r
           ON r.person_id = p.wca_id AND r.group_id = ${groupId}
         WHERE r.group_rank IS NOT NULL
@@ -565,7 +599,9 @@ export async function getGroupSOR(
           p.gender
         FROM ${person} p
         INNER JOIN ${groupMembership} gm
-          ON gm.person_id = p.wca_id AND gm.group_id = ${groupId}
+          ON gm.person_id = p.wca_id
+         AND gm.group_id = ${groupId}
+         AND gm.hide_from_roster = false
         LEFT JOIN ${state} s ON p.state_id = s.id
         WHERE EXISTS (
             SELECT 1
@@ -682,6 +718,7 @@ export async function getGroupSORGenderCounts(
       and(
         eq(groupMembership.personId, person.wcaId),
         eq(groupMembership.groupId, groupId),
+        eq(groupMembership.hideFromRoster, false),
       ),
     )
     .where(
@@ -775,7 +812,9 @@ export async function getGroupKinch(
         p.name
       FROM ${person} p
       INNER JOIN ${groupMembership} gm
-        ON gm.person_id = p.wca_id AND gm.group_id = ${groupId}
+        ON gm.person_id = p.wca_id
+       AND gm.group_id = ${groupId}
+       AND gm.hide_from_roster = false
     ),
     Events AS (
       SELECT id, rank

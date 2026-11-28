@@ -72,6 +72,17 @@ export function CubersSection({
           <SharedCubersTable rows={cubers.teammates} />
         </div>
       )}
+      {cubers.communityCompanions.map((group) => (
+        <div key={group.groupId} className="space-y-3">
+          <h3 className="text-lg font-semibold">
+            Compañeros de {group.groupName}
+          </h3>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            De {group.groupName}, coincidió más veces con:
+          </p>
+          <SharedCubersTable rows={group.companions} />
+        </div>
+      ))}
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>

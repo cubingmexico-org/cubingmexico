@@ -1,7 +1,3 @@
-import {
-  COMMUNITIES_PUBLICLY_RELEASED,
-  SPONSORS_PUBLICLY_RELEASED,
-} from "@/lib/groups";
 import { normalizeSearchText } from "@/lib/search";
 
 export type SitePage = {
@@ -33,28 +29,15 @@ export const SITE_PAGES: SitePage[] = [
     href: "/teams",
     keywords: ["equipos", "estados"],
   },
-  ...(COMMUNITIES_PUBLICLY_RELEASED
-    ? [
-        {
-          title: "Comunidades locales",
-          href: "/communities",
-          keywords: ["comunidad", "comunidades", "vallarta", "local"],
-        },
-      ]
-    : []),
-  ...(SPONSORS_PUBLICLY_RELEASED
-    ? [
-        {
-          title: "Patrocinadores",
-          href: "/sponsors",
-          keywords: ["sponsor", "tienda", "cubos dany", "publicidad"],
-        },
-      ]
-    : []),
   {
-    title: "Comparar teams",
-    href: "/teams/compare",
-    keywords: ["head to head", "versus", "vs", "equipos", "comparación"],
+    title: "Comunidades locales",
+    href: "/communities",
+    keywords: ["comunidad", "comunidades", "vallarta", "local"],
+  },
+  {
+    title: "Patrocinadores",
+    href: "/sponsors",
+    keywords: ["sponsor", "tienda", "cubos dany", "publicidad"],
   },
   {
     title: "Rankings",
@@ -63,24 +46,9 @@ export const SITE_PAGES: SitePage[] = [
   },
   { title: "Récords", href: "/records", keywords: ["records", "nr", "sr"] },
   {
-    title: "Rankings no oficiales",
-    href: "/unofficial/rankings",
-    keywords: ["cubing contests", "fto", "mirror", "kilominx", "no oficial"],
-  },
-  {
-    title: "Récords no oficiales",
-    href: "/unofficial/records",
-    keywords: ["cubing contests", "records", "no oficial"],
-  },
-  {
     title: "Sum of Ranks",
     href: "/sor/single",
     keywords: ["sor", "suma de ranks"],
-  },
-  {
-    title: "Sum of Ranks (Teams)",
-    href: "/sor/single/teams",
-    keywords: ["sor teams"],
   },
   {
     title: "Sum of State Ranks",
@@ -94,14 +62,44 @@ export const SITE_PAGES: SitePage[] = [
     keywords: ["kinch estatal"],
   },
   {
+    title: "Rachas de PRs",
+    href: "/streaks",
+    keywords: ["streaks", "pr"],
+  },
+  {
+    title: "Sum of Ranks (Teams)",
+    href: "/sor/single/teams",
+    keywords: ["sor teams"],
+  },
+  {
     title: "Kinch Ranks (Teams)",
     href: "/kinch/teams",
     keywords: ["kinch teams"],
   },
   {
-    title: "Rachas de PRs",
-    href: "/streaks",
-    keywords: ["streaks", "pr"],
+    title: "Comparar colectivos",
+    href: "/teams/compare",
+    keywords: [
+      "head to head",
+      "versus",
+      "vs",
+      "equipos",
+      "teams",
+      "comunidades",
+      "patrocinadores",
+      "sponsors",
+      "comparación",
+    ],
+  },
+  {
+    title: "Rankings no oficiales",
+    href: "/unofficial/rankings",
+    keywords: ["cubing contests", "fto", "mirror", "kilominx", "no oficial"],
+  },
+  {
+    title: "Récords no oficiales",
+    href: "/unofficial/records",
+    keywords: ["cubing contests", "records", "no oficial"],
   },
   {
     title: "Competidores",

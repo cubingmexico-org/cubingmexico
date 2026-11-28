@@ -24,10 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select";
+import { Switch } from "@workspace/ui/components/switch";
 import type { GroupMembership } from "@workspace/db/schema";
 import { StateLabel } from "@/components/state-flag";
 import type { GroupMember } from "../_types";
-import { updateGroupMemberRole } from "../_lib/actions";
+import {
+  updateGroupMemberHideFromRoster,
+  updateGroupMemberRole,
+} from "../_lib/actions";
 
 interface GetColumnsProps {
   genderCounts: Record<string, number>;
@@ -95,6 +99,47 @@ function RoleCell({
   );
 }
 
+function HideFromRosterCell({
+  member,
+  groupId,
+}: {
+  member: GroupMember;
+  groupId: string;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = React.useTransition();
+
+  return (
+    <Switch
+      checked={member.hideFromRoster}
+      disabled={pending}
+      onCheckedChange={(checked) => {
+        startTransition(async () => {
+          const { error, warning } = await updateGroupMemberHideFromRoster({
+            personId: member.wcaId,
+            groupId,
+            hideFromRoster: checked,
+          });
+
+          if (error) {
+            toast.error(error);
+            return;
+          }
+
+          toast.success(
+            checked
+              ? "Oculto de rankings y registros"
+              : "Visible en rankings y registros",
+          );
+          if (warning) toast.warning(warning);
+          router.refresh();
+        });
+      }}
+      aria-label={`Ocultar a ${member.name ?? member.wcaId} de rankings y registros`}
+    />
+  );
+}
+
 export function getGroupMemberColumns({
   genderCounts,
   setRowAction,
@@ -159,7 +204,7 @@ export function getGroupMemberColumns({
           </Link>
           {row.original.hideFromRoster ? (
             <Badge variant="outline" className="text-muted-foreground">
-              Oculto del directorio
+              Oculto de rankings
             </Badge>
           ) : null}
         </div>
@@ -186,6 +231,18 @@ export function getGroupMemberColumns({
         />
       ),
       enableHiding: false,
+    },
+    {
+      id: "hideFromRoster",
+      accessorKey: "hideFromRoster",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Ocultar" />
+      ),
+      cell: ({ row }) => (
+        <HideFromRosterCell member={row.original} groupId={groupId} />
+      ),
+      enableHiding: false,
+      enableSorting: false,
     },
     {
       id: "state",

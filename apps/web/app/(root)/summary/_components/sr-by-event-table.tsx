@@ -6,6 +6,7 @@ import {
   TableRow,
 } from "@workspace/ui/components/table";
 import type { AnnualSummary } from "../[year]/[wcaId]/_lib/queries";
+import type { CommunityAnnualSummary } from "../community/[year]/[groupId]/_lib/queries";
 import type { TeamAnnualSummary } from "../team/[year]/[stateId]/_lib/queries";
 import { AccentCell } from "./summary-stat";
 import { EventNameCell } from "./summary-table-cells";
@@ -15,7 +16,8 @@ export function SrByEventTable({
 }: {
   rows:
     | AnnualSummary["records"]["byEventSr"]
-    | TeamAnnualSummary["members"]["records"]["byEventSr"];
+    | TeamAnnualSummary["members"]["records"]["byEventSr"]
+    | CommunityAnnualSummary["records"]["byEventSr"];
 }) {
   return (
     <div className="overflow-x-auto">

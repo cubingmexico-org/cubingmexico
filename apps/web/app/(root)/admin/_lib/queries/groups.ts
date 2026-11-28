@@ -1,8 +1,8 @@
 import "server-only";
 
 import { db } from "@workspace/db";
-import { group } from "@workspace/db/schema";
-import { asc } from "drizzle-orm";
+import { group, state } from "@workspace/db/schema";
+import { asc, eq } from "drizzle-orm";
 
 export async function getAdminGroups() {
   return db
@@ -14,7 +14,10 @@ export async function getAdminGroups() {
       sponsorshipStatus: group.sponsorshipStatus,
       publicityEnabled: group.publicityEnabled,
       regionLabel: group.regionLabel,
+      city: group.city,
+      stateName: state.name,
     })
     .from(group)
+    .leftJoin(state, eq(group.stateId, state.id))
     .orderBy(asc(group.kind), asc(group.name));
 }

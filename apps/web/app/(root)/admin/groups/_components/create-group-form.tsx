@@ -112,7 +112,15 @@ export function CreateGroupForm() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="regionLabel">Región (comunidades)</Label>
-        <Input id="regionLabel" name="regionLabel" />
+        <Input
+          id="regionLabel"
+          name="regionLabel"
+          placeholder="Zona metropolitana de…"
+        />
+        <p className="text-xs text-muted-foreground">
+          La dirección de tiendas de patrocinadores se captura después en
+          Administrar.
+        </p>
       </div>
       <div className="space-y-2">
         <Label htmlFor="websiteUrl">Sitio web (patrocinadores)</Label>

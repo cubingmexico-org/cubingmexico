@@ -27,6 +27,8 @@ import {
 import { EventsCheckboxes } from "@/components/events-checkboxes";
 import { PersonsCombobox } from "@/components/persons-combobox";
 import { groupKindLabel } from "@/lib/groups";
+import { Checkbox } from "@workspace/ui/components/checkbox";
+import { Label } from "@workspace/ui/components/label";
 import type { GroupKind } from "@workspace/db/schema";
 import type { GroupMember } from "../_types";
 import { addGroupMemberFormAction } from "../_lib/actions";
@@ -44,6 +46,7 @@ export function AddGroupMemberForm({
   canManageRoles: boolean;
 }) {
   const [open, setOpen] = React.useState(false);
+  const [hideFromRoster, setHideFromRoster] = React.useState(false);
   const [state, formAction, pending] = useActionState(
     addGroupMemberFormAction,
     {
@@ -61,6 +64,7 @@ export function AddGroupMemberForm({
   useEffect(() => {
     if (state.success) {
       setOpen(false);
+      setHideFromRoster(false);
     }
   }, [state.success]);
 
@@ -132,6 +136,29 @@ export function AddGroupMemberForm({
                     ) : null}
                   </div>
                   <EventsCheckboxes />
+                  <div className="flex items-start gap-3 rounded-md border p-3">
+                    <input
+                      type="hidden"
+                      name="hideFromRoster"
+                      value={hideFromRoster ? "on" : ""}
+                    />
+                    <Checkbox
+                      id="hideFromRoster"
+                      checked={hideFromRoster}
+                      onCheckedChange={(checked) =>
+                        setHideFromRoster(checked === true)
+                      }
+                    />
+                    <div className="grid gap-1">
+                      <Label htmlFor="hideFromRoster">
+                        Ocultar de rankings y registros
+                      </Label>
+                      <p className="text-muted-foreground text-xs">
+                        Útil para admins u otros miembros que deben pertenecer
+                        al grupo sin aparecer en rankings, records, SOR o Kinch.
+                      </p>
+                    </div>
+                  </div>
                 </div>
                 <DialogFooter>
                   <Button type="submit" disabled={pending}>

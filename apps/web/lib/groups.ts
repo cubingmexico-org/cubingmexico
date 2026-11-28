@@ -1,26 +1,5 @@
 import type { GroupKind } from "@workspace/db/schema";
 
-/** Communities directory, nav, sitemap, and search are public. */
-export const COMMUNITIES_PUBLICLY_RELEASED = true;
-
-/**
- * Sponsors directory, nav, sitemap, search, and home/footer promo stay gated
- * until public launch; superadmins can still open routes via the layout gate.
- */
-export const SPONSORS_PUBLICLY_RELEASED = false;
-
-export function isGroupKindPubliclyReleased(kind: GroupKind): boolean {
-  return kind === "community"
-    ? COMMUNITIES_PUBLICLY_RELEASED
-    : SPONSORS_PUBLICLY_RELEASED;
-}
-
-export function canShowGroupsLinks(isSuperadmin = false): boolean {
-  return (
-    COMMUNITIES_PUBLICLY_RELEASED || SPONSORS_PUBLICLY_RELEASED || isSuperadmin
-  );
-}
-
 export function groupBasePath(kind: GroupKind): "/communities" | "/sponsors" {
   return kind === "community" ? "/communities" : "/sponsors";
 }
@@ -29,9 +8,20 @@ export function groupHref(kind: GroupKind, groupId: string): string {
   return `${groupBasePath(kind)}/${groupId}`;
 }
 
-/** Record code shown in UI; communities omit a code (avoid clashing with WCA CR). */
-export function groupRecordLabel(kind: GroupKind): "SpR" | null {
-  return kind === "community" ? null : "SpR";
+/** Short location line for cards/shell: "Ciudad, Estado" or community region. */
+export function formatGroupLocationLine(input: {
+  kind: GroupKind;
+  regionLabel?: string | null;
+  city?: string | null;
+  stateName?: string | null;
+}): string | null {
+  if (input.kind === "community") {
+    return input.regionLabel?.trim() || null;
+  }
+  const city = input.city?.trim() || null;
+  const stateName = input.stateName?.trim() || null;
+  if (city && stateName) return `${city}, ${stateName}`;
+  return city || stateName || input.regionLabel?.trim() || null;
 }
 
 export function groupKindLabel(kind: GroupKind): string {

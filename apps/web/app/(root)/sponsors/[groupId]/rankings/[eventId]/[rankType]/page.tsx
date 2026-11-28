@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { eventNames } from "@/lib/constants";
 import { getGroupInfo } from "../../../../../groups/_lib/queries";
 import { GroupRankings } from "../../../../../groups/_components/group-rankings";
 
@@ -10,8 +11,10 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { groupId, eventId, rankType } = await params;
   const group = await getGroupInfo(groupId);
+  const eventName = eventNames[eventId] ?? eventId;
+  const rankLabel = rankType === "average" ? "Averages" : "Singles";
   return {
-    title: `${group?.name ?? "Patrocinador"} | Rankings ${eventId} ${rankType} | Cubing México`,
+    title: `${group?.name ?? "Patrocinador"} · Ranking de ${eventName} · ${rankLabel} | Cubing México`,
   };
 }
 

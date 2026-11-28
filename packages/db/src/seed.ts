@@ -40,9 +40,14 @@ async function seed() {
         kind: "sponsor",
         name: "Cubos Dany",
         description: "Equipo patrocinado por Cubos Dany.",
+        address: "C. Correo Mayor 10, Centro Histórico",
+        city: "Ciudad de México",
+        stateId: "CMX",
+        latitude: 19.433971,
+        longitude: -99.1297615,
         isActive: true,
-        sponsorshipStatus: "inactive",
-        publicityEnabled: false,
+        sponsorshipStatus: "active",
+        publicityEnabled: true,
       },
     ])
     .onConflictDoNothing();

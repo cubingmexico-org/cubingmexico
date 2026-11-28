@@ -1,9 +1,21 @@
 import "server-only";
 
 import { db } from "@workspace/db";
-import { competition, person, result, state } from "@workspace/db/schema";
-import { and, asc, desc, eq, gte, lt, ne, sql } from "drizzle-orm";
-import type { SharedCuber, StateVisits, YearStates } from "./types";
+import {
+  competition,
+  group,
+  groupMembership,
+  person,
+  result,
+  state,
+} from "@workspace/db/schema";
+import { and, asc, desc, eq, gte, inArray, lt, ne, sql } from "drizzle-orm";
+import type {
+  CommunityCompanions,
+  SharedCuber,
+  StateVisits,
+  YearStates,
+} from "./types";
 import { haversineKm } from "./utils";
 
 export async function computeTravelKm(
@@ -119,4 +131,69 @@ export async function computeTeammates(
 
   const teammateSet = new Set(teammateIds.map((t) => t.wcaId));
   return sharedCubers.filter((c) => teammateSet.has(c.wcaId)).slice(0, 10);
+}
+
+/** Top shared cubers per active community the person belongs to. */
+export async function computeCommunityCompanions(
+  wcaId: string,
+  sharedCubers: SharedCuber[],
+): Promise<CommunityCompanions[]> {
+  if (sharedCubers.length === 0) return [];
+
+  const communities = await db
+    .select({
+      groupId: group.id,
+      groupName: group.name,
+    })
+    .from(groupMembership)
+    .innerJoin(group, eq(groupMembership.groupId, group.id))
+    .where(
+      and(
+        eq(groupMembership.personId, wcaId),
+        eq(group.kind, "community"),
+        eq(group.isActive, true),
+      ),
+    )
+    .orderBy(asc(group.name));
+
+  if (communities.length === 0) return [];
+
+  const groupIds = communities.map((c) => c.groupId);
+  const memberRows = await db
+    .select({
+      groupId: groupMembership.groupId,
+      personId: groupMembership.personId,
+    })
+    .from(groupMembership)
+    .where(
+      and(
+        inArray(groupMembership.groupId, groupIds),
+        eq(groupMembership.hideFromRoster, false),
+        ne(groupMembership.personId, wcaId),
+      ),
+    );
+
+  const membersByGroup = new Map<string, Set<string>>();
+  for (const row of memberRows) {
+    const set = membersByGroup.get(row.groupId) ?? new Set<string>();
+    set.add(row.personId);
+    membersByGroup.set(row.groupId, set);
+  }
+
+  const result: CommunityCompanions[] = [];
+  for (const community of communities) {
+    const memberSet = membersByGroup.get(community.groupId);
+    if (!memberSet || memberSet.size === 0) continue;
+    const companions = sharedCubers
+      .filter((c) => memberSet.has(c.wcaId))
+      .slice(0, 10);
+    if (companions.length === 0) continue;
+    result.push({
+      groupId: community.groupId,
+      groupName: community.groupName,
+      companions,
+    });
+  }
+
+  return result;
 }

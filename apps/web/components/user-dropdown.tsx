@@ -22,10 +22,6 @@ import {
   getDefaultSummaryYear,
 } from "@/app/(root)/summary/_lib/summary-year";
 import {
-  COMMUNITIES_PUBLICLY_RELEASED,
-  SPONSORS_PUBLICLY_RELEASED,
-} from "@/lib/groups";
-import {
   Avatar,
   AvatarImage,
   AvatarFallback,
@@ -45,6 +41,7 @@ type SessionUser = NonNullable<
 export function UserDropdown({
   user,
   team,
+  communities = [],
   isSuperadmin = false,
 }: {
   user: SessionUser;
@@ -52,6 +49,7 @@ export function UserDropdown({
     id: string;
     name: string;
   } | null;
+  communities?: Array<{ id: string; name: string }>;
   isSuperadmin?: boolean;
 }) {
   const isMobile = useIsMobile();
@@ -131,34 +129,26 @@ export function UserDropdown({
             </Link>
           </DropdownMenuItem>
         ) : null}
+        {showAnnualSummary
+          ? communities.map((community) => (
+              <DropdownMenuItem key={community.id}>
+                <CalendarRange />
+                <Link
+                  href={`/summary/community/${summaryYear}/${community.id}`}
+                  prefetch={false}
+                  className="w-full"
+                >
+                  Resumen de {community.name}
+                </Link>
+              </DropdownMenuItem>
+            ))
+          : null}
         <DropdownMenuItem>
           <Award />
           <a href={ORGANIZER_APP_URL} className="w-full">
             Organización
           </a>
         </DropdownMenuItem>
-        {isSuperadmin &&
-        (!COMMUNITIES_PUBLICLY_RELEASED || !SPONSORS_PUBLICLY_RELEASED) ? (
-          <>
-            <DropdownMenuSeparator />
-            {!COMMUNITIES_PUBLICLY_RELEASED ? (
-              <DropdownMenuItem>
-                <Users />
-                <Link href="/communities" className="w-full" prefetch={false}>
-                  Comunidades locales
-                </Link>
-              </DropdownMenuItem>
-            ) : null}
-            {!SPONSORS_PUBLICLY_RELEASED ? (
-              <DropdownMenuItem>
-                <Award />
-                <Link href="/sponsors" className="w-full" prefetch={false}>
-                  Patrocinadores
-                </Link>
-              </DropdownMenuItem>
-            ) : null}
-          </>
-        ) : null}
         {isSuperadmin ? (
           <>
             <DropdownMenuSeparator />

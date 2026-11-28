@@ -1,4 +1,5 @@
 import type { GroupKind } from "@workspace/db/schema";
+import { formatGroupLocationLine } from "@/lib/groups";
 import { getGroupsByKind } from "../_lib/queries";
 import { GroupDirectoryView } from "./group-directory-view";
 
@@ -15,7 +16,12 @@ export async function GroupDirectory({ kind }: { kind: GroupKind }) {
         description: item.description,
         image: item.image,
         coverImage: item.coverImage,
-        subtitle: kind === "community" ? item.regionLabel : item.websiteUrl,
+        subtitle: formatGroupLocationLine({
+          kind: item.kind,
+          regionLabel: item.regionLabel,
+          city: item.city,
+          stateName: item.stateName,
+        }),
         founded: item.founded,
         isActive: item.isActive,
         members: Number(item.members),
