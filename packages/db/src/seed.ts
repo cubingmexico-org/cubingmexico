@@ -41,8 +41,8 @@ async function seed() {
         name: "Cubos Dany",
         description: "Equipo patrocinado por Cubos Dany.",
         isActive: true,
-        sponsorshipStatus: "inactive",
-        publicityEnabled: false,
+        sponsorshipStatus: "active",
+        publicityEnabled: true,
       },
     ])
     .onConflictDoNothing();

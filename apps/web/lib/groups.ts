@@ -1,26 +1,5 @@
 import type { GroupKind } from "@workspace/db/schema";
 
-/** Communities directory, nav, sitemap, and search are public. */
-export const COMMUNITIES_PUBLICLY_RELEASED = true;
-
-/**
- * Sponsors directory, nav, sitemap, search, and home/footer promo stay gated
- * until public launch; superadmins can still open routes via the layout gate.
- */
-export const SPONSORS_PUBLICLY_RELEASED = false;
-
-export function isGroupKindPubliclyReleased(kind: GroupKind): boolean {
-  return kind === "community"
-    ? COMMUNITIES_PUBLICLY_RELEASED
-    : SPONSORS_PUBLICLY_RELEASED;
-}
-
-export function canShowGroupsLinks(isSuperadmin = false): boolean {
-  return (
-    COMMUNITIES_PUBLICLY_RELEASED || SPONSORS_PUBLICLY_RELEASED || isSuperadmin
-  );
-}
-
 export function groupBasePath(kind: GroupKind): "/communities" | "/sponsors" {
   return kind === "community" ? "/communities" : "/sponsors";
 }

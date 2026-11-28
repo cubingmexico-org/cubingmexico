@@ -14,6 +14,7 @@ import {
   updateGroupCover,
   updateGroupIcon,
   updateGroupLogo,
+  updateGroupMemberHideFromRoster as setGroupMemberHideFromRoster,
   updateGroupMemberRole as setGroupMemberRole,
 } from "@/db/group-mutations";
 import { getErrorMessage } from "@/lib/handle-error";
@@ -144,11 +145,16 @@ export async function addGroupMemberFormAction(
       };
     }
 
+    const hideFromRoster =
+      formData.get("hideFromRoster") === "on" ||
+      formData.get("hideFromRoster") === "true";
+
     await addGroupMember({
       groupId: data.groupId,
       personId: data.personId,
       specialties,
       achievements: null,
+      hideFromRoster,
     });
 
     const { ok } = await refreshGroupsAfterRosterChange({
@@ -328,6 +334,58 @@ export async function updateGroupMemberRole(input: {
     return {
       data: null,
       error: getErrorMessage(err),
+    };
+  }
+}
+
+export async function updateGroupMemberHideFromRoster(input: {
+  personId: string;
+  groupId: string;
+  hideFromRoster: boolean;
+}) {
+  try {
+    await requireGroupPermission(input.groupId, "group.members");
+
+    const [member] = await db
+      .select({ personId: groupMembership.personId })
+      .from(groupMembership)
+      .where(
+        and(
+          eq(groupMembership.groupId, input.groupId),
+          eq(groupMembership.personId, input.personId),
+        ),
+      )
+      .limit(1);
+
+    if (!member) {
+      return {
+        data: null,
+        error: "El miembro no pertenece a este grupo",
+        warning: null,
+      };
+    }
+
+    await setGroupMemberHideFromRoster({
+      groupId: input.groupId,
+      personId: input.personId,
+      hideFromRoster: input.hideFromRoster,
+    });
+
+    const { ok } = await refreshGroupsAfterRosterChange({
+      groupIds: [input.groupId],
+      personIds: [input.personId],
+    });
+
+    return {
+      data: null,
+      error: null,
+      warning: ok ? null : GROUP_ROSTER_REFRESH_PENDING,
+    };
+  } catch (err) {
+    return {
+      data: null,
+      error: getErrorMessage(err),
+      warning: null,
     };
   }
 }

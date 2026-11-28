@@ -340,7 +340,12 @@ export async function getGroupCurrentRecords(
   const memberIds = await db
     .select({ personId: groupMembership.personId })
     .from(groupMembership)
-    .where(eq(groupMembership.groupId, groupId));
+    .where(
+      and(
+        eq(groupMembership.groupId, groupId),
+        eq(groupMembership.hideFromRoster, false),
+      ),
+    );
 
   if (memberIds.length === 0) {
     return [];
@@ -529,7 +534,9 @@ export async function getGroupSOR(
         SELECT DISTINCT p.wca_id
         FROM ${person} p
         INNER JOIN ${groupMembership} gm
-          ON gm.person_id = p.wca_id AND gm.group_id = ${groupId}
+          ON gm.person_id = p.wca_id
+         AND gm.group_id = ${groupId}
+         AND gm.hide_from_roster = false
         INNER JOIN ${rankTable} r
           ON r.person_id = p.wca_id AND r.group_id = ${groupId}
         WHERE r.group_rank IS NOT NULL
@@ -565,7 +572,9 @@ export async function getGroupSOR(
           p.gender
         FROM ${person} p
         INNER JOIN ${groupMembership} gm
-          ON gm.person_id = p.wca_id AND gm.group_id = ${groupId}
+          ON gm.person_id = p.wca_id
+         AND gm.group_id = ${groupId}
+         AND gm.hide_from_roster = false
         LEFT JOIN ${state} s ON p.state_id = s.id
         WHERE EXISTS (
             SELECT 1
@@ -682,6 +691,7 @@ export async function getGroupSORGenderCounts(
       and(
         eq(groupMembership.personId, person.wcaId),
         eq(groupMembership.groupId, groupId),
+        eq(groupMembership.hideFromRoster, false),
       ),
     )
     .where(
@@ -775,7 +785,9 @@ export async function getGroupKinch(
         p.name
       FROM ${person} p
       INNER JOIN ${groupMembership} gm
-        ON gm.person_id = p.wca_id AND gm.group_id = ${groupId}
+        ON gm.person_id = p.wca_id
+       AND gm.group_id = ${groupId}
+       AND gm.hide_from_roster = false
     ),
     Events AS (
       SELECT id, rank

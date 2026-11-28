@@ -22,10 +22,6 @@ import {
   getDefaultSummaryYear,
 } from "@/app/(root)/summary/_lib/summary-year";
 import {
-  COMMUNITIES_PUBLICLY_RELEASED,
-  SPONSORS_PUBLICLY_RELEASED,
-} from "@/lib/groups";
-import {
   Avatar,
   AvatarImage,
   AvatarFallback,
@@ -137,28 +133,6 @@ export function UserDropdown({
             Organización
           </a>
         </DropdownMenuItem>
-        {isSuperadmin &&
-        (!COMMUNITIES_PUBLICLY_RELEASED || !SPONSORS_PUBLICLY_RELEASED) ? (
-          <>
-            <DropdownMenuSeparator />
-            {!COMMUNITIES_PUBLICLY_RELEASED ? (
-              <DropdownMenuItem>
-                <Users />
-                <Link href="/communities" className="w-full" prefetch={false}>
-                  Comunidades locales
-                </Link>
-              </DropdownMenuItem>
-            ) : null}
-            {!SPONSORS_PUBLICLY_RELEASED ? (
-              <DropdownMenuItem>
-                <Award />
-                <Link href="/sponsors" className="w-full" prefetch={false}>
-                  Patrocinadores
-                </Link>
-              </DropdownMenuItem>
-            ) : null}
-          </>
-        ) : null}
         {isSuperadmin ? (
           <>
             <DropdownMenuSeparator />

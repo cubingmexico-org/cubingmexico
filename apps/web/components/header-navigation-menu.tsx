@@ -34,10 +34,6 @@ import {
 } from "@workspace/ui/components/navigation-menu";
 import { CubingMexico } from "@workspace/icons";
 import { cn } from "@workspace/ui/lib/utils";
-import {
-  COMMUNITIES_PUBLICLY_RELEASED,
-  SPONSORS_PUBLICLY_RELEASED,
-} from "@/lib/groups";
 import { HeaderLiveNavLink } from "./header-live-nav-link";
 import { HeaderNavLink } from "./header-nav-link";
 import { ResponsiveNavigationMenu } from "./responsive-navigation-menu";
@@ -105,24 +101,20 @@ export function HeaderNavigationMenu() {
                   <MapPinned className="size-4" />
                   Teams estatales
                 </HeaderNavLink>
-                {COMMUNITIES_PUBLICLY_RELEASED ? (
-                  <HeaderNavLink
-                    href="/communities"
-                    linkClassName="flex-row items-center gap-2"
-                  >
-                    <Users className="size-4" />
-                    Comunidades locales
-                  </HeaderNavLink>
-                ) : null}
-                {SPONSORS_PUBLICLY_RELEASED ? (
-                  <HeaderNavLink
-                    href="/sponsors"
-                    linkClassName="flex-row items-center gap-2"
-                  >
-                    <Handshake className="size-4" />
-                    Patrocinadores
-                  </HeaderNavLink>
-                ) : null}
+                <HeaderNavLink
+                  href="/communities"
+                  linkClassName="flex-row items-center gap-2"
+                >
+                  <Users className="size-4" />
+                  Comunidades locales
+                </HeaderNavLink>
+                <HeaderNavLink
+                  href="/sponsors"
+                  linkClassName="flex-row items-center gap-2"
+                >
+                  <Handshake className="size-4" />
+                  Patrocinadores
+                </HeaderNavLink>
               </li>
             </ul>
           </NavigationMenuContent>
