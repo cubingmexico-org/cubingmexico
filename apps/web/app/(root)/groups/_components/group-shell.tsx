@@ -9,9 +9,10 @@ import {
 } from "@workspace/ui/components/avatar";
 import { Badge } from "@workspace/ui/components/badge";
 import { cn } from "@workspace/ui/lib/utils";
-import { MapPin, Settings, Users } from "lucide-react";
+import { CalendarRange, MapPin, Settings, Swords, Users } from "lucide-react";
 import { PageHeading } from "@/components/page-heading";
 import type { GroupKind } from "@workspace/db/schema";
+import { buildCollectiveCompareHref } from "@/lib/collective-compare";
 import { groupBasePath, groupKindLabel } from "@/lib/groups";
 import { GroupTabsNav } from "./group-tabs-nav";
 
@@ -28,6 +29,8 @@ type GroupShellProps = {
   hasRoster: boolean;
   founded: Date | null;
   canManage: boolean;
+  /** Year the "Resumen anual" link opens, or null to hide the link. */
+  summaryYear: number | null;
   children: ReactNode;
 };
 
@@ -44,6 +47,7 @@ export function GroupShell({
   hasRoster,
   founded,
   canManage,
+  summaryYear,
   children,
 }: GroupShellProps) {
   const basePath = groupBasePath(kind);
@@ -137,6 +141,36 @@ export function GroupShell({
                 >
                   <Settings />
                   Administrar
+                </Link>
+              ) : null}
+              {kind === "community" && hasRoster && summaryYear !== null ? (
+                <Link
+                  className={cn(
+                    buttonVariants({
+                      variant: "ghost",
+                      size: "default",
+                    }),
+                    "bg-black/20 text-white hover:bg-black/30 hover:text-white",
+                  )}
+                  href={`/summary/community/${summaryYear}/${groupId}`}
+                  prefetch={false}
+                >
+                  <CalendarRange /> Resumen anual
+                </Link>
+              ) : null}
+              {hasRoster ? (
+                <Link
+                  className={cn(
+                    buttonVariants({
+                      variant: "ghost",
+                      size: "default",
+                    }),
+                    "bg-black/20 text-white hover:bg-black/30 hover:text-white",
+                  )}
+                  href={buildCollectiveCompareHref({ kind, id: groupId }, null)}
+                  prefetch={false}
+                >
+                  <Swords /> Comparar
                 </Link>
               ) : null}
               <Link

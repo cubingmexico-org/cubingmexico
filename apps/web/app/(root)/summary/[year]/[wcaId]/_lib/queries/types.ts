@@ -1,6 +1,7 @@
 import "server-only";
 
 import type {
+  CommunityCompanions,
   RankProgressRow,
   SharedCuber,
   YearChampionshipPodiums,
@@ -106,6 +107,7 @@ export type AnnualSummary = {
     topShared: SharedCuber[];
     distribution: SharedCompetitionBucket[];
     teammates: SharedCuber[];
+    communityCompanions: CommunityCompanions[];
   };
   states: YearStates;
   travelKm: number | null;

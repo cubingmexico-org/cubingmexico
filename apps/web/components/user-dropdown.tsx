@@ -41,6 +41,7 @@ type SessionUser = NonNullable<
 export function UserDropdown({
   user,
   team,
+  communities = [],
   isSuperadmin = false,
 }: {
   user: SessionUser;
@@ -48,6 +49,7 @@ export function UserDropdown({
     id: string;
     name: string;
   } | null;
+  communities?: Array<{ id: string; name: string }>;
   isSuperadmin?: boolean;
 }) {
   const isMobile = useIsMobile();
@@ -127,6 +129,20 @@ export function UserDropdown({
             </Link>
           </DropdownMenuItem>
         ) : null}
+        {showAnnualSummary
+          ? communities.map((community) => (
+              <DropdownMenuItem key={community.id}>
+                <CalendarRange />
+                <Link
+                  href={`/summary/community/${summaryYear}/${community.id}`}
+                  prefetch={false}
+                  className="w-full"
+                >
+                  Resumen de {community.name}
+                </Link>
+              </DropdownMenuItem>
+            ))
+          : null}
         <DropdownMenuItem>
           <Award />
           <a href={ORGANIZER_APP_URL} className="w-full">

@@ -149,13 +149,6 @@ export function HeaderNavigationMenu() {
                   Sum of Ranks
                 </HeaderNavLink>
                 <HeaderNavLink
-                  href="/sor/single/teams"
-                  linkClassName="flex-row items-center gap-2"
-                >
-                  <SquareSigma className="size-4" />
-                  Sum of Ranks (Teams)
-                </HeaderNavLink>
-                <HeaderNavLink
                   href="/sosr/MEX/single"
                   linkClassName="flex-row items-center gap-2"
                 >
@@ -177,6 +170,20 @@ export function HeaderNavigationMenu() {
                   Kinch Ranks estatales
                 </HeaderNavLink>
                 <HeaderNavLink
+                  href="/streaks"
+                  linkClassName="flex-row items-center gap-2"
+                >
+                  <Flame className="size-4" />
+                  Rachas de PRs
+                </HeaderNavLink>
+                <HeaderNavLink
+                  href="/sor/single/teams"
+                  linkClassName="flex-row items-center gap-2"
+                >
+                  <SquareSigma className="size-4" />
+                  Sum of Ranks (Teams)
+                </HeaderNavLink>
+                <HeaderNavLink
                   href="/kinch/teams"
                   linkClassName="flex-row items-center gap-2"
                 >
@@ -188,14 +195,7 @@ export function HeaderNavigationMenu() {
                   linkClassName="flex-row items-center gap-2"
                 >
                   <Swords className="size-4" />
-                  Comparar teams
-                </HeaderNavLink>
-                <HeaderNavLink
-                  href="/streaks"
-                  linkClassName="flex-row items-center gap-2"
-                >
-                  <Flame className="size-4" />
-                  Rachas de PRs
+                  Comparar colectivos
                 </HeaderNavLink>
                 <HeaderNavLink
                   href="/unofficial/rankings"

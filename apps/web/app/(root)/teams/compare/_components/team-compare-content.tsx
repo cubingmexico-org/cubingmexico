@@ -24,111 +24,181 @@ import {
 } from "@/components/head-to-head";
 import { getEvents } from "@/db/queries";
 import type { EventScope } from "@/lib/constants";
+import {
+  collectiveKindLabel,
+  collectiveRefKey,
+  type CollectiveRef,
+} from "@/lib/collective-compare";
+import { formatGroupLocationLine, groupHref } from "@/lib/groups";
 import { formatAttemptValue } from "@/lib/utils";
 import {
-  getAverageNationalRecords,
-  getSingleNationalRecords,
+  getGroupInfo,
+  getGroupMedals,
+  getGroupTotalMembers,
+} from "@/app/(root)/groups/_lib/queries";
+import {
   getTeamCompetitions,
   getTeamInfo,
   getTeamMedals,
   getTotalMembers,
 } from "../../[stateId]/_lib/queries";
 import {
-  getTeamBestRecords,
-  getTeamHeadToHeadResults,
-  type TeamBestRecord,
-  type TeamBestRecords,
+  getCollectiveBestRecords,
+  getCollectiveHeadToHeadResults,
+  getCollectiveNationalRecordCount,
+  type CollectiveBestRecord,
+  type CollectiveBestRecords,
 } from "../_lib/queries";
 
 const ROUND_LIST_LIMIT = 100;
 
-async function getTeamCompareData(stateId: string, scope: EventScope) {
-  const [
-    info,
-    members,
-    competitions,
-    medals,
-    singleNRs,
-    averageNRs,
-    bestRecords,
-  ] = await Promise.all([
-    getTeamInfo(stateId),
-    getTotalMembers(stateId),
-    getTeamCompetitions(stateId),
-    getTeamMedals(stateId),
-    getSingleNationalRecords(stateId, scope),
-    getAverageNationalRecords(stateId, scope),
-    getTeamBestRecords(stateId, scope),
-  ]);
+type CollectiveCompareData = {
+  ref: CollectiveRef;
+  name: string;
+  image: string | null;
+  href: string;
+  subtitle: string | null;
+  stateId: string | null;
+  stateName: string | null;
+  members: number;
+  competitionCount: number | null;
+  medals: { gold: number; silver: number; bronze: number };
+  nationalRecords: number;
+  bestRecords: CollectiveBestRecords;
+};
 
-  if (!info) return null;
+async function getCollectiveCompareData(
+  ref: CollectiveRef,
+  scope: EventScope,
+): Promise<CollectiveCompareData | null> {
+  if (ref.kind === "team") {
+    const [info, members, competitions, medals, nationalRecords, bestRecords] =
+      await Promise.all([
+        getTeamInfo(ref.id),
+        getTotalMembers(ref.id),
+        getTeamCompetitions(ref.id),
+        getTeamMedals(ref.id),
+        getCollectiveNationalRecordCount(ref, scope),
+        getCollectiveBestRecords(ref, scope),
+      ]);
+    if (!info) return null;
+    return {
+      ref,
+      name: info.name,
+      image: info.image,
+      href: `/teams/${ref.id}`,
+      subtitle: info.state,
+      stateId: ref.id,
+      stateName: info.state,
+      members,
+      competitionCount: competitions.length,
+      medals,
+      nationalRecords,
+      bestRecords,
+    };
+  }
+
+  const [info, members, medals, nationalRecords, bestRecords] =
+    await Promise.all([
+      getGroupInfo(ref.id),
+      getGroupTotalMembers(ref.id),
+      getGroupMedals(ref.id),
+      getCollectiveNationalRecordCount(ref, scope),
+      getCollectiveBestRecords(ref, scope),
+    ]);
+
+  if (!info || info.kind !== ref.kind) return null;
+
+  const location = formatGroupLocationLine({
+    kind: info.kind,
+    regionLabel: info.regionLabel,
+    city: info.city,
+    stateName: info.stateName,
+  });
 
   return {
-    stateId,
-    info,
+    ref,
+    name: info.name,
+    image: info.image,
+    href: groupHref(info.kind, info.id),
+    subtitle: location ?? collectiveKindLabel(ref.kind),
+    stateId: null,
+    stateName: null,
     members,
-    competitionCount: competitions.length,
+    competitionCount: null,
     medals,
-    nationalRecords: singleNRs.length + averageNRs.length,
+    nationalRecords,
     bestRecords,
   };
 }
 
-type TeamData = NonNullable<Awaited<ReturnType<typeof getTeamCompareData>>>;
-
-function stateRecordCount(records: TeamBestRecords) {
+function bestMarkCount(records: CollectiveBestRecords) {
   return Object.values(records).reduce(
     (total, entry) => total + (entry.single ? 1 : 0) + (entry.average ? 1 : 0),
     0,
   );
 }
 
-function TeamHeader({ data }: { data: TeamData }) {
-  const { info, stateId } = data;
-
+function CollectiveHeader({ data }: { data: CollectiveCompareData }) {
   return (
     <div className="flex flex-col items-center gap-2 text-center min-w-0">
       <Avatar className="size-24 md:size-32 rounded">
         <AvatarImage
-          src={info.image ?? undefined}
-          alt={info.name}
+          src={data.image ?? undefined}
+          alt={data.name}
           className="object-cover"
         />
         <AvatarFallback className="rounded text-2xl">
-          {info.name
+          {data.name
             .split(" ")
             .map((word) => word[0])
             .join("")}
         </AvatarFallback>
       </Avatar>
       <Link
-        href={`/teams/${stateId}`}
+        href={data.href}
         prefetch={false}
         className="font-semibold text-lg text-link hover:text-link/80 wrap-break-word"
       >
-        {info.name}
+        {data.name}
       </Link>
-      <StateLabel
-        stateId={stateId}
-        stateName={info.state}
-        className="justify-center text-sm text-muted-foreground"
-      />
+      {data.stateId && data.stateName ? (
+        <StateLabel
+          stateId={data.stateId}
+          stateName={data.stateName}
+          className="justify-center text-sm text-muted-foreground"
+        />
+      ) : data.subtitle ? (
+        <p className="text-sm text-muted-foreground">{data.subtitle}</p>
+      ) : null}
     </div>
   );
 }
 
-function SummaryTable({ a, b }: { a: TeamData; b: TeamData }) {
+function SummaryTable({
+  a,
+  b,
+}: {
+  a: CollectiveCompareData;
+  b: CollectiveCompareData;
+}) {
+  const bothTeams = a.ref.kind === "team" && b.ref.kind === "team";
+
   return (
     <SummaryComparisonTable
-      aName={a.info.name}
-      bName={b.info.name}
+      aName={a.name}
+      bName={b.name}
       rows={[
         { label: "Miembros", a: a.members, b: b.members },
-        {
-          label: "Competencias organizadas",
-          a: a.competitionCount,
-          b: b.competitionCount,
-        },
+        ...(bothTeams
+          ? [
+              {
+                label: "Competencias organizadas",
+                a: a.competitionCount ?? 0,
+                b: b.competitionCount ?? 0,
+              },
+            ]
+          : []),
         {
           label: "Eventos",
           a: Object.keys(a.bestRecords).length,
@@ -139,9 +209,9 @@ function SummaryTable({ a, b }: { a: TeamData; b: TeamData }) {
         { label: "Bronce", a: a.medals.bronze, b: b.medals.bronze },
         { label: "NR", a: a.nationalRecords, b: b.nationalRecords },
         {
-          label: "SR",
-          a: stateRecordCount(a.bestRecords),
-          b: stateRecordCount(b.bestRecords),
+          label: "Mejores marcas",
+          a: bestMarkCount(a.bestRecords),
+          b: bestMarkCount(b.bestRecords),
         },
       ]}
     />
@@ -155,7 +225,7 @@ function BestRecordCell({
   isWinner,
 }: {
   eventId: string;
-  record: TeamBestRecord | undefined;
+  record: CollectiveBestRecord | undefined;
   type: "single" | "average";
   isWinner: boolean;
 }) {
@@ -190,8 +260,8 @@ function BestRecordsTable({
   b,
   events,
 }: {
-  a: TeamData;
-  b: TeamData;
+  a: CollectiveCompareData;
+  b: CollectiveCompareData;
   events: Array<{ id: string; name: string }>;
 }) {
   const rows = events.filter(
@@ -211,10 +281,10 @@ function BestRecordsTable({
           </TableHead>
         </TableRow>
         <TableRow>
-          <TableHead className="text-center">{a.info.name}</TableHead>
-          <TableHead className="text-center">{b.info.name}</TableHead>
-          <TableHead className="text-center">{a.info.name}</TableHead>
-          <TableHead className="text-center">{b.info.name}</TableHead>
+          <TableHead className="text-center">{a.name}</TableHead>
+          <TableHead className="text-center">{b.name}</TableHead>
+          <TableHead className="text-center">{a.name}</TableHead>
+          <TableHead className="text-center">{b.name}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -275,19 +345,22 @@ export async function TeamCompareContent({
   b,
   scope,
 }: {
-  a: string;
-  b: string;
+  a: CollectiveRef;
+  b: CollectiveRef;
   scope: EventScope;
 }) {
   "use cache";
   cacheLife("days");
-  cacheTag(`team-compare-${a}`, `team-compare-${b}`);
+  cacheTag(
+    `collective-compare-${collectiveRefKey(a)}`,
+    `collective-compare-${collectiveRefKey(b)}`,
+  );
 
   const [events, aData, bData, rounds] = await Promise.all([
     getEvents(scope),
-    getTeamCompareData(a, scope),
-    getTeamCompareData(b, scope),
-    getTeamHeadToHeadResults(a, b, scope),
+    getCollectiveCompareData(a, scope),
+    getCollectiveCompareData(b, scope),
+    getCollectiveHeadToHeadResults(a, b, scope),
   ]);
 
   if (!aData || !bData) {
@@ -297,11 +370,11 @@ export async function TeamCompareContent({
   return (
     <div className="flex flex-col gap-8">
       <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-4">
-        <TeamHeader data={aData} />
+        <CollectiveHeader data={aData} />
         <span className="self-center text-2xl font-bold text-muted-foreground">
           vs
         </span>
-        <TeamHeader data={bData} />
+        <CollectiveHeader data={bData} />
       </div>
 
       <section>
@@ -321,15 +394,15 @@ export async function TeamCompareContent({
           Enfrentamientos directos
         </h2>
         <p className="text-center text-sm text-muted-foreground mb-4">
-          En cada ronda compartida gana el team cuyo mejor integrante quedó en
-          mejor posición.
+          En cada ronda compartida gana el colectivo cuyo mejor integrante quedó
+          en mejor posición.
         </p>
         <DirectMatchups
-          aName={aData.info.name}
-          bName={bData.info.name}
+          aName={aData.name}
+          bName={bData.name}
           rounds={rounds}
           roundLimit={ROUND_LIST_LIMIT}
-          emptyMessage="Estos teams nunca han competido en la misma ronda."
+          emptyMessage="Estos colectivos nunca han competido en la misma ronda."
         />
       </section>
     </div>

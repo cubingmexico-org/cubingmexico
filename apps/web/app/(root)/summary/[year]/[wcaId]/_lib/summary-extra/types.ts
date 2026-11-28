@@ -8,6 +8,12 @@ export type SharedCuber = {
   sharedCompetitions: number;
 };
 
+export type CommunityCompanions = {
+  groupId: string;
+  groupName: string;
+  companions: SharedCuber[];
+};
+
 export type StateVisits = {
   stateId: string;
   stateName: string;

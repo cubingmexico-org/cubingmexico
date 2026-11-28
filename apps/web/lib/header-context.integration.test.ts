@@ -19,12 +19,14 @@ describe("getHeaderContextAction", () => {
     signIn(EDITOR);
     expect(await getHeaderContextAction()).toEqual({
       team: { id: "JAL", name: "Team Jalisco" },
+      communities: [],
       isSuperadmin: false,
     });
 
     signIn(SUPERADMIN);
     expect(await getHeaderContextAction()).toEqual({
       team: null,
+      communities: [],
       isSuperadmin: true,
     });
   });
